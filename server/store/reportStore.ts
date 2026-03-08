@@ -1,7 +1,10 @@
 import fs from "fs";
 import path from "path";
 
-const FILE = path.resolve(process.cwd(), "data/reports.jsonl");
+// Vercel serverless: only /tmp is writable
+const FILE = process.env.VERCEL
+  ? path.join("/tmp", "reports.jsonl")
+  : path.resolve(process.cwd(), "data/reports.jsonl");
 
 export type ReportStatus = "open" | "fixed" | "rejected";
 
@@ -59,6 +62,7 @@ export function getReportById(id: string): CitationReport | null {
 
 /** Append rawInput as a new line to the curated stress-test citations file. */
 export function addToStressTest(rawInput: string): void {
+  if (process.env.VERCEL) return; // No persistent writes on serverless
   const curatedPath = path.resolve(process.cwd(), "scripts/data/real_citations_curated.json");
   let curated: string[] = [];
   if (fs.existsSync(curatedPath)) {
