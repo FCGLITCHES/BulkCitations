@@ -1,0 +1,186 @@
+Fantastic — let’s craft you a detailed prompt you can use to tell an AI language model exactly what you want to build. Here’s a comprehensive description you could copy and paste (or adjust) as your prompt:
+
+
+---
+
+✅ Prompt for an AI language model
+
+> I want you to help me create a web application with the following specifications:
+
+Purpose:
+
+The website should allow users to convert references between different citation styles.
+
+Users can input references in any format (APA, MLA, Harvard, Chicago, IEEE, Vancouver, etc.) and select a target citation style to convert those references into.
+
+
+Supported Reference Types:
+
+Journal articles
+
+Books
+
+Book chapters
+
+Conference papers
+
+Websites
+
+Reports
+
+Theses/dissertations
+
+Other common academic sources
+
+
+Supported Citation Styles:
+
+APA
+
+MLA
+
+Harvard
+
+Chicago
+
+IEEE
+
+Vancouver
+
+
+Features:
+
+1. User Input Area:
+
+A text box (or upload option) where users can paste or upload references in any format.
+
+Optional fields for batch input (multiple references at once).
+
+
+
+2. Detection of Input Format:
+
+The system should automatically detect the citation style of the input references if possible.
+
+Alternatively, provide a dropdown where users can manually specify the input format.
+
+
+
+3. Reference Parsing:
+
+Accurately parse key citation fields:
+
+Author(s)
+
+Title
+
+Year
+
+Journal/book title
+
+Volume, issue, pages
+
+Publisher
+
+DOI or URL
+
+Place of publication
+
+Editors (if applicable)
+
+
+
+
+4. Conversion Functionality:
+
+Convert references into the user’s chosen output citation style.
+
+Maintain correct punctuation, capitalization, and ordering according to the target style’s guidelines.
+
+
+
+5. Output Display:
+
+Display converted references on the webpage in a readable format.
+
+Option to copy all converted references to clipboard.
+
+Option to download converted references in:
+
+Plain text
+
+Word document
+
+BibTeX
+
+RIS format (for citation managers)
+
+
+
+
+6. Batch Processing:
+
+Ability to convert multiple references at once.
+
+
+
+7. User Interface:
+
+Clean and modern design.
+
+Mobile-friendly.
+
+User-friendly instructions for first-time users.
+
+
+
+8. Error Handling:
+
+If parsing fails, provide clear feedback and allow manual editing.
+
+
+
+9. Security & Privacy:
+
+Ensure uploaded references or data are not stored permanently unless explicitly saved by the user.
+
+
+
+
+Optional Advanced Features:
+
+Integration with academic databases (e.g., CrossRef, PubMed) to auto-complete missing reference details.
+
+Support for in-text citations conversion alongside the reference list.
+
+Save user’s preferred settings (e.g., default citation style).
+
+User account system for saving citation projects.
+
+
+Technical Preferences:
+
+Please propose:
+
+The best tech stack (frontend, backend, libraries for citation parsing and formatting).
+
+How to handle citation style rules programmatically (e.g. use CSL JSON, existing citation libraries, or custom parsers).
+
+
+
+My goal is a comprehensive website that makes it easy for researchers, students, and writers to convert references accurately and quickly between all major citation styles.
+
+
+
+
+---
+
+How to use this:
+
+Paste it into your AI chat window and say “Build this for me” or “Help me plan this website.”
+
+You could also shorten it or adjust the level of detail depending on the AI you’re using.
+
+
+Would you like it phrased shorter, or with more emphasis on certain aspects (like UI, backend tech, etc.)?
+

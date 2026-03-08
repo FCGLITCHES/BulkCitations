@@ -1,0 +1,37 @@
+14. Smith, J.A. and Jones, B.C., 2021. Machine learning in healthcare. Journal of Medical Informatics, 45(3), pp.123-145.
+15. Brown, C., Davis, E. and Wilson, F., 2020. Neural network applications. Nature Machine Intelligence, 2(1), pp.45-67.
+16. Smith JA, Jones BC. Machine learning in healthcare. J Med Inform. 2021;45(3):123-45.
+17. Smith J, Jones B. Machine learning in healthcare. J. Med. Informatics. 2021;45:123.
+18. Smith, J. A., & Jones, B. (2021). Machine learning in healthcare. J Med Inform, 45(3), 123–145.
+19. Taylor P. Cardiac outcomes study. JAMA. 2023;329(2):145-67.
+20. Evans L. Cancer immunotherapy review. Lancet Oncol. 2021;22(8):1123-35.
+21. Green D. Cognitive development in adolescents. Psych Bull. 2020;146(3):234-56.
+22. Harris T. Climate modelling projections. Nat Geosci. 2022;15(6):478-90.
+23. Patel N. Surgical outcomes meta-analysis. Br Med J. 2021;374:1823-36.
+24. Martin K. Drug safety profiles in elderly patients. J Clin Pharmacol. 2021;61 Suppl 2:S45-S67.
+25. Clark H. Paediatric dosing guidelines. Arch Dis Child. 2020;105(Suppl 3):S12-S28.
+26. Lewis J. Oncology treatment review. Ann Oncol. 2022;33 Suppl 7:S234-S256.
+27. Ahmed R. Cardiology supplement findings. Eur Heart J. 2021;42 Suppl 1:S89-S102.
+28. Walker B. Protein folding mechanisms. Biochemistry. 2021;Vol. 60, No. 12:1456-78.
+29. Hall S. Quantum computing advances. Phys Rev Lett. 2022;Vol 128(4):040501.
+30. Young C. Epidemiology of type 2 diabetes. Diabetologia. 2020;63(2):345–367.
+31. Moore T. Atmospheric pressure studies. J Atmos Sci. 2019;Vol. 76, No. 8:2341-58.
+32. Müller H, Björk A, O'Brien C. Neurodegenerative disorder progression. Eur J Neurol. 2021;28(4):1234-45.
+33. Hernández-García M, López-Martínez J. Diabetes prevalence in Spain. Rev Esp Cardiol. 2022;75(3):234-45.
+34. van der Berg W, de Vries L. Infectious disease modelling. J Infect Dis. 2020;222(5):789-801.
+35. d'Angelo F, O'Sullivan K. Spinal rehabilitation outcomes. Eur Spine J. 2021;30(7):1923-34.
+36. García-López J.-F., Martínez B.-C. Hyphenated name parsing test. J Clin Med. 2022;11(4):1023-45.
+37. Chen X, Liu Y, Zhang W, Wang H, Li J, Zhao K, et al. CRISPR gene editing outcomes. Nature. 2023;615(7953):456-78.
+38. Rodriguez A, Martinez B, Garcia C, Lopez D, Hernandez E, Gonzalez F, Perez G. Cardiovascular risk factors. Circulation. 2022;145(3):234-56.
+39. Wilson K. Protein structure analysis. In: Thompson R, editor. Molecular biology. 3rd ed. New York, NY: Elsevier; 2021. p. 234-56.
+40. Davis P, Martinez A. Statistical methods in research. In: Advanced research methods. Cambridge: Cambridge University Press; 2020. p. 89-112.
+41. Robinson A. Computational biology methods. New York, NY: Springer; 2021.
+42. White P. Organic chemistry handbook. London, UK: Oxford University Press; 2020. p. 45-67.
+43. Thompson G. Data structures and algorithms. Cambridge, MA: MIT Press; 2019.
+44. Johnson. Deep learning. IEEE. 2019.
+45. Brown et al, Neural networks, 2020, pp45-67
+46. Smith & Jones (2021) - Machine learning healthcare - J Med Inform 45 pp123
+47. Evans. Cancer immunotherapy. 22(8):1123-35.
+48. Taylor P, et al. Cardiac outcomes. JAMA.
+49. Vaswani A, Shazeer N, Parmar N, Uszkoreit J, Jones L, Gomez AN, et al. Attention is all you need. Adv Neural Inf Process Syst. 2017;30:5998-6008.
+50. Krizhevsky A, Sutskever I, Hinton GE. ImageNet classification with deep convolutional neural networks. Commun ACM. 2017;60(6):84-90.

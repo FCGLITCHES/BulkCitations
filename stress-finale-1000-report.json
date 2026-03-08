@@ -1,0 +1,856 @@
+{
+  "generatedAt": "2026-03-07T04:25:25.093Z",
+  "totalCases": 1000,
+  "totalFailures": 14,
+  "passRate": 98.6,
+  "byCategory": {
+    "reference-type": 12,
+    "title": 6,
+    "venue": 5,
+    "year": 5
+  },
+  "bySource": {
+    "openalex": {
+      "total": 1000,
+      "failed": 14
+    },
+    "curated": {
+      "total": 0,
+      "failed": 0
+    }
+  },
+  "byStyle": {
+    "apa": {
+      "total": 167,
+      "failed": 0
+    },
+    "ieee": {
+      "total": 167,
+      "failed": 1
+    },
+    "vancouver": {
+      "total": 167,
+      "failed": 1
+    },
+    "harvard": {
+      "total": 167,
+      "failed": 1
+    },
+    "mla": {
+      "total": 166,
+      "failed": 0
+    },
+    "chicago": {
+      "total": 166,
+      "failed": 11
+    }
+  },
+  "failureExamples": {
+    "reference-type": [
+      {
+        "id": "oa-23",
+        "source": "openalex",
+        "categories": [
+          "reference-type",
+          "title",
+          "venue",
+          "reference-type"
+        ],
+        "expected": {
+          "year": "2021",
+          "titleToken": "The PRISMA 2020 statement: an updated guideline for reporting systematic reviews",
+          "firstAuthorFamily": "Page",
+          "venueToken": "BMJ",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "harvard",
+          "referenceType": "other",
+          "year": "2021",
+          "title": ": n71",
+          "firstAuthor": "Page, M",
+          "output": "Page, M., atthew J, J., McKenzie, P., Bossuyt, I., sabelle Boutron, T., Hoffmann, C., Mulrow, L., & 372, J. M. Tetzlaff. \"The P. 2020 statement: an updated guideline for reporting systematic reviews. "
+        }
+      },
+      {
+        "id": "oa-23",
+        "source": "openalex",
+        "categories": [
+          "reference-type",
+          "title",
+          "venue",
+          "reference-type"
+        ],
+        "expected": {
+          "year": "2021",
+          "titleToken": "The PRISMA 2020 statement: an updated guideline for reporting systematic reviews",
+          "firstAuthorFamily": "Page",
+          "venueToken": "BMJ",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "harvard",
+          "referenceType": "other",
+          "year": "2021",
+          "title": ": n71",
+          "firstAuthor": "Page, M",
+          "output": "Page, M., atthew J, J., McKenzie, P., Bossuyt, I., sabelle Boutron, T., Hoffmann, C., Mulrow, L., & 372, J. M. Tetzlaff. \"The P. 2020 statement: an updated guideline for reporting systematic reviews. "
+        }
+      },
+      {
+        "id": "oa-557",
+        "source": "openalex",
+        "categories": [
+          "reference-type",
+          "title",
+          "venue",
+          "reference-type"
+        ],
+        "expected": {
+          "year": "2016",
+          "titleToken": "ROBINS-I: a tool for assessing risk of bias in non-randomised studies of interventions",
+          "firstAuthorFamily": "Sterne",
+          "venueToken": "BMJ",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "harvard",
+          "referenceType": "other",
+          "year": "2016",
+          "title": ": i4919",
+          "firstAuthor": "Sterne, J",
+          "output": "Sterne, J., onathan A. C., M., Hernán, B., Reeves, J., elena Savović, N., Berkman, M., eera Viswanathan, D., & 355, D. G. Altman. \"ROBINS-I. a tool for assessing risk of bias in non-randomised studies"
+        }
+      },
+      {
+        "id": "oa-557",
+        "source": "openalex",
+        "categories": [
+          "reference-type",
+          "title",
+          "venue",
+          "reference-type"
+        ],
+        "expected": {
+          "year": "2016",
+          "titleToken": "ROBINS-I: a tool for assessing risk of bias in non-randomised studies of interventions",
+          "firstAuthorFamily": "Sterne",
+          "venueToken": "BMJ",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "harvard",
+          "referenceType": "other",
+          "year": "2016",
+          "title": ": i4919",
+          "firstAuthor": "Sterne, J",
+          "output": "Sterne, J., onathan A. C., M., Hernán, B., Reeves, J., elena Savović, N., Berkman, M., eera Viswanathan, D., & 355, D. G. Altman. \"ROBINS-I. a tool for assessing risk of bias in non-randomised studies"
+        }
+      },
+      {
+        "id": "oa-629",
+        "source": "openalex",
+        "categories": [
+          "reference-type",
+          "title",
+          "reference-type"
+        ],
+        "expected": {
+          "year": "2017",
+          "titleToken": "Production, use, and fate of all plastics ever made",
+          "firstAuthorFamily": "Geyer",
+          "venueToken": "Science Advances",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "harvard",
+          "referenceType": "other",
+          "year": "2017",
+          "title": ": e1700782",
+          "firstAuthor": "Geyer, Roland, Jenna R. Jambeck",
+          "output": "Geyer, R., Jenna R. Jambeck, Kara Lavender Law. \"Production,  use, & fate of all plastics ever made.\" Science Advances 3,  no. 7. (2017). : e1700782."
+        }
+      }
+    ],
+    "title": [
+      {
+        "id": "oa-23",
+        "source": "openalex",
+        "categories": [
+          "reference-type",
+          "title",
+          "venue",
+          "reference-type"
+        ],
+        "expected": {
+          "year": "2021",
+          "titleToken": "The PRISMA 2020 statement: an updated guideline for reporting systematic reviews",
+          "firstAuthorFamily": "Page",
+          "venueToken": "BMJ",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "harvard",
+          "referenceType": "other",
+          "year": "2021",
+          "title": ": n71",
+          "firstAuthor": "Page, M",
+          "output": "Page, M., atthew J, J., McKenzie, P., Bossuyt, I., sabelle Boutron, T., Hoffmann, C., Mulrow, L., & 372, J. M. Tetzlaff. \"The P. 2020 statement: an updated guideline for reporting systematic reviews. "
+        }
+      },
+      {
+        "id": "oa-32",
+        "source": "openalex",
+        "categories": [
+          "title"
+        ],
+        "expected": {
+          "year": "1990",
+          "titleToken": "Standard methods: For the examination of water and waste water",
+          "firstAuthorFamily": "Federation.",
+          "venueToken": "Analytical Biochemistry",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "vancouver",
+          "referenceType": "journal",
+          "year": "1990",
+          "title": "WE, Federation",
+          "firstAuthor": "Federation",
+          "venue": "WPC, Association. AWW, Association. APH. Standard methods: For the examination of water and waste water. Analytical Biochemistry",
+          "output": "Federation. (1990). W. E., Federation. W. P. C., Association. A. W. W., Association. A. P. H.. For the Examination of Water and Waste Water. Analytical Biochemistry, 186(1), 183."
+        }
+      },
+      {
+        "id": "oa-557",
+        "source": "openalex",
+        "categories": [
+          "reference-type",
+          "title",
+          "venue",
+          "reference-type"
+        ],
+        "expected": {
+          "year": "2016",
+          "titleToken": "ROBINS-I: a tool for assessing risk of bias in non-randomised studies of interventions",
+          "firstAuthorFamily": "Sterne",
+          "venueToken": "BMJ",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "harvard",
+          "referenceType": "other",
+          "year": "2016",
+          "title": ": i4919",
+          "firstAuthor": "Sterne, J",
+          "output": "Sterne, J., onathan A. C., M., Hernán, B., Reeves, J., elena Savović, N., Berkman, M., eera Viswanathan, D., & 355, D. G. Altman. \"ROBINS-I. a tool for assessing risk of bias in non-randomised studies"
+        }
+      },
+      {
+        "id": "oa-629",
+        "source": "openalex",
+        "categories": [
+          "reference-type",
+          "title",
+          "reference-type"
+        ],
+        "expected": {
+          "year": "2017",
+          "titleToken": "Production, use, and fate of all plastics ever made",
+          "firstAuthorFamily": "Geyer",
+          "venueToken": "Science Advances",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "harvard",
+          "referenceType": "other",
+          "year": "2017",
+          "title": ": e1700782",
+          "firstAuthor": "Geyer, Roland, Jenna R. Jambeck",
+          "output": "Geyer, R., Jenna R. Jambeck, Kara Lavender Law. \"Production,  use, & fate of all plastics ever made.\" Science Advances 3,  no. 7. (2017). : e1700782."
+        }
+      },
+      {
+        "id": "oa-743",
+        "source": "openalex",
+        "categories": [
+          "reference-type",
+          "title",
+          "reference-type"
+        ],
+        "expected": {
+          "year": "2010",
+          "titleToken": "ANNOVAR: functional annotation of genetic variants from high-throughput sequencing data",
+          "firstAuthorFamily": "Wang",
+          "venueToken": "Nucleic Acids Research",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "harvard",
+          "referenceType": "other",
+          "year": "2010",
+          "title": ": e164",
+          "firstAuthor": "Wang, K., M. Li",
+          "output": "Wang, K., M. Li, H. Hakonarson. “ANNOVAR: functional annotation of genetic variants from high-throughput sequencing data.” Nucleic Acids Research 38,  no. 16. (2010). : e164."
+        }
+      }
+    ],
+    "venue": [
+      {
+        "id": "oa-23",
+        "source": "openalex",
+        "categories": [
+          "reference-type",
+          "title",
+          "venue",
+          "reference-type"
+        ],
+        "expected": {
+          "year": "2021",
+          "titleToken": "The PRISMA 2020 statement: an updated guideline for reporting systematic reviews",
+          "firstAuthorFamily": "Page",
+          "venueToken": "BMJ",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "harvard",
+          "referenceType": "other",
+          "year": "2021",
+          "title": ": n71",
+          "firstAuthor": "Page, M",
+          "output": "Page, M., atthew J, J., McKenzie, P., Bossuyt, I., sabelle Boutron, T., Hoffmann, C., Mulrow, L., & 372, J. M. Tetzlaff. \"The P. 2020 statement: an updated guideline for reporting systematic reviews. "
+        }
+      },
+      {
+        "id": "oa-229",
+        "source": "openalex",
+        "categories": [
+          "venue"
+        ],
+        "expected": {
+          "year": "1986",
+          "titleToken": "A Computational Approach to Edge Detection",
+          "firstAuthorFamily": "Canny",
+          "venueToken": "IEEE Transactions on Pattern Analysis and Machine Intelligence",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "harvard",
+          "referenceType": "journal",
+          "year": "1986",
+          "title": "A Computational Approach to Edge Detection,",
+          "firstAuthor": "John Canny, \"A Computational Approach to Edge Detection",
+          "output": "John Canny, \"A Computational Approach to Edge Detection. (1986). A Computational Approach to Edge Detection,. 679–698."
+        }
+      },
+      {
+        "id": "oa-543",
+        "source": "openalex",
+        "categories": [
+          "venue"
+        ],
+        "expected": {
+          "year": "1984",
+          "titleToken": "Stochastic Relaxation, Gibbs Distributions, and the Bayesian Restoration of Images",
+          "firstAuthorFamily": "Geman",
+          "venueToken": "IEEE Transactions on Pattern Analysis and Machine Intelligence",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "harvard",
+          "referenceType": "journal",
+          "year": "1984",
+          "title": "Stochastic Relaxation, Gibbs Distributions, and the Bayesian Restoration of Images",
+          "firstAuthor": "Geman, Stuart",
+          "output": "Geman, S., & Geman, D. (1984). Stochastic Relaxation, Gibbs Distributions, and the Bayesian Restoration of Images. 721–741."
+        }
+      },
+      {
+        "id": "oa-557",
+        "source": "openalex",
+        "categories": [
+          "reference-type",
+          "title",
+          "venue",
+          "reference-type"
+        ],
+        "expected": {
+          "year": "2016",
+          "titleToken": "ROBINS-I: a tool for assessing risk of bias in non-randomised studies of interventions",
+          "firstAuthorFamily": "Sterne",
+          "venueToken": "BMJ",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "harvard",
+          "referenceType": "other",
+          "year": "2016",
+          "title": ": i4919",
+          "firstAuthor": "Sterne, J",
+          "output": "Sterne, J., onathan A. C., M., Hernán, B., Reeves, J., elena Savović, N., Berkman, M., eera Viswanathan, D., & 355, D. G. Altman. \"ROBINS-I. a tool for assessing risk of bias in non-randomised studies"
+        }
+      },
+      {
+        "id": "oa-929",
+        "source": "openalex",
+        "categories": [
+          "reference-type",
+          "venue",
+          "reference-type"
+        ],
+        "expected": {
+          "year": "2011",
+          "titleToken": "pROC: an open-source package for R and S+ to analyze and compare ROC curves",
+          "firstAuthorFamily": "Robin",
+          "venueToken": "BMC Bioinformatics",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "harvard",
+          "referenceType": "other",
+          "year": "2011",
+          "title": ":",
+          "firstAuthor": "Robin, X",
+          "output": "Robin, X., atacha Turck, A., lexandre Hainard, N., atalia Tiberti, F., rédérique Lisacek, J., Markus Müller. \"p R. O. C.: an open-source package for, R., to analyze, S., & compare R. O. C. curves.\" B."
+        }
+      }
+    ],
+    "year": [
+      {
+        "id": "oa-359",
+        "source": "openalex",
+        "categories": [
+          "year"
+        ],
+        "expected": {
+          "year": "2017",
+          "titleToken": "lmerTest Package: Tests in Linear Mixed Effects Models",
+          "firstAuthorFamily": "Kuznetsova",
+          "venueToken": "Journal of Statistical Software",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "chicago",
+          "referenceType": "journal",
+          "title": "lmerTest Package: Tests in Linear Mixed Effects Models",
+          "firstAuthor": "Kuznetsova, Alexandra",
+          "venue": "Journal of Statistical Software",
+          "output": "Kuznetsova, A., Brockhoff, P. B., & Christensen, R. H. B. (n.d.). lmerTests in Linear Mixed Effects Models. Journal of Statistical Software."
+        }
+      },
+      {
+        "id": "oa-569",
+        "source": "openalex",
+        "categories": [
+          "year"
+        ],
+        "expected": {
+          "year": "2010",
+          "titleToken": "Conducting Meta-Analyses in R with the metafor Package",
+          "firstAuthorFamily": "Viechtbauer",
+          "venueToken": "Journal of Statistical Software",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "mla",
+          "referenceType": "journal",
+          "title": "Conducting Meta-Analyses in R with the metafor Package",
+          "firstAuthor": "Viechtbauer, Wolfgang",
+          "venue": "Journal of Statistical Software",
+          "output": "Viechtbauer, W. (n.d.). Conducting Meta-Analyses in R with the metafor Package. Journal of Statistical Software."
+        }
+      },
+      {
+        "id": "oa-635",
+        "source": "openalex",
+        "categories": [
+          "year"
+        ],
+        "expected": {
+          "year": "2010",
+          "titleToken": "Regularization Paths for Generalized Linear Models via Coordinate Descent",
+          "firstAuthorFamily": "Friedman",
+          "venueToken": "Journal of Statistical Software",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "chicago",
+          "referenceType": "journal",
+          "title": "Regularization Paths for Generalized Linear Models via Coordinate Descent",
+          "firstAuthor": "Friedman, Jerome",
+          "venue": "Journal of Statistical Software",
+          "output": "Friedman, J., Hastie, T., & Tibshirani, R. (n.d.). Regularization Paths for Generalized Linear Models via Coordinate Descent. Journal of Statistical Software."
+        }
+      },
+      {
+        "id": "oa-641",
+        "source": "openalex",
+        "categories": [
+          "year"
+        ],
+        "expected": {
+          "year": "1992",
+          "titleToken": "Inference from Iterative Simulation Using Multiple Sequences",
+          "firstAuthorFamily": "Gelman",
+          "venueToken": "Statistical Science",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "chicago",
+          "referenceType": "journal",
+          "title": "Inference from Iterative Simulation Using Multiple Sequences",
+          "firstAuthor": "Gelman, Andrew",
+          "venue": "Statistical Science",
+          "output": "Gelman, A., & Rubin, D. B. (n.d.). Inference from Iterative Simulation Using Multiple Sequences. Statistical Science."
+        }
+      },
+      {
+        "id": "oa-983",
+        "source": "openalex",
+        "categories": [
+          "year"
+        ],
+        "expected": {
+          "year": "2011",
+          "titleToken": "mice : Multivariate Imputation by Chained Equations in R",
+          "firstAuthorFamily": "Buuren",
+          "venueToken": "Journal of Statistical Software",
+          "referenceType": "journal"
+        },
+        "actual": {
+          "inputStyle": "chicago",
+          "referenceType": "journal",
+          "title": "mice : Multivariate Imputation by Chained Equations in R",
+          "firstAuthor": "Buuren, Stef van",
+          "venue": "Journal of Statistical Software",
+          "output": "Buuren, S. van, & Groothuis-Oudshoorn, K. (n.d.). mice : Multivariate Imputation by Chained Equations in R. Journal of Statistical Software."
+        }
+      }
+    ]
+  },
+  "sampleFailures": [
+    {
+      "id": "oa-23",
+      "source": "openalex",
+      "categories": [
+        "reference-type",
+        "title",
+        "venue",
+        "reference-type"
+      ],
+      "expected": {
+        "year": "2021",
+        "titleToken": "The PRISMA 2020 statement: an updated guideline for reporting systematic reviews",
+        "firstAuthorFamily": "Page",
+        "venueToken": "BMJ",
+        "referenceType": "journal"
+      },
+      "actual": {
+        "inputStyle": "harvard",
+        "referenceType": "other",
+        "year": "2021",
+        "title": ": n71",
+        "firstAuthor": "Page, M",
+        "output": "Page, M., atthew J, J., McKenzie, P., Bossuyt, I., sabelle Boutron, T., Hoffmann, C., Mulrow, L., & 372, J. M. Tetzlaff. \"The P. 2020 statement: an updated guideline for reporting systematic reviews. "
+      }
+    },
+    {
+      "id": "oa-32",
+      "source": "openalex",
+      "categories": [
+        "title"
+      ],
+      "expected": {
+        "year": "1990",
+        "titleToken": "Standard methods: For the examination of water and waste water",
+        "firstAuthorFamily": "Federation.",
+        "venueToken": "Analytical Biochemistry",
+        "referenceType": "journal"
+      },
+      "actual": {
+        "inputStyle": "vancouver",
+        "referenceType": "journal",
+        "year": "1990",
+        "title": "WE, Federation",
+        "firstAuthor": "Federation",
+        "venue": "WPC, Association. AWW, Association. APH. Standard methods: For the examination of water and waste water. Analytical Biochemistry",
+        "output": "Federation. (1990). W. E., Federation. W. P. C., Association. A. W. W., Association. A. P. H.. For the Examination of Water and Waste Water. Analytical Biochemistry, 186(1), 183."
+      }
+    },
+    {
+      "id": "oa-229",
+      "source": "openalex",
+      "categories": [
+        "venue"
+      ],
+      "expected": {
+        "year": "1986",
+        "titleToken": "A Computational Approach to Edge Detection",
+        "firstAuthorFamily": "Canny",
+        "venueToken": "IEEE Transactions on Pattern Analysis and Machine Intelligence",
+        "referenceType": "journal"
+      },
+      "actual": {
+        "inputStyle": "harvard",
+        "referenceType": "journal",
+        "year": "1986",
+        "title": "A Computational Approach to Edge Detection,",
+        "firstAuthor": "John Canny, \"A Computational Approach to Edge Detection",
+        "output": "John Canny, \"A Computational Approach to Edge Detection. (1986). A Computational Approach to Edge Detection,. 679–698."
+      }
+    },
+    {
+      "id": "oa-359",
+      "source": "openalex",
+      "categories": [
+        "year"
+      ],
+      "expected": {
+        "year": "2017",
+        "titleToken": "lmerTest Package: Tests in Linear Mixed Effects Models",
+        "firstAuthorFamily": "Kuznetsova",
+        "venueToken": "Journal of Statistical Software",
+        "referenceType": "journal"
+      },
+      "actual": {
+        "inputStyle": "chicago",
+        "referenceType": "journal",
+        "title": "lmerTest Package: Tests in Linear Mixed Effects Models",
+        "firstAuthor": "Kuznetsova, Alexandra",
+        "venue": "Journal of Statistical Software",
+        "output": "Kuznetsova, A., Brockhoff, P. B., & Christensen, R. H. B. (n.d.). lmerTests in Linear Mixed Effects Models. Journal of Statistical Software."
+      }
+    },
+    {
+      "id": "oa-543",
+      "source": "openalex",
+      "categories": [
+        "venue"
+      ],
+      "expected": {
+        "year": "1984",
+        "titleToken": "Stochastic Relaxation, Gibbs Distributions, and the Bayesian Restoration of Images",
+        "firstAuthorFamily": "Geman",
+        "venueToken": "IEEE Transactions on Pattern Analysis and Machine Intelligence",
+        "referenceType": "journal"
+      },
+      "actual": {
+        "inputStyle": "harvard",
+        "referenceType": "journal",
+        "year": "1984",
+        "title": "Stochastic Relaxation, Gibbs Distributions, and the Bayesian Restoration of Images",
+        "firstAuthor": "Geman, Stuart",
+        "output": "Geman, S., & Geman, D. (1984). Stochastic Relaxation, Gibbs Distributions, and the Bayesian Restoration of Images. 721–741."
+      }
+    },
+    {
+      "id": "oa-557",
+      "source": "openalex",
+      "categories": [
+        "reference-type",
+        "title",
+        "venue",
+        "reference-type"
+      ],
+      "expected": {
+        "year": "2016",
+        "titleToken": "ROBINS-I: a tool for assessing risk of bias in non-randomised studies of interventions",
+        "firstAuthorFamily": "Sterne",
+        "venueToken": "BMJ",
+        "referenceType": "journal"
+      },
+      "actual": {
+        "inputStyle": "harvard",
+        "referenceType": "other",
+        "year": "2016",
+        "title": ": i4919",
+        "firstAuthor": "Sterne, J",
+        "output": "Sterne, J., onathan A. C., M., Hernán, B., Reeves, J., elena Savović, N., Berkman, M., eera Viswanathan, D., & 355, D. G. Altman. \"ROBINS-I. a tool for assessing risk of bias in non-randomised studies"
+      }
+    },
+    {
+      "id": "oa-569",
+      "source": "openalex",
+      "categories": [
+        "year"
+      ],
+      "expected": {
+        "year": "2010",
+        "titleToken": "Conducting Meta-Analyses in R with the metafor Package",
+        "firstAuthorFamily": "Viechtbauer",
+        "venueToken": "Journal of Statistical Software",
+        "referenceType": "journal"
+      },
+      "actual": {
+        "inputStyle": "mla",
+        "referenceType": "journal",
+        "title": "Conducting Meta-Analyses in R with the metafor Package",
+        "firstAuthor": "Viechtbauer, Wolfgang",
+        "venue": "Journal of Statistical Software",
+        "output": "Viechtbauer, W. (n.d.). Conducting Meta-Analyses in R with the metafor Package. Journal of Statistical Software."
+      }
+    },
+    {
+      "id": "oa-629",
+      "source": "openalex",
+      "categories": [
+        "reference-type",
+        "title",
+        "reference-type"
+      ],
+      "expected": {
+        "year": "2017",
+        "titleToken": "Production, use, and fate of all plastics ever made",
+        "firstAuthorFamily": "Geyer",
+        "venueToken": "Science Advances",
+        "referenceType": "journal"
+      },
+      "actual": {
+        "inputStyle": "harvard",
+        "referenceType": "other",
+        "year": "2017",
+        "title": ": e1700782",
+        "firstAuthor": "Geyer, Roland, Jenna R. Jambeck",
+        "output": "Geyer, R., Jenna R. Jambeck, Kara Lavender Law. \"Production,  use, & fate of all plastics ever made.\" Science Advances 3,  no. 7. (2017). : e1700782."
+      }
+    },
+    {
+      "id": "oa-635",
+      "source": "openalex",
+      "categories": [
+        "year"
+      ],
+      "expected": {
+        "year": "2010",
+        "titleToken": "Regularization Paths for Generalized Linear Models via Coordinate Descent",
+        "firstAuthorFamily": "Friedman",
+        "venueToken": "Journal of Statistical Software",
+        "referenceType": "journal"
+      },
+      "actual": {
+        "inputStyle": "chicago",
+        "referenceType": "journal",
+        "title": "Regularization Paths for Generalized Linear Models via Coordinate Descent",
+        "firstAuthor": "Friedman, Jerome",
+        "venue": "Journal of Statistical Software",
+        "output": "Friedman, J., Hastie, T., & Tibshirani, R. (n.d.). Regularization Paths for Generalized Linear Models via Coordinate Descent. Journal of Statistical Software."
+      }
+    },
+    {
+      "id": "oa-641",
+      "source": "openalex",
+      "categories": [
+        "year"
+      ],
+      "expected": {
+        "year": "1992",
+        "titleToken": "Inference from Iterative Simulation Using Multiple Sequences",
+        "firstAuthorFamily": "Gelman",
+        "venueToken": "Statistical Science",
+        "referenceType": "journal"
+      },
+      "actual": {
+        "inputStyle": "chicago",
+        "referenceType": "journal",
+        "title": "Inference from Iterative Simulation Using Multiple Sequences",
+        "firstAuthor": "Gelman, Andrew",
+        "venue": "Statistical Science",
+        "output": "Gelman, A., & Rubin, D. B. (n.d.). Inference from Iterative Simulation Using Multiple Sequences. Statistical Science."
+      }
+    },
+    {
+      "id": "oa-743",
+      "source": "openalex",
+      "categories": [
+        "reference-type",
+        "title",
+        "reference-type"
+      ],
+      "expected": {
+        "year": "2010",
+        "titleToken": "ANNOVAR: functional annotation of genetic variants from high-throughput sequencing data",
+        "firstAuthorFamily": "Wang",
+        "venueToken": "Nucleic Acids Research",
+        "referenceType": "journal"
+      },
+      "actual": {
+        "inputStyle": "harvard",
+        "referenceType": "other",
+        "year": "2010",
+        "title": ": e164",
+        "firstAuthor": "Wang, K., M. Li",
+        "output": "Wang, K., M. Li, H. Hakonarson. “ANNOVAR: functional annotation of genetic variants from high-throughput sequencing data.” Nucleic Acids Research 38,  no. 16. (2010). : e164."
+      }
+    },
+    {
+      "id": "oa-929",
+      "source": "openalex",
+      "categories": [
+        "reference-type",
+        "venue",
+        "reference-type"
+      ],
+      "expected": {
+        "year": "2011",
+        "titleToken": "pROC: an open-source package for R and S+ to analyze and compare ROC curves",
+        "firstAuthorFamily": "Robin",
+        "venueToken": "BMC Bioinformatics",
+        "referenceType": "journal"
+      },
+      "actual": {
+        "inputStyle": "harvard",
+        "referenceType": "other",
+        "year": "2011",
+        "title": ":",
+        "firstAuthor": "Robin, X",
+        "output": "Robin, X., atacha Turck, A., lexandre Hainard, N., atalia Tiberti, F., rédérique Lisacek, J., Markus Müller. \"p R. O. C.: an open-source package for, R., to analyze, S., & compare R. O. C. curves.\" B."
+      }
+    },
+    {
+      "id": "oa-947",
+      "source": "openalex",
+      "categories": [
+        "reference-type",
+        "title",
+        "reference-type"
+      ],
+      "expected": {
+        "year": "1944",
+        "titleToken": "Wettability of porous surfaces",
+        "firstAuthorFamily": "Cassie",
+        "venueToken": "Transactions of the Faraday Society",
+        "referenceType": "journal"
+      },
+      "actual": {
+        "inputStyle": "harvard",
+        "referenceType": "other",
+        "year": "1944",
+        "title": ": 546",
+        "firstAuthor": "Cassie",
+        "output": "Cassie, A. B. D., & Baxter. “Wettability of porous surfaces.” Transactions of the Faraday Society 40, S. (1944). : 546."
+      }
+    },
+    {
+      "id": "oa-983",
+      "source": "openalex",
+      "categories": [
+        "year"
+      ],
+      "expected": {
+        "year": "2011",
+        "titleToken": "mice : Multivariate Imputation by Chained Equations in R",
+        "firstAuthorFamily": "Buuren",
+        "venueToken": "Journal of Statistical Software",
+        "referenceType": "journal"
+      },
+      "actual": {
+        "inputStyle": "chicago",
+        "referenceType": "journal",
+        "title": "mice : Multivariate Imputation by Chained Equations in R",
+        "firstAuthor": "Buuren, Stef van",
+        "venue": "Journal of Statistical Software",
+        "output": "Buuren, S. van, & Groothuis-Oudshoorn, K. (n.d.). mice : Multivariate Imputation by Chained Equations in R. Journal of Statistical Software."
+      }
+    }
+  ]
+}

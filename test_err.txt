@@ -1,0 +1,64 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mD:/Coding/Citing[39m
+
+[90mstdout[2m | tests/test_edgeCases.test.ts
+[22m[39mCSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+
+ [32m✓[39m tests/test_edgeCases.test.ts[2m > [22mParser Isolation & Edge Cases[2m > [22mParser Isolation: Output must only derive from input (No silent fetch)[32m 5[2mms[22m[39m
+ [32m✓[39m tests/test_edgeCases.test.ts[2m > [22mParser Isolation & Edge Cases[2m > [22mRound-Trip Normalization Test[32m 206[2mms[22m[39m
+ [32m✓[39m tests/test_edgeCases.test.ts[2m > [22mParser Isolation & Edge Cases[2m > [22mTrailing Year n.d. Fallback Protection (IEEE Bug #14)[32m 1[2mms[22m[39m
+ [32m✓[39m tests/test_edgeCases.test.ts[2m > [22mParser Isolation & Edge Cases[2m > [22mSupplement and Article Number Normalization[32m 1[2mms[22m[39m
+ [32m✓[39m tests/test_edgeCases.test.ts[2m > [22mParser Isolation & Edge Cases[2m > [22mSingle Letter Author Surname Preservation[32m 3[2mms[22m[39m
+ [32m✓[39m tests/test_edgeCases.test.ts[2m > [22mParser Isolation & Edge Cases[2m > [22mComplex Supplement Global Pre-pass[32m 1[2mms[22m[39m
+ [32m✓[39m tests/test_edgeCases.test.ts[2m > [22mParser Isolation & Edge Cases[2m > [22mIrish/Scottish Prefix (O'Brien) vs Lowercase Particle (d'Angelo)[32m 1[2mms[22m[39m
+ [31m×[39m tests/test_edgeCases.test.ts[2m > [22mParser Isolation & Edge Cases[2m > [22mDynamic Pattern Strict Overwrite Guard[32m 7[2mms[22m[39m
+[31m   → expected undefined to be '10' // Object.is equality[39m
+ [31m×[39m tests/test_edgeCases.test.ts[2m > [22mParser Isolation & Edge Cases[2m > [22mCluster Merge E2E Test[32m 3[2mms[22m[39m
+[31m   → expected +0 to be 1 // Object.is equality[39m
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/test_edgeCases.test.ts > Parser Isolation & Edge Cases > Dynamic Pattern Strict Overwrite Guard
+AssertionError: expected undefined to be '10' // Object.is equality
+
+- Expected: 
+"10"
+
++ Received: 
+undefined
+
+ ❯ tests/test_edgeCases.test.ts:119:31
+    117|         // The primary parser extracts volume 10. The dynamic regex /V…
+    118|         // The guard should PREVENT '99' from overwriting '10'.
+    119|         expect(parsed.volume).toBe("10");
+       |                               ^
+    120|     });
+    121| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/test_edgeCases.test.ts > Parser Isolation & Edge Cases > Cluster Merge E2E Test
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ tests/test_edgeCases.test.ts:135:33
+    133|         const clusters = clusterCitations([refA, refB], 80);
+    134|         // They should merge into 1 cluster because similarity is very…
+    135|         expect(clusters.length).toBe(1);
+       |                                 ^
+    136|         expect(clusters[0].members.length).toBe(2);
+    137|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m7 passed[39m[22m[90m (9)[39m
+[2m   Start at [22m 07:30:24
+[2m   Duration [22m 2.82s[2m (transform 197ms, setup 0ms, import 848ms, tests 231ms, environment 0ms)[22m
+

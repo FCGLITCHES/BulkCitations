@@ -1,0 +1,414 @@
+[
+  {
+    "id": "oa-15",
+    "rawInput": "Love, MichaelI, Huber, Wolfgang and Anders, Simon, 2014. Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2. Genome biology, 15(12), pp.550.",
+    "detectedStyle": "harvard",
+    "parsedIntermediate": {
+      "authors": [
+        "Love, M",
+        "ichael I, H",
+        "Anders, Simon"
+      ],
+      "year": "2014",
+      "title": "Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2",
+      "journal": "Genome biology",
+      "volume": "15",
+      "issue": "12",
+      "pages": "550",
+      "_inputHadLocator": true,
+      "rawInput": "Love, MichaelI, Huber, Wolfgang and Anders, Simon, 2014. Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2. Genome biology, 15(12), pp.550."
+    },
+    "finalOutput": {
+      "year": "2014",
+      "title": "Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2",
+      "venue": "Genome biology",
+      "firstAuthor": "Love, M",
+      "referenceType": "journal",
+      "output": "Love, M., ichael I, H., & Anders, S. (2014). Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2. Genome Biology, 15(12), 550."
+    }
+  },
+  {
+    "id": "oa-25",
+    "rawInput": "D. Moher, A. Liberati, J. Tetzlaff, D. G Altman, and for the PRISMA Group, \"Preferred reporting items for systematic reviews and meta-analyses: the PRISMA statement,\" BMJ, vol. 339, no. jul21 1, pp. b2535, 2009.",
+    "detectedStyle": "ieee",
+    "parsedIntermediate": {
+      "title": "Preferred reporting items for systematic reviews and meta-analyses: the PRISMA statement",
+      "authors": [
+        "D. Moher",
+        "A. Liberati",
+        "J. Tetzlaff",
+        "D. G Altman"
+      ],
+      "year": "2009",
+      "volume": "339",
+      "issue": "jul21",
+      "journal": "BMJ",
+      "article-number": "b2535",
+      "_inputHadLocator": true,
+      "rawInput": "D. Moher, A. Liberati, J. Tetzlaff, D. G Altman, and for the PRISMA Group, \"Preferred reporting items for systematic reviews and meta-analyses: the PRISMA statement,\" BMJ, vol. 339, no. jul21 1, pp. b2535, 2009."
+    },
+    "finalOutput": {
+      "year": "2009",
+      "title": "Preferred reporting items for systematic reviews and meta-analyses: the PRISMA statement",
+      "venue": "BMJ",
+      "firstAuthor": "D. Moher",
+      "referenceType": "journal",
+      "output": "Moher, D., Liberati, A., Tetzlaff, J., & G Altman, D. (2009). Preferred reporting items for systematic reviews and meta-analyses: the PRISMA statement. B. M. J., 339(jul21), Article b2535."
+    }
+  },
+  {
+    "id": "oa-30",
+    "rawInput": "Landis, J. Richard, & Koch, Gary G. (1977). The Measurement of Observer Agreement for Categorical Data. Biometrics, 33(1), 159.",
+    "detectedStyle": "apa",
+    "parsedIntermediate": {
+      "authors": [
+        "Landis, J. Richard",
+        "Koch, Gary G"
+      ],
+      "year": "1977",
+      "title": "The Measurement of Observer Agreement for Categorical Data",
+      "journal": "Biometrics",
+      "volume": "33",
+      "issue": "1",
+      "pages": "159",
+      "_inputHadLocator": false,
+      "rawInput": "Landis, J. Richard, & Koch, Gary G. (1977). The Measurement of Observer Agreement for Categorical Data. Biometrics, 33(1), 159."
+    },
+    "finalOutput": {
+      "year": "1977",
+      "title": "The Measurement of Observer Agreement for Categorical Data",
+      "venue": "Biometrics",
+      "firstAuthor": "Landis, J. Richard",
+      "referenceType": "journal",
+      "output": "Landis, J. R., & Koch, G. G. (1977). The Measurement of Observer Agreement for Categorical Data. Biometrics, 33(1), 159."
+    }
+  },
+  {
+    "id": "oa-33",
+    "rawInput": "Kresse, G. and Furthmüller, J., 1996. Efficiency of ab-initio total energy calculations for metals and semiconductors using a plane-wave basis set. Computational Materials Science, 6(1), pp.15-50.",
+    "detectedStyle": "harvard",
+    "parsedIntermediate": {
+      "authors": [
+        "Kresse, G.",
+        "Furthmüller, J"
+      ],
+      "year": "1996",
+      "title": "Efficiency of ab-initio total energy calculations for metals and semiconductors using a plane-wave basis set",
+      "journal": "Computational Materials Science",
+      "volume": "6",
+      "issue": "1",
+      "pages": "15-50",
+      "_inputHadLocator": true,
+      "rawInput": "Kresse, G. and Furthmüller, J., 1996. Efficiency of ab-initio total energy calculations for metals and semiconductors using a plane-wave basis set. Computational Materials Science, 6(1), pp.15-50."
+    },
+    "finalOutput": {
+      "year": "1996",
+      "title": "Efficiency of ab-initio total energy calculations for metals and semiconductors using a plane-wave basis set",
+      "venue": "Computational Materials Science",
+      "firstAuthor": "Kresse, G.",
+      "referenceType": "journal",
+      "output": "Kresse, G., & Furthmüller, J. (1996). Efficiency of ab-initio total energy calculations for metals and semiconductors using a plane-wave basis set. Computational Materials Science, 6(1), 15–50."
+    }
+  },
+  {
+    "id": "oa-39",
+    "rawInput": "Murashige, Toshio and Skoog, Folke, 1962. A Revised Medium for Rapid Growth and Bio Assays with Tobacco Tissue Cultures. Physiologia Plantarum, 15(3), pp.473-497.",
+    "detectedStyle": "harvard",
+    "parsedIntermediate": {
+      "authors": [
+        "Murashige, Toshio",
+        "Skoog, Folke"
+      ],
+      "year": "1962",
+      "title": "A Revised Medium for Rapid Growth and Bio Assays with Tobacco Tissue Cultures",
+      "journal": "Physiologia Plantarum",
+      "volume": "15",
+      "issue": "3",
+      "pages": "473-497",
+      "_inputHadLocator": true,
+      "rawInput": "Murashige, Toshio and Skoog, Folke, 1962. A Revised Medium for Rapid Growth and Bio Assays with Tobacco Tissue Cultures. Physiologia Plantarum, 15(3), pp.473-497."
+    },
+    "finalOutput": {
+      "year": "1962",
+      "title": "A Revised Medium for Rapid Growth and Bio Assays with Tobacco Tissue Cultures",
+      "venue": "Physiologia Plantarum",
+      "firstAuthor": "Murashige, Toshio",
+      "referenceType": "journal",
+      "output": "Murashige, T., & Skoog, F. (1962). A Revised Medium for Rapid Growth and Bio Assays with Tobacco Tissue Cultures. Physiologia Plantarum, 15(3), 473–497."
+    }
+  },
+  {
+    "id": "oa-51",
+    "rawInput": "Schneider, CarolineA, Rasband, WayneS and Eliceiri, KevinW, 2012. NIH Image to ImageJ: 25 years of image analysis. Nature Methods, 9(7), pp.671-675.",
+    "detectedStyle": "harvard",
+    "parsedIntermediate": {
+      "authors": [
+        "Schneider, C",
+        "aroline A, R",
+        "Eliceiri, Kevin W"
+      ],
+      "year": "2012",
+      "title": "NIH Image to ImageJ: 25 years of image analysis",
+      "journal": "Nature Methods",
+      "volume": "9",
+      "issue": "7",
+      "pages": "671-675",
+      "_inputHadLocator": true,
+      "rawInput": "Schneider, CarolineA, Rasband, WayneS and Eliceiri, KevinW, 2012. NIH Image to ImageJ: 25 years of image analysis. Nature Methods, 9(7), pp.671-675."
+    },
+    "finalOutput": {
+      "year": "2012",
+      "title": "NIH Image to ImageJ: 25 years of image analysis",
+      "venue": "Nature Methods",
+      "firstAuthor": "Schneider, C",
+      "referenceType": "journal",
+      "output": "Schneider, C., aroline A, R., & Eliceiri, K. W. (2012). N. I. H. Image to ImageJ: 25 years of image analysis. Nature Methods, 9(7), 671–675."
+    }
+  },
+  {
+    "id": "oa-72",
+    "rawInput": "DuBois, Michel., Gilles, K. A., Hamilton, J. K., Rebers, P. A., & Smith, Fred. (1956). Colorimetric Method for Determination of Sugars and Related Substances. Analytical Chemistry, 28(3), 350-356.",
+    "detectedStyle": "apa",
+    "parsedIntermediate": {
+      "authors": [
+        "DuBois",
+        "Michel",
+        "Gilles",
+        "K. A",
+        "Hamilton",
+        "J. K",
+        "Rebers",
+        "P. A",
+        "& Smith",
+        "Fred"
+      ],
+      "year": "1956",
+      "title": "Colorimetric Method for Determination of Sugars and Related Substances",
+      "journal": "Analytical Chemistry",
+      "volume": "28",
+      "issue": "3",
+      "pages": "350-356",
+      "_author_warning": "warning: initials_formatted_as_surname",
+      "_inputHadLocator": false,
+      "rawInput": "DuBois, Michel., Gilles, K. A., Hamilton, J. K., Rebers, P. A., & Smith, Fred. (1956). Colorimetric Method for Determination of Sugars and Related Substances. Analytical Chemistry, 28(3), 350-356."
+    },
+    "finalOutput": {
+      "year": "1956",
+      "title": "Colorimetric Method for Determination of Sugars and Related Substances",
+      "venue": "Analytical Chemistry",
+      "firstAuthor": "DuBois",
+      "referenceType": "journal",
+      "output": "DuBois, Michel, Gilles, K. A, Hamilton, J. K, Rebers, P. A, Smith, &, & Fred. (1956). Colorimetric Method for Determination of Sugars and Related Substances. Analytical Chemistry, 28(3), 350–356."
+    }
+  },
+  {
+    "id": "oa-105",
+    "rawInput": "Jumper, John, Evans, Richard, Pritzel, Alexander, Green, Tim, Figurnov, Michael, Ronneberger, Olaf, Tunyasuvunakool, Kathryn and Bates, Russ, 2021. Highly accurate protein structure prediction with AlphaFold. Nature, 596(7873), pp.583-589.",
+    "detectedStyle": "harvard",
+    "parsedIntermediate": {
+      "authors": [
+        "Jumper, J",
+        "Evans, R",
+        "Pritzel, A",
+        "Green, T",
+        "Figurnov, M",
+        "Ronneberger, O",
+        "Tunyasuvunakool, K",
+        "Bates, Russ"
+      ],
+      "year": "2021",
+      "title": "Highly accurate protein structure prediction with AlphaFold",
+      "journal": "Nature",
+      "volume": "596",
+      "issue": "7873",
+      "pages": "583-589",
+      "_inputHadLocator": true,
+      "rawInput": "Jumper, John, Evans, Richard, Pritzel, Alexander, Green, Tim, Figurnov, Michael, Ronneberger, Olaf, Tunyasuvunakool, Kathryn and Bates, Russ, 2021. Highly accurate protein structure prediction with AlphaFold. Nature, 596(7873), pp.583-589."
+    },
+    "finalOutput": {
+      "year": "2021",
+      "title": "Highly accurate protein structure prediction with AlphaFold",
+      "venue": "Nature",
+      "firstAuthor": "Jumper, J",
+      "referenceType": "journal",
+      "output": "Jumper, J., Evans, R., Pritzel, A., Green, T., Figurnov, M., Ronneberger, O., Tunyasuvunakool, K., & Bates, R. (2021). Highly accurate protein structure prediction with AlphaFold. Nature, 596(7873), 583–589."
+    }
+  },
+  {
+    "id": "oa-123",
+    "rawInput": "Bloch, Maurice, Lave, Jean and Wenger, Etienne, 1994. Situated Learning: Legitimate Peripheral Participation.. Man, 29(2), pp.487.",
+    "detectedStyle": "harvard",
+    "parsedIntermediate": {
+      "authors": [
+        "Bloch, M",
+        "Lave, J",
+        "Wenger, Etienne"
+      ],
+      "year": "1994",
+      "title": "Situated Learning: Legitimate Peripheral Participation.",
+      "journal": "Man",
+      "volume": "29",
+      "issue": "2",
+      "pages": "487",
+      "_inputHadLocator": true,
+      "rawInput": "Bloch, Maurice, Lave, Jean and Wenger, Etienne, 1994. Situated Learning: Legitimate Peripheral Participation.. Man, 29(2), pp.487."
+    },
+    "finalOutput": {
+      "year": "1994",
+      "title": "Situated Learning: Legitimate Peripheral Participation.",
+      "venue": "Man",
+      "firstAuthor": "Bloch, M",
+      "referenceType": "journal",
+      "output": "Bloch, M., Lave, J., & Wenger, E. (1994). Legitimate Peripheral Participation. Man, 29(2), 487."
+    }
+  },
+  {
+    "id": "oa-159",
+    "rawInput": "DiMaggio, PaulJ. and Powell, WalterW., 1983. The Iron Cage Revisited: Institutional Isomorphism and Collective Rationality in Organizational Fields. American Sociological Review, 48(2), pp.147.",
+    "detectedStyle": "harvard",
+    "parsedIntermediate": {
+      "authors": [
+        "DiMaggio, Paul J.",
+        "Powell, Walter W"
+      ],
+      "year": "1983",
+      "title": "The Iron Cage Revisited: Institutional Isomorphism and Collective Rationality in Organizational Fields",
+      "journal": "American Sociological Review",
+      "volume": "48",
+      "issue": "2",
+      "pages": "147",
+      "_inputHadLocator": true,
+      "rawInput": "DiMaggio, PaulJ. and Powell, WalterW., 1983. The Iron Cage Revisited: Institutional Isomorphism and Collective Rationality in Organizational Fields. American Sociological Review, 48(2), pp.147."
+    },
+    "finalOutput": {
+      "year": "1983",
+      "title": "The Iron Cage Revisited: Institutional Isomorphism and Collective Rationality in Organizational Fields",
+      "venue": "American Sociological Review",
+      "firstAuthor": "DiMaggio, Paul J.",
+      "referenceType": "journal",
+      "output": "DiMaggio, P. J., & Powell, W. W. (1983). Institutional Isomorphism and Collective Rationality in Organizational Fields. American Sociological Review, 48(2), 147."
+    }
+  },
+  {
+    "id": "oa-169",
+    "rawInput": "Hilary Arksey and Lisa O'Malley, \"Scoping studies: towards a methodological framework,\" International Journal of Social Research Methodology, vol. 8, no. 1, pp. 19-32, 2005.",
+    "detectedStyle": "mla",
+    "parsedIntermediate": {
+      "title": "Scoping studies: towards a methodological framework,",
+      "authors": [
+        "Hilary Arksey",
+        "Lisa O'Malley"
+      ],
+      "year": "2005",
+      "pages": "19-32",
+      "journal": "International Journal of Social Research Methodology, vol",
+      "_inputHadLocator": true,
+      "rawInput": "Hilary Arksey and Lisa O'Malley, \"Scoping studies: towards a methodological framework,\" International Journal of Social Research Methodology, vol. 8, no. 1, pp. 19-32, 2005."
+    },
+    "finalOutput": {
+      "year": "2005",
+      "title": "Scoping studies: towards a methodological framework,",
+      "venue": "International Journal of Social Research Methodology, vol",
+      "firstAuthor": "Hilary Arksey",
+      "referenceType": "journal",
+      "output": "Arksey, H., & O’Malley, L. (2005). Scoping studies: towards a methodological framework,. International Journal of Social Research Methodology, Vol, 19–32."
+    }
+  },
+  {
+    "id": "oa-225",
+    "rawInput": "Zhou, Fei, Yu, Ting, Du, Ronghui, Fan, Guohui, Liu, Ying, Liu, Zhibo, Xiang, Jie and Wang, Yeming, 2020. Clinical course and risk factors for mortality of adult inpatients with COVID-19 in Wuhan, China: a retrospective cohort study. The Lancet, 395(10229), pp.1054-1062.",
+    "detectedStyle": "harvard",
+    "parsedIntermediate": {
+      "authors": [
+        "Zhou, F",
+        "Yu, T",
+        "Du, R",
+        "Fan, G",
+        "Liu, Y",
+        "Liu, Z",
+        "Xiang, J",
+        "Wang, Yeming"
+      ],
+      "year": "2020",
+      "title": "Clinical course and risk factors for mortality of adult inpatients with COVID-19 in Wuhan, China: a retrospective cohort study",
+      "journal": "The Lancet",
+      "volume": "395",
+      "issue": "10229",
+      "pages": "1054-1062",
+      "_inputHadLocator": true,
+      "rawInput": "Zhou, Fei, Yu, Ting, Du, Ronghui, Fan, Guohui, Liu, Ying, Liu, Zhibo, Xiang, Jie and Wang, Yeming, 2020. Clinical course and risk factors for mortality of adult inpatients with COVID-19 in Wuhan, China: a retrospective cohort study. The Lancet, 395(10229), pp.1054-1062."
+    },
+    "finalOutput": {
+      "year": "2020",
+      "title": "Clinical course and risk factors for mortality of adult inpatients with COVID-19 in Wuhan, China: a retrospective cohort study",
+      "venue": "The Lancet",
+      "firstAuthor": "Zhou, F",
+      "referenceType": "journal",
+      "output": "Zhou, F., Yu, T., Du, R., Fan, G., Liu, Y., Liu, Z., Xiang, J., & Wang, Y. (2020). Clinical course and risk factors for mortality of adult inpatients with COVID-19 in Wuhan, China: a retrospective cohort study. The Lancet, 395(10229), 1054–1062."
+    }
+  },
+  {
+    "id": "oa-234",
+    "rawInput": "Heckman, James J. (1979). Sample Selection Bias as a Specification Error. Econometrica, 47(1), 153.",
+    "detectedStyle": "apa",
+    "parsedIntermediate": {
+      "authors": [
+        "Heckman, James J"
+      ],
+      "year": "1979",
+      "title": "Sample Selection Bias as a Specification Error",
+      "journal": "Econometrica",
+      "volume": "47",
+      "issue": "1",
+      "pages": "153",
+      "_inputHadLocator": false,
+      "rawInput": "Heckman, James J. (1979). Sample Selection Bias as a Specification Error. Econometrica, 47(1), 153."
+    },
+    "finalOutput": {
+      "year": "1979",
+      "title": "Sample Selection Bias as a Specification Error",
+      "venue": "Econometrica",
+      "firstAuthor": "Heckman, James J",
+      "referenceType": "journal",
+      "output": "Heckman, J. J. (1979). Sample Selection Bias as a Specification Error. Econometrica, 47(1), 153."
+    }
+  },
+  {
+    "id": "oa-285",
+    "rawInput": "Abraham, MarkJames, Murtola, Teemu, Schulz, Roland, Páll, Szilárd, Smith, JeremyC., Hess, Berk and Lindahl, Erik, 2015. GROMACS: High performance molecular simulations through multi-level parallelism from laptops to supercomputers. SoftwareX, 1-2, pp.19-25.",
+    "detectedStyle": "harvard",
+    "parsedIntermediate": {
+      "authors": [
+        "Abraham",
+        "MarkJames",
+        "Murtola",
+        "Teemu",
+        "Schulz",
+        "Roland",
+        "Páll",
+        "Szilárd",
+        "Smith",
+        "JeremyC",
+        "Hess",
+        "Berk",
+        "Lindahl",
+        "Erik"
+      ],
+      "year": "2015",
+      "title": "GROMACS: High performance molecular simulations through multi-level parallelism from laptops to supercomputers",
+      "journal": "SoftwareX",
+      "volume": "1",
+      "pages": "19-25",
+      "_inputHadLocator": true,
+      "rawInput": "Abraham, MarkJames, Murtola, Teemu, Schulz, Roland, Páll, Szilárd, Smith, JeremyC., Hess, Berk and Lindahl, Erik, 2015. GROMACS: High performance molecular simulations through multi-level parallelism from laptops to supercomputers. SoftwareX, 1-2, pp.19-25."
+    },
+    "finalOutput": {
+      "year": "2015",
+      "title": "GROMACS: High performance molecular simulations through multi-level parallelism from laptops to supercomputers",
+      "venue": "SoftwareX",
+      "firstAuthor": "Abraham",
+      "referenceType": "journal",
+      "output": "Abraham, MarkJames, Murtola, Teemu, Schulz, Roland, Páll, Szilárd, Smith, JeremyC, Hess, Berk, Lindahl, & Erik. (2015). GROMACS: High performance molecular simulations through multi-level parallelism from laptops to supercomputers. SoftwareX, 1, 19–25."
+    }
+  }
+]

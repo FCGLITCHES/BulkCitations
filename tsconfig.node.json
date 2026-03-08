@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "composite": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "types": ["node", "vite/client", "express"],
+    "paths": {
+      "@/*": ["./client/src/*"],
+      "@server/*": ["./server/*"],
+      "@shared/*": ["./shared/*"]
+    }
+  },
+  "include": [
+    "client/src",
+    "server",
+    "shared",
+    "vite.config.ts",
+    "drizzle.config.ts"
+  ]
+}

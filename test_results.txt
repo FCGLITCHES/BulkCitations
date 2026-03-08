@@ -1,0 +1,86 @@
+CSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+
+==============================================
+TESTING STYLE: APA
+==============================================
+
+[1] Parsed: {"style":"apa","authors":["Marchetti, L.","Osei, R"],"title":"Tokenization of hyphenated surnames in multilingual corpora","journal":"Journal of Computational Linguistics","pages":"88–112"}
+    Formatted: Marchetti, L., & Osei, R. (2021). Tokenization of hyphenated surnames in multilingual corpora. Journal of Computational Linguistics, 47(2), 88–112. https://doi.org/https://doi.org/10.1162/coli_a_00401
+[2] Parsed: {"style":"harvard","authors":["Ivanova, T.","Petrov, D.","Nakamura, Y"],"title":"Sentence boundary disambiguation in reference strings","journal":"Natural Language Engineering","pages":"512–534"}
+    Formatted: Ivanova, T., Petrov, D., & Nakamura, Y. (2020). Sentence boundary disambiguation in reference strings. Natural Language Engineering, 26(4), 512–534. https://doi.org/https://doi.org/10.1017/nle.2020.0044
+[3] Parsed: {"style":"apa","authors":["MacPherson, B.","O'Sullivan, A"],"title":"Prefix-aware alphabetical sorting in bibliographic databases","journal":"Library Resources & Technical Services","pages":"144–159"}
+    Formatted: MacPherson, B., & O’Sullivan, A. (2019). Prefix-aware alphabetical sorting in bibliographic databases. Library Resources & Technical Services, 63(3), 144–159. https://doi.org/https://doi.org/10.5860/lrts.63n3.144
+[4] Parsed: {"style":"vancouver","authors":["Zhang L","Osei R","Ivanova T"],"title":"Neural reference segmentation with transformer models","journal":"IEEE Trans Knowl Data Eng","pages":"3211-3225. doi:10.1109/tkde.2022.0034007"}
+    Formatted: Zhang, L., Osei, R., & Ivanova, T. (2022). Neural reference segmentation with transformer models. IEEE Transactions on Knowledge and Data Engineering, 34(7), 3211-3225. doi:10.1109/tkde.2022.0034007. https://doi.org/https://doi.org/10.1109/tkde.2022.0034007
+[5] Parsed: {"style":"apa","authors":["Sørensen, E.","Łukasiewicz, A.","Németh, B"],"title":"Encoding diacritics in shared metadata schemas","journal":"International Journal of Metadata, Semantics and Ontologies","pages":"1–18"}
+    Formatted: Sørensen, E., Łukasiewicz, A., & Németh, B. (2022). Encoding diacritics in shared metadata schemas. International Journal of Metadata, Semantics and Ontologies, 16(1), 1–18. https://doi.org/https://doi.org/10.1504/ijmso.2022.016001
+[6] Parsed: {"style":"ieee","authors":["R. d'Angelo","W.-K. Ng"],"title":"Particle-aware author sorting in multilingual digital libraries","journal":"ACM Trans. Inf. Syst"}
+    Formatted: d’Angelo, R., & Ng, W.-K. (2022). Particle-aware author sorting in multilingual digital libraries. ACM Transactions on Information Systems, 40(3). https://doi.org/https://doi.org/10.1145/3490100
+[7] Parsed: {"style":"vancouver","authors":["van Houten P","Bergström A","d'Silva K"],"title":"Cross-repository metadata harmonisation","journal":"J Digit Libr","pages":"401-418. doi:10.1007/s00799-021-00301-4"}
+    Formatted: van Houten, P., Bergström, A., & d’Silva, K. (2021). Cross-repository metadata harmonisation. J Digit Libr, 22(4), 401-418. doi:10.1007/s00799-021-00301–00304. https://doi.org/https://doi.org/10.1007/s00799-021-00301-4
+[8] Parsed: {"style":"apa","authors":["Björk, B.-C.","Tremblay, J.-F"],"title":"Green open access and citation style consistency","journal":"Scientometrics","pages":"801–819"}
+    Formatted: Björk, B.-C., & Tremblay, J.-F. (2019). Green open access and citation style consistency. Scientometrics, 119(2), 801–819. https://doi.org/https://doi.org/10.1007/s11192-019-03028-x
+[9] Parsed: {"style":"apa","authors":["Okonkwo, C.","Rashid, A.","Yamamoto, T.","Singh, P.","O'Brien, M.","van der Berg, S"],"title":"Author list parsing at scale for heterogeneous input formats","journal":"Data & Information Management","pages":"155–172"}
+    Formatted: Okonkwo, C., Rashid, A., Yamamoto, T., Singh, P., O’Brien, M., & van der Berg, S. (2022). Author list parsing at scale for heterogeneous input formats. Data & Information Management, 6(3), 155–172. https://doi.org/https://doi.org/10.2478/dim-2022-0014
+[10] Parsed: {"style":"vancouver","authors":["Ferenczi A","Kowalski P"],"title":"Unicode normalisation failures in citation metadata pipelines","journal":"J Metadata Stand","pages":"201-219"}
+    Formatted: Ferenczi, A., & Kowalski, P. (2019). Unicode normalisation failures in citation metadata pipelines. Journal of Metadata Standards, 3(4), 201–219.
+[11] Parsed: {"style":"apa","authors":["Tremblay, J.-F.","Björk, B.-C"],"title":"Open-access mandates and citation style compliance","journal":"Scientometrics","pages":"1543–1561"}
+    Formatted: Tremblay, J.-F., & Björk, B.-C. (2018). Open-access mandates and citation style compliance. Scientometrics, 117(3), 1543–1561. https://doi.org/https://doi.org/10.1007/s11192-018-2908-x
+[12] Parsed: {"style":"harvard","authors":["Vega-Romero, I"],"title":"Hyphenated surnames and their effect on bibliographic parsing","journal":"Cataloguing & Classification Quarterly","pages":"89–104"}
+    Formatted: Vega-Romero, I. (2019). Hyphenated surnames and their effect on bibliographic parsing. Cataloguing & Classification Quarterly, 57(2), 89–104. https://doi.org/https://doi.org/10.1080/ccq.2019.57002
+[13] Parsed: {"style":"apa","authors":["Al-Farsi, M.","Al-Khalil, Y"],"title":"Missing issue fields in volume-only journals: impact on citation converters","journal":"Journal of Information Systems","pages":"77–93"}
+    Formatted: Al-Farsi, M., & Al-Khalil, Y. (2021). Missing issue fields in volume-only journals: impact on citation converters. Journal of Information Systems, 18(2), 77–93. https://doi.org/https://doi.org/10.1016/j.is.2021.101742
+[14] Parsed: {"style":"harvard","authors":["O'Sullivan, A"],"title":"Handling the apostrophe in Irish and French surnames for automated parsers","journal":"Library Hi Tech","pages":"1101–1115"}
+    Formatted: O’Sullivan, A. (2021). Handling the apostrophe in Irish and French surnames for automated parsers. Library Hi Tech, 39(4), 1101–1115. https://doi.org/https://doi.org/10.1108/lht.2021.039004
+[15] Parsed: {"style":"apa","authors":["Petrov, D.","Nakamura, Y"],"title":"Page range normalization across five citation styles","journal":"Scholarly Publishing Research","pages":"88–103"}
+    Formatted: Petrov, D., & Nakamura, Y. (2021). Page range normalization across five citation styles. Scholarly Publishing Research, 4(2), 88–103.
+[16] Parsed: {"style":"mla","authors":["A. Łukasiewicz, E. Sørensen","B. Németh,"],"title":"Diacritics-aware author matching,","journal":"Inf. Quality Q., vol","pages":"12–29"}
+    Formatted: A. Łukasiewicz, E. S., & B. Németh. (n.d.). Diacritics-aware author matching,. Inf. Quality Q., Vol, 12–29. https://doi.org/https://doi.org/10.3100/iqq.2023.1501.02
+[17] Parsed: {"style":"apa","authors":["Yamamoto, T.","Nakamura, Y"],"title":"Article number versus page range: a conversion accuracy study","journal":"Publishing Research Quarterly","pages":"55–71"}
+    Formatted: Yamamoto, T., & Nakamura, Y. (2022). Article number versus page range: a conversion accuracy study. Publishing Research Quarterly, 38(1), 55–71. https://doi.org/https://doi.org/10.1007/s12109-022-09834-2
+[18] Parsed: {"style":"vancouver","authors":["de la Cruz P","van Dijk S"],"title":"Tokenization of noisy bibliographic strings at scale","journal":"Digit Scholarsh Methods","pages":"99-121. doi:10.4000/dsm.2020.00602"}
+    Formatted: de la Cruz, P., & van Dijk, S. (2020). Tokenization of noisy bibliographic strings at scale. Digital Scholarship Methods, 6(2), 99-121. doi:10.4000/dsm.2020.00602. https://doi.org/https://doi.org/10.4000/dsm.2020.00602
+[19] Parsed: {"style":"apa","authors":["Rashid, A.","Okonkwo, C"],"title":"Cross-lingual author disambiguation in multilingual bibliographies","journal":"Journal of Information Science","pages":"310–325"}
+    Formatted: Rashid, A., & Okonkwo, C. (2022). Cross-lingual author disambiguation in multilingual bibliographies. Journal of Information Science, 48(3), 310–325. https://doi.org/https://doi.org/10.1177/jis.2022.048003
+[20] Parsed: {"style":"apa","authors":["Lindström, M.","Bergström, A.","Vega-Romero, I"],"title":"Cross-format citation converter evaluation","journal":"Journal of the American Society for Information Science and Technology","pages":"402–419"}
+    Formatted: Lindström, M., Bergström, A., & Vega-Romero, I. (2023). Cross-format citation converter evaluation. Journal of the American Society for Information Science and Technology, 74(4), 402–419. https://doi.org/https://doi.org/10.1002/asi.24700
+[21] Parsed: {"style":"ieee","authors":["P. Kowalski, A. Ferenczi","L. Johansson"],"title":"Multi-script author name normalization in citation pipelines","journal":"Int. J. Digit. Curation"}
+    Formatted: P. Kowalski, A. F., & Johansson, L. (2020). Multi-script author name normalization in citation pipelines. International Journal of Digital Curation, 15(1). https://doi.org/https://doi.org/10.2218/ijdc.2020.e0031
+[22] Parsed: {"style":"harvard","authors":["Svensson, Å"],"title":"Diacritics in Nordic author names: challenges for citation parsers","journal":"Scandinavian Library Quarterly","pages":"44–55"}
+    Formatted: Svensson, Å. (2017). Diacritics in Nordic author names: challenges for citation parsers. Scandinavian Library Quarterly, 50(2), 44–55.
+[23] Parsed: {"style":"vancouver","authors":["Nakamura Y","Petrov D","Tremblay J-F"],"title":"Sentence boundary detection in reference strings","journal":"J Nat Lang Eng","pages":"701-722. doi:10.1017/S1351324920000123"}
+    Formatted: Nakamura, Y., Petrov, D., & Tremblay, J.-F. (2020). Sentence boundary detection in reference strings. Journal of Natural Language Engineering, 26(5), 701-722. doi:10.1017/S1351324920000123. https://doi.org/https://doi.org/10.1017/S1351324920000123
+[24] Parsed: {"style":"apa","authors":["O'Brien, M.","Singh, P.","van der Berg, S"],"title":"Structured field extraction from heterogeneous reference lists","journal":"International Journal of Information Management"}
+    Formatted: O’Brien, M., Singh, P., & van der Berg, S. (2023). Structured field extraction from heterogeneous reference lists. International Journal of Information Management, 55. https://doi.org/https://doi.org/10.1016/j.ijinfomgt.2020.102208
+[25] Parsed: {"style":"apa","authors":["Hernández, P"],"title":"Hyphens in initials and name disambiguation","journal":"Cataloguing & Metadata","pages":"144–158"}
+    Formatted: Hernández, P. (2015). Hyphens in initials and name disambiguation. Cataloguing & Metadata, 19(3), 144–158.
+[26] Parsed: {"style":"harvard","authors":["Lindström, M.","Bergström, A"],"title":"Benchmark evaluation of six citation converters","journal":"Digital Library Perspectives","pages":"289–305"}
+    Formatted: Lindström, M., & Bergström, A. (2021). Benchmark evaluation of six citation converters. Digital Library Perspectives, 37(3), 289–305. https://doi.org/https://doi.org/10.1108/dlp.2021.037003
+[27] Parsed: {"style":"mla","authors":["B.-C. Björk","J.-F. Tremblay,"],"title":"Citation compliance rates across disciplines,","journal":"Learn. Publ., vol","pages":"142–151"}
+    Formatted: Björk, B.-C., & J.-F. Tremblay. (n.d.). Citation compliance rates across disciplines,. Learn. Publ., Vol, 142–151. https://doi.org/https://doi.org/10.1002/leap.1287
+[28] Parsed: {"style":"apa","authors":["Kowalski, P.","Ferenczi, A"],"title":"Recovering truncated page ranges from parsed citation strings","journal":"Journal of Library and Information Science","pages":"22–37"}
+    Formatted: Kowalski, P., & Ferenczi, A. (2022). Recovering truncated page ranges from parsed citation strings. Journal of Library and Information Science, 54(1), 22–37. https://doi.org/https://doi.org/10.1177/jlis.2022.054001
+[29] Parsed: {"style":"vancouver","authors":["Yamamoto T","Nakamura Y","Osei R"],"title":"DOI format drift across citation styles: a longitudinal study","journal":"Scientometrics","pages":"1901-1918. doi:10.1007/s11192-023-04651-5"}
+    Formatted: Yamamoto, T., Nakamura, Y., & Osei, R. (2023). DOI format drift across citation styles: a longitudinal study. Scientometrics, 128(3), 1901-1918. doi:10.1007/s11192-023-04651–04655. https://doi.org/https://doi.org/10.1007/s11192-023-04651-5
+[30] Parsed: {"style":"harvard","authors":["Rashid, A"],"title":"Author disambiguation using cross-lingual embedding models","journal":"Journal of the Association for Information Science and Technology","pages":"512–528"}
+    Formatted: Rashid, A. (2020). Author disambiguation using cross-lingual embedding models. Journal of the Association for Information Science and Technology, 71(5), 512–528. https://doi.org/https://doi.org/10.1002/asi.24285
+[31] Parsed: {"style":"ieee","authors":["M. van Houten"],"title":"Metadata completeness scoring for open-access journal articles","journal":"IEEE Access","pages":"22314–22329"}
+    Formatted: van Houten, M. (2023). Metadata completeness scoring for open-access journal articles. IEEE Access, 11, 22314–22329. https://doi.org/https://doi.org/10.1109/ACCESS.2023.0022314
+[32] Parsed: {"style":"apa","authors":["d'Angelo, R.","Ng, W.-K"],"title":"Sorting algorithms for names with particles: a comparative evaluation","journal":"Information Processing & Management"}
+    Formatted: d’Angelo, R., & Ng, W.-K. (2021). Sorting algorithms for names with particles: a comparative evaluation. Information Processing & Management, 58(4). https://doi.org/https://doi.org/10.1016/j.ipm.2021.102557
+[33] Parsed: {"style":"vancouver","authors":["O'Connor J","García M"],"title":"Reproducibility standards in applied ML: a systematic review","journal":"Comput Pract","pages":"55-79. doi:10.5555/cip.2021.20419"}
+    Formatted: O’Connor, J., & García, M. (2021). Reproducibility standards in applied ML: a systematic review. Computing in Practice, 12(4), 55-79. doi:10.5555/cip.2021.20419. https://doi.org/https://doi.org/10.5555/cip.2021.20419
+[34] Parsed: {"style":"apa","authors":["Vega-Romero, I.","Lindström, M.","Bergström, A"],"title":"Evaluating sentence-case enforcement across seven APA-compliant citation tools","journal":"Journal of Scholarly Metadata","pages":"1–19"}
+    Formatted: Vega-Romero, I., Lindström, M., & Bergström, A. (2022). Evaluating sentence-case enforcement across seven APA-compliant citation tools. Journal of Scholarly Metadata, 8(1), 1–19. https://doi.org/https://doi.org/10.5000/jsm.2022.008001
+[35] Parsed: {"style":"ieee","authors":["P. Hernández"],"title":"Hyphen disambiguation in compound names and initials","journal":"Cataloguing & Metadata","pages":"144–158"}
+    Formatted: Hernández, P. (2015). Hyphen disambiguation in compound names and initials. Cataloguing & Metadata, 19(3), 144–158.
+[36] Parsed: {"style":"apa","authors":["van der Berg, S.","Singh, P.","Okonkwo, C"],"title":"Reference list deduplication at scale","journal":"Digital Scholarship in the Humanities","pages":"448–463"}
+    Formatted: van der Berg, S., Singh, P., & Okonkwo, C. (2021). Reference list deduplication at scale. Digital Scholarship in the Humanities, 36(2), 448–463. https://doi.org/https://doi.org/10.1093/llc/fqaa048
+[37] Parsed: {"style":"vancouver","authors":["Tremblay J-F","Björk B-C","Nakamura Y"],"title":"Author-date versus notes-bibliography: parsing implications for mixed-format corpora","journal":"J Acad Librariansh","pages":"102497. doi:10.1016/j.acalib.2021.102497"}
+    Formatted: Tremblay, J.-F., Björk, B.-C., & Nakamura, Y. (2022). Author-date versus notes-bibliography: parsing implications for mixed-format corpora. Journal of Academic Librarianship, 48(1), 102497. doi:10.1016/j.acalib.2021.102497. https://doi.org/https://doi.org/10.1016/j.acalib.2021.102497
+[38] Parsed: {"style":"harvard","authors":["Al-Khalil, Y"],"title":"Abbreviated journal titles and their disambiguation in citation conversion pipelines","journal":"Scholarly Communication Review","pages":"66–84"}
+    Formatted: Al-Khalil, Y. (2022). Abbreviated journal titles and their disambiguation in citation conversion pipelines. Scholarly Communication Review, 14(2), 66–84. https://doi.org/https://doi.org/10.7700/scr.2022.142.006
+[39] Parsed: {"style":"apa","authors":["Bergström, A.","van Houten, P.","d'Silva, K"],"title":"Metadata completeness in open-access repositories: a five-year longitudinal study","journal":"Journal of Digital Libraries","pages":"401–418"}
+    Formatted: Bergström, A., van Houten, P., & d’Silva, K. (2022). Metadata completeness in open-access repositories: a five-year longitudinal study. Journal of Digital Libraries, 22(4), 401–418. https://doi.org/https://doi.org/10.1007/s00799-022-00335-1
+[40] Parsed: {"style":"apa","authors":["Ferenczi, A.","Kowalski, P.","Johansson, L"],"title":"End-to-end citation parsing with pre-trained language models","journal":"Journal of Information Science","pages":"3–22"}
+    Formatted: Ferenczi, A., Kowalski, P., & Johansson, L. (2024). End-to-end citation parsing with pre-trained language models. Journal of Information Science, 50(1), 3–22. https://doi.org/https://doi.org/10.1177/jis.2024.050001

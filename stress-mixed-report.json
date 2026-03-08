@@ -1,0 +1,1172 @@
+{
+  "generatedAt": "2026-03-05T21:51:35.483Z",
+  "totalCases": 581,
+  "totalFailures": 32,
+  "passRate": 94.49,
+  "byCategory": {
+    "style-detection": 24,
+    "locator": 8,
+    "reference-type": 16,
+    "venue": 16,
+    "title": 8
+  },
+  "byStyle": {
+    "apa": {
+      "total": 96,
+      "failed": 0
+    },
+    "ieee": {
+      "total": 96,
+      "failed": 0
+    },
+    "vancouver": {
+      "total": 98,
+      "failed": 0
+    },
+    "harvard": {
+      "total": 97,
+      "failed": 16
+    },
+    "mla": {
+      "total": 97,
+      "failed": 16
+    },
+    "chicago": {
+      "total": 97,
+      "failed": 0
+    }
+  },
+  "byWorkStyle": {
+    "w1:apa": {
+      "total": 8,
+      "failed": 0
+    },
+    "w1:ieee": {
+      "total": 8,
+      "failed": 0
+    },
+    "w1:vancouver": {
+      "total": 8,
+      "failed": 0
+    },
+    "w1:harvard": {
+      "total": 8,
+      "failed": 0
+    },
+    "w1:mla": {
+      "total": 8,
+      "failed": 0
+    },
+    "w1:chicago": {
+      "total": 8,
+      "failed": 0
+    },
+    "w2:apa": {
+      "total": 8,
+      "failed": 0
+    },
+    "w2:ieee": {
+      "total": 8,
+      "failed": 0
+    },
+    "w2:vancouver": {
+      "total": 8,
+      "failed": 0
+    },
+    "w2:harvard": {
+      "total": 8,
+      "failed": 0
+    },
+    "w2:mla": {
+      "total": 8,
+      "failed": 0
+    },
+    "w2:chicago": {
+      "total": 8,
+      "failed": 0
+    },
+    "w3:apa": {
+      "total": 8,
+      "failed": 0
+    },
+    "w3:ieee": {
+      "total": 8,
+      "failed": 0
+    },
+    "w3:vancouver": {
+      "total": 8,
+      "failed": 0
+    },
+    "w3:harvard": {
+      "total": 8,
+      "failed": 0
+    },
+    "w3:mla": {
+      "total": 8,
+      "failed": 0
+    },
+    "w3:chicago": {
+      "total": 8,
+      "failed": 0
+    },
+    "w4:apa": {
+      "total": 8,
+      "failed": 0
+    },
+    "w4:ieee": {
+      "total": 8,
+      "failed": 0
+    },
+    "w4:vancouver": {
+      "total": 8,
+      "failed": 0
+    },
+    "w4:harvard": {
+      "total": 8,
+      "failed": 8
+    },
+    "w4:mla": {
+      "total": 8,
+      "failed": 8
+    },
+    "w4:chicago": {
+      "total": 8,
+      "failed": 0
+    },
+    "w5:apa": {
+      "total": 8,
+      "failed": 0
+    },
+    "w5:ieee": {
+      "total": 8,
+      "failed": 0
+    },
+    "w5:vancouver": {
+      "total": 8,
+      "failed": 0
+    },
+    "w5:harvard": {
+      "total": 8,
+      "failed": 0
+    },
+    "w5:mla": {
+      "total": 8,
+      "failed": 0
+    },
+    "w5:chicago": {
+      "total": 8,
+      "failed": 0
+    },
+    "w6:apa": {
+      "total": 8,
+      "failed": 0
+    },
+    "w6:ieee": {
+      "total": 8,
+      "failed": 0
+    },
+    "w6:vancouver": {
+      "total": 8,
+      "failed": 0
+    },
+    "w6:harvard": {
+      "total": 8,
+      "failed": 0
+    },
+    "w6:mla": {
+      "total": 8,
+      "failed": 8
+    },
+    "w6:chicago": {
+      "total": 8,
+      "failed": 0
+    },
+    "w7:apa": {
+      "total": 8,
+      "failed": 0
+    },
+    "w7:ieee": {
+      "total": 8,
+      "failed": 0
+    },
+    "w7:vancouver": {
+      "total": 8,
+      "failed": 0
+    },
+    "w7:harvard": {
+      "total": 8,
+      "failed": 0
+    },
+    "w7:mla": {
+      "total": 8,
+      "failed": 0
+    },
+    "w7:chicago": {
+      "total": 8,
+      "failed": 0
+    },
+    "w8:apa": {
+      "total": 8,
+      "failed": 0
+    },
+    "w8:ieee": {
+      "total": 8,
+      "failed": 0
+    },
+    "w8:vancouver": {
+      "total": 8,
+      "failed": 0
+    },
+    "w8:harvard": {
+      "total": 8,
+      "failed": 0
+    },
+    "w8:mla": {
+      "total": 8,
+      "failed": 0
+    },
+    "w8:chicago": {
+      "total": 8,
+      "failed": 0
+    },
+    "w9:apa": {
+      "total": 8,
+      "failed": 0
+    },
+    "w9:ieee": {
+      "total": 8,
+      "failed": 0
+    },
+    "w9:vancouver": {
+      "total": 8,
+      "failed": 0
+    },
+    "w9:harvard": {
+      "total": 8,
+      "failed": 0
+    },
+    "w9:mla": {
+      "total": 8,
+      "failed": 0
+    },
+    "w9:chicago": {
+      "total": 8,
+      "failed": 0
+    },
+    "w10:apa": {
+      "total": 8,
+      "failed": 0
+    },
+    "w10:ieee": {
+      "total": 8,
+      "failed": 0
+    },
+    "w10:vancouver": {
+      "total": 8,
+      "failed": 0
+    },
+    "w10:harvard": {
+      "total": 8,
+      "failed": 0
+    },
+    "w10:mla": {
+      "total": 8,
+      "failed": 0
+    },
+    "w10:chicago": {
+      "total": 8,
+      "failed": 0
+    },
+    "w11:apa": {
+      "total": 8,
+      "failed": 0
+    },
+    "w11:ieee": {
+      "total": 8,
+      "failed": 0
+    },
+    "w11:vancouver": {
+      "total": 8,
+      "failed": 0
+    },
+    "w11:harvard": {
+      "total": 8,
+      "failed": 0
+    },
+    "w11:mla": {
+      "total": 8,
+      "failed": 0
+    },
+    "w11:chicago": {
+      "total": 8,
+      "failed": 0
+    },
+    "w12:apa": {
+      "total": 8,
+      "failed": 0
+    },
+    "w12:ieee": {
+      "total": 8,
+      "failed": 0
+    },
+    "w12:vancouver": {
+      "total": 8,
+      "failed": 0
+    },
+    "w12:harvard": {
+      "total": 8,
+      "failed": 8
+    },
+    "w12:mla": {
+      "total": 8,
+      "failed": 0
+    },
+    "w12:chicago": {
+      "total": 8,
+      "failed": 0
+    },
+    "real-gomes-harvard:harvard": {
+      "total": 1,
+      "failed": 0
+    },
+    "real-gomes-vancouver:vancouver": {
+      "total": 1,
+      "failed": 0
+    },
+    "real-gomes-chicago:chicago": {
+      "total": 1,
+      "failed": 0
+    },
+    "real-adams-mla:mla": {
+      "total": 1,
+      "failed": 0
+    },
+    "real-shailaja-vancouver:vancouver": {
+      "total": 1,
+      "failed": 0
+    }
+  },
+  "clusterSummary": {
+    "totalClusters": 122,
+    "clustersWithApaMember": 31,
+    "apaWinners": 17,
+    "apaPreferenceReasonTriggered": 0
+  },
+  "errors": [
+    "Could not detect citation style for reference 553 — converted as best-guess stub",
+    "Could not detect citation style for reference 554 — converted as best-guess stub",
+    "Could not detect citation style for reference 555 — converted as best-guess stub",
+    "Could not detect citation style for reference 556 — converted as best-guess stub",
+    "Could not detect citation style for reference 557 — converted as best-guess stub",
+    "Could not detect citation style for reference 558 — converted as best-guess stub",
+    "Could not detect citation style for reference 559 — converted as best-guess stub",
+    "Could not detect citation style for reference 560 — converted as best-guess stub"
+  ],
+  "failureExamplesByCategory": {
+    "style-detection": [
+      {
+        "caseId": "w4-harvard-base",
+        "workId": "w4",
+        "style": "harvard",
+        "perturbation": "base",
+        "categories": [
+          "style-detection"
+        ],
+        "expected": {
+          "style": "harvard",
+          "referenceType": "journal",
+          "year": "2021",
+          "titleToken": "Drug safety profiles in elderly patients",
+          "firstAuthorFamily": "Martin",
+          "venueToken": "Clinical Pharmacology",
+          "expectLocator": true,
+          "locatorToken": "S45-S67"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "journal",
+          "year": "2021",
+          "title": "Drug safety profiles in elderly patients",
+          "firstAuthor": "Martin, K",
+          "venue": "Journal of Clinical Pharmacology",
+          "locator": "S45-S67",
+          "output": "Martin, K. (2021). Drug safety profiles in elderly patients. Journal of Clinical Pharmacology, 61(Suppl. 2), S45–S67.",
+          "warnings": [
+            "warning:apa:volume_issue_format"
+          ]
+        }
+      },
+      {
+        "caseId": "w4-harvard-numbered-dot",
+        "workId": "w4",
+        "style": "harvard",
+        "perturbation": "numbered-dot",
+        "categories": [
+          "style-detection"
+        ],
+        "expected": {
+          "style": "harvard",
+          "referenceType": "journal",
+          "year": "2021",
+          "titleToken": "Drug safety profiles in elderly patients",
+          "firstAuthorFamily": "Martin",
+          "venueToken": "Clinical Pharmacology",
+          "expectLocator": true,
+          "locatorToken": "S45-S67"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "journal",
+          "year": "2021",
+          "title": "Drug safety profiles in elderly patients",
+          "firstAuthor": "Martin, K",
+          "venue": "Journal of Clinical Pharmacology",
+          "locator": "S45-S67",
+          "output": "Martin, K. (2021). Drug safety profiles in elderly patients. Journal of Clinical Pharmacology, 61(Suppl. 2), S45–S67.",
+          "warnings": [
+            "warning:apa:volume_issue_format"
+          ]
+        }
+      },
+      {
+        "caseId": "w4-harvard-numbered-bracket",
+        "workId": "w4",
+        "style": "harvard",
+        "perturbation": "numbered-bracket",
+        "categories": [
+          "style-detection"
+        ],
+        "expected": {
+          "style": "harvard",
+          "referenceType": "journal",
+          "year": "2021",
+          "titleToken": "Drug safety profiles in elderly patients",
+          "firstAuthorFamily": "Martin",
+          "venueToken": "Clinical Pharmacology",
+          "expectLocator": true,
+          "locatorToken": "S45-S67"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "journal",
+          "year": "2021",
+          "title": "Drug safety profiles in elderly patients",
+          "firstAuthor": "Martin, K",
+          "venue": "Journal of Clinical Pharmacology",
+          "locator": "S45-S67",
+          "output": "Martin, K. (2021). Drug safety profiles in elderly patients. Journal of Clinical Pharmacology, 61(Suppl. 2), S45–S67.",
+          "warnings": [
+            "warning:apa:volume_issue_format"
+          ]
+        }
+      },
+      {
+        "caseId": "w4-harvard-padded-whitespace",
+        "workId": "w4",
+        "style": "harvard",
+        "perturbation": "padded-whitespace",
+        "categories": [
+          "style-detection"
+        ],
+        "expected": {
+          "style": "harvard",
+          "referenceType": "journal",
+          "year": "2021",
+          "titleToken": "Drug safety profiles in elderly patients",
+          "firstAuthorFamily": "Martin",
+          "venueToken": "Clinical Pharmacology",
+          "expectLocator": true,
+          "locatorToken": "S45-S67"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "journal",
+          "year": "2021",
+          "title": "Drug safety profiles in elderly patients",
+          "firstAuthor": "Martin, K",
+          "venue": "Journal of Clinical Pharmacology",
+          "locator": "S45-S67",
+          "output": "Martin, K. (2021). Drug safety profiles in elderly patients. Journal of Clinical Pharmacology, 61(Suppl. 2), S45–S67.",
+          "warnings": [
+            "warning:apa:volume_issue_format"
+          ]
+        }
+      },
+      {
+        "caseId": "w4-harvard-wrapped-newlines",
+        "workId": "w4",
+        "style": "harvard",
+        "perturbation": "wrapped-newlines",
+        "categories": [
+          "style-detection"
+        ],
+        "expected": {
+          "style": "harvard",
+          "referenceType": "journal",
+          "year": "2021",
+          "titleToken": "Drug safety profiles in elderly patients",
+          "firstAuthorFamily": "Martin",
+          "venueToken": "Clinical Pharmacology",
+          "expectLocator": true,
+          "locatorToken": "S45-S67"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "journal",
+          "year": "2021",
+          "title": "Drug safety profiles in elderly patients",
+          "firstAuthor": "Martin, K",
+          "venue": "Journal of Clinical Pharmacology",
+          "locator": "S45-S67",
+          "output": "Martin, K. (2021). Drug safety profiles in elderly patients. Journal of Clinical Pharmacology, 61(Suppl. 2), S45–S67.",
+          "warnings": [
+            "warning:apa:volume_issue_format"
+          ]
+        }
+      }
+    ],
+    "locator": [
+      {
+        "caseId": "w4-mla-base",
+        "workId": "w4",
+        "style": "mla",
+        "perturbation": "base",
+        "categories": [
+          "locator"
+        ],
+        "expected": {
+          "style": "mla",
+          "referenceType": "journal",
+          "year": "2021",
+          "titleToken": "Drug safety profiles in elderly patients",
+          "firstAuthorFamily": "Martin",
+          "venueToken": "Clinical Pharmacology",
+          "expectLocator": true,
+          "locatorToken": "S45-S67"
+        },
+        "actual": {
+          "inputStyle": "mla",
+          "referenceType": "journal",
+          "year": "2021",
+          "title": "Drug safety profiles in elderly patients",
+          "firstAuthor": "Martin, K",
+          "venue": "Journal of Clinical Pharmacology, vol",
+          "output": "Martin, K. (2021). Drug safety profiles in elderly patients. Journal of Clinical Pharmacology, Vol.",
+          "warnings": [
+            "warning:missing_locator"
+          ]
+        }
+      },
+      {
+        "caseId": "w4-mla-numbered-dot",
+        "workId": "w4",
+        "style": "mla",
+        "perturbation": "numbered-dot",
+        "categories": [
+          "locator"
+        ],
+        "expected": {
+          "style": "mla",
+          "referenceType": "journal",
+          "year": "2021",
+          "titleToken": "Drug safety profiles in elderly patients",
+          "firstAuthorFamily": "Martin",
+          "venueToken": "Clinical Pharmacology",
+          "expectLocator": true,
+          "locatorToken": "S45-S67"
+        },
+        "actual": {
+          "inputStyle": "mla",
+          "referenceType": "journal",
+          "year": "2021",
+          "title": "Drug safety profiles in elderly patients",
+          "firstAuthor": "Martin, K",
+          "venue": "Journal of Clinical Pharmacology, vol",
+          "output": "Martin, K. (2021). Drug safety profiles in elderly patients. Journal of Clinical Pharmacology, Vol.",
+          "warnings": [
+            "warning:missing_locator"
+          ]
+        }
+      },
+      {
+        "caseId": "w4-mla-numbered-bracket",
+        "workId": "w4",
+        "style": "mla",
+        "perturbation": "numbered-bracket",
+        "categories": [
+          "locator"
+        ],
+        "expected": {
+          "style": "mla",
+          "referenceType": "journal",
+          "year": "2021",
+          "titleToken": "Drug safety profiles in elderly patients",
+          "firstAuthorFamily": "Martin",
+          "venueToken": "Clinical Pharmacology",
+          "expectLocator": true,
+          "locatorToken": "S45-S67"
+        },
+        "actual": {
+          "inputStyle": "mla",
+          "referenceType": "journal",
+          "year": "2021",
+          "title": "Drug safety profiles in elderly patients",
+          "firstAuthor": "Martin, K",
+          "venue": "Journal of Clinical Pharmacology, vol",
+          "output": "Martin, K. (2021). Drug safety profiles in elderly patients. Journal of Clinical Pharmacology, Vol.",
+          "warnings": [
+            "warning:missing_locator"
+          ]
+        }
+      },
+      {
+        "caseId": "w4-mla-padded-whitespace",
+        "workId": "w4",
+        "style": "mla",
+        "perturbation": "padded-whitespace",
+        "categories": [
+          "locator"
+        ],
+        "expected": {
+          "style": "mla",
+          "referenceType": "journal",
+          "year": "2021",
+          "titleToken": "Drug safety profiles in elderly patients",
+          "firstAuthorFamily": "Martin",
+          "venueToken": "Clinical Pharmacology",
+          "expectLocator": true,
+          "locatorToken": "S45-S67"
+        },
+        "actual": {
+          "inputStyle": "mla",
+          "referenceType": "journal",
+          "year": "2021",
+          "title": "Drug safety profiles in elderly patients",
+          "firstAuthor": "Martin, K",
+          "venue": "Journal of Clinical Pharmacology, vol",
+          "output": "Martin, K. (2021). Drug safety profiles in elderly patients. Journal of Clinical Pharmacology, Vol.",
+          "warnings": [
+            "warning:missing_locator"
+          ]
+        }
+      },
+      {
+        "caseId": "w4-mla-wrapped-newlines",
+        "workId": "w4",
+        "style": "mla",
+        "perturbation": "wrapped-newlines",
+        "categories": [
+          "locator"
+        ],
+        "expected": {
+          "style": "mla",
+          "referenceType": "journal",
+          "year": "2021",
+          "titleToken": "Drug safety profiles in elderly patients",
+          "firstAuthorFamily": "Martin",
+          "venueToken": "Clinical Pharmacology",
+          "expectLocator": true,
+          "locatorToken": "S45-S67"
+        },
+        "actual": {
+          "inputStyle": "mla",
+          "referenceType": "journal",
+          "year": "2021",
+          "title": "Drug safety profiles in elderly patients",
+          "firstAuthor": "Martin, K",
+          "venue": "Journal of Clinical Pharmacology, vol",
+          "output": "Martin, K. (2021). Drug safety profiles in elderly patients. Journal of Clinical Pharmacology, Vol.",
+          "warnings": [
+            "warning:missing_locator"
+          ]
+        }
+      }
+    ],
+    "reference-type": [
+      {
+        "caseId": "w6-mla-base",
+        "workId": "w6",
+        "style": "mla",
+        "perturbation": "base",
+        "categories": [
+          "style-detection",
+          "reference-type",
+          "venue"
+        ],
+        "expected": {
+          "style": "mla",
+          "referenceType": "journal",
+          "year": "2015",
+          "titleToken": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthorFamily": "Elliott",
+          "venueToken": "Physical Review Letters",
+          "expectLocator": true,
+          "locatorToken": "113604"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "other",
+          "year": "2015",
+          "title": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthor": "Elliott, T. J., W. Kozlowski, S. F. Caballero-Benitez, and I. B. Mekhov. \"Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "locator": "113604",
+          "output": "Elliott, T. J., & Kozlowski, S. F. C. (2015). Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement (No. 113604). Article 113604.",
+          "warnings": []
+        }
+      },
+      {
+        "caseId": "w6-mla-numbered-dot",
+        "workId": "w6",
+        "style": "mla",
+        "perturbation": "numbered-dot",
+        "categories": [
+          "style-detection",
+          "reference-type",
+          "venue"
+        ],
+        "expected": {
+          "style": "mla",
+          "referenceType": "journal",
+          "year": "2015",
+          "titleToken": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthorFamily": "Elliott",
+          "venueToken": "Physical Review Letters",
+          "expectLocator": true,
+          "locatorToken": "113604"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "other",
+          "year": "2015",
+          "title": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthor": "Elliott, T. J., W. Kozlowski, S. F. Caballero-Benitez, and I. B. Mekhov. \"Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "locator": "113604",
+          "output": "Elliott, T. J., & Kozlowski, S. F. C. (2015). Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement (No. 113604). Article 113604.",
+          "warnings": []
+        }
+      },
+      {
+        "caseId": "w6-mla-numbered-bracket",
+        "workId": "w6",
+        "style": "mla",
+        "perturbation": "numbered-bracket",
+        "categories": [
+          "style-detection",
+          "reference-type",
+          "venue"
+        ],
+        "expected": {
+          "style": "mla",
+          "referenceType": "journal",
+          "year": "2015",
+          "titleToken": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthorFamily": "Elliott",
+          "venueToken": "Physical Review Letters",
+          "expectLocator": true,
+          "locatorToken": "113604"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "other",
+          "year": "2015",
+          "title": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthor": "Elliott, T. J., W. Kozlowski, S. F. Caballero-Benitez, and I. B. Mekhov. \"Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "locator": "113604",
+          "output": "Elliott, T. J., & Kozlowski, S. F. C. (2015). Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement (No. 113604). Article 113604.",
+          "warnings": []
+        }
+      },
+      {
+        "caseId": "w6-mla-padded-whitespace",
+        "workId": "w6",
+        "style": "mla",
+        "perturbation": "padded-whitespace",
+        "categories": [
+          "style-detection",
+          "reference-type",
+          "venue"
+        ],
+        "expected": {
+          "style": "mla",
+          "referenceType": "journal",
+          "year": "2015",
+          "titleToken": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthorFamily": "Elliott",
+          "venueToken": "Physical Review Letters",
+          "expectLocator": true,
+          "locatorToken": "113604"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "other",
+          "year": "2015",
+          "title": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthor": "Elliott, T. J., W. Kozlowski, S. F. Caballero-Benitez, and I. B. Mekhov. \"Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "locator": "113604",
+          "output": "Elliott, T. J., & Kozlowski, S. F. C. (2015). Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement (No. 113604). Article 113604.",
+          "warnings": []
+        }
+      },
+      {
+        "caseId": "w6-mla-wrapped-newlines",
+        "workId": "w6",
+        "style": "mla",
+        "perturbation": "wrapped-newlines",
+        "categories": [
+          "style-detection",
+          "reference-type",
+          "venue"
+        ],
+        "expected": {
+          "style": "mla",
+          "referenceType": "journal",
+          "year": "2015",
+          "titleToken": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthorFamily": "Elliott",
+          "venueToken": "Physical Review Letters",
+          "expectLocator": true,
+          "locatorToken": "113604"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "other",
+          "year": "2015",
+          "title": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthor": "Elliott, T. J., W. Kozlowski, S. F. Caballero-Benitez, and I. B. Mekhov. \"Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "locator": "113604",
+          "output": "Elliott, T. J., & Kozlowski, S. F. C. (2015). Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement (No. 113604). Article 113604.",
+          "warnings": []
+        }
+      }
+    ],
+    "venue": [
+      {
+        "caseId": "w6-mla-base",
+        "workId": "w6",
+        "style": "mla",
+        "perturbation": "base",
+        "categories": [
+          "style-detection",
+          "reference-type",
+          "venue"
+        ],
+        "expected": {
+          "style": "mla",
+          "referenceType": "journal",
+          "year": "2015",
+          "titleToken": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthorFamily": "Elliott",
+          "venueToken": "Physical Review Letters",
+          "expectLocator": true,
+          "locatorToken": "113604"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "other",
+          "year": "2015",
+          "title": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthor": "Elliott, T. J., W. Kozlowski, S. F. Caballero-Benitez, and I. B. Mekhov. \"Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "locator": "113604",
+          "output": "Elliott, T. J., & Kozlowski, S. F. C. (2015). Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement (No. 113604). Article 113604.",
+          "warnings": []
+        }
+      },
+      {
+        "caseId": "w6-mla-numbered-dot",
+        "workId": "w6",
+        "style": "mla",
+        "perturbation": "numbered-dot",
+        "categories": [
+          "style-detection",
+          "reference-type",
+          "venue"
+        ],
+        "expected": {
+          "style": "mla",
+          "referenceType": "journal",
+          "year": "2015",
+          "titleToken": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthorFamily": "Elliott",
+          "venueToken": "Physical Review Letters",
+          "expectLocator": true,
+          "locatorToken": "113604"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "other",
+          "year": "2015",
+          "title": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthor": "Elliott, T. J., W. Kozlowski, S. F. Caballero-Benitez, and I. B. Mekhov. \"Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "locator": "113604",
+          "output": "Elliott, T. J., & Kozlowski, S. F. C. (2015). Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement (No. 113604). Article 113604.",
+          "warnings": []
+        }
+      },
+      {
+        "caseId": "w6-mla-numbered-bracket",
+        "workId": "w6",
+        "style": "mla",
+        "perturbation": "numbered-bracket",
+        "categories": [
+          "style-detection",
+          "reference-type",
+          "venue"
+        ],
+        "expected": {
+          "style": "mla",
+          "referenceType": "journal",
+          "year": "2015",
+          "titleToken": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthorFamily": "Elliott",
+          "venueToken": "Physical Review Letters",
+          "expectLocator": true,
+          "locatorToken": "113604"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "other",
+          "year": "2015",
+          "title": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthor": "Elliott, T. J., W. Kozlowski, S. F. Caballero-Benitez, and I. B. Mekhov. \"Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "locator": "113604",
+          "output": "Elliott, T. J., & Kozlowski, S. F. C. (2015). Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement (No. 113604). Article 113604.",
+          "warnings": []
+        }
+      },
+      {
+        "caseId": "w6-mla-padded-whitespace",
+        "workId": "w6",
+        "style": "mla",
+        "perturbation": "padded-whitespace",
+        "categories": [
+          "style-detection",
+          "reference-type",
+          "venue"
+        ],
+        "expected": {
+          "style": "mla",
+          "referenceType": "journal",
+          "year": "2015",
+          "titleToken": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthorFamily": "Elliott",
+          "venueToken": "Physical Review Letters",
+          "expectLocator": true,
+          "locatorToken": "113604"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "other",
+          "year": "2015",
+          "title": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthor": "Elliott, T. J., W. Kozlowski, S. F. Caballero-Benitez, and I. B. Mekhov. \"Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "locator": "113604",
+          "output": "Elliott, T. J., & Kozlowski, S. F. C. (2015). Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement (No. 113604). Article 113604.",
+          "warnings": []
+        }
+      },
+      {
+        "caseId": "w6-mla-wrapped-newlines",
+        "workId": "w6",
+        "style": "mla",
+        "perturbation": "wrapped-newlines",
+        "categories": [
+          "style-detection",
+          "reference-type",
+          "venue"
+        ],
+        "expected": {
+          "style": "mla",
+          "referenceType": "journal",
+          "year": "2015",
+          "titleToken": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthorFamily": "Elliott",
+          "venueToken": "Physical Review Letters",
+          "expectLocator": true,
+          "locatorToken": "113604"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "other",
+          "year": "2015",
+          "title": "Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "firstAuthor": "Elliott, T. J., W. Kozlowski, S. F. Caballero-Benitez, and I. B. Mekhov. \"Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement",
+          "locator": "113604",
+          "output": "Elliott, T. J., & Kozlowski, S. F. C. (2015). Multipartite entangled spatial modes of ultracold atoms generated and controlled by quantum measurement (No. 113604). Article 113604.",
+          "warnings": []
+        }
+      }
+    ],
+    "title": [
+      {
+        "caseId": "w12-harvard-base",
+        "workId": "w12",
+        "style": "harvard",
+        "perturbation": "base",
+        "categories": [
+          "style-detection",
+          "reference-type",
+          "title",
+          "venue"
+        ],
+        "expected": {
+          "style": "harvard",
+          "referenceType": "conference",
+          "year": "2019",
+          "titleToken": "Clinical NLP for low-resource triage",
+          "firstAuthorFamily": "O'Brien",
+          "venueToken": "Clinical Natural Language Processing",
+          "expectLocator": true,
+          "locatorToken": "201-209"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "other",
+          "year": "2019",
+          "firstAuthor": "O'Brien, M., d'Angelo, R. and Singh, P., 2019, July. Clinical NLP for low-resource triage. In Workshop on Clinical Natural Language Processing (pp. 201-209). Springer",
+          "locator": "201-209",
+          "output": "Brien, M., Angelo, R., & Singh, P. (2019). 201–209.",
+          "warnings": [
+            "error: Style could not be detected; output is a best-guess stub.",
+            "warning:apa:author_particle_handling"
+          ]
+        }
+      },
+      {
+        "caseId": "w12-harvard-numbered-dot",
+        "workId": "w12",
+        "style": "harvard",
+        "perturbation": "numbered-dot",
+        "categories": [
+          "style-detection",
+          "reference-type",
+          "title",
+          "venue"
+        ],
+        "expected": {
+          "style": "harvard",
+          "referenceType": "conference",
+          "year": "2019",
+          "titleToken": "Clinical NLP for low-resource triage",
+          "firstAuthorFamily": "O'Brien",
+          "venueToken": "Clinical Natural Language Processing",
+          "expectLocator": true,
+          "locatorToken": "201-209"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "other",
+          "year": "2019",
+          "firstAuthor": "O'Brien, M., d'Angelo, R. and Singh, P., 2019, July. Clinical NLP for low-resource triage. In Workshop on Clinical Natural Language Processing (pp. 201-209). Springer",
+          "locator": "201-209",
+          "output": "Brien, M., Angelo, R., & Singh, P. (2019). 201–209.",
+          "warnings": [
+            "error: Style could not be detected; output is a best-guess stub.",
+            "warning:apa:author_particle_handling"
+          ]
+        }
+      },
+      {
+        "caseId": "w12-harvard-numbered-bracket",
+        "workId": "w12",
+        "style": "harvard",
+        "perturbation": "numbered-bracket",
+        "categories": [
+          "style-detection",
+          "reference-type",
+          "title",
+          "venue"
+        ],
+        "expected": {
+          "style": "harvard",
+          "referenceType": "conference",
+          "year": "2019",
+          "titleToken": "Clinical NLP for low-resource triage",
+          "firstAuthorFamily": "O'Brien",
+          "venueToken": "Clinical Natural Language Processing",
+          "expectLocator": true,
+          "locatorToken": "201-209"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "other",
+          "year": "2019",
+          "firstAuthor": "O'Brien, M., d'Angelo, R. and Singh, P., 2019, July. Clinical NLP for low-resource triage. In Workshop on Clinical Natural Language Processing (pp. 201-209). Springer",
+          "locator": "201-209",
+          "output": "Brien, M., Angelo, R., & Singh, P. (2019). 201–209.",
+          "warnings": [
+            "error: Style could not be detected; output is a best-guess stub.",
+            "warning:apa:author_particle_handling"
+          ]
+        }
+      },
+      {
+        "caseId": "w12-harvard-padded-whitespace",
+        "workId": "w12",
+        "style": "harvard",
+        "perturbation": "padded-whitespace",
+        "categories": [
+          "style-detection",
+          "reference-type",
+          "title",
+          "venue"
+        ],
+        "expected": {
+          "style": "harvard",
+          "referenceType": "conference",
+          "year": "2019",
+          "titleToken": "Clinical NLP for low-resource triage",
+          "firstAuthorFamily": "O'Brien",
+          "venueToken": "Clinical Natural Language Processing",
+          "expectLocator": true,
+          "locatorToken": "201-209"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "other",
+          "year": "2019",
+          "firstAuthor": "O'Brien, M., d'Angelo, R. and Singh, P., 2019, July. Clinical NLP for low-resource triage. In Workshop on Clinical Natural Language Processing (pp. 201-209). Springer",
+          "locator": "201-209",
+          "output": "Brien, M., Angelo, R., & Singh, P. (2019). 201–209.",
+          "warnings": [
+            "error: Style could not be detected; output is a best-guess stub.",
+            "warning:apa:author_particle_handling"
+          ]
+        }
+      },
+      {
+        "caseId": "w12-harvard-wrapped-newlines",
+        "workId": "w12",
+        "style": "harvard",
+        "perturbation": "wrapped-newlines",
+        "categories": [
+          "style-detection",
+          "reference-type",
+          "title",
+          "venue"
+        ],
+        "expected": {
+          "style": "harvard",
+          "referenceType": "conference",
+          "year": "2019",
+          "titleToken": "Clinical NLP for low-resource triage",
+          "firstAuthorFamily": "O'Brien",
+          "venueToken": "Clinical Natural Language Processing",
+          "expectLocator": true,
+          "locatorToken": "201-209"
+        },
+        "actual": {
+          "inputStyle": "apa",
+          "referenceType": "other",
+          "year": "2019",
+          "firstAuthor": "O'Brien, M., d'Angelo, R. and Singh, P., 2019, July. Clinical NLP for low-resource triage. In Workshop on Clinical Natural Language Processing (pp. 201-209). Springer",
+          "locator": "201-209",
+          "output": "Brien, M., Angelo, R., & Singh, P. (2019). 201–209.",
+          "warnings": [
+            "error: Style could not be detected; output is a best-guess stub.",
+            "warning:apa:author_particle_handling"
+          ]
+        }
+      }
+    ]
+  }
+}

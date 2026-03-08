@@ -1,0 +1,16 @@
+
+> rest-express@1.0.0 dev
+> tsx server/index.ts
+
+CSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+Re-optimizing dependencies because lockfile has changed
+7:11:32 AM [express] serving on port 5000
+07:11:39 [vite] Pre-transform error: D:\Coding\Citing\client\src\components\reference-output.tsx: Identifier 'jsPDF' has already been declared. (24:7)
+
+  22 | import { apiRequest } from "@/lib/queryClient";
+  23 | import jsPDF from 'jspdf';
+> 24 | import jsPDF from 'jspdf';
+     |        ^
+  25 |
+  26 | import { ScholarPreview } from "./ScholarPreview";
+  27 |
