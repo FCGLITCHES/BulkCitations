@@ -1049,8 +1049,8 @@ export default function ReferenceOutput({ convertedReferences, clusters = [], on
 
         {/* Copy All + Download row — fixed on mobile/tablet up to md; same width, centered then shift left when scroll-to-top shows */}
         <div
-          className={`fixed md:relative bottom-4 md:bottom-auto md:left-auto z-40 md:z-auto bg-card/95 md:bg-transparent backdrop-blur-md md:backdrop-blur-none p-3 md:p-0 rounded-xl md:rounded-none shadow-2xl md:shadow-none border border-border md:border-0 flex flex-row gap-3 max-w-[calc(100vw-4.5rem)] md:max-w-none
-            ${isScrollPastThreshold ? "left-4 right-14" : "left-1/2 -translate-x-1/2"}
+          className={`fixed md:relative bottom-4 md:bottom-auto z-40 md:z-auto bg-card/95 md:bg-transparent backdrop-blur-md md:backdrop-blur-none p-3 md:p-0 rounded-xl md:rounded-none shadow-2xl md:shadow-none border border-border md:border-0 flex flex-row md:justify-center gap-3 max-w-[calc(100vw-4.5rem)] md:max-w-none
+            ${isScrollPastThreshold ? "left-4 right-14 md:left-auto md:right-auto" : "left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0"}
           `}
         >
           <Button
