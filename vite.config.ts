@@ -28,10 +28,7 @@ if (!isProd) {
 export default defineConfig({
   plugins,
   resolve: {
-    alias: {
-      "@shared": path.resolve(__dirname, "shared"),
-      "@assets": path.resolve(__dirname, "attached_assets"),
-    },
+    alias: {},
     dedupe: ["react", "react-dom", "scheduler"],
   },
   root: path.resolve(__dirname, "client"),
