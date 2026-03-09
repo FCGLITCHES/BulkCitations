@@ -12,7 +12,6 @@ import HistoryPage from './pages/history';
 import ScrollToTop from './components/scroll-to-top';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import './index.css';
-import './dark-mode.css';
 
 const queryClient = new QueryClient();
 
