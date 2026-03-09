@@ -64,6 +64,11 @@ function resolveYearFromCandidates(
 
 function recoverYear(badYear: string | undefined, rawInput: string): string | undefined {
   if (isValidYear(badYear)) return badYear;
+  // Preserve 4-digit year or n.d. that appears in the source (parser isolation: no silent replacement)
+  if (badYear && rawInput) {
+    if (/^\d{4}$/.test(badYear) && new RegExp(`\\b${badYear}\\b`).test(rawInput)) return badYear;
+    if (/^n\.d\.$/i.test(badYear) && rawInput.toLowerCase().includes('n.d.')) return badYear;
+  }
   const candidates = extractYearCandidates(rawInput);
   return resolveYearFromCandidates({ year: badYear }, rawInput, candidates);
 }
@@ -439,17 +444,22 @@ export class CitationParser {
     }
 
     if (!parsed.year) {
-      const trailingMatch = cleanText.match(/,\s*((?:19|20)\d{2}|n\.d\.)\.$/i);
-      if (trailingMatch) {
-        parsed.year = trailingMatch[1];
+      const ndMatch = cleanText.match(/\(\s*n\.d\.\s*\)/i);
+      if (ndMatch) {
+        parsed.year = 'n.d.';
       } else {
-        const globalYearMatch = cleanText.match(/(?:^|\s|\(|\[)((?:19|20)\d{2}|n\.d\.)(?:\)|\]|[.,]|$)/gi);
-        if (globalYearMatch && globalYearMatch.length > 0) {
-          // Take the last reasonable year match, extract digits or n.d.
-          const lastMatch = globalYearMatch[globalYearMatch.length - 1];
-          const yearToken = lastMatch.match(/(?:\d{4}|n\.d\.)/i);
-          if (yearToken) {
-            parsed.year = yearToken[0];
+        const trailingMatch = cleanText.match(/,\s*((?:19|20)\d{2}|n\.d\.)\.$/i);
+        if (trailingMatch) {
+          parsed.year = trailingMatch[1];
+        } else {
+          const globalYearMatch = cleanText.match(/(?:^|\s|\(|\[)((?:19|20)\d{2}|n\.d\.)(?:\)|\]|[.,]|$)/gi);
+          if (globalYearMatch && globalYearMatch.length > 0) {
+            // Take the last reasonable year match, extract digits or n.d.
+            const lastMatch = globalYearMatch[globalYearMatch.length - 1];
+            const yearToken = lastMatch.match(/(?:\d{4}|n\.d\.)/i);
+            if (yearToken) {
+              parsed.year = yearToken[0];
+            }
           }
         }
       }
@@ -802,8 +812,8 @@ export class CitationParser {
     let cleanText = stripLeadingNumbering(text);
 
     // 1) Extract authors and year
-    // Pattern: everything before "(YYYY)" is authors
-    const authorYearMatch = cleanText.match(/^(.+?)\s*\((\d{4}[a-z]?)(?:,\s*[^)]+)?\)\.\s*/);
+    // Pattern: everything before "(YYYY)" or "(n.d.)" is authors (allow ". " before paren e.g. "Author, P. (n.d.).")
+    const authorYearMatch = cleanText.match(/^(.+?)\s*\.?\s*\((\d{4}[a-z]?|n\.d\.)(?:,\s*[^)]+)?\)\.\s*/i);
     if (authorYearMatch) {
       parsed.authors = this.parseAuthorList(authorYearMatch[1].trim(), 'apa');
       parsed.year = authorYearMatch[2];
@@ -1954,6 +1964,8 @@ export class CitationParser {
 
     if (parsed.bookTitle) score.bookChapter += 4;
     if (parsed.editor) score.bookChapter += 2;
+    // Strong chapter signal: "In: Editor. Book Title" (Vancouver/APA chapter) should beat journal container leak
+    if (parsed.bookTitle && parsed.editor) score.bookChapter += 3;
 
     if (/press|publisher|springer|elsevier|wiley|cambridge|oxford/.test(publisher)) score.book += 3;
     if (!parsed.volume && !parsed.issue && !parsed.pages && parsed.publisher) score.book += 2;

@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Quote, Sparkles, Package, Shield, CheckCircle, Menu, FileText, History, HelpCircle, Info, LogIn, LogOut, FileWarning, LineChart } from "lucide-react";
+import { Quote, Sparkles, Package, Shield, CheckCircle, Menu, FileText, History, HelpCircle, Info, LogIn, LogOut, FileWarning, LineChart, Moon, Sun } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import CitationConverter from "@/components/citation-converter";
@@ -14,6 +14,29 @@ export default function Home() {
   const [navOpen, setNavOpen] = useState(false);
   const { isAdmin, logout } = useAuth();
   const [, setLocation] = useLocation();
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    // Check initial state from classList or localStorage
+    const isDarkMode = document.documentElement.classList.contains("dark") ||
+      localStorage.getItem("theme") === "dark";
+    setIsDark(isDarkMode);
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = !isDark;
+    setIsDark(nextTheme);
+    if (nextTheme) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -50,13 +73,23 @@ export default function Home() {
               ) : (
                 <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">Login</Link>
               )}
+              <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full w-8 h-8 ml-2" title="Toggle theme">
+                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                <span className="sr-only">Toggle theme</span>
+              </Button>
             </nav>
             <Sheet open={navOpen} onOpenChange={setNavOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">Open menu</span>
-                </Button>
+                <div className="flex items-center gap-2 md:hidden">
+                  <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full w-8 h-8" title="Toggle theme">
+                    {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                    <span className="sr-only">Toggle theme</span>
+                  </Button>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                </div>
               </SheetTrigger>
               <SheetContent side="right" className="w-[280px] pt-10">
                 <nav className="flex flex-col gap-1">
