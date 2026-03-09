@@ -1,11 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { createRequire } from "module";
 import multer from "multer";
 import * as mammoth from "mammoth";
-
-const require = createRequire(import.meta.url);
-const pdfParseModule = require("pdf-parse");
+import pdfParseModule from "pdf-parse";
 const pdfParse: (buffer: Buffer) => Promise<{ text: string }> =
   typeof pdfParseModule === "function" ? pdfParseModule : (pdfParseModule?.default ?? pdfParseModule);
 import { storage } from "./storage";
