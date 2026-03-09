@@ -46,7 +46,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background font-sans">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-card/80 backdrop-blur-lg border-b border-border shadow-sm sticky top-0 z-50 overflow-x-hidden transition-colors duration-300">
+      <header className="bg-background/90 backdrop-blur-lg border-b border-border shadow-sm sticky top-0 z-50 overflow-x-hidden transition-colors duration-300">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2 min-w-0">
             <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
