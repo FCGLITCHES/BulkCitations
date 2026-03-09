@@ -322,7 +322,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-br from-secondary via-secondary to-primary/20 dark:from-secondary dark:via-secondary dark:to-primary/10 text-secondary-foreground py-8 sm:py-10 border-t border-primary/10 overflow-x-hidden">
+      <footer className="bg-gradient-to-br from-secondary via-secondary to-primary/20 dark:from-background dark:via-background dark:to-primary/10 text-secondary-foreground py-8 sm:py-10 border-t border-primary/10 overflow-x-hidden">
         <div className="container mx-auto px-3 sm:px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
             <div>
