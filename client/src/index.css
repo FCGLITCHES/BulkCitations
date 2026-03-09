@@ -2,38 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: 210 40% 98%;
-  --foreground: 222 47% 11%;
-  --muted: 210 40% 94%;
-  --muted-foreground: 215 16% 47%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --primary: 160 84% 39%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 217 33% 17%;
-  --secondary-foreground: 210 40% 98%;
-  --accent: 160 84% 39%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
-  --ring: 160 84% 39%;
-  --radius: 0.75rem;
-  --surface: 0 0% 100%;
-  --gradient-start: 222 47% 11%;
-  --gradient-mid: 217 33% 17%;
-  --gradient-end: 160 84% 39%;
-}
-
-
 @layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    --muted: 210 40% 94%;
+    --muted-foreground: 215 16% 47%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --primary: 160 84% 39%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --accent: 160 84% 39%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --ring: 160 84% 39%;
+    --radius: 0.75rem;
+    --surface: 0 0% 100%;
+    --gradient-start: 222 47% 11%;
+    --gradient-mid: 217 33% 17%;
+    --gradient-end: 160 84% 39%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
-    margin: 0;
-    font-family: sans-serif;
+    @apply font-sans antialiased bg-background text-foreground;
+    min-height: 100dvh;
+    overflow-x: hidden;
   }
 }
 
