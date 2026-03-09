@@ -65,7 +65,7 @@
     "fuzzball": "^2.2.3",
     "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
-    "jspdf": "^3.0.1",
+    "jspdf": "^4.2.0",
     "lucide-react": "^0.453.0",
     "mammoth": "^1.11.0",
     "memorystore": "^1.6.7",
@@ -121,7 +121,7 @@
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.1",
     "typescript": "5.6.3",
-    "vite": "^5.4.19",
+    "vite": "^7.3.1",
     "vitest": "^4.0.18"
   },
   "optionalDependencies": {
