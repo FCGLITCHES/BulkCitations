@@ -10,7 +10,14 @@ import { SAMPLE_MIXED_REFERENCES } from "../lib/sampleReferences";
 import { apiRequest } from "../lib/queryClient";
 import { ConversionRequest, ConversionResponse, INPUT_STYLES } from "../lib/types";
 import { useToast } from "../hooks/use-toast";
-import { stripLeadingNumbering } from "@shared/stripNumbering";
+export function stripLeadingNumbering(line: string): string {
+  let s = line;
+  s = s.replace(/^\s*\[\d+\]\s*/, '');
+  s = s.replace(/^\s*\d+\s*[.):\-–]\s*/, '');
+  s = s.replace(/^\d+\s+(?=[A-Z])/, '');
+  s = s.replace(/([^a-zA-Z])\s+\d{1,2}\.\s*$/, '$1');
+  return s.trim();
+}
 
 interface ReferenceInputProps {
   onConversionResult: (response: ConversionResponse) => void;
