@@ -26,7 +26,7 @@ export async function createApp(): Promise<{ app: express.Express; server: Await
 
   const server = await registerRoutes(app);
 
-  app.use((err: unknown, _req: express.Request, res: express.Response) => {
+  app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     const status = (err as { status?: number; statusCode?: number }).status ?? (err as { statusCode?: number }).statusCode ?? 500;
     const message = (err as Error).message ?? 'Internal Server Error';
     res.status(status).json({ message });
