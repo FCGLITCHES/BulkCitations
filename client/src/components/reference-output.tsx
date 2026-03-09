@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "./ui/button";
+import { Card, CardContent } from "./ui/card";
+import { Badge } from "./ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { Checkbox } from "./ui/checkbox";
 import {
   Download,
   FileText,
@@ -22,13 +22,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ConvertedReference, Cluster, type AssertionHighlight } from "@/lib/types";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+} from "./ui/dropdown-menu";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
+import { Label } from "./ui/label";
+import { Textarea } from "./ui/textarea";
+import { ConvertedReference, Cluster, type AssertionHighlight } from "../lib/types";
+import { useToast } from "../hooks/use-toast";
+import { apiRequest } from "../lib/queryClient";
 import jsPDF from 'jspdf';
 
 import { ScholarPreview } from "./ScholarPreview";

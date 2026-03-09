@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader } from "../components/ui/card";
+import { Separator } from "../components/ui/separator";
 import { Quote } from "lucide-react";
 import { Link } from "wouter";
 

@@ -1,6 +1,5 @@
 import { defineConfig, type PluginOption } from "vite";
 import react from "@vitejs/plugin-react";
-import tsconfigPaths from "vite-tsconfig-paths";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -8,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProd = process.env.NODE_ENV === "production";
 const isReplit = process.env.REPL_ID !== undefined;
 
-const plugins: PluginOption[] = [react(), tsconfigPaths()];
+const plugins: PluginOption[] = [react()];
 if (!isProd) {
   try {
     const runtimeErrorOverlay = await import("@replit/vite-plugin-runtime-error-modal").then((m) => m.default);

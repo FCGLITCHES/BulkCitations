@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Card, CardContent } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Separator } from "../components/ui/separator";
+import { Button } from "../components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "../components/ui/sheet";
 import { Quote, Sparkles, Package, Shield, CheckCircle, Menu, FileText, History, HelpCircle, Info, LogIn, LogOut, FileWarning, LineChart, Moon, Sun } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import CitationConverter from "@/components/citation-converter";
-import { useAuth } from "@/hooks/use-auth";
+import CitationConverter from "../components/citation-converter";
+import { useAuth } from "../hooks/use-auth";
 
 export default function Home() {
   const [navOpen, setNavOpen] = useState(false);

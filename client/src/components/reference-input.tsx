@@ -1,15 +1,15 @@
 import { useState, useCallback, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "./ui/button";
+import { Label } from "./ui/label";
+import { Textarea } from "./ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Card, CardContent } from "./ui/card";
 import { Upload, Sparkles, RotateCw, Trash2, Beaker } from "lucide-react";
-import { SAMPLE_MIXED_REFERENCES } from "@/lib/sampleReferences";
-import { apiRequest } from "@/lib/queryClient";
-import { ConversionRequest, ConversionResponse, INPUT_STYLES } from "@/lib/types";
-import { useToast } from "@/hooks/use-toast";
+import { SAMPLE_MIXED_REFERENCES } from "../lib/sampleReferences";
+import { apiRequest } from "../lib/queryClient";
+import { ConversionRequest, ConversionResponse, INPUT_STYLES } from "../lib/types";
+import { useToast } from "../hooks/use-toast";
 import { stripLeadingNumbering } from "@shared/stripNumbering";
 
 interface ReferenceInputProps {

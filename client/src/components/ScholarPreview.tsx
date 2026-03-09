@@ -3,9 +3,9 @@ import {
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+} from "./ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Badge } from "./ui/badge";
 import { Link, CheckCircle2, AlertTriangle, ExternalLink } from "lucide-react";
 import type { AuthorityData, ConfidenceResult, AuthorityStatus } from "@shared/schema";
 import { Button } from "./ui/button";
