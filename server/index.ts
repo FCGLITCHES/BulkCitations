@@ -26,12 +26,11 @@ export async function createApp(): Promise<{ app: express.Express; server: Await
 
   const server = await registerRoutes(app);
 
-  const errorHandler: express.ErrorRequestHandler = function (err, req, res, next) {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || 'Internal Server Error';
+  app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    const status = (err as { status?: number; statusCode?: number }).status ?? (err as { statusCode?: number }).statusCode ?? 500;
+    const message = (err as Error).message ?? 'Internal Server Error';
     res.status(status).json({ message });
-  };
-  app.use(errorHandler);
+  });
 
   const isDev = app.get('env') === 'development' || process.env.NODE_ENV !== 'production';
   if (isDev) {
