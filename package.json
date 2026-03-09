@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
-  "engines": {
-    "node": "20.x"
-  },
   "scripts": {
     "dev": "tsx server/index.ts",
     "dev:debug": "cross-env DEBUG_STRESS=1 tsx server/index.ts",
@@ -96,6 +93,8 @@
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
+    "@replit/vite-plugin-cartographer": "^0.2.7",
+    "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
     "@tailwindcss/typography": "^0.5.15",
     "@tailwindcss/vite": "^4.1.3",
     "@types/connect-pg-simple": "^7.0.3",

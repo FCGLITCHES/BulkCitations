@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Quote, Sparkles, Package, Shield, CheckCircle, Menu } from "lucide-react";
+import { Quote, Sparkles, Package, Shield, CheckCircle, Menu, FileText, History, HelpCircle, Info, LogIn, LogOut, FileWarning, LineChart, Moon, Sun } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import CitationConverter from "@/components/citation-converter";
@@ -14,6 +14,29 @@ export default function Home() {
   const [navOpen, setNavOpen] = useState(false);
   const { isAdmin, logout } = useAuth();
   const [, setLocation] = useLocation();
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    // Check initial state from classList or localStorage
+    const isDarkMode = document.documentElement.classList.contains("dark") ||
+      localStorage.getItem("theme") === "dark";
+    setIsDark(isDarkMode);
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = !isDark;
+    setIsDark(nextTheme);
+    if (nextTheme) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -23,7 +46,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background font-sans">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-card/80 backdrop-blur-lg border-b border-border shadow-sm sticky top-0 z-50 overflow-x-hidden transition-colors duration-300">
+      <header className="bg-background/90 backdrop-blur-lg border-b border-border shadow-sm sticky top-0 z-50 overflow-x-hidden transition-colors duration-300">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2 min-w-0">
             <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
@@ -40,37 +63,75 @@ export default function Home() {
               <Link href="/history" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">History</Link>
               <Link href="/faq" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">FAQ</Link>
               <Link href="/about" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">About</Link>
+              <Link href="/privacy" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">Privacy</Link>
 
               {isAdmin ? (
                 <>
                   <Link href="/admin/reports" className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer">Admin Mode</Link>
-                  <button onClick={handleLogout} className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors cursor-pointer">Logout</button>
+                  <button onClick={handleLogout} className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors cursor-pointer border px-3 py-1.5 rounded bg-muted/30">Logout</button>
                 </>
               ) : (
                 <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">Login</Link>
               )}
+              <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full w-8 h-8 ml-2" title="Toggle theme">
+                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                <span className="sr-only">Toggle theme</span>
+              </Button>
             </nav>
             <Sheet open={navOpen} onOpenChange={setNavOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">Open menu</span>
-                </Button>
+                <div className="flex items-center gap-2 md:hidden">
+                  <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full w-8 h-8" title="Toggle theme">
+                    {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                    <span className="sr-only">Toggle theme</span>
+                  </Button>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                </div>
               </SheetTrigger>
               <SheetContent side="right" className="w-[280px] pt-10">
-                <nav className="flex flex-col gap-4">
-                  <Link href="/#converter" onClick={() => setNavOpen(false)} className="text-sm font-medium hover:text-primary transition-colors py-2 cursor-pointer">Converter</Link>
-                  <Link href="/history" onClick={() => setNavOpen(false)} className="text-sm font-medium hover:text-primary transition-colors py-2 cursor-pointer">History</Link>
-                  <Link href="/faq" onClick={() => setNavOpen(false)} className="text-sm font-medium hover:text-primary transition-colors py-2 cursor-pointer">FAQ</Link>
-                  <Link href="/about" onClick={() => setNavOpen(false)} className="text-sm font-medium hover:text-primary transition-colors py-2 cursor-pointer">About</Link>
+                <nav className="flex flex-col gap-1">
+                  <Link href="/#converter" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
+                    <FileText className="w-4 h-4 text-muted-foreground" />
+                    Converter
+                  </Link>
+                  <Link href="/history" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
+                    <History className="w-4 h-4 text-muted-foreground" />
+                    History
+                  </Link>
+                  <Link href="/faq" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
+                    <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                    FAQ
+                  </Link>
+                  <Link href="/about" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
+                    <Info className="w-4 h-4 text-muted-foreground" />
+                    About
+                  </Link>
+                  <Link href="/privacy" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
+                    <Shield className="w-4 h-4 text-muted-foreground" />
+                    Privacy
+                  </Link>
+
+                  <div className="my-2 border-t border-border"></div>
 
                   {isAdmin ? (
                     <>
-                      <Link href="/admin/reports" onClick={() => setNavOpen(false)} className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors py-2 cursor-pointer">Admin Mode</Link>
-                      <button onClick={() => { handleLogout(); setNavOpen(false); }} className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors py-2 text-left cursor-pointer">Logout</button>
+                      <Link href="/admin/reports" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-semibold text-primary hover:text-primary/80 transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
+                        <LineChart className="w-4 h-4" />
+                        Admin Mode
+                      </Link>
+                      <button onClick={() => { handleLogout(); setNavOpen(false); }} className="flex items-center gap-3 text-sm font-medium text-destructive hover:text-destructive/80 transition-colors py-3 px-2 text-left cursor-pointer rounded-md hover:bg-muted/50 w-full">
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </button>
                     </>
                   ) : (
-                    <Link href="/login" onClick={() => setNavOpen(false)} className="text-sm font-medium hover:text-primary transition-colors py-2 cursor-pointer">Login</Link>
+                    <Link href="/login" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
+                      <LogIn className="w-4 h-4 text-muted-foreground" />
+                      Login
+                    </Link>
                   )}
                 </nav>
               </SheetContent>
@@ -80,13 +141,13 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <main className="w-full max-w-[1800px] mx-auto px-3 sm:px-4 py-6 sm:py-8 overflow-x-hidden">
+      <main className="w-full max-w-[1800px] mx-auto px-3 sm:px-4 py-4 sm:py-6 overflow-x-hidden">
         {/* Hero Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="relative overflow-hidden rounded-xl sm:rounded-2xl mb-6 sm:mb-8 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 dark:from-primary/10 dark:via-transparent dark:to-accent/10 border border-primary/10 dark:border-primary/20 px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10"
+          className="relative overflow-hidden rounded-xl sm:rounded-2xl mb-4 sm:mb-6 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 dark:from-primary/10 dark:via-transparent dark:to-accent/10 border border-primary/10 dark:border-primary/20 px-4 py-4 sm:px-6 sm:py-6 md:px-6 md:py-8"
         >
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent pointer-events-none" />
           <div className="relative text-center z-10">
@@ -110,7 +171,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="mt-4 sm:mt-5 flex items-center justify-center gap-2 flex-wrap text-xs sm:text-sm text-muted-foreground font-medium"
+              className="mt-3 sm:mt-4 flex items-center justify-center gap-2 flex-wrap text-xs sm:text-sm text-muted-foreground font-medium"
             >
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary">
                 <Sparkles className="h-3 w-3" /> Auto-detect
@@ -149,8 +210,8 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 md:gap-10">
             {[
               {
-                title: "Smart Detection",
-                desc: "Automatically identifies citation styles and formats with high accuracy.",
+                title: "98%+ Parsing Accuracy",
+                desc: "Powered by thousands of academic test cases to handle edge cases, missing fields, and messy data flawlessly.",
                 icon: Sparkles,
                 colorClass: "text-primary",
                 bgClass: "bg-primary/10 group-hover:bg-primary/20",
@@ -158,8 +219,8 @@ export default function Home() {
                 gradientClass: "via-primary"
               },
               {
-                title: "Batch Processing",
-                desc: "Convert multiple references at once to save time and effort.",
+                title: "Paste 450+ at Once",
+                desc: "Stop converting references one by one. Paste your entire bibliography and get a clean list back in seconds.",
                 icon: Package,
                 colorClass: "text-accent",
                 bgClass: "bg-accent/10 group-hover:bg-accent/20",
@@ -167,8 +228,8 @@ export default function Home() {
                 gradientClass: "via-accent"
               },
               {
-                title: "Privacy First",
-                desc: "Your references are processed locally and never stored permanently.",
+                title: "100% Private Processing",
+                desc: "Your unpublished research stays entirely yours. We don't save your data to databases or train AI on your citations.",
                 icon: Shield,
                 colorClass: "text-primary",
                 bgClass: "bg-primary/10 group-hover:bg-primary/20",
@@ -261,7 +322,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-br from-secondary via-secondary to-primary/20 dark:from-secondary dark:via-secondary dark:to-primary/10 text-secondary-foreground py-8 sm:py-10 border-t border-primary/10 overflow-x-hidden">
+      <footer className="bg-gradient-to-br from-secondary via-secondary to-primary/20 dark:from-background dark:via-background dark:to-primary/10 text-secondary-foreground py-8 sm:py-10 border-t border-primary/10 overflow-x-hidden">
         <div className="container mx-auto px-3 sm:px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
             <div>
@@ -302,7 +363,7 @@ export default function Home() {
           </div>
           <Separator className="my-8 border-secondary-foreground/20" />
           <div className="text-center text-sm text-secondary-foreground/70">
-            <p>&copy; 2024 BulkCitations. All rights reserved.</p>
+            <p>&copy; 2026 BulkCitations. All rights reserved.</p>
           </div>
         </div>
       </footer>

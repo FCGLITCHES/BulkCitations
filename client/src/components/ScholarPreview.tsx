@@ -3,11 +3,11 @@ import {
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
-} from "./ui/tooltip";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
-import { Badge } from "./ui/badge";
+} from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { Link, CheckCircle2, AlertTriangle, ExternalLink } from "lucide-react";
-import type { AuthorityData, ConfidenceResult, AuthorityStatus } from "../../../shared/schema";
+import type { AuthorityData, ConfidenceResult, AuthorityStatus } from "@shared/schema";
 import { Button } from "./ui/button";
 import { RefreshCw } from "lucide-react";
 import { useState, useRef, useCallback } from "react";

@@ -10,7 +10,7 @@ import { SAMPLE_MIXED_REFERENCES } from "@/lib/sampleReferences";
 import { apiRequest } from "@/lib/queryClient";
 import { ConversionRequest, ConversionResponse, INPUT_STYLES } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { stripLeadingNumbering } from "../../../shared/stripNumbering";
+import { stripLeadingNumbering } from "@shared/stripNumbering";
 
 interface ReferenceInputProps {
   onConversionResult: (response: ConversionResponse) => void;
@@ -61,12 +61,12 @@ export default function ReferenceInput({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const allowedTypes = ['text/plain'];
-    const allowedExtensions = ['.txt'];
+    const allowedTypes = ['text/plain', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const allowedExtensions = ['.txt', '.pdf', '.docx'];
     const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
 
     if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
-      onError("Please upload a text file (.txt)");
+      onError("Please upload a .txt, .pdf, or .docx file");
       return;
     }
 
@@ -91,15 +91,20 @@ export default function ReferenceInput({
         const response = await fetch('/api/parse-file', {
           method: 'POST',
           body: formData,
+          credentials: 'include',
         });
 
         if (!response.ok) {
-          throw new Error('Failed to parse file');
+          const errBody = await response.json().catch(() => ({}));
+          const msg = (errBody as { details?: string; error?: string }).details
+            || (errBody as { error?: string }).error
+            || response.statusText;
+          throw new Error(msg || 'Failed to parse file');
         }
 
-        const result = await response.json();
+        const result = await response.json() as { text?: string };
 
-        if (result.text && result.text.trim()) {
+        if (result.text != null && String(result.text).trim()) {
           setInputText(result.text);
           handleInputChange(result.text);
 
@@ -112,7 +117,7 @@ export default function ReferenceInput({
         }
       }
     } catch (error) {
-      onError("Failed to read file content");
+      onError(error instanceof Error ? error.message : "Failed to read file content");
     } finally {
       setIsFileUploading(false);
       // Reset the input value so the same file can be uploaded again
@@ -172,8 +177,9 @@ export default function ReferenceInput({
     if (initialCaptureText) handleInputChange(initialCaptureText);
   }, [initialCaptureText, handleInputChange]);
 
-  const handleConvert = (textOverride?: string) => {
-    const source = (textOverride ?? inputText).trim();
+  const handleConvert = (textOverride?: string | any) => {
+    const actualText = typeof textOverride === 'string' ? textOverride : inputText;
+    const source = actualText.trim();
     if (!source) {
       onError("Please enter some references to convert");
       return;
@@ -353,11 +359,11 @@ Or use numbered format:
           <input
             id="file-upload"
             type="file"
-            accept=".txt"
+            accept=".txt,.pdf,.docx"
             onChange={handleFileUpload}
             className="hidden"
           />
-          <p className="text-xs text-muted-foreground mt-2">Supports .txt files with references</p>
+          <p className="text-xs text-muted-foreground mt-2">Supports .txt, .pdf, and .docx files with references</p>
         </CardContent>
       </Card>
 
@@ -393,7 +399,7 @@ Or use numbered format:
         </Select>
 
         <Button
-          onClick={handleConvert}
+          onClick={() => handleConvert()}
           disabled={isProcessing || !inputText.trim()}
           className="w-full"
         >

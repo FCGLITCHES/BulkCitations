@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "./ui/card";
-import { Badge } from "./ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import ReferenceInput from "./reference-input";
 import ReferenceOutput from "./reference-output";
 import ProcessingStatus from "./processing-status";
 import ErrorToast from "./error-toast";
-import { ConvertedReference, ConversionResponse } from "../lib/types";
-import { apiRequest } from "../lib/queryClient";
-import { useToast } from "../hooks/use-toast";
+import { ConvertedReference, ConversionResponse } from "@/lib/types";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
 const CAPTURE_BATCH_KEY = "bulkcitations_capture_batch";

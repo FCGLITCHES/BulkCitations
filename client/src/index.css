@@ -29,31 +29,6 @@
   --gradient-end: hsl(160, 84%, 39%);
 }
 
-.dark {
-  --background: hsl(222, 47%, 11%);
-  --foreground: hsl(210, 40%, 98%);
-  --muted: hsl(217, 33%, 17%);
-  --muted-foreground: hsl(215, 20%, 65%);
-  --popover: hsl(222, 47%, 11%);
-  --popover-foreground: hsl(210, 40%, 98%);
-  --card: hsl(217, 33%, 14%);
-  --card-foreground: hsl(210, 40%, 98%);
-  --border: hsl(217, 33%, 17%);
-  --input: hsl(217, 33%, 17%);
-  --primary: hsl(160, 84%, 39%);
-  --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: hsl(217, 33%, 17%);
-  --secondary-foreground: hsl(210, 40%, 98%);
-  --accent: hsl(160, 84%, 39%);
-  --accent-foreground: hsl(0, 0%, 100%);
-  --destructive: hsl(0, 63%, 50%);
-  --destructive-foreground: hsl(210, 40%, 98%);
-  --ring: hsl(160, 84%, 39%);
-  --surface: hsl(217, 33%, 14%);
-  --gradient-start: hsl(222, 47%, 11%);
-  --gradient-mid: hsl(160, 100%, 25%);
-  --gradient-end: hsl(160, 84%, 39%);
-}
 
 @layer base {
   * {
