@@ -1672,7 +1672,7 @@ export class CitationParser {
     if (pages) parsed.pages = pages;
 
     const looksLikeVenue = (s: string) =>
-      /\b(?:Journal|Transactions|Proceedings|Conference|Symposium|Review|Letters|International|IEEE|ACM|Science|Nature|Communications|Bulletin|Magazine)\b/i.test(s) ||
+      /\b(?:Journal|Transactions|Proceedings|Conference|Symposium|Review|Letters|International|IEEE|ACM|Science|Nature|Communications|Bulletin|Magazine|Scientific\s+American|American)\b/i.test(s) ||
       /\b(?:vol\.?|no\.?|pp\.?)\s*\d/i.test(s);
 
     if (segments.length === 2) {
@@ -1696,17 +1696,23 @@ export class CitationParser {
     return parsed;
   }
 
-  /** Remove known publisher/place tokens that were mis-parsed as author names. */
+  /** Remove known publisher/place tokens and journal-name-as-author; move journal names to parsed.journal. */
   private filterPublisherFromAuthors(parsed: ParsedReference): void {
     const publisherLike = /\b(Springer|Elsevier|Wiley|Cambridge|Oxford|Cham|Heidelberg|Academic\s+Press|IEEE|ACM|pp?\.\s*\d)\b/i;
+    const journalLike = /^(Journal\s+of|International\s+Journal\s+of|.*\s+Journal\s+of)\s+.+$/i;
     if (parsed.authors?.length) {
-      parsed.authors = parsed.authors.filter((a) => {
+      const filtered: string[] = [];
+      for (const a of parsed.authors) {
         const t = a.trim();
-        if (publisherLike.test(t)) return false;
-        if (/^[A-Z]\.?\s*$/.test(t)) return false;
-        return true;
-      });
-      if (parsed.authors.length === 0) delete parsed.authors;
+        if (publisherLike.test(t) || /^[A-Z]\.?\s*$/.test(t)) continue;
+        if (journalLike.test(t) && !parsed.journal) {
+          parsed.journal = t;
+          continue;
+        }
+        filtered.push(a);
+      }
+      parsed.authors = filtered.length ? filtered : undefined;
+      if (parsed.authors?.length === 0) delete parsed.authors;
     }
   }
 

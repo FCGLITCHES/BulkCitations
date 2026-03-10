@@ -341,54 +341,96 @@ export function calculateCitationSimilarity(a: ParsedReference, b: ParsedReferen
  */
 export function clusterCitations(references: ConvertedReference[], threshold: number = 85): Cluster[] {
     const clusters: Cluster[] = [];
+    const workKeyMap = new Map<string, Cluster>(); // Pre-index for O(1) exact match
     let nextClusterId = 1;
+
+    // Pre-calculate normalized data for all references to avoid doing it in the N^2 loop
+    const refMetaData = references.map(ref => ({
+        id: ref.id,
+        normTitle: normalize(ref.parsedData?.title || ''),
+        authStr: authorString(ref.parsedData?.authors),
+        jourStr: normalize(expandJournal(ref.parsedData?.journal || ref.parsedData?.bookTitle || ref.parsedData?.conferenceTitle || ''))
+    }));
+    const metaById = new Map(refMetaData.map(m => [m.id, m]));
 
     for (const ref of references) {
         let placed = false;
+        const meta = metaById.get(ref.id)!;
 
-        // Check against existing clusters
-        for (const cluster of clusters) {
-            if (cluster.members.length >= 5) continue; // Max cluster size 5
-
-            // Compare against all members; use max similarity.
-            // This avoids representative drift when cluster[0] is noisy.
-            let bestSimilarity = 0;
-            let bestTitleSimilarity = 0;
-            let workKeyMatched = false;
-            for (const member of cluster.members) {
-                if (ref.workKey && member.workKey && ref.workKey === member.workKey) {
-                    bestSimilarity = 100;
-                    bestTitleSimilarity = 100;
-                    workKeyMatched = true;
-                    break;
-                }
-                const similarity = calculateCitationSimilarity(ref.parsedData, member.parsedData);
-                if (similarity > bestSimilarity) bestSimilarity = similarity;
-                const refTitle = normalize(ref.parsedData?.title || '');
-                const memberTitle = normalize(member.parsedData?.title || '');
-                if (refTitle && memberTitle) {
-                    const titleSimilarity = fuzzball.token_set_ratio(refTitle, memberTitle);
-                    if (titleSimilarity > bestTitleSimilarity) bestTitleSimilarity = titleSimilarity;
-                }
-            }
-
-            // False-positive guard: require strong title overlap unless exact workKey match.
-            if (bestSimilarity >= threshold && (workKeyMatched || bestTitleSimilarity >= 85)) {
+        // 1. FAST PATH: Exact workKey match (O(1))
+        if (ref.workKey && workKeyMap.has(ref.workKey)) {
+            const cluster = workKeyMap.get(ref.workKey)!;
+            if (cluster.members.length < 5) {
                 cluster.members.push(ref);
-                ref.clusterId = cluster.clusterId; // Tag the reference
+                ref.clusterId = cluster.clusterId;
                 placed = true;
-                break;
             }
         }
 
-        // If not placed in any cluster, create a new one
+        // 2. FUZZY PATH: Compare against existing clusters (O(C))
+        if (!placed) {
+            for (const cluster of clusters) {
+                if (cluster.members.length >= 5) continue;
+
+                let bestSimilarity = 0;
+                let bestTitleSimilarity = 0;
+                let workKeyMatched = false;
+
+                for (const member of cluster.members) {
+                    if (ref.workKey && member.workKey && ref.workKey === member.workKey) {
+                        bestSimilarity = 100;
+                        bestTitleSimilarity = 100;
+                        workKeyMatched = true;
+                        break;
+                    }
+
+                    // Calculate similarity using pre-normalized metadata
+                    const memberMeta = metaById.get(member.id)!;
+
+                    // Inline logic of calculateCitationSimilarity but using pre-cached values
+                    if (!meta.normTitle || !memberMeta.normTitle) continue;
+
+                    const titleSimilarity = fuzzball.token_set_ratio(meta.normTitle, memberMeta.normTitle);
+                    if (titleSimilarity > bestTitleSimilarity) bestTitleSimilarity = titleSimilarity;
+
+                    const authSim = (meta.authStr && memberMeta.authStr) ? fuzzball.token_set_ratio(meta.authStr, memberMeta.authStr) : 100;
+                    const jourSim = (meta.jourStr && memberMeta.jourStr) ? fuzzball.token_set_ratio(meta.jourStr, memberMeta.jourStr) : 100;
+
+                    let similarity = (titleSimilarity * 0.5) + (authSim * 0.3) + (jourSim * 0.2);
+
+                    // Year delta penalty
+                    if (ref.parsedData?.year && member.parsedData?.year && ref.parsedData.year !== member.parsedData.year) {
+                        const yA = parseInt(ref.parsedData.year, 10);
+                        const yB = parseInt(member.parsedData.year, 10);
+                        if (!isNaN(yA) && !isNaN(yB)) {
+                            similarity -= Math.min(Math.abs(yA - yB) * 5, 50);
+                        }
+                    }
+
+                    if (similarity > bestSimilarity) bestSimilarity = similarity;
+                }
+
+                if (bestSimilarity >= threshold && (workKeyMatched || bestTitleSimilarity >= 85)) {
+                    cluster.members.push(ref);
+                    ref.clusterId = cluster.clusterId;
+                    placed = true;
+                    // If we matched a cluster fuzzy but it has a workKey, index this ref's workKey too
+                    if (ref.workKey) workKeyMap.set(ref.workKey, cluster);
+                    break;
+                }
+            }
+        }
+
+        // 3. NEW CLUSTER PATH
         if (!placed) {
             const newClusterId = `C${nextClusterId++}`;
             ref.clusterId = newClusterId;
-            clusters.push({
+            const newCluster = {
                 clusterId: newClusterId,
                 members: [ref]
-            });
+            };
+            clusters.push(newCluster);
+            if (ref.workKey) workKeyMap.set(ref.workKey, newCluster);
         }
     }
 

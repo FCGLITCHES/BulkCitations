@@ -17,6 +17,7 @@ import { hasAuthorInitialsOnly } from "./utils/authorResolution";
 import { clusterCitations } from "../shared/clustering";
 import { computeWorkKey } from "./utils/workKey";
 import { toRawReferenceText } from "@shared/types/textBrands";
+import pLimit from "p-limit";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const citationParser = new CitationParser();
@@ -45,23 +46,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const convertedReferences: ConvertedReference[] = [];
       const errors: string[] = [];
 
-      // Pro extraction parameters
+      const limit = pLimit(5); // Process 5 citations at a time to avoid slamming SS API
       const enrichWithAuthority = validatedData.enrichWithAuthority;
 
-      for (let i = 0; i < references.length; i++) {
-        const rawRef = toRawReferenceText(references[i].trim());
-        if (!rawRef) continue;
+      const processTasks = references.map((inputRef, i) => limit(async () => {
+        const rawRef = toRawReferenceText(inputRef.trim());
+        if (!rawRef) return null;
         if (rawRef.length > MAX_REF_LENGTH) {
           errors.push(`Reference ${i + 1} exceeds ${MAX_REF_LENGTH} character limit — skipped for safety.`);
-          continue;
+          return null;
         }
 
         try {
           // Pre-normalize once so detect and parse see the same string
           const normalized = citationParser.preNormalize(rawRef);
-          if (!normalized) continue;
+          if (!normalized) return null;
 
-          // Detect style if auto-detection is requested; soft-fail with fallback instead of hard skip
+          // Detect style if auto-detection is requested
           let detectedStyle = inputStyle;
           let styleDetectionFailed = false;
           if (inputStyle === 'auto') {
@@ -69,43 +70,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (detected) {
               detectedStyle = detected;
             } else {
-              detectedStyle = 'apa'; // fallback to APA-ish stub
+              detectedStyle = 'apa';
               styleDetectionFailed = true;
               errors.push(`Could not detect citation style for reference ${i + 1} — converted as best-guess stub`);
             }
           }
 
-          // Parse the reference (same normalized text)
+          // Parse the reference
           const { parsed: parsedData, patternHits } = citationParser.parseReference(normalized, detectedStyle as any);
           (parsedData as any)._inputHadLocator = /\bpp?\.?\s*[A-Z]?\d|\bArt(?:icle)?\.?\s*(?:no\.?\s*)?[A-Z]?\d|\b\d+\(\d+\)\s*:\s*[A-Z]?\d|\bS\d+(?:[-–]S?\d+)?\b/i.test(normalized);
           (parsedData as any).rawInput = rawRef;
 
-          // Determine reference type
           const referenceType = citationParser.determineReferenceType(parsedData);
-
-          // Canonical work key for clustering, storage, and cache
           const workKey = computeWorkKey(parsedData);
+          let cslData = parsedReferenceToCSL(parsedData, referenceType, `ref${i}`);
 
-          // Build CSL-JSON from our parser output
-          let cslData = parsedReferenceToCSL(parsedData, referenceType, `ref${i} `);
-
-          // Format using CSL engine
-          // Pass includeDoi=false as we stripped DOI functionality
           const rawConvertedText = formatCSLData(cslData, outputStyleInternal as any, { includeDoi: false });
-
-          // Apply Strict Renderer post-processing (Harvard, APA, IEEE, Chicago, MLA, Vancouver)
           const convertedText = fixFormatting(outputStyleInternal, rawConvertedText, parsedData);
-          const assertionResult: AssertionResult = runAssertions(outputStyleInternal, convertedText, parsedData);
+          const assertionResult = runAssertions(outputStyleInternal, convertedText, parsedData);
+
           let warnings = assertionResult.warnings;
           const parseWarnings = (parsedData.parseWarnings ?? []).map((w: string) => `parse: ${w}`);
           if (parseWarnings.length > 0) warnings = [...parseWarnings, ...warnings];
-          const { assertionSummary, assertionHighlights } = assertionResult;
+
           if (styleDetectionFailed) {
             warnings = [`warning: Style could not be detected; output is a best-guess stub.`, ...warnings];
           }
 
-          // Confidence Grader execution
-          // Translate warnings into a 0-100 base rule score (deduct for missing fields or critical formatting breaks)
           let baseRulesScore = 100;
           for (let w of warnings) {
             if (w.startsWith('error:')) baseRulesScore -= 30;
@@ -113,7 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           baseRulesScore = Math.max(0, baseRulesScore);
 
-          let authorityData: import("@shared/schema").AuthorityData | undefined;
+          let authorityData: any;
           let authorityStatus: AuthorityStatus = 'none';
 
           if (!validatedData.isPro) {
@@ -126,48 +117,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (result.data) authorityData = result.data;
           }
 
-          // Generate Confidence Object
           const confidence = calculateConfidence(parsedData, baseRulesScore, authorityData);
 
-          // Store the conversion internally
-          const storedReference = await storage.createReference({
-            originalText: rawRef,
-            inputStyle: detectedStyle,
-            outputStyle,
-            parsedData,
-            convertedText,
-            referenceType,
-            confidenceScore: confidence.score,
-            workKey,
-            patternHits,
-            authorityStatus,
-          });
-
-          convertedReferences.push({
-            id: storedReference.id.toString(),
-            originalText: rawRef,
-            convertedText,
-            referenceType,
-            parsedData,
-            inputStyle: detectedStyle as any,
-            outputStyle,
-            warnings,
-            confidence,
-            authorityData,
-            patternHits,
-            authorityStatus,
-            workKey,
-            styleDetectionFailed,
-            assertionSummary,
-            assertionHighlights,
-            authorInitialsOnly: hasAuthorInitialsOnly(parsedData),
-          });
-
+          // Return prepared data for aggregation and batch storage
+          return {
+            refData: {
+              originalText: rawRef,
+              inputStyle: detectedStyle,
+              outputStyle,
+              parsedData,
+              convertedText,
+              referenceType,
+              confidenceScore: confidence.score,
+              workKey,
+              patternHits,
+              authorityStatus,
+            },
+            uiData: {
+              originalText: rawRef,
+              convertedText,
+              referenceType,
+              parsedData,
+              inputStyle: detectedStyle as any,
+              outputStyle,
+              warnings,
+              confidence,
+              authorityData,
+              patternHits,
+              authorityStatus,
+              workKey,
+              styleDetectionFailed,
+              assertionSummary: assertionResult.assertionSummary,
+              assertionHighlights: assertionResult.assertionHighlights,
+              authorInitialsOnly: hasAuthorInitialsOnly(parsedData),
+            }
+          };
         } catch (error) {
           console.error(`Error processing reference ${i + 1}: `, error);
-          errors.push(`Error processing reference ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'} `);
+          errors.push(`Error processing reference ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          return null;
         }
-      }
+      }));
+
+      // Await all parallel tasks
+      const results = await Promise.all(processTasks);
+      const validResults = results.filter((r): r is NonNullable<typeof r> => r !== null);
+
+      // Batch store references
+      const storedRefs = await storage.createReferences(validResults.map(r => r.refData));
+
+      // Map back to final ConvertedReference objects with correct IDs
+      const convertedReferences: ConvertedReference[] = validResults.map((r, idx) => ({
+        ...r.uiData,
+        id: storedRefs[idx].id.toString()
+      }));
 
       // Execute Clustering (Similarity Grouping) on the batched set
       const clusters = clusterCitations(convertedReferences, 80);

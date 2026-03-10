@@ -547,15 +547,26 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
             clean = clean.replace(/(?:[a-zA-Z\s]+,\s*[A-Z]{2}|[A-Z][a-z]+(?:[\s-][A-Z][a-z]+)*):\s+(?=[A-Z0-9])/g, '');
             // Preserve hyphenated acronyms, known terms, and labels (DOI, IIT, etc.) before initial expansion
             const apaPreserved = new Map<string, string>();
-            clean = clean.replace(/\b(DFT-D|ChIP-Seq|EM|RNA|DNA|PCR|MACS|ORTEP-III|DOI|IIT\s+Bombay|IIT|ACM|IEEE|UC|U\.\s*C\.)\b/g, (m) => {
+            clean = clean.replace(/\b(DFT-D|ChIP-Seq|EM|RNA|DNA|PCR|MACS|ORTEP-III|DOI|IIT\s+Bombay|IIT|ACM|IEEE|UC|U\.\s*C\.|PhD)\b/g, (m) => {
                 const t = `__APAPRES${apaPreserved.size}__`;
                 apaPreserved.set(t, m);
                 return t;
             });
-            // Normalize jammed initials in author names: "MAS" / "M.A.S" -> "M. A. S.", "VL" / "V.L" -> "V. L."
-            clean = clean.replace(/\b([A-Z])\.?([A-Z])\.?([A-Z])\.?\b/g, '$1. $2. $3.');
-            clean = clean.replace(/\b([A-Z])\.?([A-Z])\.?\b/g, '$1. $2.');
-            apaPreserved.forEach((orig, tok) => { clean = clean.replace(tok, orig); });
+            // Apply initial expansion ONLY to the first segment (author list, up to first ". ") so we don't abbreviate title/journal
+            const firstSegmentEnd = clean.indexOf('. ');
+            if (firstSegmentEnd !== -1) {
+                const firstSegment = clean.slice(0, firstSegmentEnd + 1);
+                const rest = clean.slice(firstSegmentEnd + 1);
+                let authorOnly = firstSegment;
+                authorOnly = authorOnly.replace(/\b([A-Z])\.?([A-Z])\.?([A-Z])\.?\b/g, '$1. $2. $3.');
+                authorOnly = authorOnly.replace(/\b([A-Z])\.?([A-Z])\.?\b/g, '$1. $2.');
+                apaPreserved.forEach((orig, tok) => { authorOnly = authorOnly.replace(tok, orig); });
+                clean = authorOnly + rest;
+            } else {
+                clean = clean.replace(/\b([A-Z])\.?([A-Z])\.?([A-Z])\.?\b/g, '$1. $2. $3.');
+                clean = clean.replace(/\b([A-Z])\.?([A-Z])\.?\b/g, '$1. $2.');
+                apaPreserved.forEach((orig, tok) => { clean = clean.replace(tok, orig); });
+            }
             // Remove stray "&" before initials in final author (e.g. "da Silva, & V.L." -> "da Silva, V.L.")
             clean = clean.replace(/,\s*&\s*([A-Z]\.)/g, ', $1');
             // Remove duplicate trailing " (Year)." when year already appears earlier in the citation
@@ -565,6 +576,16 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
               if (beforeTrailing.includes(`(${fields.year})`)) {
                 clean = (beforeTrailing.replace(/\s*\.?\s*$/, '') || beforeTrailing.trim()).replace(/\s*$/, '') + '.';
               }
+            }
+            // Remove duplicate trailing " (Year). TitleFragment" (repeated title at end)
+            const titleStr = (fields?.title ?? '').trim();
+            if (titleStr.length > 15 && fields?.year) {
+              const prefix = titleStr.substring(0, 30).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const dupTrailing = new RegExp(
+                `\\s+\\(${fields.year}\\)\\.?\\s+${prefix}[^.]*\\.?\\s*$`,
+                'i'
+              );
+              clean = clean.replace(dupTrailing, '.');
             }
             break;
 
