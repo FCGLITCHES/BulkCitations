@@ -84,6 +84,8 @@ export type AuthorityStatus =
   | "no_match"
   | "error";
 
+export type HealthState = "clean" | "review" | "action_needed";
+
 export interface ConvertedReference {
   id: string;
   originalText: string;
@@ -105,6 +107,8 @@ export interface ConvertedReference {
   assertionHighlights?: AssertionHighlight[];
   authorInitialsOnly?: boolean;
   authorsExpandedFromMetadata?: boolean;
+  healthState?: HealthState;
+  healthReasons?: string[];
 }
 
 export interface ConversionResponse {

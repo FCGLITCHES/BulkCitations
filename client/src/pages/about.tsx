@@ -5,7 +5,7 @@ import { Link } from "wouter";
 export default function About() {
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-surface shadow-sm border-b border-border overflow-x-hidden">
+      <header className="bg-background/90 backdrop-blur-lg shadow-sm border-b border-border overflow-x-hidden sticky top-0 z-50 transition-colors duration-300">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2 min-w-0">
             <div className="flex items-center space-x-3 mb-8">
@@ -15,7 +15,7 @@ export default function About() {
                 </div>
               </Link>
               <div>
-                <h1 className="text-xl font-semibold text-foreground">BulkCitations</h1>
+                <h1 className="text-xl font-semibold text-foreground">BulkReferences</h1>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider">About</p>
               </div>
             </div>
@@ -29,11 +29,11 @@ export default function About() {
       </header>
 
       <main className="container mx-auto px-3 sm:px-4 py-8 sm:py-12 max-w-2xl overflow-x-hidden">
-        <h2 className="text-2xl font-bold text-foreground mb-6">About BulkCitations</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-6">About BulkReferences</h2>
         <Card>
           <CardContent className="pt-6 space-y-4 text-muted-foreground">
             <p>
-              BulkCitations helps researchers and students convert references between academic citation styles. Paste mixed-format references from different sources, and get clean output in APA, MLA, Harvard, Chicago, IEEE, or Vancouver.
+              BulkReferences helps researchers and students convert references between academic citation styles. Paste mixed-format references from different sources, and get clean output in APA, MLA, Harvard, Chicago, IEEE, or Vancouver.
             </p>
             <p>
               <strong className="text-foreground">Features.</strong> Auto-detection of input style, duplicate clustering, per-citation warnings, batch summary, and export to TXT, PDF, BibTeX, and RIS.

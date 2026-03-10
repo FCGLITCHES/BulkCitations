@@ -30,6 +30,7 @@ function readCaptureBatch(): string {
 export default function CitationConverter() {
   const [convertedReferences, setConvertedReferences] = useState<ConvertedReference[]>([]);
   const [clusters, setClusters] = useState<ConversionResponse["clusters"]>(undefined);
+  const [clusterEnabled, setClusterEnabled] = useState(true);
   const [isPro, setIsPro] = useState(true); // Pro by default for development; wire to auth when ready
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState({ visible: false, title: "", message: "" });
@@ -197,7 +198,7 @@ export default function CitationConverter() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          <Card className="shadow-lg border-border/50 hover:shadow-xl transition-shadow duration-500 overflow-hidden bg-card h-full">
+          <Card className="shadow-lg border-border/50 hover:shadow-xl overflow-hidden bg-card h-full">
             <CardContent className="pt-6 sm:pt-8 px-4 sm:px-8">
               <div className="flex items-center justify-between mb-6 sm:mb-8 flex-wrap gap-3">
                 <h3 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Input References</h3>
@@ -216,6 +217,24 @@ export default function CitationConverter() {
                 onOutputStyleChange={handleOutputStyleChange}
                 initialCaptureText={initialCaptureText || undefined}
               />
+
+              <div className="mt-4 flex items-center justify-between">
+                <div className="text-xs sm:text-sm text-muted-foreground">
+                  <span className="font-semibold">Clustering</span>
+                  <span className="ml-1">
+                    {clusterEnabled
+                      ? "Similar references will be grouped together."
+                      : "Duplicates will be kept separate in the output."}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setClusterEnabled(prev => !prev)}
+                  className="text-xs sm:text-sm font-medium px-3 py-1.5 rounded-full border border-border hover:bg-muted transition-colors"
+                >
+                  {clusterEnabled ? "Disable clustering" : "Enable clustering"}
+                </button>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -227,18 +246,7 @@ export default function CitationConverter() {
           transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
           className="relative h-full"
         >
-          <AnimatePresence>
-            {convertedReferences.length === 0 && !isProcessing && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, scale: 1.02 }}
-                transition={{ duration: 0.4 }}
-                className="absolute inset-0 z-10 bg-background/50 rounded-xl flex items-center justify-center pointer-events-none"
-              />
-            )}
-          </AnimatePresence>
-          <Card className={`h-full shadow-lg border-border/50 transition-all duration-700 overflow-hidden ${convertedReferences.length > 0 ? 'bg-card ring-1 ring-accent/30 shadow-accent/5' : 'bg-card/60'}`}>
+          <Card className="shadow-lg border-border/50 hover:shadow-xl overflow-hidden bg-card h-full">
             <CardContent className="pt-6 sm:pt-8 px-4 sm:px-8">
               <div className="flex items-center justify-between mb-6 sm:mb-8 flex-wrap gap-3">
                 <h3 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Converted References</h3>
@@ -255,6 +263,7 @@ export default function CitationConverter() {
               <ReferenceOutput
                 convertedReferences={convertedReferences}
                 clusters={clusters}
+                enableClustering={clusterEnabled}
                 onError={handleError}
                 isPro={isPro}
                 onRecheck={handleRecheck}

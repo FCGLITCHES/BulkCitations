@@ -54,7 +54,7 @@ export default function Home() {
                 <Quote className="text-white text-lg" />
               </div>
               <div className="flex items-center gap-2 min-w-0">
-                <h1 className="text-base sm:text-lg font-extrabold text-foreground tracking-tight truncate">BulkCitations</h1>
+                <h1 className="text-base sm:text-lg font-extrabold text-foreground tracking-tight truncate">BulkReferences</h1>
                 <Badge variant="secondary" className="text-[10px] uppercase font-bold text-white bg-primary hover:bg-primary/90 hidden sm:inline-flex">Beta</Badge>
               </div>
             </div>
@@ -79,18 +79,18 @@ export default function Home() {
               </Button>
             </nav>
             <Sheet open={navOpen} onOpenChange={setNavOpen}>
-              <SheetTrigger asChild>
-                <div className="flex items-center gap-2 md:hidden">
-                  <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full w-8 h-8" title="Toggle theme">
-                    {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                    <span className="sr-only">Toggle theme</span>
-                  </Button>
+              <div className="flex items-center gap-2 md:hidden">
+                <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full w-8 h-8" title="Toggle theme">
+                  {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  <span className="sr-only">Toggle theme</span>
+                </Button>
+                <SheetTrigger asChild>
                   <Button variant="ghost" size="icon">
                     <Menu className="h-5 w-5" />
                     <span className="sr-only">Open menu</span>
                   </Button>
-                </div>
-              </SheetTrigger>
+                </SheetTrigger>
+              </div>
               <SheetContent side="right" className="w-[280px] pt-10">
                 <nav className="flex flex-col gap-1">
                   <Link href="/#converter" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
@@ -205,7 +205,7 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             className="text-2xl sm:text-3xl md:text-4xl font-bold text-center text-foreground mb-10 sm:mb-14 tracking-tight px-2"
           >
-            Why Choose BulkCitations?
+            Why Choose BulkReferences?
           </motion.h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 md:gap-10">
             {[
@@ -331,7 +331,7 @@ export default function Home() {
                   <Quote className="text-white" />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold">BulkCitations</span>
+                  <span className="font-bold">BulkReferences</span>
                   <Badge variant="secondary" className="text-[9px] px-1.5 py-0 uppercase font-bold text-white bg-primary hidden sm:inline-flex">Beta</Badge>
                 </div>
               </div>
@@ -363,7 +363,7 @@ export default function Home() {
           </div>
           <Separator className="my-8 border-secondary-foreground/20" />
           <div className="text-center text-sm text-secondary-foreground/70">
-            <p>&copy; 2026 BulkCitations. All rights reserved.</p>
+            <p>&copy; 2026 BulkReferences. All rights reserved.</p>
           </div>
         </div>
       </footer>

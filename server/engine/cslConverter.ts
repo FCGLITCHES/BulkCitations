@@ -323,9 +323,10 @@ export function parsedReferenceToCSL(
         csl.URL = parsed.url;
     }
 
-    // Publisher
-    if (parsed.publisher) {
-        csl.publisher = parsed.publisher;
+    // Publisher (thesis/report: use institution when publisher missing)
+    const publisher = parsed.publisher ?? ((type === 'thesis' || type === 'report') && parsed.institution ? parsed.institution : undefined);
+    if (publisher) {
+        csl.publisher = publisher;
     }
 
     // Place of publication

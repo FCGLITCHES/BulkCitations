@@ -187,8 +187,13 @@ export class CitationParser {
     s = s.replace(/<[^>]+>/g, ' ');
     // En-dash/em-dash → hyphen
     s = s.replace(/[\u2013\u2014]/g, '-');
-    // Normalize missing space in conference markers like "In2018 ..."
+    // Re-space camelCase fused names (e.g., "OliverH", "NiraJ.") before author parsing
+    // We look for a lowercase char followed by an uppercase char, but only if it's the start
+    // of an initial or abbreviation (end of word or followed by dot/comma/space) to avoid "McDonald"
+    s = s.replace(/([a-z])([A-Z])(?=[\s.,;]|$)/g, '$1 $2');
+    // Normalize missing space in conference markers
     s = s.replace(/\bIn(?=\d{4}\b)/g, 'In ');
+    s = s.replace(/\bIn(?=[A-Z][a-z])/g, 'In ');
     // Collapse whitespace
     s = s.replace(/\s+/g, ' ').trim();
     return s as PreNormalizedText;
@@ -264,6 +269,10 @@ export class CitationParser {
     if (/\d{4}\s*;\s*\??\s*:?/.test(trimmed) || /\d{4}\s*;\s*[^;]*$/.test(trimmed)) scores.vancouver += 60;
     // Compact-initial author (no comma before year) + semicolon: "Holland JH. Title. Publisher. 1992;"
     if (/^[A-Z][a-z]+\s+[A-Z]{1,3}\.\s+.+\.\s+.+\.\s+\d{4}\s*;/.test(scrubbedForDetection)) scores.vancouver += 8;
+    // Vancouver/NLM Style Compact Author List Detection: "Vaswani A, Shazeer N, Parmar N..."
+    // Surnames followed by 1-3 initials WITHOUT commas before the initials, joined by commas.
+    // Extremely strong signal that differs uniquely from APA ("Vaswani, A.,")
+    if (/^(?:[A-Z][a-z]+(?:-[A-Z][a-z]+)?\s+[A-Z]{1,3}(?:,\s*|$)){2,}/.test(scrubbedForDetection)) scores.vancouver += 20;
     // Vancouver removed DOI check
 
     // === APA: "Author, I. (Year)." or "Author, I., & Author, B. (Year)." ===
@@ -670,6 +679,26 @@ export class CitationParser {
       }
     }
 
+    // Chicago eBook Author token fix
+    // "Witten, Ian H. 1947-" where author absorbed the birth year from the library record
+    if (clean.authors?.length) {
+      for (let i = 0; i < clean.authors.length; i++) {
+        const authorStr = clean.authors[i];
+        let authorCleaned = authorStr.trim();
+        // Remove trailing commas/dates/years from author strings (e.g. ", 1947-" or ", 1955")
+        // Check if author string ends with a 4-digit year optionally followed by a hyphen or question mark
+        const trailingYearMatch = authorCleaned.match(/(?:,\s*|\s+)(\b(?:19|20)\d{2}\b)[-?]?\s*\.?$/);
+        if (trailingYearMatch) {
+          authorCleaned = authorCleaned.slice(0, trailingYearMatch.index).replace(/,\s*$/, '').trim();
+          clean.authors[i] = authorCleaned;
+          // Only pull to global year if year is missing
+          if (!clean.year) {
+            clean.year = trailingYearMatch[1];
+          }
+        }
+      }
+    }
+
     // Extract and strip "Vol. N, No. N:pages" from journal/publisher so CSL gets clean data; populate volume/issue/pages if missing
     const volNoPagesRe = /(?:[;,]?\s*)(Vol\.?\s*\d+)(?:,\s*No\.?\s*(\d+))?\s*:?\s*([\d\-–]+)\s*\.?\s*$/i;
     for (const field of ['journal', 'publisher', 'bookTitle'] as const) {
@@ -801,6 +830,15 @@ export class CitationParser {
       }
     }
 
+    // 4. Resolve fallback year to raw year search if available and required
+    if ((!clean.year || clean.year === 'n.d.') && rawText) {
+      // Look for a realistic 4-digit year in the original text since structured fields missed it.
+      const rawYearMatch = rawText.match(/\b((?:19|20)\d{2})\b/);
+      if (rawYearMatch) {
+        clean.year = rawYearMatch[1];
+      }
+    }
+
     return clean;
   }
 
@@ -911,8 +949,11 @@ export class CitationParser {
       const potentialTitle = parts.slice(0, i).join('. ');
       const potentialRemainder = parts.slice(i).join('. ');
       const firstSegment = parts[i].trim();
-      // Don't treat bare Roman numeral or "Vol." as start of journal — keep in title (e.g. "III. The role...", "A Laboratory Manual")
-      if (ROMAN.test(firstSegment)) continue;
+      const firstWord = firstSegment.split(/\s+/)[0];
+      const CONTINUATION = /^(I{1,3}|IV|VI{0,3}|IX|XI{0,3}|XIV|XV|Vol\.?|A|An|The|Part|Section|Series|And|Or|In|On|Of|For|With)$/i;
+      // Don't treat continuation words, roman numerals, or lowercase words as start of journal
+      // keep in title (e.g. "III. The role...", "A Laboratory Manual", "of exact exchange")
+      if (CONTINUATION.test(firstWord) || /^[a-z]/.test(firstWord)) continue;
       // Only treat segment i as journal-start when this segment itself contains ,\s*\d (not the whole remainder)
       if (/^[A-Z]/.test(potentialRemainder) && looksLikeJournal(potentialRemainder)) {
         const out = { title: potentialTitle, remainder: potentialRemainder };
@@ -1226,12 +1267,24 @@ export class CitationParser {
     // Strip "Available at:" and "(Accessed: ...)" before parsing
     cleanText = cleanText.replace(/\s*Available at:\s*/gi, ' ').replace(/\s*\(Accessed:[^)]+\)\s*/gi, ' ').replace(/\s{2,}/g, ' ').trim();
 
+    // INTERCEPT VOL/ISSUE/PAGES AT END BEFORE YEAR EXTRACTION
+    // Harvard pages are often 'pp.XXX-YYY'. Intercepting them immediately stops year-matching rules from misidentifying issue numbers.
+    const trailingLocator = cleanText.match(/(?:,\s*|\.\s*|\s+)(?:(?:vol\.?\s*)?(\d+)\s*\(\s*(\d+)\s*\)\s*[,:]?\s*(?:pp\.?\s*)?(\d+(?:[-–]\d+)?)|(?:vol\.?\s*)?(\d+)[,:]\s*(?:pp\.?\s*)?(\d+(?:[-–]\d+)?)|(?:pp\.?|p\.)\s*(\d+(?:[-–]\d+)?))\s*\.?\s*$/i);
+    let locatorStr = '';
+    if (trailingLocator) {
+      if (trailingLocator[1]) { parsed.volume = trailingLocator[1]; parsed.issue = trailingLocator[2]; parsed.pages = trailingLocator[3]; }
+      else if (trailingLocator[4]) { parsed.volume = trailingLocator[4]; parsed.pages = trailingLocator[5]; }
+      else if (trailingLocator[6]) { parsed.pages = trailingLocator[6]; }
+      locatorStr = trailingLocator[0];
+      cleanText = cleanText.substring(0, cleanText.length - locatorStr.length).trim();
+    }
+
     // Pattern 1: Author, I. (Year) 'Title'... or Author, I. (Year) Title...
     // Year must be (19|20)xx so issue numbers like 7553 are never captured as year.
     const harvardWithParens = cleanText.match(/^(.+?)\s*\(((19|20)\d{2}[a-z]?)(?:,\s*[^)]+)?\)\s*\.?\s*(.+)$/);
     if (harvardWithParens) {
       let authorStr = harvardWithParens[1].trim();
-      let remainder = harvardWithParens[4];
+      let remainder = harvardWithParens[4] + locatorStr;
 
       // Author/title boundary: "Author, \"Title\"" — split before quote so title is not parsed as author
       const authorQuotedTitle = authorStr.match(/^(.+?),\s*\\?["\u201C]([^"\\\u201D]+)[\"\u201D]\s*\.?\s*$/);
@@ -1244,7 +1297,7 @@ export class CitationParser {
       parsed.year = harvardWithParens[2];
 
       // Extract URL before parsing remainder
-      this.extractURL(cleanText, parsed);
+      this.extractURL(cleanText + locatorStr, parsed);
       if (parsed.url) {
         remainder = remainder.replace(parsed.url, '').trim();
       }
@@ -1275,7 +1328,7 @@ export class CitationParser {
       parsed.authors = this.parseAuthorList(harvardNoParens[1].replace(/,\s*$/, '').trim(), 'harvard');
       parsed.year = harvardNoParens[2];
 
-      const remainder = harvardNoParens[4];
+      const remainder = harvardNoParens[4] + locatorStr;
       const titleEnd = this.extractTitleAndRemainder(remainder);
       parsed.title = titleEnd.title;
 
@@ -1287,9 +1340,9 @@ export class CitationParser {
     }
 
     // Always extract DOI and URL
-    this.extractURL(cleanText, parsed);
+    this.extractURL(cleanText + locatorStr, parsed);
 
-    const generic = this.parseGeneric(cleanText);
+    const generic = this.parseGeneric(cleanText + locatorStr);
     if (DEBUG_STRESS) this.logHarvardTrace(generic);
     return generic;
   }
@@ -2074,6 +2127,12 @@ export class CitationParser {
     if (parsed.volume) score.journal += 2;
     if (parsed.issue) score.journal += 1;
     if (parsed.pages || (parsed as { startPage?: string }).startPage || parsed['article-number']) score.journal += 2;
+
+    // POSITIVE JOURNAL SIGNAL: Venue looks like journal and has volume/pages
+    if (!/proceedings|conference|symposium|workshop|press|publisher|springer|elsevier/i.test(venue)) {
+      if (venue && (parsed.volume || parsed.issue) && parsed.pages) score.journal += 10;
+    }
+
     if (/ieee\s+transactions/.test(combined) && (parsed.volume || parsed.issue || parsed.pages)) score.journal += 4;
 
     if (/proceedings|conference|symposium|workshop|in proc\b/.test(combined)) score.conference += 4;

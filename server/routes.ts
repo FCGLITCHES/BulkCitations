@@ -8,9 +8,9 @@ const pdfParse: (buffer: Buffer) => Promise<{ text: string }> =
 import { storage } from "./storage";
 import reportsRouter from "./routes/reports";
 import { conversionRequestSchema, normalizeCitationStyle, type ConversionResponse, type CitationStyle, type ConvertedReference, type AuthorityStatus } from "@shared/schema";
-import { CitationParser } from "./services/citationParser";
-import { formatCSLData, parsedReferenceToCSL, initCSLStyles } from "./services/cslConverter";
-import { fixFormatting, runAssertions, type AssertionResult } from "./services/strictRenderer";
+import { CitationParser } from "./engine/citationParser";
+import { formatCSLData, parsedReferenceToCSL, initCSLStyles } from "./engine/cslConverter";
+import { fixFormatting, runAssertions, type AssertionResult } from "./engine/strictRenderer";
 import { getAuthorityData } from "../shared/authorityLookup";
 import { calculateConfidence } from "../shared/confidence";
 import { hasAuthorInitialsOnly } from "./utils/authorResolution";

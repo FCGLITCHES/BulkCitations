@@ -44,7 +44,7 @@ export default function HistoryPage() {
 
     return (
         <div className="min-h-screen bg-background font-sans">
-            <header className="bg-white/80 dark:bg-card/80 backdrop-blur-lg shadow-sm border-b border-border overflow-x-hidden sticky top-0 z-50">
+            <header className="bg-background/90 backdrop-blur-lg shadow-sm border-b border-border overflow-x-hidden sticky top-0 z-50 transition-colors duration-300">
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center space-x-3">
@@ -54,7 +54,7 @@ export default function HistoryPage() {
                                 </div>
                             </Link>
                             <div>
-                                <h1 className="text-xl font-semibold text-foreground">BulkCitations</h1>
+                                <h1 className="text-xl font-semibold text-foreground">BulkReferences</h1>
                                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Conversion History</p>
                             </div>
                         </div>

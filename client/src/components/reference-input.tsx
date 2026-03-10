@@ -194,12 +194,18 @@ export default function ReferenceInput({
 
     for (const paragraph of paragraphs) {
       if (paragraph.trim()) {
-        // Clean up the paragraph and strip any leading numbering
-        const cleanRef = stripLeadingNumbering(
-          paragraph.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()
-        );
-        if (cleanRef) {
-          references.push(cleanRef);
+        const normalized = paragraph.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+        // Split on IEEE-style [N] in the middle (e.g. "... 86-94 [19] Alam T") so merged refs become separate
+        const parts = normalized.split(/\s+(\[\d+\])\s+/).filter(Boolean);
+        if (parts.length >= 3) {
+          references.push(stripLeadingNumbering(parts[0].trim()));
+          for (let i = 1; i < parts.length; i += 2) {
+            const refText = (parts[i] + ' ' + (parts[i + 1] ?? '')).trim();
+            if (refText) references.push(stripLeadingNumbering(refText));
+          }
+        } else {
+          const cleanRef = stripLeadingNumbering(normalized);
+          if (cleanRef) references.push(cleanRef);
         }
       }
     }
@@ -214,8 +220,9 @@ export default function ReferenceInput({
         const trimmedLine = line.trim();
         if (!trimmedLine) continue;
 
-        // Check if this line starts a new numbered reference (1., 2), 3 -, [4], etc.)
-        const numberedMatch = trimmedLine.match(/^\s*\[?\d+\]?\s*[.):\-–]\s*(.+)/);
+        // Check if this line starts a new numbered reference (1., 2), 3 -, [4], etc.) or IEEE-style [19] at start
+        const bracketNumMatch = trimmedLine.match(/^\s*\[\d+\]\s*(.+)/);
+        const numberedMatch = bracketNumMatch ?? trimmedLine.match(/^\s*\[?\d+\]?\s*[.):\-–]\s*(.+)/);
         if (numberedMatch) {
           // Save previous reference if exists
           if (currentRef.trim()) {

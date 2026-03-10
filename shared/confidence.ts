@@ -107,9 +107,10 @@ export function fieldMatchScore(parsed: ParsedReference, authority: AuthorityDat
 
 /**
  * Calculates the final ConfidenceResult.
- * Rules: (journal% * 0.5) + (fields% * 0.3) + (rules% * 0.2)
- * 
- * If no authority data is provided, it returns max 70% based purely on rulesScore.
+ *
+ * Authority should slightly adjust confidence (≈5–10%), not dominate it.
+ * We treat rulesScore as the primary signal and use authority as a small
+ * corrective factor on top.
  */
 export function calculateConfidence(
     parsed: ParsedReference,
@@ -124,11 +125,10 @@ export function calculateConfidence(
         finalRulesScore = Math.min(finalRulesScore, 75);
     }
 
-    // No authority: cap at 70% so "could not validate" is clearly below validated matches
+    // No authority: trust rulesScore directly (with a soft cap), since we cannot adjust with metadata.
     if (!authority) {
-        const cappedScore = Math.min(Math.round(finalRulesScore * 0.7), 70);
         return {
-            score: cappedScore,
+            score: Math.max(0, Math.min(95, Math.round(finalRulesScore))),
             breakdown: { rules: finalRulesScore },
             isSuspicious: false
         };
@@ -149,11 +149,13 @@ export function calculateConfidence(
     const jScore = journalMatchScore(parsed.journal, authority.journal);
     const fScore = fieldMatchScore(parsed, authority);
 
-    // Calculate blended formula
+    // Calculate blended formula:
+    // - rulesScore: 90% weight
+    // - authority-based similarity (journal/fields): 10% weight
+    const authorityComponent = Math.round((jScore * 0.5) + (fScore * 0.5));
     const finalScore = Math.round(
-        (jScore * 0.5) +
-        (fScore * 0.3) +
-        (finalRulesScore * 0.2)
+        (finalRulesScore * 0.9) +
+        (authorityComponent * 0.1)
     );
 
     return {

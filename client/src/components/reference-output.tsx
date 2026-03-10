@@ -26,9 +26,10 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ConvertedReference, Cluster, type AssertionHighlight } from "@/lib/types";
+import { ConvertedReference, Cluster, type AssertionHighlight, type HealthState } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { computeReferenceHealth } from "@/lib/referenceHealth";
 import jsPDF from 'jspdf';
 
 import { ScholarPreview } from "./ScholarPreview";
@@ -41,6 +42,7 @@ interface ReferenceOutputProps {
   isPro?: boolean;
   onRecheck?: (referenceId: string) => void;
   onResolveAuthors?: (refId: string, newAuthors: string[]) => Promise<void>;
+  enableClustering?: boolean;
 }
 
 const INPUT_STYLE_LABELS: Record<string, string> = {
@@ -171,6 +173,7 @@ function CitationRow({
   isFailed,
   userEditedText,
   onSaveEdit,
+  health,
 }: {
   refData: ConvertedReference;
   handleCopyReference: (id: string, text: string) => void;
@@ -185,6 +188,7 @@ function CitationRow({
   isFailed?: boolean;
   userEditedText?: string;
   onSaveEdit?: (id: string, newText: string) => void;
+  health?: { state: HealthState; reasons: string[] };
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState("");
@@ -203,10 +207,6 @@ function CitationRow({
   if (!refData.parsedData?.publisher && refData.referenceType === 'book') {
     rowWarnings.push("Incomplete: publisher missing");
   }
-  if (refData.authorInitialsOnly) {
-    rowWarnings.push("Author initials only — review suggested");
-  }
-
   const citationText = userEditedText ?? refData.convertedText;
   const isLongCitation = citationText.length > 150;
 
@@ -224,36 +224,9 @@ function CitationRow({
   const otherBadges = (
     <>
       {refData.referenceType && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="outline" className="text-xs cursor-help">
-                {getReferenceTypeLabel(refData.referenceType)}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs text-xs">
-              {refData.referenceType === "journal" && (
-                <p>Classified as a journal article based on title, year, and journal/volume/pages pattern.</p>
-              )}
-              {refData.referenceType === "conference" && (
-                <p>Classified as a conference proceeding because a conference container (e.g. &quot;In 2018 IEEE ...&quot;) was detected.</p>
-              )}
-              {refData.referenceType === "book" && (
-                <p>Classified as a book or monograph because no clear journal/conference container was found.</p>
-              )}
-              {refData.referenceType === "bookChapter" && (
-                <p>Classified as a book chapter due to an &quot;In:&quot; style container with editors or book title.</p>
-              )}
-              {(!refData.referenceType || refData.referenceType === "other") && (
-                <p>
-                  Parsed as <strong>Other</strong> because the parser could not confidently detect a journal,
-                  conference, or book container. If this is a journal article, make sure the input includes a
-                  clear journal or conference title and isn&apos;t truncated.
-                </p>
-              )}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Badge variant="outline" className="text-xs">
+          {getReferenceTypeLabel(refData.referenceType)}
+        </Badge>
       )}
 
       {showInputFormat && (
@@ -286,44 +259,63 @@ function CitationRow({
     </>
   );
 
-  const warningBadges = (
-    <>
-      {rowWarnings.length > 1 ? (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="destructive" className="text-xs cursor-help">
-                ⚠️ {rowWarnings.length} Warnings
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs text-xs space-y-1">
-              <ul className="list-disc pl-3">
-                {rowWarnings.map((w, i) => <li key={i}>{w}</li>)}
-              </ul>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      ) : rowWarnings.length === 1 ? (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant={rowWarnings[0].includes("initials") ? "secondary" : "destructive"} className="text-xs cursor-help">
-                {rowWarnings[0].includes("initials") ? "Author initials only" : `⚠️ ${rowWarnings[0]}`}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs text-xs">
-              {rowWarnings[0]}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      ) : null}
-    </>
-  );
+  const healthBadge = health ? (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge
+            variant={
+              health.state === "clean"
+                ? "outline"
+                : health.state === "review"
+                  ? "secondary"
+                  : "destructive"
+            }
+            className="text-xs cursor-help flex items-center gap-1"
+          >
+            {health.state === "clean" && <ShieldCheck className="w-3 h-3" />}
+            {health.state === "review" && <ClipboardList className="w-3 h-3" />}
+            {health.state === "action_needed" && <ShieldAlert className="w-3 h-3" />}
+            <span>
+              {health.state === "clean"
+                ? "Ready"
+                : health.state === "review"
+                  ? "Review"
+                  : "Needs fix"}
+            </span>
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs text-xs space-y-1">
+          <p className="font-semibold">
+            {health.state === "clean"
+              ? "Ready to submit."
+              : health.state === "review"
+                ? "Looks good overall; a quick review is suggested."
+                : "Needs attention before submission."}
+          </p>
+          {health.reasons.length > 0 && (
+            <ul className="list-disc pl-3 space-y-0.5">
+              {health.reasons.map((reason, idx) => (
+                <li key={idx}>{reason}</li>
+              ))}
+            </ul>
+          )}
+          {rowWarnings.length > 0 && (
+            <ul className="list-disc pl-3 space-y-0.5 mt-1">
+              {rowWarnings.map((w, i) => (
+                <li key={i}>{w}</li>
+              ))}
+            </ul>
+          )}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  ) : null;
 
   const citationBadges = (
     <>
+      {healthBadge}
       {otherBadges}
-      {warningBadges}
       {confidenceBadge}
     </>
   );
@@ -388,11 +380,7 @@ function CitationRow({
           </Collapsible>
 
           <div className="hidden sm:flex flex-col gap-3 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 min-w-0">
-              {otherBadges}
-              {confidenceBadge}
-              {warningBadges}
-            </div>
+            <div className="flex flex-wrap items-center gap-2 min-w-0">{citationBadges}</div>
 
             <div className="flex items-center gap-2 flex-shrink-0 w-full justify-end border-t border-muted/50 pt-2">
               <Button
@@ -437,24 +425,25 @@ function CitationRow({
           <div className="sm:hidden flex items-center gap-2 w-full justify-end border-t border-muted/50 pt-3 mt-1">
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => {
                 if (!isEditing) {
                   setEditText(citationText);
                   setIsEditing(true);
                 }
               }}
-              className="text-xs text-foreground hover:bg-muted hover:text-foreground"
+              className="text-muted-foreground hover:bg-muted hover:text-foreground h-8 w-8"
               title="Edit citation"
             >
-              <Edit className="h-3 w-3 mr-1" />
-              Edit
+              <Edit className="h-4 w-4" />
+              <span className="sr-only">Edit</span>
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => handleCopyReference(refData.id, userEditedText ?? refData.convertedText)}
-              className="text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="text-muted-foreground hover:bg-muted hover:text-foreground h-8 w-8"
+              title="Copy citation"
             >
               {copiedStates[refData.id] ? (
                 <Check className="h-3 w-3 text-primary" />
@@ -492,7 +481,14 @@ function CitationRow({
 // ---------------------------------------------------------------------------
 const SCROLL_THRESHOLD = 300; // same as ScrollToTop so bar shifts when button appears
 
-export default function ReferenceOutput({ convertedReferences, clusters = [], onError, isPro = false, onRecheck }: ReferenceOutputProps) {
+export default function ReferenceOutput({
+  convertedReferences,
+  clusters = [],
+  onError,
+  isPro = false,
+  onRecheck,
+  enableClustering = true,
+}: ReferenceOutputProps) {
   const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
   const [reportedIds, setReportedIds] = useState<Set<string>>(new Set());
   const [showDebug, setShowDebug] = useState(false);
@@ -501,7 +497,7 @@ export default function ReferenceOutput({ convertedReferences, clusters = [], on
   const [showNumbered, setShowNumbered] = useState(false);
   const [keepItalics, setKeepItalics] = useState(false);
   const [hasShownDoiToast, setHasShownDoiToast] = useState(false);
-  const [showFailedOnly, setShowFailedOnly] = useState(false);
+  const [healthFilter, setHealthFilter] = useState<HealthState | "all">("all");
   const [isScrollPastThreshold, setIsScrollPastThreshold] = useState(false);
 
   useEffect(() => {
@@ -513,52 +509,29 @@ export default function ReferenceOutput({ convertedReferences, clusters = [], on
   const [userEdits, setUserEdits] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
+  const effectiveClusters = enableClustering ? clusters : [];
+
+  const healthById = useMemo(() => {
+    const map: Record<string, { state: HealthState; reasons: string[] }> = {};
+    for (const ref of convertedReferences) {
+      const health = computeReferenceHealth(ref, effectiveClusters as Cluster[] | undefined);
+      map[ref.id] = health;
+    }
+    return map;
+  }, [convertedReferences, effectiveClusters]);
+
+  const visibleReferences = useMemo(
+    () =>
+      healthFilter === "all"
+        ? convertedReferences
+        : convertedReferences.filter((r) => healthById[r.id]?.state === healthFilter),
+    [healthFilter, convertedReferences, healthById]
+  );
+
   const handleSaveEdit = (id: string, newText: string) => {
     setUserEdits(prev => ({ ...prev, [id]: newText }));
     toast({ title: "Edits Saved", description: "Your changes have been saved locally." });
   };
-
-  const isFailedReference = (ref: ConvertedReference) => {
-    const hasCriticalWarning = (ref.warnings ?? []).some((w) => w.startsWith("error:"));
-    return ref.styleDetectionFailed || ref.referenceType === "other" || hasCriticalWarning;
-  };
-
-  const batchSummary = useMemo(() => {
-    const failed = convertedReferences.filter(isFailedReference).length;
-    const lowConfidence = convertedReferences.filter(
-      (r) => r.confidence?.isSuspicious || (r.confidence?.score ?? 100) < 60
-    ).length;
-    const duplicateCount =
-      clusters?.reduce((sum, c) => sum + Math.max(0, (c.members?.length ?? 0) - 1), 0) ?? 0;
-    const missingYear = convertedReferences.filter((r) => !r.parsedData?.year).length;
-    const missingVenue = convertedReferences.filter(
-      (r) =>
-        r.referenceType === "other" ||
-        ((r.referenceType === "journal" || r.referenceType === "conference") && !r.parsedData?.journal && !r.parsedData?.conferenceTitle)
-    ).length;
-    const needReview = convertedReferences.filter(
-      (r) =>
-        isFailedReference(r) ||
-        r.confidence?.isSuspicious ||
-        (r.confidence?.score ?? 100) < 70
-    ).length;
-
-    return {
-      total: convertedReferences.length,
-      failed,
-      successful: convertedReferences.length - failed,
-      lowConfidence,
-      duplicateCount,
-      missingYear,
-      missingVenue,
-      needReview,
-    };
-  }, [convertedReferences, clusters]);
-
-  const visibleReferences = useMemo(
-    () => (showFailedOnly ? convertedReferences.filter(isFailedReference) : convertedReferences),
-    [showFailedOnly, convertedReferences]
-  );
 
   // Scan input specifically for DOI stripping toast warning
   // To avoid blasting the user, we only show it once per batch.
@@ -769,23 +742,31 @@ export default function ReferenceOutput({ convertedReferences, clusters = [], on
 
   const healthStats = useMemo(() => {
     const total = convertedReferences.length;
-    const failed = convertedReferences.filter(isFailedReference).length;
+    let clean = 0;
+    let review = 0;
+    let actionNeeded = 0;
 
-    const needsReview = convertedReferences.filter(
-      (r) => !isFailedReference(r) && (
-        r.confidence?.isSuspicious ||
-        (r.confidence?.score ?? 100) < 70 ||
-        !r.parsedData?.year ||
-        (!r.parsedData?.journal && !r.parsedData?.conferenceTitle && (r.referenceType === "journal" || r.referenceType === "conference")) ||
-        r.authorInitialsOnly
-      )
-    ).length;
+    for (const ref of convertedReferences) {
+      const health = healthById[ref.id];
+      if (!health) continue;
+      if (health.state === "clean") clean += 1;
+      else if (health.state === "review") review += 1;
+      else if (health.state === "action_needed") actionNeeded += 1;
+    }
 
-    const duplicates = clusters?.reduce((sum, c) => sum + Math.max(0, (c.members?.length ?? 0) - 1), 0) ?? 0;
-    const clean = Math.max(0, total - failed - needsReview - duplicates);
+    const duplicates =
+      effectiveClusters?.reduce((sum, c) => sum + Math.max(0, (c.members?.length ?? 0) - 1), 0) ??
+      0;
 
-    return { total, clean, needsReview, duplicates, failed };
-  }, [convertedReferences, clusters]);
+    return { total, clean, review, actionNeeded, duplicates };
+  }, [convertedReferences, effectiveClusters, healthById]);
+
+  useEffect(() => {
+    if (!healthStats.total) return;
+    // Lightweight instrumentation hook for future tuning of thresholds.
+    // eslint-disable-next-line no-console
+    console.debug("referenceHealthDistribution", healthStats);
+  }, [healthStats]);
 
   if (convertedReferences.length === 0) {
     return (
@@ -800,9 +781,8 @@ export default function ReferenceOutput({ convertedReferences, clusters = [], on
   }
 
   const cleanPct = healthStats.total ? (healthStats.clean / healthStats.total) * 100 : 0;
-  const reviewPct = healthStats.total ? (healthStats.needsReview / healthStats.total) * 100 : 0;
-  const dupPct = healthStats.total ? (healthStats.duplicates / healthStats.total) * 100 : 0;
-  const failPct = healthStats.total ? (healthStats.failed / healthStats.total) * 100 : 0;
+  const reviewPct = healthStats.total ? (healthStats.review / healthStats.total) * 100 : 0;
+  const actionPct = healthStats.total ? (healthStats.actionNeeded / healthStats.total) * 100 : 0;
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -811,52 +791,76 @@ export default function ReferenceOutput({ convertedReferences, clusters = [], on
         <div className="p-3 sm:p-4 flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-semibold text-foreground">Reference Health</h4>
-            <span className="text-xs font-medium text-muted-foreground">{healthStats.total} total</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              {healthStats.total} total
+            </span>
           </div>
 
           <div className="h-2 w-full flex rounded-full overflow-hidden flex-nowrap bg-muted">
             {cleanPct > 0 && <div style={{ width: `${cleanPct}%` }} className="bg-emerald-500" />}
             {reviewPct > 0 && <div style={{ width: `${reviewPct}%` }} className="bg-amber-400" />}
-            {dupPct > 0 && <div style={{ width: `${dupPct}%` }} className="bg-blue-400" />}
-            {failPct > 0 && <div style={{ width: `${failPct}%` }} className="bg-red-500" />}
+            {actionPct > 0 && <div style={{ width: `${actionPct}%` }} className="bg-red-500" />}
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs mt-1">
-            {[
-              healthStats.clean > 0 && (
-                <div key="clean" className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span><strong className="font-bold">{healthStats.clean}</strong> clean</span>
-                </div>
-              ),
-              healthStats.needsReview > 0 && (
-                <div key="review" className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
-                  <div className="w-2 h-2 rounded-full bg-amber-400" />
-                  <span><strong className="font-bold">{healthStats.needsReview}</strong> review</span>
-                </div>
-              ),
-              healthStats.duplicates > 0 && (
-                <div key="duplicate" className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400">
-                  <div className="w-2 h-2 rounded-full bg-blue-400" />
-                  <span><strong className="font-bold">{healthStats.duplicates}</strong> duplicate</span>
-                </div>
-              ),
-              healthStats.failed > 0 && (
-                <div
-                  key="failed"
-                  className={`flex items-center gap-1.5 cursor-pointer hover:underline transition-colors ${showFailedOnly ? 'text-foreground font-bold' : 'text-red-700 dark:text-red-400'}`}
-                  onClick={() => setShowFailedOnly(prev => !prev)}
-                >
-                  <div className="w-2 h-2 rounded-full bg-red-500" />
-                  <span><strong className="font-bold">{healthStats.failed}</strong> failed {showFailedOnly ? "(Showing only failed)" : ""}</span>
-                </div>
-              )
-            ].filter(Boolean).map((item, index, arr) => (
-              <React.Fragment key={index}>
-                {item}
-                {index < arr.length - 1 && <span className="text-muted-foreground/40 font-bold px-1">&middot;</span>}
-              </React.Fragment>
-            ))}
+          <div className="flex flex-col gap-1 mt-1 text-[13px] text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                className={`flex items-center gap-1.5 underline-offset-2 ${healthFilter === "clean"
+                  ? "font-bold text-foreground underline"
+                  : "font-bold text-emerald-700 dark:text-emerald-400 hover:underline"
+                  }`}
+                onClick={() =>
+                  setHealthFilter(prev => (prev === "clean" ? "all" : "clean"))
+                }
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>
+                  {healthStats.clean} ready
+                </span>
+              </button>
+              <span className="text-muted-foreground/40 font-bold">&middot;</span>
+              <button
+                type="button"
+                className={`flex items-center gap-1.5 underline-offset-2 ${healthFilter === "review"
+                  ? "font-bold text-foreground underline"
+                  : "font-bold text-amber-700 dark:text-amber-400 hover:underline"
+                  }`}
+                onClick={() =>
+                  setHealthFilter(prev => (prev === "review" ? "all" : "review"))
+                }
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+                <span>
+                  {healthStats.review} worth reviewing
+                </span>
+              </button>
+              <span className="text-muted-foreground/40 font-bold">&middot;</span>
+              <button
+                type="button"
+                className={`flex items-center gap-1.5 underline-offset-2 ${healthFilter === "action_needed"
+                  ? "font-bold text-foreground underline"
+                  : "font-bold text-red-700 dark:text-red-400 hover:underline"
+                  }`}
+                onClick={() =>
+                  setHealthFilter(prev =>
+                    prev === "action_needed" ? "all" : "action_needed"
+                  )
+                }
+              >
+                <span className="w-2 h-2 rounded-full bg-red-500" />
+                <span>
+                  {healthStats.actionNeeded} action needed
+                  {healthFilter === "action_needed" ? " (showing only these)" : ""}
+                </span>
+              </button>
+            </div>
+            {healthStats.duplicates > 0 && (
+              <div className="text-[11px] text-muted-foreground">
+                Includes {healthStats.duplicates} likely duplicate
+                {healthStats.duplicates === 1 ? "" : "s"}.
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -886,10 +890,13 @@ export default function ReferenceOutput({ convertedReferences, clusters = [], on
       {/* Output Display */}
       <div className="bg-muted/50 rounded-lg p-3 sm:p-4 min-h-[200px] overflow-x-auto">
         {/* Render Clusters First */}
-        {clusters && clusters.length > 0 && clusters.map(cluster => {
+        {effectiveClusters && effectiveClusters.length > 0 && effectiveClusters.map(cluster => {
           const clusterMembers = cluster.members as ConvertedReference[];
-          const filteredMembers = showFailedOnly ? clusterMembers.filter(isFailedReference) : clusterMembers;
-          if (showFailedOnly && filteredMembers.length === 0) return null;
+          const filteredMembers =
+            healthFilter === "all"
+              ? clusterMembers
+              : clusterMembers.filter((m) => healthById[m.id]?.state === healthFilter);
+          if (filteredMembers.length === 0) return null;
 
           const mainRef =
             filteredMembers.find((m: ConvertedReference) => m.id === cluster.bestMemberId) ||
@@ -914,9 +921,10 @@ export default function ReferenceOutput({ convertedReferences, clusters = [], on
                 showInputFormat={showInputFormat}
                 reportedIds={reportedIds}
                 onReported={(id) => setReportedIds((prev) => new Set(prev).add(id))}
-                isFailed={isFailedReference(mainRef)}
+                isFailed={healthById[mainRef.id]?.state === "action_needed"}
                 userEditedText={userEdits[mainRef.id]}
                 onSaveEdit={handleSaveEdit}
+                health={healthById[mainRef.id]}
               />
 
               {showDebug && (cluster.warnings?.length || cluster.winnerDiagnostics) && (
@@ -979,9 +987,10 @@ export default function ReferenceOutput({ convertedReferences, clusters = [], on
                         showInputFormat={showInputFormat}
                         reportedIds={reportedIds}
                         onReported={(id) => setReportedIds((prev) => new Set(prev).add(id))}
-                        isFailed={isFailedReference(dup)}
+                        isFailed={healthById[dup.id]?.state === "action_needed"}
                         userEditedText={userEdits[dup.id]}
                         onSaveEdit={handleSaveEdit}
+                        health={healthById[dup.id]}
                       />
                     ))}
                   </CollapsibleContent>
@@ -993,7 +1002,10 @@ export default function ReferenceOutput({ convertedReferences, clusters = [], on
 
         {/* Render Independent References (not in any cluster) */}
         {visibleReferences
-          .filter(ref => !ref.clusterId || !clusters?.some(c => c.clusterId === ref.clusterId))
+          .filter(
+            ref =>
+              !ref.clusterId || !effectiveClusters?.some(c => c.clusterId === ref.clusterId)
+          )
           .map((ref) => (
             <CitationRow
               key={ref.id}
@@ -1007,9 +1019,10 @@ export default function ReferenceOutput({ convertedReferences, clusters = [], on
               showInputFormat={showInputFormat}
               reportedIds={reportedIds}
               onReported={(id) => setReportedIds((prev) => new Set(prev).add(id))}
-              isFailed={isFailedReference(ref)}
+              isFailed={healthById[ref.id]?.state === "action_needed"}
               userEditedText={userEdits[ref.id]}
               onSaveEdit={handleSaveEdit}
+              health={healthById[ref.id]}
             />
           ))}
       </div>
@@ -1047,16 +1060,16 @@ export default function ReferenceOutput({ convertedReferences, clusters = [], on
           </div>
         </div>
 
-        {/* Copy All + Download row — fixed on mobile/tablet up to md; same width, centered then shift left when scroll-to-top shows */}
+        {/* Copy All + Download row */}
         <div
-          className={`fixed md:relative bottom-4 md:bottom-auto z-40 md:z-auto bg-card/95 md:bg-transparent backdrop-blur-md md:backdrop-blur-none p-3 md:p-0 rounded-xl md:rounded-none shadow-2xl md:shadow-none border border-border md:border-0 flex flex-row md:justify-center gap-3 max-w-[calc(100vw-4.5rem)] md:max-w-none
-            ${isScrollPastThreshold ? "left-4 right-14 md:left-auto md:right-auto" : "left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0"}
+          className={`fixed md:relative bottom-4 md:bottom-auto z-40 md:z-auto bg-card/95 md:bg-transparent backdrop-blur-md md:backdrop-blur-none p-3 md:p-0 rounded-xl md:rounded-none shadow-2xl md:shadow-none border border-border md:border-0 flex flex-row md:justify-center gap-2 sm:max-w-[calc(100vw-4.5rem)] md:max-w-none
+            ${isScrollPastThreshold ? "left-4 right-[4.5rem] sm:right-[5.5rem] md:left-auto md:right-auto w-auto" : "left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 w-[calc(100vw-3rem)] sm:w-auto"}
           `}
         >
           <Button
             onClick={handleCopyAll}
             variant="default"
-            className="flex-1 text-sm md:text-base whitespace-nowrap"
+            className="flex-1 sm:w-auto h-11 text-sm md:text-base whitespace-nowrap"
             disabled={allCopied}
           >
             {allCopied ? (
@@ -1074,9 +1087,10 @@ export default function ReferenceOutput({ convertedReferences, clusters = [], on
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex-1 md:w-auto md:flex-none flex items-center justify-center gap-2">
+              <Button variant="outline" className="flex-1 sm:w-auto md:flex-none flex items-center justify-center gap-2 h-11 text-sm md:text-base">
                 <Download className="h-4 w-4" />
-                Download
+                <span className="hidden sm:inline">Download</span>
+                <span className="sm:hidden">Save</span>
                 <ChevronDown className="h-4 w-4 ml-1" />
               </Button>
             </DropdownMenuTrigger>

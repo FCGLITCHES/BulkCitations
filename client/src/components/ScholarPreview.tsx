@@ -49,7 +49,11 @@ export function ScholarPreview({ confidence, authorityData, authorityStatus, isP
         );
     }
 
-    // Planned bands: >=95 Authority Validated, 80-94 Partial match, <80 Needs review
+    // Bands tuned to keep authority as a light, reassuring signal:
+    // - <50 or suspicious: Needs review (red)
+    // - 90+: Authority validated
+    // - 70–89: High confidence
+    // - 50–69: Worth reviewing
     let badgeVariant: "default" | "secondary" | "destructive" | "outline" = "outline";
     let icon = null;
     let bandLabel = "";
@@ -58,16 +62,16 @@ export function ScholarPreview({ confidence, authorityData, authorityStatus, isP
         badgeVariant = "destructive";
         icon = <AlertTriangle className="w-3 h-3 mr-1" />;
         bandLabel = "Needs review";
-    } else if (confidence.score >= 95) {
+    } else if (confidence.score >= 90) {
         badgeVariant = "default";
         icon = <CheckCircle2 className="w-3 h-3 mr-1" />;
         bandLabel = "Authority Validated";
-    } else if (confidence.score >= 80) {
+    } else if (confidence.score >= 70) {
         badgeVariant = "secondary";
-        bandLabel = "Partial match";
+        bandLabel = "High confidence";
     } else {
         badgeVariant = "secondary";
-        bandLabel = "Needs review";
+        bandLabel = "Worth reviewing";
     }
 
     const statusLabel = authorityStatus ? authorityStatusLabel(authorityStatus) : "";
@@ -99,6 +103,14 @@ export function ScholarPreview({ confidence, authorityData, authorityStatus, isP
                 <span>Parsing Rules:</span>
                 <span>{confidence.breakdown.rules}/100</span>
             </div>
+
+            {/* Explain “not 100%” only for high scores that are capped by lack of external check. */}
+            {!authorityData && confidence.score >= 95 && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                    This score is slightly below 100% because there was no external metadata check;
+                    it reflects formatting and parsing rules only.
+                </p>
+            )}
 
             {authorityData && (
                 <>

@@ -5,7 +5,7 @@ import { Link } from "wouter";
 export default function Privacy() {
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-surface shadow-sm border-b border-border overflow-x-hidden">
+      <header className="bg-background/90 backdrop-blur-lg shadow-sm border-b border-border overflow-x-hidden sticky top-0 z-50 transition-colors duration-300">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2 min-w-0">
             <div className="flex items-center space-x-3">
@@ -15,7 +15,7 @@ export default function Privacy() {
                 </div>
               </Link>
               <div>
-                <h1 className="text-xl font-semibold text-foreground">BulkCitations</h1>
+                <h1 className="text-xl font-semibold text-foreground">BulkReferences</h1>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Privacy Policy</p>
               </div>
             </div>

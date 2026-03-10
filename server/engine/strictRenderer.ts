@@ -545,9 +545,9 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
             // Strip publisher location (APA 7 drops publisher location)
             // e.g. "New York, NY: Springer." -> "Springer."
             clean = clean.replace(/(?:[a-zA-Z\s]+,\s*[A-Z]{2}|[A-Z][a-z]+(?:[\s-][A-Z][a-z]+)*):\s+(?=[A-Z0-9])/g, '');
-            // Preserve hyphenated acronyms (DFT-D) and known terms (EM Algorithm) before initial expansion
+            // Preserve hyphenated acronyms, known terms, and labels (DOI, IIT, etc.) before initial expansion
             const apaPreserved = new Map<string, string>();
-            clean = clean.replace(/\b(DFT-D|ChIP-Seq|EM|RNA|DNA|PCR|MACS|ORTEP-III)\b/g, (m) => {
+            clean = clean.replace(/\b(DFT-D|ChIP-Seq|EM|RNA|DNA|PCR|MACS|ORTEP-III|DOI|IIT\s+Bombay|IIT|ACM|IEEE|UC|U\.\s*C\.)\b/g, (m) => {
                 const t = `__APAPRES${apaPreserved.size}__`;
                 apaPreserved.set(t, m);
                 return t;
@@ -558,6 +558,14 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
             apaPreserved.forEach((orig, tok) => { clean = clean.replace(tok, orig); });
             // Remove stray "&" before initials in final author (e.g. "da Silva, & V.L." -> "da Silva, V.L.")
             clean = clean.replace(/,\s*&\s*([A-Z]\.)/g, ', $1');
+            // Remove duplicate trailing " (Year)." when year already appears earlier in the citation
+            const trailingYearMatch = clean.match(/\s+\((?:19|20)\d{2}|n\.d\.\)\.?\s*$/i);
+            if (trailingYearMatch && fields?.year) {
+              const beforeTrailing = clean.slice(0, -trailingYearMatch[0].length);
+              if (beforeTrailing.includes(`(${fields.year})`)) {
+                clean = (beforeTrailing.replace(/\s*\.?\s*$/, '') || beforeTrailing.trim()).replace(/\s*$/, '') + '.';
+              }
+            }
             break;
 
         case 'harvard-ctr':
