@@ -15,9 +15,9 @@ export async function sendContactNotification(data: {
     const apiKey = process.env.RESEND_API_KEY;
     const toEmail = process.env.CONTACT_EMAIL_TO || STATIC_TO_EMAIL;
 
-    // Fallback 'from' email to onboarding@resend.dev if domain not verified yet.
-    // Professional 'from' requires domain verification in Resend dashboard.
-    const fromEmail = process.env.CONTACT_EMAIL_FROM || "onboarding@resend.dev";
+    // Fallback 'from' email — requires domain verification in Resend dashboard.
+    // User verified domain: bulkreferences.com
+    const fromEmail = process.env.CONTACT_EMAIL_FROM || "Citing <support@bulkreferences.com>"; 
 
     if (!apiKey) {
         console.warn("[email] RESEND_API_KEY is missing. Add it to Vercel/Environment variables.");
