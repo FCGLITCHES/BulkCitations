@@ -20,16 +20,13 @@ export async function sendContactNotification(data: {
     const fromEmail = process.env.CONTACT_EMAIL_FROM || "Citing <support@bulkreferences.com>"; 
 
     if (!apiKey) {
-        console.error("[email] CRITICAL: RESEND_API_KEY is missing from environment. Double check Vercel settings.");
+        console.warn("[email] RESEND_API_KEY is missing. Add it to Vercel/Environment variables.");
         return { success: false, error: "API key missing" };
     }
 
     try {
         const resend = new Resend(apiKey);
-        console.log(`[email] DEBUG: Starting send process...`);
-        console.log(`[email] From: ${fromEmail}`);
-        console.log(`[email] To: ${toEmail}`);
-        console.log(`[email] Subject: [Citing Contact] ${data.subject}`);
+        console.log(`[email] Attempting to send from ${fromEmail} to ${toEmail}...`);
 
         const emailResult = await resend.emails.send({
             from: fromEmail,
@@ -51,18 +48,15 @@ export async function sendContactNotification(data: {
         });
 
         if (emailResult.error) {
-            console.error("[email] Resend API rejected the request:");
-            console.error(`  - Name: ${emailResult.error.name}`);
-            console.error(`  - Message: ${emailResult.error.message}`);
-            // This is the most important part for DNS/Verification issues
-            console.error(`  - Full Error Trace: ${JSON.stringify(emailResult.error)}`); 
+            console.error("[email] Resend API error:", emailResult.error.message || String(emailResult.error));
+            console.error("[email] Full error details:", JSON.stringify(emailResult.error));
             return { success: false, error: emailResult.error.message };
         }
 
-        console.log(`[email] SUCCESS! Notification ID: ${emailResult.data?.id}`);
+        console.log(`[email] Notification successfully sent. ID: ${emailResult.data?.id}`);
         return { success: true };
     } catch (err) {
-        console.error("[email] SYSTEM EXCEPTION during send (Networking/Runtime):", err instanceof Error ? err.message : String(err));
+        console.error("[email] Exception during email send:", err instanceof Error ? err.message : String(err));
         return { success: false, error: err instanceof Error ? err.message : "Internal error" };
     }
 }

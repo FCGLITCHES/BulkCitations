@@ -275,17 +275,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { name, email, subject, message } = contactRequestSchema.parse(req.body);
 
-      // In a real production app, this would use a mail service (SendGrid, Postmark)
-      // For now, we log it and return success as requested.
       console.log(`[ContactForm] New message from ${name} (${email}) - [${subject}]`);
       console.log(`Message: ${message}`);
 
-      // We MUST await this on Vercel/serverless environments, 
-      // otherwise the function may terminate before the email is sent.
-      try {
-        await sendContactNotification({ name, email, subject, message });
-      } catch (err) {
-        console.error('[routes] Notification error:', err instanceof Error ? err.message : String(err));
+      const notificationResult = await sendContactNotification({ name, email, subject, message });
+
+      if (!notificationResult.success) {
+        console.error("[routes] Contact notification failed:", notificationResult.error ?? "Unknown email error");
+        return res.status(502).json({
+          message: "Message could not be delivered",
+          error: notificationResult.error ?? "Email provider rejected the request",
+        });
       }
 
       res.json({ success: true, message: "Your message has been received." });
