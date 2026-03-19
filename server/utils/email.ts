@@ -28,90 +28,114 @@ function formatMessage(message: string) {
     return escapeHtml(message).replace(/\r?\n/g, "<br />");
 }
 
-function buildInfoCard(label: string, value: string, accent = false) {
-    const border = accent ? "#d1fae5" : "#e2e8f0";
-    const background = accent
-        ? "linear-gradient(180deg,rgba(16,185,129,0.10) 0%,rgba(255,255,255,0.96) 100%)"
-        : "linear-gradient(180deg,#ffffff 0%,#f8fafc 100%)";
-    const labelColor = accent ? "#059669" : "#64748b";
-    const valueColor = accent ? "#064e3b" : "#0f172a";
-
-    return `
-        <div style="border:1px solid ${border};border-radius:18px;padding:20px;background:${background};box-sizing:border-box;">
-            <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;color:${labelColor};margin-bottom:8px;">${escapeHtml(label)}</div>
-            <div style="font-size:18px;font-weight:700;color:${valueColor};line-height:1.5;">${value}</div>
-        </div>
-    `;
-}
-
-function buildMessageCard(label: string, messageHtml: string) {
-    return `
-        <div style="border:1px solid #e2e8f0;border-radius:18px;padding:20px;background:#f8fafc;box-sizing:border-box;">
-            <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;color:#64748b;margin-bottom:8px;">${escapeHtml(label)}</div>
-            <div style="font-size:15px;line-height:1.8;color:#1e293b;">${messageHtml}</div>
-        </div>
-    `;
-}
-
-function wrapSection(sectionHtml: string) {
-    return `
-        <tr>
-            <td style="padding:0 0 16px 0;">
-                ${sectionHtml}
-            </td>
-        </tr>
-    `;
-}
-
 function buildCtaButton(label: string, href: string) {
     const safeLabel = escapeHtml(label);
     const safeHref = escapeHtml(href);
 
     return `
-        <div style="margin-top:22px;">
-            <a href="${safeHref}" style="display:inline-block;background:linear-gradient(135deg,#0f172a 0%,#1e293b 55%,#10b981 100%);color:#ffffff;text-decoration:none;padding:14px 22px;border-radius:14px;font-size:14px;font-weight:700;letter-spacing:0.01em;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:20px;">
+            <tr>
+                <td style="background-color:#0f172a;padding:0;">
+                    <a href="${safeHref}" style="display:inline-block;background:linear-gradient(135deg,#0f172a 0%,#1e293b 55%,#10b981 100%);color:#ffffff;text-decoration:none;padding:14px 22px;font-size:14px;font-weight:700;letter-spacing:0.01em;">
                 ${safeLabel}
             </a>
-        </div>
+                </td>
+            </tr>
+        </table>
     `;
+}
+
+function buildSectionRow(label: string, valueHtml: string, accent = false) {
+    const headerColor = accent ? "#047857" : "#64748b";
+    const valueColor = accent ? "#064e3b" : "#0f172a";
+    const borderColor = accent ? "#c7f0df" : "#dbe4ee";
+    const backgroundColor = accent ? "#f2fbf7" : "#ffffff";
+
+    return `
+        <tr>
+            <td style="border:1px solid ${borderColor};background-color:${backgroundColor};padding:18px 20px;">
+                <div style="font-size:12px;line-height:16px;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;color:${headerColor};margin:0 0 8px 0;">
+                    ${escapeHtml(label)}
+                </div>
+                <div style="font-size:18px;line-height:28px;font-weight:700;color:${valueColor};margin:0;">
+                    ${valueHtml}
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+function buildBodyRow(label: string, valueHtml: string) {
+    return `
+        <tr>
+            <td style="border:1px solid #dbe4ee;background-color:#f8fafc;padding:20px;">
+                <div style="font-size:12px;line-height:16px;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;color:#64748b;margin:0 0 8px 0;">
+                    ${escapeHtml(label)}
+                </div>
+                <div style="font-size:15px;line-height:28px;color:#1e293b;margin:0;">
+                    ${valueHtml}
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+function buildSpacerRow(height = 14) {
+    return `
+        <tr>
+            <td style="height:${height}px;line-height:${height}px;font-size:${height}px;padding:0;">&nbsp;</td>
+        </tr>
+    `;
+}
+
+function joinRows(rows: string[]) {
+    return rows.map((row, index) => `${index > 0 ? buildSpacerRow(14) : ""}${row}`).join("");
 }
 
 function buildEmailShell(options: TemplateOptions) {
     const footer = options.footer ?? `Sent from the ${APP_NAME} email system.`;
 
     return `
-        <div style="margin:0;padding:32px 16px;background-color:#f4f7fb;">
-            <div style="max-width:640px;margin:0 auto;font-family:Sohne,Inter,'Segoe UI',Arial,sans-serif;color:#0f172a;">
-                <div style="overflow:hidden;border-radius:24px;background:linear-gradient(135deg,#0f172a 0%,#1e293b 55%,#10b981 100%);padding:32px 32px 28px;box-shadow:0 24px 60px rgba(15,23,42,0.18);">
-                    <div style="display:inline-block;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.1);color:#ecfdf5;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">
-                        ${escapeHtml(options.badge)}
-                    </div>
-                    <h1 style="margin:18px 0 10px;font-size:32px;line-height:1.1;font-weight:800;color:#ffffff;">
-                        ${escapeHtml(options.title)}
-                    </h1>
-                    <p style="margin:0;font-size:15px;line-height:1.7;color:rgba(255,255,255,0.78);max-width:460px;">
-                        ${escapeHtml(options.description)}
-                    </p>
-                </div>
-
-                <div style="height:18px;line-height:18px;font-size:18px;">&nbsp;</div>
-
-                <div style="padding:0 14px;">
-                    <div style="background:#ffffff;border:1px solid #dbe4ee;border-radius:22px;padding:28px;box-shadow:0 18px 45px rgba(15,23,42,0.08);">
-                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-                            <tbody>
-                                ${options.sections}
-                            </tbody>
+        <div style="margin:0;padding:0;background-color:#eef3f8;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;background-color:#eef3f8;">
+                <tr>
+                    <td align="center" style="padding:32px 16px 24px 16px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:640px;width:100%;border-collapse:collapse;font-family:Sohne,Inter,'Segoe UI',Arial,sans-serif;">
+                            <tr>
+                                <td style="background:linear-gradient(135deg,#0f172a 0%,#1e293b 55%,#10b981 100%);padding:28px 28px 24px 28px;">
+                                    <div style="display:inline-block;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.10);color:#ecfdf5;padding:7px 12px;font-size:12px;line-height:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">
+                                        ${escapeHtml(options.badge)}
+                                    </div>
+                                    <div style="height:18px;line-height:18px;font-size:18px;">&nbsp;</div>
+                                    <div style="font-size:30px;line-height:38px;font-weight:800;color:#ffffff;margin:0;">
+                                        ${escapeHtml(options.title)}
+                                    </div>
+                                    <div style="height:10px;line-height:10px;font-size:10px;">&nbsp;</div>
+                                    <div style="max-width:460px;font-size:15px;line-height:28px;color:rgba(255,255,255,0.82);margin:0;">
+                                        ${escapeHtml(options.description)}
+                                    </div>
+                                </td>
+                            </tr>
+                            ${buildSpacerRow(20)}
+                            <tr>
+                                <td style="background-color:#ffffff;border:1px solid #dbe4ee;padding:28px;">
+                                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
+                                        ${options.sections}
+                                    </table>
+                                </td>
+                            </tr>
+                            ${buildSpacerRow(18)}
+                            <tr>
+                                <td align="center" style="padding:0 8px;">
+                                    <div style="font-size:12px;line-height:20px;color:#64748b;margin:0;">
+                                        ${escapeHtml(footer)}
+                                    </div>
+                                </td>
+                            </tr>
                         </table>
-                    </div>
-                </div>
-
-                <div style="padding:18px 8px 0;text-align:center;">
-                    <p style="margin:0;font-size:12px;line-height:1.7;color:#64748b;">
-                        ${escapeHtml(footer)}
-                    </p>
-                </div>
-            </div>
+                    </td>
+                </tr>
+            </table>
         </div>
     `;
 }
@@ -131,15 +155,11 @@ export function buildContactNotificationEmailHtml(data: {
         badge: "New Contact Message",
         title: "Bulk References inbox update",
         description: "A new contact request just came in from the website. The details below use the same clean card-and-gradient styling as the product.",
-        sections: `
-            ${wrapSection(buildInfoCard("From", `${safeName}<div style="font-size:14px;color:#475569;margin-top:4px;font-weight:500;">${safeEmail}</div>`))}
-            ${wrapSection(buildInfoCard("Topic", safeSubject, true))}
-            <tr>
-                <td style="padding:0;">
-                    ${buildMessageCard("Message", safeMessage)}
-                </td>
-            </tr>
-        `,
+        sections: joinRows([
+            buildSectionRow("From", `${safeName}<div style="font-size:14px;line-height:22px;color:#475569;font-weight:500;">${safeEmail}</div>`),
+            buildSectionRow("Topic", safeSubject, true),
+            buildBodyRow("Message", safeMessage),
+        ]),
         footer: "Sent from the Bulk References contact form.",
     });
 }
@@ -155,22 +175,18 @@ export function buildContactAutoReplyEmailHtml(data: {
         badge: "Message Received",
         title: "We got your note",
         description: "Thanks for reaching out to Bulk References. Your message is in our inbox and we will review it shortly.",
-        sections: `
-            ${wrapSection(buildInfoCard("From", safeName))}
-            ${wrapSection(buildInfoCard("Topic", safeSubject, true))}
-            ${wrapSection(buildMessageCard("What happens next", `
+        sections: joinRows([
+            buildSectionRow("From", safeName),
+            buildSectionRow("Topic", safeSubject, true),
+            buildBodyRow("What happens next", `
                 We will review your message and follow up if needed.<br />
                 If your note was about a bug or feature request, it is now part of our review queue.
-            `))}
-            <tr>
-                <td style="padding:0;">
-                    ${buildMessageCard("Need to add details?", `
+            `),
+            buildBodyRow("Need to add details?", `
                 Reply directly to this email and your response will stay attached to the same conversation.
                 ${buildCtaButton("Open Bulk References", APP_URL)}
-            `)}
-                </td>
-            </tr>
-        `,
+            `),
+        ]),
         footer: "This is an automatic confirmation from Bulk References.",
     });
 }
@@ -188,19 +204,15 @@ export function buildPasswordResetEmailHtml(data: {
         badge: "Password Reset",
         title: "Reset your password",
         description: `Hi ${safeName}, we received a request to reset your ${APP_NAME} password.`,
-        sections: `
-            ${wrapSection(buildMessageCard("Secure access", `
+        sections: joinRows([
+            buildBodyRow("Secure access", `
                 Use the button below to set a new password. This reset link expires in ${expiresInHours} hour${expiresInHours === 1 ? "" : "s"}.
                 ${buildCtaButton("Reset password", safeResetUrl)}
-            `))}
-            <tr>
-                <td style="padding:0;">
-                    ${buildMessageCard("Did not request this?", `
+            `),
+            buildBodyRow("Did not request this?", `
                 If you did not request a password reset, you can safely ignore this email. Your account remains unchanged until the reset link is used.
-            `)}
-                </td>
-            </tr>
-        `,
+            `),
+        ]),
         footer: "Security notification from Bulk References.",
     });
 }
@@ -218,19 +230,15 @@ export function buildEmailVerificationEmailHtml(data: {
         badge: "Verify Email",
         title: "Confirm your email address",
         description: `Hi ${safeName}, finish setting up your ${APP_NAME} account by verifying your email address.`,
-        sections: `
-            ${wrapSection(buildMessageCard("Verification", `
+        sections: joinRows([
+            buildBodyRow("Verification", `
                 Click below to confirm your email. This link expires in ${expiresInHours} hour${expiresInHours === 1 ? "" : "s"}.
                 ${buildCtaButton("Verify email", safeVerificationUrl)}
-            `))}
-            <tr>
-                <td style="padding:0;">
-                    ${buildMessageCard("Why this matters", `
+            `),
+            buildBodyRow("Why this matters", `
                 Email verification helps us secure your account and make sure important product updates reach the right inbox.
-            `)}
-                </td>
-            </tr>
-        `,
+            `),
+        ]),
         footer: "Account verification email from Bulk References.",
     });
 }
