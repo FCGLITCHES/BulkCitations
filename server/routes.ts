@@ -43,17 +43,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // Map storage IDs back to UI references
-      const convertedReferences: ConvertedReference[] = result.storageData.map((sd, idx) => ({
+      const convertResults: ConvertedReference[] = result.storageData.map((sd, idx) => ({
         ...sd._uiData,
         id: storedRefs[idx].id.toString(),
       }));
 
       // Re-cluster with IDs assigned
       const { clusterCitations } = await import("../shared/clustering");
-      const clusters = clusterCitations(convertedReferences, 80);
+      const clusters = clusterCitations(convertResults, 80);
 
       const response: ConversionResponse = {
-        convertedReferences,
+        convertedReferences: convertResults,
         clusters: clusters.length > 0 ? clusters : undefined,
         errors: result.errors.length > 0 ? result.errors : undefined,
       };
@@ -261,8 +261,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "references[] and outputStyle are required" });
       }
 
-      const convertedReferences = reformatReferences(references, outputStyle);
-      res.json({ convertedReferences });
+      const reformatResults = reformatReferences(references, outputStyle);
+      res.json({ convertedReferences: reformatResults });
     } catch (error) {
       console.error('Reformat error:', error);
       res.status(500).json({ message: "Reformat failed" });
