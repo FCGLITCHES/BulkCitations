@@ -1,5 +1,5 @@
 # Technical Specification: Citing (Bulk Citations)
-*Stack: React, Vite, TailwindCSS (for UI), Node.js/Express (for Engine), Radix UI (for Components).*
+*Stack: React, Vite, TailwindCSS (for UI), Node.js/Express (for Engine), Radix UI (for Components), pnpm (for package management).*
 
 ### Styling & UI
 - **Required**: Vanilla CSS + TailwindCSS utility classes.
