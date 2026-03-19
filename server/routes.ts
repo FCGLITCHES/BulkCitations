@@ -11,6 +11,7 @@ import { conversionRequestSchema, contactRequestSchema, type ConvertedReference,
 import { processReferences, reformatReferences, initCSLStyles } from "./engine/index";
 import { getAuthorityData } from "../shared/authorityLookup";
 import { calculateConfidence } from "../shared/confidence";
+import { sendContactNotification } from "./utils/email";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize CSL styles at startup
@@ -278,6 +279,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // For now, we log it and return success as requested.
       console.log(`[ContactForm] New message from ${name} (${email}) - [${subject}]`);
       console.log(`Message: ${message}`);
+
+      // We don't await this as we don't want to block the user's feedback experience.
+      // But we call it fire-and-forget.
+      sendContactNotification({ name, email, subject, message }).catch(err => {
+          console.error('[routes] Notification error (fire-and-forget):', err instanceof Error ? err.message : String(err));
+      });
 
       res.json({ success: true, message: "Your message has been received." });
     } catch (error) {
