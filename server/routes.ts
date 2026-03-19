@@ -11,7 +11,7 @@ import { conversionRequestSchema, contactRequestSchema, type ConvertedReference,
 import { processReferences, reformatReferences, initCSLStyles } from "./engine/index";
 import { getAuthorityData } from "../shared/authorityLookup";
 import { calculateConfidence } from "../shared/confidence";
-import { sendContactNotification } from "./utils/email";
+import { sendContactAutoReply, sendContactNotification } from "./utils/email";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize CSL styles at startup
@@ -287,6 +287,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: notificationResult.error ?? "Email provider rejected the request",
         });
       }
+
+      sendContactAutoReply({ name, email, subject }).catch((err) => {
+        console.error("[routes] Contact auto-reply failed:", err instanceof Error ? err.message : String(err));
+      });
 
       res.json({ success: true, message: "Your message has been received." });
     } catch (error) {
