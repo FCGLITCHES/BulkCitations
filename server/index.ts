@@ -3,6 +3,11 @@ import express from 'express';
 import { registerRoutes } from './routes';
 import { setupVite, serveStatic, log } from './vite';
 
+function isVercelRuntime() {
+  const vercel = process.env.VERCEL?.toLowerCase();
+  return vercel === "1" || vercel === "true";
+}
+
 /** Build and return the Express app (and optional server for listen). Used by Vercel serverless. */
 export async function createApp(): Promise<{ app: express.Express; server: Awaited<ReturnType<typeof registerRoutes>> }> {
   const app = express();
@@ -52,6 +57,6 @@ async function main() {
   });
 }
 
-if (!process.env.VERCEL) {
+if (!isVercelRuntime()) {
   main();
 }
