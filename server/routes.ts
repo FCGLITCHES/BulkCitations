@@ -280,11 +280,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[ContactForm] New message from ${name} (${email}) - [${subject}]`);
       console.log(`Message: ${message}`);
 
-      // We don't await this as we don't want to block the user's feedback experience.
-      // But we call it fire-and-forget.
-      sendContactNotification({ name, email, subject, message }).catch(err => {
-          console.error('[routes] Notification error (fire-and-forget):', err instanceof Error ? err.message : String(err));
-      });
+      // We MUST await this on Vercel/serverless environments, 
+      // otherwise the function may terminate before the email is sent.
+      try {
+        await sendContactNotification({ name, email, subject, message });
+      } catch (err) {
+        console.error('[routes] Notification error:', err instanceof Error ? err.message : String(err));
+      }
 
       res.json({ success: true, message: "Your message has been received." });
     } catch (error) {
