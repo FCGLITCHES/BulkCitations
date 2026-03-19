@@ -37,7 +37,7 @@ function buildInfoCard(label: string, value: string, accent = false) {
     const valueColor = accent ? "#064e3b" : "#0f172a";
 
     return `
-        <div style="border:1px solid ${border};border-radius:18px;padding:18px 18px;background:${background};">
+        <div style="border:1px solid ${border};border-radius:18px;padding:20px;background:${background};box-sizing:border-box;">
             <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;color:${labelColor};margin-bottom:8px;">${escapeHtml(label)}</div>
             <div style="font-size:18px;font-weight:700;color:${valueColor};line-height:1.5;">${value}</div>
         </div>
@@ -46,10 +46,20 @@ function buildInfoCard(label: string, value: string, accent = false) {
 
 function buildMessageCard(label: string, messageHtml: string) {
     return `
-        <div style="border:1px solid #e2e8f0;border-radius:18px;padding:18px 18px;background:#f8fafc;">
+        <div style="border:1px solid #e2e8f0;border-radius:18px;padding:20px;background:#f8fafc;box-sizing:border-box;">
             <div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;color:#64748b;margin-bottom:8px;">${escapeHtml(label)}</div>
             <div style="font-size:15px;line-height:1.8;color:#1e293b;">${messageHtml}</div>
         </div>
+    `;
+}
+
+function wrapSection(sectionHtml: string) {
+    return `
+        <tr>
+            <td style="padding:0 0 16px 0;">
+                ${sectionHtml}
+            </td>
+        </tr>
     `;
 }
 
@@ -84,11 +94,15 @@ function buildEmailShell(options: TemplateOptions) {
                     </p>
                 </div>
 
-                <div style="margin-top:-18px;padding:0 14px;">
+                <div style="height:18px;line-height:18px;font-size:18px;">&nbsp;</div>
+
+                <div style="padding:0 14px;">
                     <div style="background:#ffffff;border:1px solid #dbe4ee;border-radius:22px;padding:28px;box-shadow:0 18px 45px rgba(15,23,42,0.08);">
-                        <div style="display:grid;grid-template-columns:1fr;gap:16px;">
-                            ${options.sections}
-                        </div>
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                            <tbody>
+                                ${options.sections}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -118,9 +132,13 @@ export function buildContactNotificationEmailHtml(data: {
         title: "Bulk References inbox update",
         description: "A new contact request just came in from the website. The details below use the same clean card-and-gradient styling as the product.",
         sections: `
-            ${buildInfoCard("From", `${safeName}<div style="font-size:14px;color:#475569;margin-top:4px;font-weight:500;">${safeEmail}</div>`)}
-            ${buildInfoCard("Topic", safeSubject, true)}
-            ${buildMessageCard("Message", safeMessage)}
+            ${wrapSection(buildInfoCard("From", `${safeName}<div style="font-size:14px;color:#475569;margin-top:4px;font-weight:500;">${safeEmail}</div>`))}
+            ${wrapSection(buildInfoCard("Topic", safeSubject, true))}
+            <tr>
+                <td style="padding:0;">
+                    ${buildMessageCard("Message", safeMessage)}
+                </td>
+            </tr>
         `,
         footer: "Sent from the Bulk References contact form.",
     });
@@ -138,16 +156,20 @@ export function buildContactAutoReplyEmailHtml(data: {
         title: "We got your note",
         description: "Thanks for reaching out to Bulk References. Your message is in our inbox and we will review it shortly.",
         sections: `
-            ${buildInfoCard("From", safeName)}
-            ${buildInfoCard("Topic", safeSubject, true)}
-            ${buildMessageCard("What happens next", `
+            ${wrapSection(buildInfoCard("From", safeName))}
+            ${wrapSection(buildInfoCard("Topic", safeSubject, true))}
+            ${wrapSection(buildMessageCard("What happens next", `
                 We will review your message and follow up if needed.<br />
                 If your note was about a bug or feature request, it is now part of our review queue.
-            `)}
-            ${buildMessageCard("Need to add details?", `
+            `))}
+            <tr>
+                <td style="padding:0;">
+                    ${buildMessageCard("Need to add details?", `
                 Reply directly to this email and your response will stay attached to the same conversation.
                 ${buildCtaButton("Open Bulk References", APP_URL)}
             `)}
+                </td>
+            </tr>
         `,
         footer: "This is an automatic confirmation from Bulk References.",
     });
@@ -167,13 +189,17 @@ export function buildPasswordResetEmailHtml(data: {
         title: "Reset your password",
         description: `Hi ${safeName}, we received a request to reset your ${APP_NAME} password.`,
         sections: `
-            ${buildMessageCard("Secure access", `
+            ${wrapSection(buildMessageCard("Secure access", `
                 Use the button below to set a new password. This reset link expires in ${expiresInHours} hour${expiresInHours === 1 ? "" : "s"}.
                 ${buildCtaButton("Reset password", safeResetUrl)}
-            `)}
-            ${buildMessageCard("Did not request this?", `
+            `))}
+            <tr>
+                <td style="padding:0;">
+                    ${buildMessageCard("Did not request this?", `
                 If you did not request a password reset, you can safely ignore this email. Your account remains unchanged until the reset link is used.
             `)}
+                </td>
+            </tr>
         `,
         footer: "Security notification from Bulk References.",
     });
@@ -193,13 +219,17 @@ export function buildEmailVerificationEmailHtml(data: {
         title: "Confirm your email address",
         description: `Hi ${safeName}, finish setting up your ${APP_NAME} account by verifying your email address.`,
         sections: `
-            ${buildMessageCard("Verification", `
+            ${wrapSection(buildMessageCard("Verification", `
                 Click below to confirm your email. This link expires in ${expiresInHours} hour${expiresInHours === 1 ? "" : "s"}.
                 ${buildCtaButton("Verify email", safeVerificationUrl)}
-            `)}
-            ${buildMessageCard("Why this matters", `
+            `))}
+            <tr>
+                <td style="padding:0;">
+                    ${buildMessageCard("Why this matters", `
                 Email verification helps us secure your account and make sure important product updates reach the right inbox.
             `)}
+                </td>
+            </tr>
         `,
         footer: "Account verification email from Bulk References.",
     });
