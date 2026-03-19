@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Quote, Menu, Moon, Sun, FileText, History, Info, Shield, LogIn, LogOut, LineChart, Mail } from "lucide-react";
+import { Quote, Menu, Moon, Sun, FileText, History, Info, LogIn, LogOut, LineChart, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -57,7 +57,6 @@ export function Navbar() {
             <Link href="/history" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">History</Link>
             <Link href="/about" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">About</Link>
             <Link href="/contact" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">Contact</Link>
-            <Link href="/privacy" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">Privacy</Link>
 
             {isAdmin ? (
               <>
@@ -107,10 +106,6 @@ export function Navbar() {
                 <Link href="/contact" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
                   <Mail className="w-4 h-4 text-muted-foreground" />
                   Contact
-                </Link>
-                <Link href="/privacy" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
-                  <Shield className="w-4 h-4 text-muted-foreground" />
-                  Privacy
                 </Link>
 
                 <div className="my-2 border-t border-border"></div>
