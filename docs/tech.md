@@ -1,38 +1,41 @@
-# Technical Specification: Citing (Bulk Citations)
-*Stack: React, Vite, TailwindCSS (for UI), Node.js/Express (for Engine), Radix UI (for Components), pnpm 10 (for package management).*
+# Technical Specification: Citing
 
-### Infrastructure & Deployment
-- **Vercel Deployment**: Requires `packageManager` field in `package.json` set to `pnpm@10.32.1`.
-- **Lockfile**: `pnpm-lock.yaml` (version 9) must be committed to the root for correct Vercel detection.
-- **Auto-Detection**: `vercel.json` should avoid overriding `installCommand` or `buildCommand` to allow Vercel to use the native pnpm build pipeline.
+**Stack**: TypeScript, React (Vite), Node.js (Express/FastAPI), TailwindCSS, Radix UI, pnpm.
 
+## Styling Approach
+- **Required**: TailwindCSS utility classes for 95% of styling.
+- **Custom CSS**: Only allowed in `index.css` for global design tokens, complex keyframe animations, or third-party library overrides that cannot be handled via Tailwind.
+- **Aesthetics**: Glassmorphism, dynamic transitions (Framer Motion), and modern typography.
 
-### Styling & UI
-- **Required**: Vanilla CSS + TailwindCSS utility classes.
-- **Library**: Radix UI (via Shadcn) for components. High-premium aesthetic: glassmorphism, animated transitions (Framer Motion).
+## Testing Standards
+- **Standard**: 100% coverage for citation extraction logic and CSL mapping.
+- **Unit Testing**: Vitest for all engine phases.
+- **E2E Testing**: Playwright for critical user flows (Bulk Paste → Conversion → Export).
+- **Regression**: `Stress-Finale` harness must be run before every major release.
 
-### Citation Engine Architecture
-1. **Pipeline**: Encoding → Pre-Normalization → Style Detection → Parsing (Hybrid) → CSL Conversion → Post-Processing/Formatting → Strict Assertion Running → Confidence Scoring.
-2. **Hybrid Parser**: Combines a static waterfall with dynamic patterns stored in `patterns.json`.
-3. **Strict Renderer**: CSL output is checked against 100+ fine-grained regex rules (assertions) per style to ensure 100% compliance with style guides (APA 7, IEEE, etc.).
+## Backend & Infrastructure
+- **Language**: TypeScript for frontend/orchestration; Python for NLP/ML (FastAPI) to handle SciBERT and BART-NLI models.
+- **Database**: 
+    - **Primary**: File-based JSONL for reports and patterns (low-overhead).
+    - **Cache**: Redis for embeddings and API (Crossref/Semantic Scholar) response caching.
+- **Async Processing**: ARQ (Async Redis Queue) for handling large batch jobs (Phase 12+).
+- **Deployment**: Vercel (Frontend/API) + GPU-enabled instances for NLP models (e.g., Render or Modal).
 
-### Failure Reporting & Auto-Detection
-- **Storage**: JSONL (`data/reports.v2.jsonl`) with base64 fingerprinting for deduplication.
-- **Auto-Queue Triggers**: 
-  - `confidence < 60`
-  - `styleDetectionFailed === true`
-  - Any error-level assertion (from `strictRenderer.ts`)
-  - Cluster type inconsistency
-  - Parser artifacts (Field leakage / "et al." primary author)
-- **Fix Propagation**: 
-  - `dynamic-pattern` fixes are written directly to `server/data/patterns.json`.
-  - The `CitationParser` hot-reloads patterns on file change using `fs.watch`.
+## API Design & Error Handling
+- **Standard**: RESTful API with OpenAPI/Swagger documentation.
+- **Error Handling**: All API boundaries MUST return consistent JSON error objects: `{ "error": string, "code": string, "details": any }`.
+- **User-Facing Errors**: Use Sonner toasts for transient errors; inline alert components for validation errors.
+- **Rate Limiting**: 100 citations per hour for free tier; authenticated API keys for B2B tiers.
 
-### Database & Auth
-- **Admin Access**: Current admin routes (`/admin/reports`) are unprotected (MVP).
-- **Persistence**: File-based storage (JSONL/JSON) to avoid Postgres/Neon dependency overhead for high-write-volume citation patterns.
-- **Rate Limiting**: IP-hashed rate limiting (10 reports/day/IP) to prevent spam.
+## Intelligence Implementation (Phase 2-11)
+- **Format Detection**: `facebook/bart-large-mnli` (Zero-shot classification).
+- **Field Extraction**: `allenai/scibert_scivocab_uncased` NER + GPT-4o-mini fallback.
+- **Deduplication**: Qdrant (Vector Search) + `text-embedding-3-small`.
+- **Enrichment Waterfall**: Crossref (DOI/Fuzzy) → Semantic Scholar → PubMed.
 
-### Testing
-- **Vitest**: Unit tests for parser normalization and style guides.
-- **Stress-Finale Harness**: 1000+ real-world citations from various PDFs for regression testing.
+## Discouraged Patterns
+- **No Heavy Databases**: Avoid Postgres/Mongo for citation storage unless explicitly required for user accounts.
+- **No Sequential API Calls**: Use `asyncio.gather` or `Promise.all` for all independent pipeline phases.
+- **No Hardcoded Formats**: Use CSL for all output rendering; do not build manual string formatters.
+- **No Direct Model Inference in Main API**: ML models must run in dedicated, scalable workers to prevent event loop blocking.
+

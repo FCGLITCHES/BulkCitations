@@ -168,7 +168,7 @@ router.post("/", (req, res) => {
       remaining: rateCheck.remaining,
     });
   } catch (err) {
-    console.error("POST /api/reports error:", err);
+    console.error("POST /api/reports error:", err instanceof Error ? err.message : String(err));
     return res.status(500).json({ message: "Failed to save report" });
   }
 });
@@ -189,7 +189,7 @@ router.get("/", (_req, res) => {
     }
     return res.json(reports);
   } catch (err) {
-    console.error("GET /api/reports error:", err);
+    console.error("GET /api/reports error:", err instanceof Error ? err.message : String(err));
     return res.status(500).json({ message: "Failed to load reports" });
   }
 });
@@ -206,7 +206,7 @@ router.get("/grouped", (_req, res) => {
     );
     return res.json(groups);
   } catch (err) {
-    console.error("GET /api/reports/grouped error:", err);
+    console.error("GET /api/reports/grouped error:", err instanceof Error ? err.message : String(err));
     return res.status(500).json({ message: "Failed to load grouped reports" });
   }
 });
@@ -220,7 +220,7 @@ router.get("/:id", (req, res) => {
     if (!report) return res.status(404).json({ message: "Report not found" });
     return res.json(report);
   } catch (err) {
-    console.error("GET /api/reports/:id error:", err);
+    console.error("GET /api/reports/:id error:", err instanceof Error ? err.message : String(err));
     return res.status(500).json({ message: "Failed to load report" });
   }
 });
@@ -278,7 +278,7 @@ router.patch("/:id", (req, res) => {
 
     return res.json({ success: true, report: updated });
   } catch (err) {
-    console.error("PATCH /api/reports/:id error:", err);
+    console.error("PATCH /api/reports/:id error:", err instanceof Error ? err.message : String(err));
     return res.status(500).json({ message: "Failed to update report" });
   }
 });
@@ -324,7 +324,7 @@ router.post("/:id/accept", (req, res) => {
       patternWritten: report.fixType === "dynamic-pattern" && !!report.proposedPattern,
     });
   } catch (err) {
-    console.error("POST /api/reports/:id/accept error:", err);
+    console.error("POST /api/reports/:id/accept error:", err instanceof Error ? err.message : String(err));
     return res.status(500).json({ message: "Failed to accept report" });
   }
 });
@@ -388,7 +388,7 @@ router.post("/:id/resolve", (req, res) => {
 
     return res.json({ success: true, report: updated });
   } catch (err) {
-    console.error("POST /api/reports/:id/resolve error:", err);
+    console.error("POST /api/reports/:id/resolve error:", err instanceof Error ? err.message : String(err));
     return res.status(500).json({ message: "Failed to resolve report" });
   }
 });
@@ -410,7 +410,7 @@ router.post("/:id/reject", (req, res) => {
 
     return res.json({ success: true });
   } catch (err) {
-    console.error("POST /api/reports/:id/reject error:", err);
+    console.error("POST /api/reports/:id/reject error:", err instanceof Error ? err.message : String(err));
     return res.status(500).json({ message: "Failed to reject report" });
   }
 });
@@ -427,7 +427,7 @@ router.post("/:id/duplicate", (req, res) => {
     if (!updated) return res.status(404).json({ message: "Report not found" });
     return res.json({ success: true });
   } catch (err) {
-    console.error("POST /api/reports/:id/duplicate error:", err);
+    console.error("POST /api/reports/:id/duplicate error:", err instanceof Error ? err.message : String(err));
     return res.status(500).json({ message: "Failed to mark as duplicate" });
   }
 });
@@ -442,7 +442,7 @@ router.post("/:id/add-to-stress", (req, res) => {
     addToStressTest(report.originalText);
     return res.json({ success: true });
   } catch (err) {
-    console.error("POST /api/reports/:id/add-to-stress error:", err);
+    console.error("POST /api/reports/:id/add-to-stress error:", err instanceof Error ? err.message : String(err));
     return res.status(500).json({ message: "Failed to add to stress test" });
   }
 });

@@ -82,7 +82,7 @@ export async function fetchCrossrefMetadata(doi: string): Promise<Record<string,
 
         return cslData;
     } catch (error) {
-        console.warn(`Crossref fetch failed for DOI ${cleanDoi}:`, error);
+        console.warn(`Crossref fetch failed for DOI ${cleanDoi}:`, error instanceof Error ? error.message : String(error));
         return null;
     }
 }

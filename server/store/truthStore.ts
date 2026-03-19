@@ -2,11 +2,19 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 
-const TRUTH_FILE = path.join(process.cwd(), "data", "truthStore.v1.jsonl");
+const TRUTH_FILE = process.env.VERCEL
+  ? path.join("/tmp", "truthStore.v1.jsonl")
+  : path.join(process.cwd(), "data", "truthStore.v1.jsonl");
 
 // Ensure data directory exists
-if (!fs.existsSync(path.dirname(TRUTH_FILE))) {
-  fs.mkdirSync(path.dirname(TRUTH_FILE), { recursive: true });
+try {
+  if (!fs.existsSync(path.dirname(TRUTH_FILE))) {
+    fs.mkdirSync(path.dirname(TRUTH_FILE), { recursive: true });
+  }
+} catch (err) {
+  if (!process.env.VERCEL) {
+    console.warn("[truthStore] Failed to create data directory:", err instanceof Error ? err.message : String(err));
+  }
 }
 
 export interface TruthEntry {
@@ -57,7 +65,11 @@ export function saveTruth(entry: Omit<TruthEntry, "validatedAt">) {
   truthCache.set(key, fullEntry);
   
   // Append to JSONL
-  fs.appendFileSync(TRUTH_FILE, JSON.stringify(fullEntry) + "\n");
+  try {
+    fs.appendFileSync(TRUTH_FILE, JSON.stringify(fullEntry) + "\n");
+  } catch (err) {
+    console.warn("[truthStore] Failed to append to truth store:", err instanceof Error ? err.message : String(err));
+  }
 }
 
 /** Get a truth entry if it exists */

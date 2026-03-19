@@ -225,7 +225,7 @@ export async function processReferences(
 
             return { refData, uiData };
         } catch (error) {
-            console.error(`Error processing reference ${i + 1}: `, error);
+            console.error(`Error processing reference ${i + 1}: `, error instanceof Error ? error.message : String(error));
             errors.push(`Error processing reference ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`);
             return null;
         }

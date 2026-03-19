@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     const { app } = await appPromise;
     app(req, res);
   } catch (err) {
-    console.error('API handler error:', err);
-    res.status(500).json({ message: 'Server error', error: process.env.NODE_ENV === 'development' ? err.message : undefined });
+    console.error('API handler error:', err instanceof Error ? err.message : String(err));
+    res.status(500).json({ message: 'Server error', error: process.env.NODE_ENV === 'development' ? (err instanceof Error ? err.message : String(err)) : undefined });
   }
 }

@@ -1,26 +1,47 @@
-# Design Guidelines: Citing (Bulk Citations)
-*Aesthetic: Modern, Professional, High-Density-Rich-Aesthetics.*
+# Design Specification: Citing
 
-### Base Component System
-- **UI Architecture**: TailwindCSS + Radix UI + Framer Motion.
-- **Typography**: Inter / Outfit for high readability in academic context.
-- **Spacing**: Consistent 4, 8, 16, 24, 32px based on 4px grid.
+**Goal**: High-Density, Premium Academic Aesthetic (Vibrant, Professional, Dynamic).
 
-### Interaction States
-- **Hover**: Subtle translate-y-[-1px] or scale-[1.01] for interactive cards.
-- **Buttons**:
-  - `LoadingButton`: Transition to spinner during async (e.g., fetching citation metadata).
-  - `Wrong?` button: Subtle red-600 border on focus; opens a centered dialog.
-- **Badges**:
-  - `Confidence`: Green (>80), Yellow (60-80), Red (<60).
-  - `Style`: Secondary badge with blue-600 background.
-- **Toast**: Bottom-right placement with 3s self-dismissal.
+## Base Component System
+- **Framework**: TailwindCSS + Radix UI (via Shadcn).
+- **Animation**: Framer Motion for micro-interactions and smooth transitions.
+- **Typography**: `Inter` for functional text, `Outfit` for headings and premium accents.
+- **Color Palette**: Sleek dark mode by default, HSL-tailored harmonious colors (Deep Indigo, Emerald Green for success, Ruby Red for errors). Use glassmorphism for overlays.
 
-### Loading-State Pattern
-- **Empty States**: Never show a blank white page. Use Skeleton loaders for `AdminReportQueue` rows or "No reports found" centered illustrations.
-- **Conversion Phase**: Progress bar or pulse animation during pipeline execution.
+## Reusable Components
+- **CitationCard**: The primary unit for displaying a processed reference. Extends Radix `Card`.
+- **ConfidenceBadge**: Dynamic color scaling based on Phase 11 output.
+- **LoadingButton**: Standardized button with integrated spinner and "disabled-while-loading" logic.
+- **ReportModal**: Centered dialog for user feedback, extending Radix `Dialog`.
 
-### Error Handling
-- **Double-Submit Prevention**: Disable submit button on `ReportButton` modal immediately upon click.
-- **Dead-Feeling UI**: Use Framer Motion `AnimatePresence` for lists (e.g., reports being removed from queue). 
-- **Error Toasts**: Clear, non-technical human error messages (e.g., "Rate limit reached. Please try again tomorrow").
+## Loading-State Pattern
+- **Requirement**: Never show a blank white page or a generic full-screen spinner.
+- **Implementation**: 
+    - Use **Skeleton Loaders** for lists and grids (e.g., `AdminReportQueue`).
+    - Use a **Phased Progress Bar** during conversion that explicitly shows the current engine phase (e.g., "Enriching via Crossref...").
+    - Use pulse animations for individual citation cards being processed in a stream.
+
+## Interaction States
+Every interactive element MUST support:
+- **Hover**: Subtle `translate-y-[-1px]` and `shadow-lg`.
+- **Focus**: Clear ring offset with high-contrast color.
+- **Active/Pressed**: Slight `scale-[0.98]` to provide tactile feedback.
+- **Disabled**: Reduced opacity and `cursor-not-allowed`.
+
+## Spacing & Layout
+- **Grid**: 4px base unit.
+- **Sections**: 32px or 48px vertical spacing.
+- **Component Gap**: 16px (consistent with `gap-4` in Tailwind).
+- **Inner Padding**: 12px or 16px for cards and containers.
+
+## Notifications (Toasts)
+- **Pattern**: Sonner-style toasts.
+- **Placement**: Bottom-right on desktop, top-center on mobile.
+- **Dismissal**: 4s auto-dismissal; manual swipe to dismiss.
+- **Behavior**: Stacked notifications for multiple events (e.g., "5 Citations Deduplicated").
+
+## Async & Double-Submit Prevention
+- **Loading Buttons**: Must display a spinner and become `disabled` immediately upon click. Text should change to present-continuous (e.g., "Saving..." instead of "Save").
+- **Optimistic UI**: Use for simple actions like "Hide Duplicate".
+- **Dead-Feeling UI Prevention**: Use `AnimatePresence` for all list additions/removals. Ensure a minimum animation duration of 200ms to allow the eye to follow changes.
+

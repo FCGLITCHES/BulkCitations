@@ -43,14 +43,14 @@ export function initCSLStyles(): void {
                 const cslXml = readFileSync(join(stylesDir, file), 'utf8');
                 config.templates.add(name, cslXml);
             } catch (e) {
-                console.warn(`Could not load CSL style '${name}' from ${file}:`, e);
+                console.warn(`Could not load CSL style '${name}' from ${file}:`, e instanceof Error ? e.message : String(e));
             }
         }
 
         stylesLoaded = true;
         console.log('CSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee');
     } catch (e) {
-        console.error('Failed to initialize CSL styles:', e);
+        console.error('Failed to initialize CSL styles:', e instanceof Error ? e.message : String(e));
     }
 }
 
@@ -423,7 +423,7 @@ export function formatCSLData(
 
         return result;
     } catch (error) {
-        console.error('CSL formatting error:', error);
+        console.error('CSL formatting error:', error instanceof Error ? error.message : String(error));
         return fallbackFormat(cslData);
     }
 }

@@ -203,7 +203,7 @@ export class CitationParser {
         styles,
       };
     } catch (e) {
-      console.warn(`Pattern ${p.id ?? idx}: regex compile failed — skipped`, e);
+      console.warn(`Pattern ${p.id ?? idx}: regex compile failed — skipped`, e instanceof Error ? e.message : String(e));
       return null;
     }
   }
@@ -231,7 +231,7 @@ export class CitationParser {
         console.log(`Loaded ${compiled.length} dynamic patterns`);
       }
     } catch (e) {
-      console.warn("Failed to load dynamic patterns map — keeping last-known-good", e);
+      console.warn("Failed to load dynamic patterns map — keeping last-known-good", e instanceof Error ? e.message : String(e));
     }
   }
 

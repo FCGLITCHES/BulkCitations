@@ -60,7 +60,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(response);
     } catch (error) {
-      console.error('Validation error:', error);
+      console.error('Validation error:', error instanceof Error ? error.message : String(error));
       res.status(400).json({
         message: "Invalid request data",
         error: error instanceof Error ? error.message : 'Unknown error'

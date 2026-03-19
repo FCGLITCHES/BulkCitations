@@ -56,8 +56,16 @@ const STATUS_MAP: Record<string, ReportStatus> = {
 // ── Helpers ──
 
 function ensureDataDir(): void {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+  } catch (err) {
+    if (process.env.VERCEL) {
+      // Silently ignore on Vercel as /tmp should exist or we can't do anything anyway
+      return;
+    }
+    console.error(`[reportStore] CRITICAL: Failed to create data directory ${DATA_DIR}:`, err instanceof Error ? err.message : err);
   }
 }
 
@@ -172,7 +180,11 @@ export function saveReport(r: CitationReport): CitationReport {
     }
   }
 
-  fs.appendFileSync(V2_FILE, JSON.stringify(r) + "\n", "utf8");
+  try {
+    fs.appendFileSync(V2_FILE, JSON.stringify(r) + "\n", "utf8");
+  } catch (err) {
+    console.warn(`[reportStore] Failed to append to ${V2_FILE}:`, err instanceof Error ? err.message : err);
+  }
   return r;
 }
 

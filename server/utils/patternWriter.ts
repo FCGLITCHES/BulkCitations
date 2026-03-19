@@ -95,8 +95,15 @@ export function writePattern(pattern: ProposedPattern): PatternWriteResult {
 
     // Write atomically: write to tmp file, then rename
     const tmpPath = PATTERNS_PATH + ".tmp";
-    fs.writeFileSync(tmpPath, JSON.stringify(existing, null, 2) + "\n", "utf8");
-    fs.renameSync(tmpPath, PATTERNS_PATH);
+    try {
+      fs.writeFileSync(tmpPath, JSON.stringify(existing, null, 2) + "\n", "utf8");
+      fs.renameSync(tmpPath, PATTERNS_PATH);
+    } catch (err) {
+      if (process.env.VERCEL) {
+        return { success: false, error: "Dynamic patterns cannot be written on Vercel (read-only filesystem). Please update patterns.json in the repository." };
+      }
+      throw err;
+    }
 
     return { success: true, totalPatterns: existing.length };
   } catch (e) {
@@ -122,8 +129,15 @@ export function removePattern(patternId: string): PatternWriteResult {
     existing.splice(index, 1);
 
     const tmpPath = PATTERNS_PATH + ".tmp";
-    fs.writeFileSync(tmpPath, JSON.stringify(existing, null, 2) + "\n", "utf8");
-    fs.renameSync(tmpPath, PATTERNS_PATH);
+    try {
+      fs.writeFileSync(tmpPath, JSON.stringify(existing, null, 2) + "\n", "utf8");
+      fs.renameSync(tmpPath, PATTERNS_PATH);
+    } catch (err) {
+      if (process.env.VERCEL) {
+        return { success: false, error: "Dynamic patterns cannot be modified on Vercel (read-only filesystem)." };
+      }
+      throw err;
+    }
 
     return { success: true, totalPatterns: existing.length };
   } catch (e) {

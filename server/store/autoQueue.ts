@@ -204,7 +204,7 @@ export function autoQueueFailures(input: AutoQueueInput): void {
       // saveReport handles dedup via fingerprint
       saveReport(report);
     } catch (err) {
-      console.warn("[autoQueue] Failed to save auto-queued report:", err);
+      console.warn("[autoQueue] Failed to save auto-queued report:", err instanceof Error ? err.message : String(err));
     }
   }
 }
