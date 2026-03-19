@@ -205,8 +205,9 @@ export class CitationParser {
     const trimmed = text.trim();
     if (!trimmed || trimmed.length < 15) return null;
 
-    // Vancouver structural pre-check: ". 2015;47(3):123" style tails
-    if (/\.\s*(19|20)\d{2};[\d?]+[\(:]/.test(trimmed)) {
+    // Vancouver structural pre-check: ". 2015;47(3):123" or "2015;47(3):123" tails
+    // This pattern is unique to Vancouver and should win before scoring.
+    if (/\.\s*(19|20)\d{2};[\d?]+[\(:]/.test(trimmed) || /\b(19|20)\d{2};\s*[\d?]+[\(:]/.test(trimmed)) {
       return 'vancouver';
     }
 
@@ -356,6 +357,16 @@ export class CitationParser {
     // Key difference: APA has "(Year)." (period after parens), Harvard has "(Year) Title" (no period)
     if (/\(\d{4}[a-z]?\)\./.test(scrubbedForDetection)) {
       scores.apa += 1;
+    }
+
+    // Strong Harvard pre-checks: distinguish from Chicago/MLA
+    // 1) Single-quoted title after year-in-parens: Author, I. (Year) 'Title', Journal...
+    if (/^[A-Z\u00c0-\u017e][A-Za-z\u00c0-\u024f'’-]+,\s*(?:[A-Z](?:\.[A-Z])*\.?).*\((?:19|20)\d{2}[a-z]?\)\s+['\u2018][^'\u2019]+['\u2019],\s*[A-Z]/.test(trimmed)) {
+      return 'harvard';
+    }
+    // 2) Available at + Accessed marker is essentially unique to Harvard references
+    if (/Available at:/i.test(trimmed) && /\(Accessed:/i.test(trimmed)) {
+      return 'harvard';
     }
 
     // MLA vs Chicago with quoted titles: 
@@ -649,6 +660,39 @@ export class CitationParser {
       clean.title = clean.title.replace(/\s*Vol\.?\s*\d+(?:,\s*No\.?\s*\d+)?\s*[:;]?\s*\d*[-–]?\d*\s*\.?\s*$/i, '').trim();
       // Strip trailing "(YYYY)." pattern leaked from preNormalize
       clean.title = clean.title.replace(/\s*\(\d{4}\)\.\s*$/, '').trim();
+
+      // Strip trailing "author as tagline" from titles like
+      // "Developing ... via AHP: M. Benaida." where the last segment
+      // redundantly repeats the primary author name.
+      if (clean.authors && clean.authors.length > 0) {
+        const firstAuthor = clean.authors[0];
+        const surname = firstAuthor.split(',')[0]?.trim();
+        const initialsMatch = firstAuthor.match(/,\s*([A-Z](?:\.\s*)?(?:[A-Z](?:\.\s*)?)*)/);
+        const initialsRaw = initialsMatch?.[1]?.trim();
+        const candidates: string[] = [];
+        const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        if (surname) {
+          candidates.push(surname);
+        }
+        if (initialsRaw) {
+          const initialsNormalized = initialsRaw.replace(/\s+/g, ' ').trim();
+          const initialsCompact = initialsNormalized.replace(/\s+/g, '');
+          candidates.push(initialsNormalized, initialsCompact);
+          if (surname) {
+            candidates.push(`${initialsNormalized} ${surname}`, `${initialsCompact} ${surname}`);
+          }
+        }
+
+        for (const cand of candidates) {
+          if (!cand) continue;
+          const re = new RegExp(`[:\\-]\\s*${escape(cand)}\\.?$`, 'i');
+          if (re.test(clean.title)) {
+            clean.title = clean.title.replace(re, '').trim().replace(/[.:]\s*$/, '').trim();
+            break;
+          }
+        }
+      }
 
       if (style === 'apa') {
         // APA sentence casing normalization
@@ -1778,6 +1822,40 @@ export class CitationParser {
   private parseGeneric(text: string): ParsedReference {
     const parsed: ParsedReference = {};
 
+    // Heuristic: "Author, Author, Title, YYYY." or "Author, Title, YYYY."
+    // Handles IEEE/Vancouver-ish inputs that fell through style detection.
+    // Skip when the string clearly looks like a report/thesis so those branches can handle it.
+    if (!/report|thesis|diss\./i.test(text)) {
+      const authorTitleYear = text.match(/^(.*),\s*((?:19|20)\d{2})\.\s*$/);
+      if (authorTitleYear) {
+        const beforeYear = authorTitleYear[1].trim();
+        const year = authorTitleYear[2];
+        const tokens = beforeYear.split(',').map((s) => s.trim()).filter(Boolean);
+        if (tokens.length >= 2) {
+          const isPersonLike = (s: string): boolean =>
+            /^[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+[A-Z]{1,3}\.?$/.test(s) || // "Goldberg DE"
+            /^[A-Z][a-z]+,\s*[A-Z]{1,3}\.?$/.test(s); // "Goldberg, D."
+
+          const authorTokens: string[] = [];
+          let i = 0;
+          for (; i < tokens.length; i++) {
+            if (isPersonLike(tokens[i])) {
+              authorTokens.push(tokens[i]);
+            } else {
+              break;
+            }
+          }
+
+          if (authorTokens.length > 0 && i < tokens.length) {
+            parsed.year = year;
+            parsed.authors = authorTokens;
+            parsed.title = tokens.slice(i).join(', ');
+            // URL / article-number extraction still applies below
+          }
+        }
+      }
+    }
+
     // Report / thesis institution: "Report submitted at Institution" or "Report Institution, Year" or "PhD diss., Institution, Year"
     const reportAtMatch = text.match(/(?:Report\s+submitted\s+at|report\s+at)\s+([^.,]+?)(?:\.|,|$)/i);
     if (reportAtMatch) {
@@ -1796,10 +1874,12 @@ export class CitationParser {
       if (!parsed.publisher) parsed.publisher = parsed.institution;
     }
 
-    // Extract year
-    const yearMatch = text.match(/\b((?:19|20)\d{2}|n\.d\.)\b/i);
-    if (yearMatch) {
-      parsed.year = yearMatch[1];
+    // Extract year (if not already set)
+    if (!parsed.year) {
+      const yearMatch = text.match(/\b((?:19|20)\d{2}|n\.d\.)\b/i);
+      if (yearMatch) {
+        parsed.year = yearMatch[1];
+      }
     }
 
     // Extract potential title (text in quotes)
@@ -1808,10 +1888,12 @@ export class CitationParser {
       parsed.title = titleMatch[1].replace(/\.$/, '').trim();
     }
 
-    // Try to extract authors from the beginning
-    const authorPart = text.split(/\(\d{4}\)|"\s/)[0].trim();
-    if (authorPart && authorPart.length > 3) {
-      parsed.authors = [authorPart.replace(/[,.]$/, '').trim()];
+    // Try to extract authors from the beginning if still unknown
+    if (!parsed.authors) {
+      const authorPart = text.split(/\(\d{4}\)|"\s/)[0].trim();
+      if (authorPart && authorPart.length > 3) {
+        parsed.authors = [authorPart.replace(/[,.]$/, '').trim()];
+      }
     }
 
 

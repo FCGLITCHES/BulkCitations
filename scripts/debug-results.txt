@@ -1,0 +1,91 @@
+Starting per-reference diagnostic...
+
+--- 1 ---
+Original: Golriz Khatami S, Mubeen S, Bharadhwaj VS, Kodamullil AT, Hofmann-Apitius M, Domingo-Fernández D: Us...
+conf: 85 style: vancouver failed: false
+warnings: ["warning:missing_locator"]
+authors: ["Golriz Khatami S","Mubeen S","Bharadhwaj VS","Kodamullil AT","Hofmann-Apitius M","Domingo-Fernández D"]
+title: Using predictive machine learning models for drug response simulation by calibrating patient-specific pathway signatures
+year: 2021
+journal: NPJ Syst Biol Appl
+out: Golriz Khatami S, Mubeen, S., Bharadhwaj, V. S., Kodamullil, A. T., Hofmann-Apitius, M., & Domingo-F
+
+--- 2 ---
+Original: Norrby PO: Holistic models of reaction selectivity. Nature. 2019, 571:332-3. 10.1038/d41586-019-0214...
+conf: 95 style: vancouver failed: false
+warnings: []
+authors: ["Norrby PO"]
+title: Holistic models of reaction selectivity
+year: 2019
+journal: Nature
+out: Norrby, P. O. (2019). Holistic models of reaction selectivity. Nature.
+
+--- 3 ---
+Original: Ali M, Aittokallio T: Machine learning and feature selection for drug response prediction in precisi...
+conf: 85 style: vancouver failed: false
+warnings: ["warning:missing_locator"]
+authors: ["Ali M","Aittokallio T"]
+title: Machine learning and feature selection for drug response prediction in precision oncology applications
+year: 2019
+journal: Biophys Rev
+out: Ali, M., & Aittokallio, T. (2019). Machine learning and feature selection for drug response predicti
+
+--- 4 ---
+Original: van der Lee M, Swen JJ: Artificial intelligence in pharmacology research and practice. Clin Transl S...
+conf: 95 style: vancouver failed: false
+warnings: []
+authors: ["van der Lee M","Swen JJ"]
+title: Artificial intelligence in pharmacology research and practice
+year: 2023
+journal: Clin Transl Sci
+out: van der Lee, M., & Swen, J. J. (2023). Artificial intelligence in pharmacology research and practice
+
+--- 5 ---
+Original: Raimundo R, Rosário A: The impact of artificial intelligence on data system security: a literature r...
+conf: 85 style: vancouver failed: false
+warnings: ["warning:missing_locator"]
+authors: ["Raimundo R","Rosário A"]
+title: The impact of artificial intelligence on data system security: a literature review
+year: 2021
+journal: Sensors (Basel)
+out: Raimundo, R., & Rosário, A. (2021). The impact of artificial intelligence on data system security: a
+
+--- 6 ---
+Original: Falcón-Cano G, Molina C, Cabrera-Pérez MÁ: Reliable prediction of Caco-2 permeability by supervised ...
+conf: 95 style: apa failed: true
+warnings: ["warning: Style could not be detected; output is a best-guess stub."]
+authors: ["Falcón-Cano G","Molina C","Cabrera-Pérez MÁ"]
+title: Reliable prediction of Caco-2 permeability by supervised recursive machine learning approaches
+year: 2022
+journal: Pharmaceutics
+out: Falcón-Cano, G., Molina, C., & MÁ, C.-P. (2022). Reliable prediction of Caco-2 permeability by super
+
+--- 7 ---
+Original: Schork NJ: Artificial intelligence and personalized medicine. Cancer Treat Res. 2019, 178:265-83. 10...
+conf: 95 style: vancouver failed: false
+warnings: []
+authors: ["Schork NJ"]
+title: Artificial intelligence and personalized medicine
+year: 2019
+journal: Cancer Treat Res
+out: Schork, N. J. (2019). Artificial intelligence and personalized medicine. Cancer Treat Res.
+
+--- 8 ---
+Original: Tanweer Alam, "IoT-Fog: A Communication Framework using Blockchain in the Internet of Things", Inter...
+conf: 65 style: apa failed: true
+warnings: ["warning: Style could not be detected; output is a best-guess stub.","parse: year-anchored-fallback","error:apa:no_quotes_around_title"]
+authors: ["Tanweer Alam","\"Io T-Fog"]
+title: A Communication Framework using Blockchain in the Internet of Things", International Journal of Recent Technology and Engineering (IJRTE), Volume-7, Issue-6
+year: 2019
+journal: undefined
+out: Alam, T., & T-Fog, "Io. (2019). A Communication Framework using Blockchain in the Internet of Things
+
+--- 9 ---
+Original: Mathew, T.V., 2012. Genetic algorithm. Report submitted at IIT Bombay.
+conf: 95 style: apa failed: false
+warnings: []
+authors: ["Mathew, T.V"]
+title: Genetic algorithm
+year: 2012
+journal: undefined
+out: Mathew, T. V. (2012). Genetic algorithm.

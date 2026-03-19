@@ -5,10 +5,10 @@ import { type Server } from "http";
 import { nanoid } from "nanoid";
 
 const viteLogger = {
+  ...console,
   info: console.log,
   warn: console.warn,
   error: console.error,
-  ...console,
 };
 
 export function log(message: string, source = "express") {

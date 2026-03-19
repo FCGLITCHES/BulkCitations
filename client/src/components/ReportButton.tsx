@@ -18,33 +18,39 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import type { ParsedReference, ReferenceType } from "@shared/schema";
 
 const CATEGORIES = [
-  "Year missing or incorrect",
-  "Author name incorrect",
-  "Title missing or incorrect",
-  "Journal / venue incorrect",
-  "Pages missing or incorrect",
-  "Wrong citation style detected",
-  "Other...",
+  { value: "author", label: "Author name incorrect" },
+  { value: "year", label: "Year missing or incorrect" },
+  { value: "title", label: "Title missing or incorrect" },
+  { value: "venue", label: "Journal / venue incorrect" },
+  { value: "locator", label: "Pages missing or incorrect" },
+  { value: "style-detection", label: "Wrong citation style detected" },
+  { value: "reference-type", label: "Wrong reference type" },
+  { value: "other", label: "Other..." },
 ] as const;
 
 export interface ReportButtonProps {
-  refId: string;
   rawInput: string;
   detectedInputStyle: string;
   targetStyle: string;
   convertedOutput: string;
+  parsedData?: ParsedReference;
+  referenceType?: ReferenceType;
+  confidence?: number;
   reported?: boolean;
   onReported?: () => void;
 }
 
 export default function ReportButton({
-  refId,
   rawInput,
   detectedInputStyle,
   targetStyle,
   convertedOutput,
+  parsedData,
+  referenceType,
+  confidence,
   reported = false,
   onReported,
 }: ReportButtonProps) {
@@ -61,12 +67,15 @@ export default function ReportButton({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          rawInput,
-          detectedInputStyle,
-          targetStyle,
-          convertedOutput,
-          userCategory: category === "Other..." ? "Other..." : category,
-          userNote: category === "Other..." ? userNote.slice(0, 300) : undefined,
+          originalText: rawInput,
+          detectedStyle: detectedInputStyle,
+          outputStyle: targetStyle,
+          convertedText: convertedOutput,
+          failureCategory: category,
+          userNote: category === "other" ? userNote.slice(0, 500) : undefined,
+          parsedData,
+          referenceType,
+          confidence,
         }),
       });
       if (!res.ok) {
@@ -102,11 +111,12 @@ export default function ReportButton({
             aria-label="Report an issue"
           >
             <Flag className="h-4 w-4 mr-1.5" />
-            Report bad citation
+            <span className="hidden sm:inline">Report bad citation</span>
+            <span className="sm:hidden">Wrong?</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Report an issue</p>
+          <p>Report an issue with this citation</p>
         </TooltipContent>
       </Tooltip>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -115,6 +125,11 @@ export default function ReportButton({
             <DialogTitle>Report an issue</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            {/* Preview of the input */}
+            <div className="bg-muted/50 rounded p-2 text-xs font-mono break-words max-h-20 overflow-y-auto">
+              {rawInput.slice(0, 200)}{rawInput.length > 200 ? "..." : ""}
+            </div>
+
             <div className="grid gap-2">
               <Label htmlFor="report-category">What is wrong? (required)</Label>
               <Select value={category} onValueChange={setCategory} required>
@@ -123,26 +138,26 @@ export default function ReportButton({
                 </SelectTrigger>
                 <SelectContent>
                   {CATEGORIES.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            {category === "Other..." && (
+            {category === "other" && (
               <div className="grid gap-2">
                 <Label htmlFor="report-note">Describe the issue</Label>
                 <Textarea
                   id="report-note"
-                  placeholder="Optional description..."
+                  placeholder="e.g. 'should be conference not journal'"
                   value={userNote}
-                  onChange={(e) => setUserNote(e.target.value.slice(0, 300))}
-                  maxLength={300}
+                  onChange={(e) => setUserNote(e.target.value.slice(0, 500))}
+                  maxLength={500}
                   rows={3}
                   className="resize-none"
                 />
-                <p className="text-xs text-muted-foreground">{userNote.length}/300</p>
+                <p className="text-xs text-muted-foreground">{userNote.length}/500</p>
               </div>
             )}
           </div>

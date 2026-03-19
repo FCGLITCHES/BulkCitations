@@ -44,7 +44,7 @@ export async function createApp(): Promise<{ app: express.Express; server: Await
 
 /** Run server when not on Vercel (e.g. `npm run start`). */
 async function main() {
-  const { app, server } = await createApp();
+  const { server } = await createApp();
   const port = Number(process.env.PORT) || 5000;
   server.listen({ port, host: '0.0.0.0' }, () => {
     log(`serving on port ${port}`);

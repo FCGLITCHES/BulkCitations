@@ -528,9 +528,36 @@ export default function ReferenceOutput({
     [healthFilter, convertedReferences, healthById]
   );
 
-  const handleSaveEdit = (id: string, newText: string) => {
+  const handleSaveEdit = async (id: string, newText: string) => {
     setUserEdits(prev => ({ ...prev, [id]: newText }));
-    toast({ title: "Edits Saved", description: "Your changes have been saved locally." });
+    
+    // Auto-report the edit to the admin queue
+    const refData = convertedReferences.find(r => r.id === id);
+    if (refData && newText !== refData.convertedText) {
+      try {
+        await fetch("/api/reports", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            source: "user-edit", // Distinguish from manual "Wrong?" reports
+            originalText: refData.originalText,
+            detectedStyle: refData.inputStyle,
+            outputStyle: refData.outputStyle,
+            convertedText: refData.convertedText,
+            proposedStyleFix: newText, // The user's "ground truth" correction
+            failureCategory: "other",
+            parsedData: refData.parsedData,
+            referenceType: refData.referenceType,
+            confidence: refData.confidence,
+            status: "proposed" // Mark as proposed fix ready for admin review
+          }),
+        });
+      } catch (err) {
+        console.warn("[ReferenceOutput] Failed to auto-report edit:", err);
+      }
+    }
+
+    toast({ title: "Edits Saved", description: "Your changes have been saved and sent for review." });
   };
 
   // Scan input specifically for DOI stripping toast warning

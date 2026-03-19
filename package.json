@@ -13,7 +13,9 @@
     "test": "vitest run",
     "stress:finale": "tsx scripts/stressFinale1000.ts",
     "stress:2500": "tsx scripts/stressFinale2500.ts",
-    "stress:debug": "tsx scripts/stressDebug.ts"
+    "stress:debug": "tsx scripts/stressDebug.ts",
+    "benchmark": "tsx scripts/benchmark.ts",
+    "test:pdf": "tsx tests/test-pdf-citations.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -48,6 +50,7 @@
     "@radix-ui/react-tooltip": "^1.2.0",
     "@tanstack/react-query": "^5.60.5",
     "@types/file-saver": "^2.0.7",
+    "@vercel/analytics": "^2.0.1",
     "citation-js": "^0.7.22",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

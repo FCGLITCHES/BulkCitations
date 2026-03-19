@@ -5,3 +5,10 @@ server/public
 vite.config.ts.*
 *.tar.gz
 data/
+.env
+.env.*
+!.env.template
+.pnpm-store/
+*.log
+.vscode/
+.antigravity/

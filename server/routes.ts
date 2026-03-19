@@ -7,21 +7,12 @@ const pdfParse: (buffer: Buffer) => Promise<{ text: string }> =
   typeof pdfParseModule === "function" ? pdfParseModule : (pdfParseModule?.default ?? pdfParseModule);
 import { storage } from "./storage";
 import reportsRouter from "./routes/reports";
-import { conversionRequestSchema, normalizeCitationStyle, type ConversionResponse, type CitationStyle, type ConvertedReference, type AuthorityStatus } from "@shared/schema";
-import { CitationParser } from "./engine/citationParser";
-import { formatCSLData, parsedReferenceToCSL, initCSLStyles } from "./engine/cslConverter";
-import { fixFormatting, runAssertions, type AssertionResult } from "./engine/strictRenderer";
+import { conversionRequestSchema, type ConvertedReference, type ConversionResponse } from "@shared/schema";
+import { processReferences, reformatReferences, initCSLStyles } from "./engine/index";
 import { getAuthorityData } from "../shared/authorityLookup";
 import { calculateConfidence } from "../shared/confidence";
-import { hasAuthorInitialsOnly } from "./utils/authorResolution";
-import { clusterCitations } from "../shared/clustering";
-import { computeWorkKey } from "./utils/workKey";
-import { toRawReferenceText } from "@shared/types/textBrands";
-import pLimit from "p-limit";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  const citationParser = new CitationParser();
-
   // Initialize CSL styles at startup
   initCSLStyles();
 
@@ -33,152 +24,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.use("/api/reports", reportsRouter);
 
-  // Safety: max reference length to avoid ReDoS on dynamic patterns
-  const MAX_REF_LENGTH = 4000;
-
-  // Convert citations endpoint
+  // Convert citations endpoint — thin wrapper around engine pipeline
   app.post("/api/convert", async (req, res) => {
     try {
       const validatedData = conversionRequestSchema.parse(req.body);
       const { references, inputStyle, outputStyle } = validatedData;
-      const outputStyleInternal = normalizeCitationStyle(outputStyle);
 
-      const convertedReferences: ConvertedReference[] = [];
-      const errors: string[] = [];
-
-      const limit = pLimit(5); // Process 5 citations at a time to avoid slamming SS API
-      const enrichWithAuthority = validatedData.enrichWithAuthority;
-
-      const processTasks = references.map((inputRef, i) => limit(async () => {
-        const rawRef = toRawReferenceText(inputRef.trim());
-        if (!rawRef) return null;
-        if (rawRef.length > MAX_REF_LENGTH) {
-          errors.push(`Reference ${i + 1} exceeds ${MAX_REF_LENGTH} character limit — skipped for safety.`);
-          return null;
-        }
-
-        try {
-          // Pre-normalize once so detect and parse see the same string
-          const normalized = citationParser.preNormalize(rawRef);
-          if (!normalized) return null;
-
-          // Detect style if auto-detection is requested
-          let detectedStyle = inputStyle;
-          let styleDetectionFailed = false;
-          if (inputStyle === 'auto') {
-            const detected = citationParser.detectStyle(normalized);
-            if (detected) {
-              detectedStyle = detected;
-            } else {
-              detectedStyle = 'apa';
-              styleDetectionFailed = true;
-              errors.push(`Could not detect citation style for reference ${i + 1} — converted as best-guess stub`);
-            }
-          }
-
-          // Parse the reference
-          const { parsed: parsedData, patternHits } = citationParser.parseReference(normalized, detectedStyle as any);
-          (parsedData as any)._inputHadLocator = /\bpp?\.?\s*[A-Z]?\d|\bArt(?:icle)?\.?\s*(?:no\.?\s*)?[A-Z]?\d|\b\d+\(\d+\)\s*:\s*[A-Z]?\d|\bS\d+(?:[-–]S?\d+)?\b/i.test(normalized);
-          (parsedData as any).rawInput = rawRef;
-
-          const referenceType = citationParser.determineReferenceType(parsedData);
-          const workKey = computeWorkKey(parsedData);
-          let cslData = parsedReferenceToCSL(parsedData, referenceType, `ref${i}`);
-
-          const rawConvertedText = formatCSLData(cslData, outputStyleInternal as any, { includeDoi: false });
-          const convertedText = fixFormatting(outputStyleInternal, rawConvertedText, parsedData);
-          const assertionResult = runAssertions(outputStyleInternal, convertedText, parsedData);
-
-          let warnings = assertionResult.warnings;
-          const parseWarnings = (parsedData.parseWarnings ?? []).map((w: string) => `parse: ${w}`);
-          if (parseWarnings.length > 0) warnings = [...parseWarnings, ...warnings];
-
-          if (styleDetectionFailed) {
-            warnings = [`warning: Style could not be detected; output is a best-guess stub.`, ...warnings];
-          }
-
-          let baseRulesScore = 100;
-          for (let w of warnings) {
-            if (w.startsWith('error:')) baseRulesScore -= 30;
-            else if (w.startsWith('warning:')) baseRulesScore -= 15;
-          }
-          baseRulesScore = Math.max(0, baseRulesScore);
-
-          let authorityData: any;
-          let authorityStatus: AuthorityStatus = 'none';
-
-          if (!validatedData.isPro) {
-            authorityStatus = 'blocked';
-          } else if (!enrichWithAuthority) {
-            authorityStatus = 'skipped';
-          } else {
-            const result = await getAuthorityData(parsedData);
-            authorityStatus = result.status;
-            if (result.data) authorityData = result.data;
-          }
-
-          const confidence = calculateConfidence(parsedData, baseRulesScore, authorityData);
-
-          // Return prepared data for aggregation and batch storage
-          return {
-            refData: {
-              originalText: rawRef,
-              inputStyle: detectedStyle,
-              outputStyle,
-              parsedData,
-              convertedText,
-              referenceType,
-              confidenceScore: confidence.score,
-              workKey,
-              patternHits,
-              authorityStatus,
-            },
-            uiData: {
-              originalText: rawRef,
-              convertedText,
-              referenceType,
-              parsedData,
-              inputStyle: detectedStyle as any,
-              outputStyle,
-              warnings,
-              confidence,
-              authorityData,
-              patternHits,
-              authorityStatus,
-              workKey,
-              styleDetectionFailed,
-              assertionSummary: assertionResult.assertionSummary,
-              assertionHighlights: assertionResult.assertionHighlights,
-              authorInitialsOnly: hasAuthorInitialsOnly(parsedData),
-            }
-          };
-        } catch (error) {
-          console.error(`Error processing reference ${i + 1}: `, error);
-          errors.push(`Error processing reference ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-          return null;
-        }
-      }));
-
-      // Await all parallel tasks
-      const results = await Promise.all(processTasks);
-      const validResults = results.filter((r): r is NonNullable<typeof r> => r !== null);
+      const result = await processReferences(references, {
+        inputStyle,
+        outputStyle,
+        enrichWithAuthority: validatedData.enrichWithAuthority,
+        isPro: validatedData.isPro,
+      });
 
       // Batch store references
-      const storedRefs = await storage.createReferences(validResults.map(r => r.refData));
+      const storedRefs = await storage.createReferences(
+        result.storageData.map(({ _uiData, ...rest }) => rest)
+      );
 
-      // Map back to final ConvertedReference objects with correct IDs
-      const convertedReferences: ConvertedReference[] = validResults.map((r, idx) => ({
-        ...r.uiData,
-        id: storedRefs[idx].id.toString()
+      // Map storage IDs back to UI references
+      const convertedReferences: ConvertedReference[] = result.storageData.map((sd, idx) => ({
+        ...sd._uiData,
+        id: storedRefs[idx].id.toString(),
       }));
 
-      // Execute Clustering (Similarity Grouping) on the batched set
+      // Re-cluster with IDs assigned
+      const { clusterCitations } = await import("../shared/clustering");
       const clusters = clusterCitations(convertedReferences, 80);
 
       const response: ConversionResponse = {
         convertedReferences,
         clusters: clusters.length > 0 ? clusters : undefined,
-        errors: errors.length > 0 ? errors : undefined,
+        errors: result.errors.length > 0 ? result.errors : undefined,
       };
 
       res.json(response);
@@ -373,8 +250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Reformat endpoint: re-renders stored parsedData with a new output style
-  // Powers the onStyleChange live hook without re-parsing from raw text
+  // Reformat endpoint: thin wrapper around engine pipeline
   app.post("/api/reformat", async (req, res) => {
     try {
       const { references, outputStyle } = req.body as {
@@ -384,46 +260,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!Array.isArray(references) || !outputStyle) {
         return res.status(400).json({ message: "references[] and outputStyle are required" });
       }
-      const outputStyleInternal = normalizeCitationStyle(outputStyle);
 
-      const reformatted: ConvertedReference[] = [];
-
-      for (const ref of references) {
-        try {
-          const cslData = parsedReferenceToCSL(ref.parsedData, ref.referenceType as any, ref.id);
-          const rawText = formatCSLData(cslData, outputStyleInternal as any, { includeDoi: false });
-          const convertedText = fixFormatting(outputStyleInternal, rawText, ref.parsedData);
-          const assertionResult: AssertionResult = runAssertions(outputStyleInternal, convertedText, ref.parsedData);
-
-          let baseRulesScore = 100;
-          for (const w of assertionResult.warnings) {
-            if (w.startsWith('error:')) baseRulesScore -= 30;
-            else if (w.startsWith('warning:')) baseRulesScore -= 15;
-          }
-          baseRulesScore = Math.max(0, baseRulesScore);
-
-          const confidence = calculateConfidence(ref.parsedData, baseRulesScore);
-
-          reformatted.push({
-            id: ref.id,
-            originalText: ref.originalText,
-            convertedText,
-            referenceType: ref.referenceType as any,
-            parsedData: ref.parsedData,
-            inputStyle: ref.inputStyle,
-            outputStyle,
-            warnings: assertionResult.warnings,
-            confidence,
-            assertionSummary: assertionResult.assertionSummary,
-            assertionHighlights: assertionResult.assertionHighlights,
-            authorInitialsOnly: hasAuthorInitialsOnly(ref.parsedData),
-          });
-        } catch (error) {
-          console.error(`Reformat error for ref ${ref.id}:`, error);
-        }
-      }
-
-      res.json({ convertedReferences: reformatted });
+      const convertedReferences = reformatReferences(references, outputStyle);
+      res.json({ convertedReferences });
     } catch (error) {
       console.error('Reformat error:', error);
       res.status(500).json({ message: "Reformat failed" });

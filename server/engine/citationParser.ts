@@ -1,6 +1,7 @@
 import { ParsedReference, ReferenceType, CitationStyle, type PatternHit } from "@shared/schema";
 import { stripLeadingNumbering } from "@shared/stripNumbering";
 import type { PreNormalizedText } from "@shared/types/textBrands";
+import { expandJournalName, looksAbbreviated } from './stages/expandJournalAbbrev';
 import fs from "fs";
 import path from "path";
 
@@ -17,6 +18,95 @@ interface DynamicPattern {
 const DEBUG_STRESS = process.env.DEBUG_STRESS === '1';
 
 const NEXT_YEAR = new Date().getFullYear() + 1;
+
+// Tokens that must never be split or lowercased during pre-normalization (IoT, MANET, IEEE, etc.)
+const PROTECTED_TOKENS = new Set([
+  'IoT',
+  'MANET',
+  'IEEE',
+  'ACM',
+  'DOI',
+  'IIT',
+  'PhD',
+  'arXiv',
+  'iJIM',
+  'iJOE',
+  'iJEP',
+  'ICGCIoT',
+  'ICIIBMS',
+  'ICCIC',
+  'JOIV',
+  'NTMS',
+  'SoSE'
+]);
+
+function protectTokens(input: string): { text: string; map: Map<string, string> } {
+  const map = new Map<string, string>();
+  let result = input;
+  let idx = 0;
+  for (const tok of PROTECTED_TOKENS) {
+    const re = new RegExp(`\\b${tok}\\b`, 'g');
+    if (re.test(result)) {
+      const placeholder = `__TOK${idx}__`;
+      result = result.replace(re, placeholder);
+      map.set(placeholder, tok);
+      idx += 1;
+    }
+  }
+  return { text: result, map };
+}
+
+function restoreTokens(input: string, map: Map<string, string>): string {
+  let out = input;
+  map.forEach((orig, placeholder) => {
+    const re = new RegExp(placeholder, 'g');
+    out = out.replace(re, orig);
+  });
+  return out;
+}
+
+
+
+// Token classifiers for author detection.
+const SURNAME_INITIALS = /^[A-Z][a-záéíóú\-']{1,25}(?:,?\s+[A-Z]{1,3}\.?(\s+[A-Z]{1,3}\.?)*)\s*$/;
+const FIRSTNAME_LASTNAME = /^[A-Z][a-záéíóú\-']+\s+[A-Z][a-záéíóú\-']+$/;
+const PARTICLE_NAME = /^(de|van|von|del|da|di|le|la|dos|las|los)\s+[A-Z][a-z]+/i;
+const INITIALS_ONLY = /^([A-Z]\.?\s*){1,3}$/;
+
+// Hard author stop rule: the moment this returns false, we stop consuming authors.
+function isPersonToken(token: string): boolean {
+  const t = token.trim().replace(/^and\s+/i, '');
+  if (!t) return false;
+  if (SURNAME_INITIALS.test(t)) return true;
+  if (FIRSTNAME_LASTNAME.test(t)) return true;
+  if (PARTICLE_NAME.test(t)) return true;
+  if (INITIALS_ONLY.test(t)) return true;
+  return false;
+}
+
+// Extract the author segment from a raw string, stopping at the first non-person token.
+// Returns the raw author segment (to be passed to parseAuthorList) and the remaining tail.
+function extractAuthorSegment(raw: string): { authorSegment: string; remaining: string } {
+  if (!raw) return { authorSegment: '', remaining: '' };
+  const normalized = raw.replace(/,?\s+and\s+/gi, ', ');
+  const tokens = normalized.split(/,\s*/).filter(Boolean);
+  const authorTokens: string[] = [];
+  let consumed = 0;
+
+  for (let i = 0; i < tokens.length; i++) {
+    const tok = tokens[i].trim();
+    if (!tok) continue;
+    if (!isPersonToken(tok)) {
+      break;
+    }
+    authorTokens.push(tok);
+    consumed = i + 1;
+  }
+
+  const authorSegment = authorTokens.join(', ');
+  const remaining = tokens.slice(consumed).join(', ');
+  return { authorSegment, remaining };
+}
 
 function isValidYear(candidate: string | undefined): boolean {
   if (!candidate) return false;
@@ -171,7 +261,7 @@ export class CitationParser {
    * Returns a branded PreNormalizedText — the only type accepted by detectStyle and parseReference.
    */
   preNormalize(raw: string): PreNormalizedText {
-    let s = raw.trim();
+    let { text: s, map } = protectTokens(raw.trim());
     if (!s) return s as PreNormalizedText;
     // Per-line: strip leading numbering (1. / 2) / 3 - / [4] etc.)
     s = s.split(/\n/).map((line) => {
@@ -196,6 +286,7 @@ export class CitationParser {
     s = s.replace(/\bIn(?=[A-Z][a-z])/g, 'In ');
     // Collapse whitespace
     s = s.replace(/\s+/g, ' ').trim();
+    s = restoreTokens(s, map);
     return s as PreNormalizedText;
   }
 
@@ -210,8 +301,9 @@ export class CitationParser {
     const trimmed = text.trim();
     if (!trimmed || trimmed.length < 15) return null;
 
-    // Vancouver structural pre-check: ". 2015;47(3):123" style tails
-    if (/\.\s*(19|20)\d{2};[\d?]+[\(:]/.test(trimmed)) {
+    // Vancouver structural pre-check: ". 2015;47(3):123" or "2015;47(3):123" style tails
+    // This compact "Year;Volume(Issue):Pages" tail is unique to Vancouver and should win before scoring.
+    if (/\.\s*(19|20)\d{2};[\d?]+[\(:]/.test(trimmed) || /\b(19|20)\d{2};\s*[\d?]+[\(:]/.test(trimmed)) {
       return 'vancouver';
     }
 
@@ -365,6 +457,16 @@ export class CitationParser {
     // Key difference: APA has "(Year)." (period after parens), Harvard has "(Year) Title" (no period)
     if (/\(\d{4}[a-z]?\)\./.test(scrubbedForDetection)) {
       scores.apa += 1;
+    }
+
+    // Strong Harvard pre-checks: distinguish from Chicago/MLA
+    // 1) Single-quoted title immediately after year-in-parens: Author, I. (Year) 'Title', Journal...
+    if (/^[A-Z\u00c0-\u017e][A-Za-z\u00c0-\u024f'’-]+,\s*(?:[A-Z](?:\.[A-Z])*\.?).*\((?:19|20)\d{2}[a-z]?\)\s+['\u2018][^'\u2019]+['\u2019],\s*[A-Z]/.test(trimmed)) {
+      return 'harvard';
+    }
+    // 2) "Available at:" plus "(Accessed: ...)" is effectively unique to Harvard web refs
+    if (/Available at:/i.test(trimmed) && /\(Accessed:/i.test(trimmed)) {
+      return 'harvard';
     }
 
     // MLA vs Chicago with quoted titles: 
@@ -600,7 +702,12 @@ export class CitationParser {
       delete clean.authors;
     }
 
-    // 2. Extracted DOI logic removed per plan
+    // 1b. Journal abbreviation expansion
+    if (clean.journal && looksAbbreviated(clean.journal)) {
+      const expanded = expandJournalName(clean.journal);
+      if (expanded !== clean.journal) clean.journal = expanded;
+    }
+
 
     // 2b. Compact physics/Vancouver form: "Journal. 128(4):040501" — N(N):N embedded in container fields
     //     Must run before the article-number check so extracted pages can be promoted.
@@ -658,6 +765,39 @@ export class CitationParser {
       clean.title = clean.title.replace(/\s*Vol\.?\s*\d+(?:,\s*No\.?\s*\d+)?\s*[:;]?\s*\d*[-–]?\d*\s*\.?\s*$/i, '').trim();
       // Strip trailing "(YYYY)." pattern leaked from preNormalize
       clean.title = clean.title.replace(/\s*\(\d{4}\)\.\s*$/, '').trim();
+
+      // Strip trailing "author as tagline" from titles like
+      // "Developing ... via AHP: M. Benaida." where the last segment
+      // redundantly repeats the primary author name.
+      if (clean.authors && clean.authors.length > 0) {
+        const firstAuthor = clean.authors[0];
+        const surname = firstAuthor.split(',')[0]?.trim();
+        const initialsMatch = firstAuthor.match(/,\s*([A-Z](?:\.\s*)?(?:[A-Z](?:\.\s*)?)*)/);
+        const initialsRaw = initialsMatch?.[1]?.trim();
+        const candidates: string[] = [];
+        const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        if (surname) {
+          candidates.push(surname);
+        }
+        if (initialsRaw) {
+          const initialsNormalized = initialsRaw.replace(/\s+/g, ' ').trim();
+          const initialsCompact = initialsNormalized.replace(/\s+/g, '');
+          candidates.push(initialsNormalized, initialsCompact);
+          if (surname) {
+            candidates.push(`${initialsNormalized} ${surname}`, `${initialsCompact} ${surname}`);
+          }
+        }
+
+        for (const cand of candidates) {
+          if (!cand) continue;
+          const re = new RegExp(`[:\\-]\\s*${escape(cand)}\\.?$`, 'i');
+          if (re.test(clean.title)) {
+            clean.title = clean.title.replace(re, '').trim().replace(/[.:]\s*$/, '').trim();
+            break;
+          }
+        }
+      }
 
       if (style === 'apa') {
         // APA sentence casing normalization
@@ -885,7 +1025,20 @@ export class CitationParser {
       // Fallback: APA-like with year without parentheses: "Author, I. 2017. Title. Journal..."
       const yearNoParen = cleanText.match(/^(.+?)\s+(\d{4})\.\s*(.+)$/);
       if (yearNoParen) {
-        parsed.authors = this.parseAuthorList(yearNoParen[1].replace(/[,&]\s*$/, '').trim(), 'apa');
+        const beforeYear = yearNoParen[1].trim();
+        // Heuristic: if the chunk before the year clearly contains non-person tokens (title-like),
+        // treat the whole line as non-APA and delegate to generic/IEEE-style parsing instead.
+        const tokens = beforeYear.split(',').map((s) => s.trim()).filter(Boolean);
+        const isPersonLike = (s: string): boolean =>
+          /^[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+[A-Z]{1,3}\.?$/.test(s) ||
+          /^[A-Z][a-z]+,\s*[A-Z]{1,3}\.?$/.test(s);
+        const personCount = tokens.filter(isPersonLike).length;
+        if (tokens.length >= 2 && personCount < tokens.length) {
+          // Mixed person + non-person → this is likely an IEEE/Vancouver style "Author, Author, Title, Year."
+          return this.parseGeneric(cleanText);
+        }
+
+        parsed.authors = this.parseAuthorList(beforeYear.replace(/[,&]\s*$/, '').trim(), 'apa');
         parsed.year = yearNoParen[2];
         const remainder = yearNoParen[3];
         const titleRemainder = this.extractTitleAndRemainder(remainder);
@@ -1726,6 +1879,23 @@ export class CitationParser {
     // Remove leading number
     let cleanText = stripLeadingNumbering(text).trim();
 
+    // Special-case "Author, Author, Title, YYYY." shapes that were misclassified as Vancouver.
+    // Example: "Goldberg DE, Holland JH, Genetic algorithms and machine learning, 1988."
+    if (!/;/.test(cleanText)) {
+      const authorTitleYear = cleanText.match(/^(.*),\s*((?:19|20)\d{2})\s*\.?\s*$/);
+      if (authorTitleYear) {
+        const beforeYear = authorTitleYear[1].trim();
+        const { authorSegment, remaining } = extractAuthorSegment(beforeYear);
+        if (authorSegment && remaining) {
+          parsed.year = authorTitleYear[2];
+          parsed.authors = this.parseAuthorList(authorSegment, 'vancouver');
+          parsed.title = remaining;
+          this.extractURL(cleanText, parsed);
+          return parsed;
+        }
+      }
+    }
+
     // Strip OpenAlex placeholder ";?:" / ";?" so ? is not treated as volume (treat as no volume data)
     cleanText = cleanText.replace(/;\s*\?+\s*:?/g, ';');
 
@@ -1746,9 +1916,9 @@ export class CitationParser {
       }
     }
 
-    // Vancouver key pattern: Year;Volume(Issue):Pages
-    // E.g., "2011;42(2):167-176" or "2024;7(2):Article e10293"
-    const yearVolMatch = cleanText.match(/(\d{4})(?:\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2})?;([^(:]+)(?:\(([^)]+)\))?(?::(.*?))?(?=\s*$|\s+[^a-z])/i);
+    // Vancouver key pattern: Year;Volume(Issue):Pages  (or slight comma variants)
+    // E.g., "2011;42(2):167-176" or "2011;42(2),167-176"
+    const yearVolMatch = cleanText.match(/(\d{4})(?:\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2})?;([^(:]+)(?:\(([^)]+)\))?(?::|,)(.*?)(?=\s*$|\s+[^a-z])/i);
 
     if (yearVolMatch) {
       parsed.year = yearVolMatch[1];
@@ -1831,6 +2001,40 @@ export class CitationParser {
   private parseGeneric(text: string): ParsedReference {
     const parsed: ParsedReference = {};
 
+    // Heuristic: "Author, Author, Title, YYYY." or "Author, Title, YYYY."
+    // Handles IEEE/Vancouver-ish inputs that fell through style detection.
+    // Skip when the string clearly looks like a report/thesis so those branches can handle it.
+    if (!/report|thesis|diss\./i.test(text)) {
+      const authorTitleYear = text.match(/^(.*),\s*((?:19|20)\d{2})\.\s*$/);
+      if (authorTitleYear) {
+        const beforeYear = authorTitleYear[1].trim();
+        const year = authorTitleYear[2];
+        const tokens = beforeYear.split(',').map((s) => s.trim()).filter(Boolean);
+        if (tokens.length >= 2) {
+          const isPersonLike = (s: string): boolean =>
+            /^[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+[A-Z]{1,3}\.?$/.test(s) || // "Goldberg DE"
+            /^[A-Z][a-z]+,\s*[A-Z]{1,3}\.?$/.test(s); // "Goldberg, D."
+
+          const authorTokens: string[] = [];
+          let i = 0;
+          for (; i < tokens.length; i++) {
+            if (isPersonLike(tokens[i])) {
+              authorTokens.push(tokens[i]);
+            } else {
+              break;
+            }
+          }
+
+          if (authorTokens.length > 0 && i < tokens.length) {
+            parsed.year = year;
+            parsed.authors = authorTokens;
+            parsed.title = tokens.slice(i).join(', ');
+            // URL / article-number extraction still applies below
+          }
+        }
+      }
+    }
+
     // Report / thesis institution: "Report submitted at Institution" or "Report Institution, Year" or "PhD diss., Institution, Year"
     const reportAtMatch = text.match(/(?:Report\s+submitted\s+at|report\s+at)\s+([^.,]+?)(?:\.|,|$)/i);
     if (reportAtMatch) {
@@ -1849,10 +2053,12 @@ export class CitationParser {
       if (!parsed.publisher) parsed.publisher = parsed.institution;
     }
 
-    // Extract year
-    const yearMatch = text.match(/\b((?:19|20)\d{2}|n\.d\.)\b/i);
-    if (yearMatch) {
-      parsed.year = yearMatch[1];
+    // Extract year (if not already set)
+    if (!parsed.year) {
+      const yearMatch = text.match(/\b((?:19|20)\d{2}|n\.d\.)\b/i);
+      if (yearMatch) {
+        parsed.year = yearMatch[1];
+      }
     }
 
     // Extract potential title (text in quotes)
@@ -1861,10 +2067,12 @@ export class CitationParser {
       parsed.title = titleMatch[1].replace(/\.$/, '').trim();
     }
 
-    // Try to extract authors from the beginning
-    const authorPart = text.split(/\(\d{4}\)|"\s/)[0].trim();
-    if (authorPart && authorPart.length > 3) {
-      parsed.authors = [authorPart.replace(/[,.]$/, '').trim()];
+    // Try to extract authors from the beginning if still unknown
+    if (!parsed.authors) {
+      const authorPart = text.split(/\(\d{4}\)|"\s/)[0].trim();
+      if (authorPart && authorPart.length > 3) {
+        parsed.authors = [authorPart.replace(/[,.]$/, '').trim()];
+      }
     }
 
 
@@ -2175,4 +2383,137 @@ export class CitationParser {
     if (bestScore < 3 || bestScore - secondScore < 2) return 'other';
     return bestType;
   }
+
+  /**
+   * Year-anchored fallback parser (Stage 5 Attempt 2).
+   * 
+   * When style-based parsing fails or yields low confidence (≤ 0.80),
+   * this method pivots on the first confident year to extract fields
+   * without requiring a known style.
+   * 
+   * Strategy:
+   *   1. Find the best year candidate using scoring (parenthesized > semicolon > bare)
+   *   2. Before the year → author block
+   *   3. After the year → title (first sentence/chunk), then venue/pages
+   * 
+   * Returns null if no year can be found.
+   */
+  parseYearAnchored(text: string): ParsedReference | null {
+    const yearRe = /\b((?:19|20)\d{2}|n\.d\.)\b/gi;
+    type YCand = { year: string; index: number; score: number };
+    const candidates: YCand[] = [];
+
+    let m: RegExpExecArray | null;
+    // Reset lastIndex before exec loop
+    yearRe.lastIndex = 0;
+    while ((m = yearRe.exec(text)) !== null) {
+      const yr = m[1];
+      const idx = m.index;
+      const before = text.slice(Math.max(0, idx - 40), idx);
+      const after = text.slice(idx + yr.length, idx + yr.length + 10);
+
+      let score = 1;
+      const inParens = /\(\s*$/.test(before) && /^\s*\)/.test(after);
+      const afterSemicolon = /;\s*$/.test(before);
+      const commaBounded = /,\s*$/.test(before);
+
+      if (yr === 'n.d.') score = 5; // always highly reliable
+      else if (inParens) score = 4;
+      else if (commaBounded) score = 2;
+      else if (afterSemicolon) score = 2;
+
+      // Penalise years embedded in long numeric context (volume-like)
+      if (/\d{2,}\s*$/.test(before) || /^\s*[,;]\s*\d/.test(after)) score = 0;
+
+      if (score > 0) candidates.push({ year: yr, index: idx, score });
+    }
+
+    if (candidates.length === 0) return null;
+
+    // Pick best candidate
+    candidates.sort((a, b) => b.score - a.score || a.index - b.index);
+    const best = candidates[0];
+    const yearIdx = best.index;
+    const yearEnd = yearIdx + best.year.length;
+
+    const parsed: ParsedReference = { year: best.year };
+
+    // ── Authors: everything before the year ──
+    let authorBlock = text.slice(0, yearIdx).trim();
+    // Strip surrounding parentheses around year block (e.g. " (2021).")
+    authorBlock = authorBlock.replace(/\s*\(?\s*$/, '').trim();
+    // Strip trailing punctuation
+    authorBlock = authorBlock.replace(/[.,;:]\s*$/, '').trim();
+
+    if (authorBlock.length > 0) {
+      // Split on " and " or " & " or ", " patterns for multiple authors
+      const authorParts = authorBlock
+        .split(/,\s*(?=and\s)|(?:\s+and\s+|\s*&\s*)/)
+        .map(a => a.trim().replace(/[.,;]+$/, '').trim())
+        .filter(a => a.length > 0);
+      if (authorParts.length > 0) {
+        parsed.authors = authorParts;
+      }
+    }
+
+    // ── After year: title and venue ──
+    let afterYear = text.slice(yearEnd).trim();
+    // Strip leading punctuation (").", ".", ",", ":")
+    afterYear = afterYear.replace(/^\s*[).,;:]+\s*/, '').trim();
+
+    if (afterYear.length === 0) return parsed;
+
+    // Title: find the first sentence boundary before a venue-like token
+    // Heuristic: title ends at ". " followed by something that looks like a journal name (Title Case)
+    // Or at the first comma after ≥ 20 chars
+    const titleEnd = findTitleBoundary(afterYear);
+    const titleBlock = titleEnd > 0 ? afterYear.slice(0, titleEnd).trim() : afterYear;
+    const venueBlock = titleEnd > 0 ? afterYear.slice(titleEnd).replace(/^[.,\s]+/, '').trim() : '';
+
+    if (titleBlock) {
+      parsed.title = titleBlock.replace(/^["'"'"]|["'"'"]\s*$/, '').trim();
+    }
+
+    // ── Venue/pages extraction from venueBlock ──
+    if (venueBlock) {
+      // Try to extract volume(issue):pages pattern
+      const volIssuePages = venueBlock.match(/(\d+)\s*\((\d+)\)\s*[:,]?\s*(\d+(?:[-–]\d+)?)/);
+      if (volIssuePages) {
+        parsed.volume = volIssuePages[1];
+        parsed.issue = volIssuePages[2];
+        parsed.pages = volIssuePages[3].replace(/–/g, '-');
+      }
+      // Try volume:pages (no issue)
+      else {
+        const volPages = venueBlock.match(/(\d+)\s*[:,]\s*(\d+(?:[-–]\d+)?)/);
+        if (volPages) {
+          parsed.volume = volPages[1];
+          parsed.pages = volPages[2].replace(/–/g, '-');
+        }
+      }
+
+      // Journal: everything before the first number segment
+      const journalMatch = venueBlock.match(/^([A-Z][^,.\d]+?)(?:[,.]?\s*\d|$)/);
+      if (journalMatch) {
+        const candidate = journalMatch[1].trim().replace(/[,.]$/, '');
+        if (candidate.length >= 3) parsed.journal = candidate;
+      }
+    }
+
+    parsed.parseWarnings = [...(parsed.parseWarnings ?? []), 'year-anchored-fallback'];
+    return parsed;
+  }
+}
+
+/** Find the boundary between title and venue in an "after-year" fragment. */
+function findTitleBoundary(text: string): number {
+  // Boundary 1: ". " followed by a word starting with uppercase (likely journal/publisher)
+  const sentenceEnd = text.search(/\.\s+[A-Z]/);
+  if (sentenceEnd >= 15 && sentenceEnd < text.length - 5) return sentenceEnd + 1;
+
+  // Boundary 2: comma after a reasonable title length
+  const commaIdx = text.indexOf(',', 20);
+  if (commaIdx > 20) return commaIdx;
+
+  return 0; // couldn't find a good boundary
 }

@@ -547,7 +547,7 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
             clean = clean.replace(/(?:[a-zA-Z\s]+,\s*[A-Z]{2}|[A-Z][a-z]+(?:[\s-][A-Z][a-z]+)*):\s+(?=[A-Z0-9])/g, '');
             // Preserve hyphenated acronyms, known terms, and labels (DOI, IIT, etc.) before initial expansion
             const apaPreserved = new Map<string, string>();
-            clean = clean.replace(/\b(DFT-D|ChIP-Seq|EM|RNA|DNA|PCR|MACS|ORTEP-III|DOI|IIT\s+Bombay|IIT|ACM|IEEE|UC|U\.\s*C\.|PhD)\b/g, (m) => {
+            clean = clean.replace(/\b(DFT-D|ChIP-Seq|EM|RNA|DNA|PCR|MACS|ORTEP-III|DOI|IIT\s+Bombay|IIT|ACM|IEEE|UC|U\.\s*C\.|PhD|IoT|MANET|iJIM|iJOE|iJEP|ICGCIoT|ICIIBMS|ICCIC|JOIV)\b/g, (m) => {
                 const t = `__APAPRES${apaPreserved.size}__`;
                 apaPreserved.set(t, m);
                 return t;
@@ -560,32 +560,32 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
                 let authorOnly = firstSegment;
                 authorOnly = authorOnly.replace(/\b([A-Z])\.?([A-Z])\.?([A-Z])\.?\b/g, '$1. $2. $3.');
                 authorOnly = authorOnly.replace(/\b([A-Z])\.?([A-Z])\.?\b/g, '$1. $2.');
+                // Restore preserved tokens in author segment for readability
                 apaPreserved.forEach((orig, tok) => { authorOnly = authorOnly.replace(tok, orig); });
                 clean = authorOnly + rest;
             } else {
                 clean = clean.replace(/\b([A-Z])\.?([A-Z])\.?([A-Z])\.?\b/g, '$1. $2. $3.');
                 clean = clean.replace(/\b([A-Z])\.?([A-Z])\.?\b/g, '$1. $2.');
-                apaPreserved.forEach((orig, tok) => { clean = clean.replace(tok, orig); });
             }
+            // Globally restore any remaining preserved tokens (venue, conference names, acronyms)
+            apaPreserved.forEach((orig, tok) => {
+                const re = new RegExp(tok, 'g');
+                clean = clean.replace(re, orig);
+            });
             // Remove stray "&" before initials in final author (e.g. "da Silva, & V.L." -> "da Silva, V.L.")
             clean = clean.replace(/,\s*&\s*([A-Z]\.)/g, ', $1');
-            // Remove duplicate trailing " (Year)." when year already appears earlier in the citation
-            const trailingYearMatch = clean.match(/\s+\((?:19|20)\d{2}|n\.d\.\)\.?\s*$/i);
-            if (trailingYearMatch && fields?.year) {
-              const beforeTrailing = clean.slice(0, -trailingYearMatch[0].length);
-              if (beforeTrailing.includes(`(${fields.year})`)) {
-                clean = (beforeTrailing.replace(/\s*\.?\s*$/, '') || beforeTrailing.trim()).replace(/\s*$/, '') + '.';
+            // Remove duplicate trailing " (Year)." when year already appears earlier in the citation.
+            if (fields?.year) {
+              const year = String(fields.year);
+              const token = `(${year})`;
+              const firstIdx = clean.indexOf(token);
+              const secondIdx = clean.indexOf(token, firstIdx + token.length);
+              if (firstIdx !== -1 && secondIdx !== -1) {
+                const between = clean.slice(firstIdx + token.length, secondIdx).trim();
+                if (between.length === 0) {
+                  clean = clean.slice(0, secondIdx).trim().replace(/[.,\s]+$/, '') + '.';
+                }
               }
-            }
-            // Remove duplicate trailing " (Year). TitleFragment" (repeated title at end)
-            const titleStr = (fields?.title ?? '').trim();
-            if (titleStr.length > 15 && fields?.year) {
-              const prefix = titleStr.substring(0, 30).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-              const dupTrailing = new RegExp(
-                `\\s+\\(${fields.year}\\)\\.?\\s+${prefix}[^.]*\\.?\\s*$`,
-                'i'
-              );
-              clean = clean.replace(dupTrailing, '.');
             }
             break;
 

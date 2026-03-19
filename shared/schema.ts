@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // Citation style type - lowercase for internal use
 // Internal names: harvard-ctr (Cite Them Right), chicago-ad (author-date), chicago-nb (notes-biblio)
-export type CitationStyle = 'apa' | 'mla' | 'harvard-ctr' | 'chicago-ad' | 'chicago-nb' | 'ieee' | 'vancouver' | 'auto';
+export type CitationStyle = 'apa' | 'mla' | 'harvard' | 'chicago' | 'harvard-ctr' | 'chicago-ad' | 'chicago-nb' | 'ieee' | 'vancouver' | 'auto';
 
 /** UI/API may send 'harvard' or 'chicago'; normalize to internal style for CSL and strict renderer. */
 export function normalizeCitationStyle(style: string): CitationStyle {
@@ -194,4 +194,74 @@ export interface InsertReference {
 export interface Reference extends InsertReference {
   id: number;
   createdAt: Date;
+}
+
+// ── Failure Reporting System ──
+
+/** Where the failure report originated */
+export type FailureSource = 'user' | 'auto' | 'user-edit';
+
+/** Broad category of what went wrong */
+export type FailureCategory =
+  | 'author'
+  | 'style-detection'
+  | 'reference-type'
+  | 'venue'
+  | 'locator'
+  | 'title'
+  | 'year'
+  | 'other';
+
+/** Lifecycle status of a failure report */
+export type ReportStatus = 'pending' | 'proposed' | 'accepted' | 'rejected' | 'duplicate';
+
+/**
+ * What kind of fix is needed.
+ * - dynamic-pattern: can be applied to patterns.json (instant, no deploy)
+ * - parser-logic: requires code change in citationParser.ts
+ * - scoring-tweak: requires change in detectStyle() or clustering/confidence logic
+ * - renderer-fix: requires cslConverter.ts or strictRenderer.ts change
+ * - type-correction: correctly parsed but wrong reference type assigned
+ * - other-fix: manual database fix or unique edge case
+ */
+export type FixType = 'dynamic-pattern' | 'parser-logic' | 'scoring-tweak' | 'renderer-fix' | 'type-correction' | 'other-fix';
+
+/** A proposed dynamic pattern fix candidate */
+export interface ProposedPattern {
+  id: string;
+  regex: string;
+  fields: Record<string, number>;
+  description: string;
+  category?: string;
+  priority?: number;
+}
+
+/** Community-verified failure report */
+export interface CitationReport {
+  id: string;
+  source: FailureSource;
+  originalText: string;
+  detectedStyle: string;
+  outputStyle: string;
+  parsedData?: ParsedReference;
+  referenceType?: ReferenceType;
+  convertedText: string;
+  confidence?: number;
+  failureCategory: FailureCategory;
+  userNote?: string;
+  status: ReportStatus;
+  fixType?: FixType;
+  proposedPattern?: ProposedPattern;
+  proposedStyleFix?: string;
+  verifiedBy?: string;
+  createdAt: string;
+  resolvedAt?: string;
+  /** SHA-256 fingerprint of normalized originalText for dedup */
+  fingerprint?: string;
+  /** Number of identical reports (incremented on dedup) */
+  reportCount: number;
+  /** Hashed IP for rate limiting (only stored, never exposed to admin UI) */
+  ipHash?: string;
+  /** Auto-queue trigger reasons */
+  autoQueueReasons?: string[];
 }

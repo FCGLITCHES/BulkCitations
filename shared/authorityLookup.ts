@@ -1,4 +1,4 @@
-import type { ParsedReference, AuthorityData, AuthorityStatus } from './schema';
+import type { ParsedReference, AuthorityData } from './schema';
 
 export type AuthorityLookupResult =
   | { data: AuthorityData; status: 'cache_hit' | 'fetched' }
@@ -38,8 +38,15 @@ class LRUCache<K, V> {
     }
 }
 
+import pLimit from 'p-limit';
+
 // Global server-side cache for authority lookup
 const authorityCache = new LRUCache<string, AuthorityData | null>(500);
+
+// Strict rate-limiter for Semantic Scholar (1 Req / Sec)
+// We use a queue to ensure we dont exceed the tiered API limit even during bursts
+const authorityLimit = pLimit(1); // One at a time
+const WAIT_MS = 1000;
 
 /**
  * Normalizes title for cache keying
@@ -66,6 +73,18 @@ function mapSemanticScholarToAuthority(data: any): AuthorityData {
         pages: data.pages || undefined,
         volume: data.journal?.volume || undefined
     };
+}
+
+/**
+ * Internal fetch implementation that enforces the 1s delay
+ */
+async function throttledFetch(apiUrl: string, headers: Record<string, string>): Promise<Response> {
+    return authorityLimit(async () => {
+        const res = await fetch(apiUrl, { method: 'GET', headers });
+        // Enforce a hard sleep of 1 second after each request to respect the TPS limit
+        await new Promise(resolve => setTimeout(resolve, WAIT_MS));
+        return res;
+    });
 }
 
 /**
@@ -99,10 +118,11 @@ export async function getAuthorityData(fields: ParsedReference, options?: { forc
     const apiUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${query}&limit=1&fields=title,authors,year,venue,journal,url,pages`;
 
     try {
-        const response = await fetch(apiUrl, {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' },
-        });
+        const apiKey = process.env.SEMANTIC_SCHOLAR_API_KEY;
+        const headers: Record<string, string> = { 'Accept': 'application/json' };
+        if (apiKey) headers['x-api-key'] = apiKey;
+
+        const response = await throttledFetch(apiUrl, headers);
 
         if (!response.ok) {
             console.warn(`Semantic Scholar API failed with status ${response.status}`);

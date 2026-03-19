@@ -29,10 +29,6 @@ export function computeReferenceHealth(
 
   const missingYear = !parsed.year;
   const missingAuthors = !parsed.authors || parsed.authors.length === 0;
-  const unclearSourceType =
-    (isJournalLike(ref.referenceType, parsed) || isConferenceLike(ref.referenceType, parsed)) &&
-    !parsed.journal &&
-    !parsed.conferenceTitle;
   const hasErrorWarning = warnings.some((w) => w.startsWith("error:"));
   const hasWarningWarning = warnings.some((w) => w.startsWith("warning:"));
   const veryLowConfidence = (ref.confidence?.score ?? 100) < 40;
@@ -46,12 +42,11 @@ export function computeReferenceHealth(
 
   if (missingAuthors) hardReasons.push("Missing author");
   if (missingYear) hardReasons.push("Missing year");
-  if (unclearSourceType || noVenueForStructuredType) {
-    hardReasons.push("Unclear source type or missing venue");
-  }
+  // Do NOT treat unclear source type / missing venue as a hard \"needs fix\" signal.
+  // Users can still see when something is classified as Other in the type badge.
   if (veryLowConfidence) hardReasons.push("Very low-confidence parse");
   if (styleFailed) hardReasons.push("Auto-detect uncertain; style fell back to best-guess");
-  if (isOtherType) hardReasons.push("Source type unclear (classified as Other)");
+  // Don't escalate \"Other\" into a hard failure; it's informational only.
   if (hasErrorWarning) hardReasons.push("Critical formatting or parsing errors");
 
   if (!missingYear && mediumLowConfidence && !veryLowConfidence) {
