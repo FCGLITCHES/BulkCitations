@@ -43,10 +43,11 @@ import pLimit from 'p-limit';
 // Global server-side cache for authority lookup
 const authorityCache = new LRUCache<string, AuthorityData | null>(500);
 
-// Strict rate-limiter for Semantic Scholar (1 Req / Sec)
-// We use a queue to ensure we dont exceed the tiered API limit even during bursts
-const authorityLimit = pLimit(1); // One at a time
-const WAIT_MS = 1000;
+// Strict rate-limiter for Semantic Scholar.
+// Tiered API limit is 1 TPS (Transactions Per Second) with an API key. 
+// Free tier without key is 100 per 5 mins (~0.33 TPS).
+const authorityLimit = pLimit(1); 
+const WAIT_MS = 1500; // 1.5s spacing
 
 /**
  * Normalizes title for cache keying
@@ -76,13 +77,23 @@ function mapSemanticScholarToAuthority(data: any): AuthorityData {
 }
 
 /**
- * Internal fetch implementation that enforces the 1s delay
+ * Internal fetch implementation that enforces the delay and handles 429 retries
  */
-async function throttledFetch(apiUrl: string, headers: Record<string, string>): Promise<Response> {
+async function throttledFetch(apiUrl: string, headers: Record<string, string>, retryCount = 0): Promise<Response> {
     return authorityLimit(async () => {
         const res = await fetch(apiUrl, { method: 'GET', headers });
-        // Enforce a hard sleep of 1 second after each request to respect the TPS limit
+        
+        // Respect the request spacing
         await new Promise(resolve => setTimeout(resolve, WAIT_MS));
+
+        // Handle 429 (Too Many Requests) with one retry after a longer wait
+        if (res.status === 429 && retryCount < 1) {
+            const backoff = 2000;
+            console.log(`[authority] 429 detected, retrying after ${backoff}ms...`);
+            await new Promise(resolve => setTimeout(resolve, backoff));
+            return throttledFetch(apiUrl, headers, retryCount + 1);
+        }
+
         return res;
     });
 }

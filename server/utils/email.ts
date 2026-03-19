@@ -1,15 +1,10 @@
 import { Resend } from 'resend';
 
 // Configure Resend with API key from environment
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const FROM_EMAIL = "Citing <notifications@citing.app>"; // Must be a verified domain in Resend
-const TO_EMAIL = process.env.CONTACT_EMAIL_TO || "youben2025@gmail.com";
+const STATIC_TO_EMAIL = "support@bulkreferences.com";
 
 /**
  * Send a notification email when the contact form is submitted.
- * 
- * @param data — { name, email, subject, message }
- * @returns { success, error? }
  */
 export async function sendContactNotification(data: {
     name: string;
@@ -17,15 +12,25 @@ export async function sendContactNotification(data: {
     subject: string;
     message: string;
 }): Promise<{ success: boolean; error?: string }> {
-    if (!resend) {
-        console.warn("[email] Resend API key missing; skipping actual email send.");
-        return { success: true }; // Return success so UI doesn't show error, just won't send email
+    const apiKey = process.env.RESEND_API_KEY;
+    const toEmail = process.env.CONTACT_EMAIL_TO || STATIC_TO_EMAIL;
+
+    // Fallback 'from' email to onboarding@resend.dev if domain not verified yet.
+    // Professional 'from' requires domain verification in Resend dashboard.
+    const fromEmail = process.env.CONTACT_EMAIL_FROM || "onboarding@resend.dev";
+
+    if (!apiKey) {
+        console.warn("[email] RESEND_API_KEY is missing. Add it to Vercel/Environment variables.");
+        return { success: false, error: "API key missing" };
     }
 
     try {
-        const { data: resendData, error } = await resend.emails.send({
-            from: FROM_EMAIL,
-            to: TO_EMAIL,
+        const resend = new Resend(apiKey);
+        console.log(`[email] Attempting to send from ${fromEmail} to ${toEmail}...`);
+
+        const emailResult = await resend.emails.send({
+            from: fromEmail,
+            to: toEmail,
             subject: `[Citing Contact] ${data.subject}: from ${data.name}`,
             replyTo: data.email,
             html: `
@@ -42,15 +47,16 @@ export async function sendContactNotification(data: {
             `,
         });
 
-        if (error) {
-            console.error("[email] Resend API error:", error.message || String(error));
-            return { success: false, error: error.message };
+        if (emailResult.error) {
+            console.error("[email] Resend API error:", emailResult.error.message || String(emailResult.error));
+            console.error("[email] Full error details:", JSON.stringify(emailResult.error));
+            return { success: false, error: emailResult.error.message };
         }
 
-        console.log(`[email] Notification sent: ${resendData?.id}`);
+        console.log(`[email] Notification successfully sent. ID: ${emailResult.data?.id}`);
         return { success: true };
     } catch (err) {
-        console.error("[email] Unexpected error sending email:", err instanceof Error ? err.message : String(err));
-        return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
+        console.error("[email] Exception during email send:", err instanceof Error ? err.message : String(err));
+        return { success: false, error: err instanceof Error ? err.message : "Internal error" };
     }
 }
