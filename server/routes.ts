@@ -7,7 +7,7 @@ const pdfParse: (buffer: Buffer) => Promise<{ text: string }> =
   typeof pdfParseModule === "function" ? pdfParseModule : (pdfParseModule?.default ?? pdfParseModule);
 import { storage } from "./storage";
 import reportsRouter from "./routes/reports";
-import { conversionRequestSchema, type ConvertedReference, type ConversionResponse } from "@shared/schema";
+import { conversionRequestSchema, contactRequestSchema, type ConvertedReference, type ConversionResponse } from "@shared/schema";
 import { processReferences, reformatReferences, initCSLStyles } from "./engine/index";
 import { getAuthorityData } from "../shared/authorityLookup";
 import { calculateConfidence } from "../shared/confidence";
@@ -266,6 +266,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Reformat error:', error);
       res.status(500).json({ message: "Reformat failed" });
+    }
+  });
+
+  // Contact/Feedback endpoint
+  app.post("/api/contact", async (req, res) => {
+    try {
+      const { name, email, subject, message } = contactRequestSchema.parse(req.body);
+
+      // In a real production app, this would use a mail service (SendGrid, Postmark)
+      // For now, we log it and return success as requested.
+      console.log(`[ContactForm] New message from ${name} (${email}) - [${subject}]`);
+      console.log(`Message: ${message}`);
+
+      res.json({ success: true, message: "Your message has been received." });
+    } catch (error) {
+      console.error('Contact error:', error);
+      res.status(400).json({
+        message: "Invalid contact form data",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 

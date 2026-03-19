@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { Navbar } from "@/components/navbar";
 import { 
   ChevronRight, 
   Users, 
@@ -54,8 +55,18 @@ export default function AdminReportQueue() {
   }, { total: 0, groups: 0 }) || { total: 0, groups: 0 };
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-6xl space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="container mx-auto py-8 px-4 max-w-6xl space-y-8">
+        <div className="flex items-center gap-4 mb-2">
+           <Link href="/">
+             <Button variant="ghost" size="sm" className="gap-2">
+               <ChevronRight className="h-4 w-4 rotate-180" />
+               Back to Home
+             </Button>
+           </Link>
+        </div>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Failure Queue</h1>
           <p className="text-muted-foreground mt-1">
@@ -135,58 +146,59 @@ export default function AdminReportQueue() {
                     No reports found for this filter.
                   </TableCell>
                 </TableRow>
-              ) : (
-                groups?.map((group) => {
-                  const latest = group.reports[0];
-                  return (
-                    <TableRow key={group.fingerprint} className="group hover:bg-muted/50">
-                      <TableCell>
-                        <Badge variant="secondary" className="font-bold">
-                          {group.totalCount}x
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {group.category.replace("-", " ")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1.5">
-                          {latest.source === "user" ? (
-                            <Users className="h-3.5 w-3.5 text-blue-500" />
-                          ) : latest.source === "user-edit" ? (
-                            <Edit className="h-3.5 w-3.5 text-orange-500" />
-                          ) : (
-                            <Bot className="h-3.5 w-3.5 text-purple-500" />
-                          )}
-                          <span className="text-xs capitalize">{latest.source.replace("-", " ")}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="max-w-md">
-                        <div className="truncate font-mono text-xs" title={latest.originalText}>
-                          {latest.originalText}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="uppercase text-[10px]">
-                          {latest.outputStyle}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Link href={`/admin/reports/${latest.id}`}>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
+                ) : (
+                  groups?.map((group) => {
+                    const latest = group.reports[0];
+                    return (
+                      <TableRow key={group.fingerprint} className="group hover:bg-muted/50">
+                        <TableCell>
+                          <Badge variant="secondary" className="font-bold">
+                            {group.totalCount}x
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">
+                            {group.category.replace("-", " ")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            {latest.source === "user" ? (
+                              <Users className="h-3.5 w-3.5 text-blue-500" />
+                            ) : latest.source === "user-edit" ? (
+                              <Edit className="h-3.5 w-3.5 text-orange-500" />
+                            ) : (
+                              <Bot className="h-3.5 w-3.5 text-purple-500" />
+                            )}
+                            <span className="text-xs capitalize">{latest.source.replace("-", " ")}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-md">
+                          <div className="truncate font-mono text-xs" title={latest.originalText}>
+                            {latest.originalText}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="uppercase text-[10px]">
+                            {latest.outputStyle}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Link href={`/admin/reports/${latest.id}`}>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,11 @@
 # Technical Specification: Citing (Bulk Citations)
-*Stack: React, Vite, TailwindCSS (for UI), Node.js/Express (for Engine), Radix UI (for Components), pnpm (for package management).*
+*Stack: React, Vite, TailwindCSS (for UI), Node.js/Express (for Engine), Radix UI (for Components), pnpm 10 (for package management).*
+
+### Infrastructure & Deployment
+- **Vercel Deployment**: Requires `packageManager` field in `package.json` set to `pnpm@10.32.1`.
+- **Lockfile**: `pnpm-lock.yaml` (version 9) must be committed to the root for correct Vercel detection.
+- **Auto-Detection**: `vercel.json` should avoid overriding `installCommand` or `buildCommand` to allow Vercel to use the native pnpm build pipeline.
+
 
 ### Styling & UI
 - **Required**: Vanilla CSS + TailwindCSS utility classes.

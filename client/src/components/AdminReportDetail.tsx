@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
+import { Navbar } from "@/components/navbar";
 import { 
   ArrowLeft, 
   CheckCircle2, 
@@ -12,7 +13,10 @@ import {
   Filter,
   AlertCircle,
   ShieldCheck,
-  Zap
+  Zap,
+  ChevronRight,
+  Code,
+  Settings
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -137,29 +141,31 @@ export default function AdminReportDetail() {
   ];
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-5xl space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/admin/reports">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Queue
-          </Button>
-        </Link>
-        <Badge variant={report.status === "pending" ? "secondary" : "default"}>
-          {report.status.toUpperCase()}
-        </Badge>
-        {report.source === "auto" ? (
-          <Badge variant="outline" className="text-purple-600 border-purple-200 dark:text-purple-400 dark:border-purple-800" title="Automatically queued by the system">
-            <Bot className="h-3 w-3 mr-1" />
-            AUTO-QUEUED
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <main className="container mx-auto py-8 px-4 max-w-5xl space-y-6">
+        <div className="flex items-center gap-4 mb-2">
+          <Link href="/admin/reports">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <ChevronRight className="h-4 w-4 rotate-180" />
+              Back to Queue
+            </Button>
+          </Link>
+          <Badge variant={report.status === "pending" ? "secondary" : "default"}>
+            {report.status.toUpperCase()}
           </Badge>
-        ) : (
-          <Badge variant="outline" className="text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800" title="Reported by a user">
-            <Users className="h-3 w-3 mr-1" />
-            USER-REPORTED
-          </Badge>
-        )}
-      </div>
+          {report.source === "auto" ? (
+            <Badge variant="outline" className="text-purple-600 border-purple-200 dark:text-purple-400 dark:border-purple-800" title="Automatically queued by the system">
+              <Bot className="h-3 w-3 mr-1" />
+              AUTO-QUEUED
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800" title="Reported by a user">
+              <Users className="h-3 w-3 mr-1" />
+              USER-REPORTED
+            </Badge>
+          )}
+        </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Input/Output */}
@@ -430,7 +436,8 @@ export default function AdminReportDetail() {
             </CardFooter>
           </Card>
         </div>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

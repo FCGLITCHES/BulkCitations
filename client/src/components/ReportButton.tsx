@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -123,6 +124,9 @@ export default function ReportButton({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Report an issue</DialogTitle>
+            <DialogDescription className="sr-only">
+              Provide feedback on a specific citation parsing or formatting error.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             {/* Preview of the input */}

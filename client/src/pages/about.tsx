@@ -1,52 +1,130 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Quote } from "lucide-react";
-import { Link } from "wouter";
+import { Quote, User, Rocket, Shield, Heart } from "lucide-react";
+import { motion } from "framer-motion";
+import { Navbar } from "@/components/navbar";
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-background/90 backdrop-blur-lg shadow-sm border-b border-border overflow-x-hidden sticky top-0 z-50 transition-colors duration-300">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <div className="flex items-center space-x-3 mb-8">
-              <Link href="/">
-                <div className="w-10 h-10 bg-gradient-brand rounded-xl flex items-center justify-center shadow-md hover:scale-105 transition-transform cursor-pointer">
-                  <Quote className="text-white text-lg" />
+    <div className="min-h-screen bg-background font-sans">
+      <Navbar />
+
+      <main className="container mx-auto px-4 py-16 sm:py-24 max-w-4xl overflow-x-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-4xl sm:text-5xl font-extrabold text-foreground mb-6 tracking-tight">
+            About <span className="text-gradient-brand">BulkReferences</span>
+          </h2>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Simplifying academic citations for researchers, students, and writers worldwide.
+          </p>
+        </motion.div>
+
+        <div className="grid gap-12 sm:gap-16">
+          {/* Mission Section */}
+          <section className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="space-y-6">
+              <h3 className="text-2xl font-bold flex items-center gap-3">
+                <Rocket className="w-6 h-6 text-primary" />
+                Our Mission
+              </h3>
+              <p className="text-muted-foreground leading-relaxed">
+                BulkReferences was born out of a simple frustration: academic citation is tedious. 
+                Whether you're juggling a thesis or a quick paper, formatting dozens of references 
+                manually is a waste of your most valuable asset—time.
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                We provide a robust, pattern-based engine that instantly detects and converts mixed-format 
+                references into clean, standardized outputs.
+              </p>
+            </div>
+            <Card className="border-primary/10 bg-primary/5">
+              <CardContent className="p-8">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">1</div>
+                     <span className="font-semibold">Auto-detect input styles</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">2</div>
+                     <span className="font-semibold">Batch process 450+ items</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">3</div>
+                     <span className="font-semibold">Export to BibTeX & RIS</span>
+                  </div>
                 </div>
-              </Link>
-              <div>
-                <h1 className="text-xl font-semibold text-foreground">BulkReferences</h1>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">About</p>
+              </CardContent>
+            </Card>
+          </section>
+
+          {/* Philosophy Section */}
+          <section className="bg-muted/30 rounded-3xl p-8 sm:p-12 border border-border/50">
+            <div className="max-w-3xl mx-auto text-center space-y-8">
+              <Heart className="w-12 h-12 text-accent mx-auto" />
+              <h3 className="text-3xl font-bold tracking-tight">Handcrafted with Care</h3>
+              <p className="text-muted-foreground text-lg italic">
+                "BulkReferences is a solo project, designed and developed by a single engineer who believes 
+                that great tools should be fast, private, and beautiful. Every line of code, every parsing 
+                rule, and every pixel is crafted to make your research workflow just a little bit easier."
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-brand flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                  <User className="w-6 h-6" />
+                </div>
+                <div className="text-left">
+                  <p className="font-bold text-foreground">Solo Developer</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">Creator of BulkReferences</p>
+                </div>
               </div>
             </div>
-            <nav className="flex flex-wrap items-center gap-2 sm:gap-4 shrink-0">
-              <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">Home</Link>
-              <Link href="/faq" className="text-muted-foreground hover:text-primary transition-colors">FAQ</Link>
-              <Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">Privacy</Link>
-            </nav>
+          </section>
+
+          {/* Core Values */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6 space-y-4">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                  <Shield className="w-6 h-6" />
+                </div>
+                <h4 className="font-bold text-xl">Privacy First</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Your references are your intellectual property. We process everything in-memory 
+                  and never store your citations in our database. We respect your research privacy.
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6 space-y-4">
+                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
+                  <Quote className="w-6 h-6" />
+                </div>
+                <h4 className="font-bold text-xl">Accuracy Focused</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  We use pattern-based parsing validated against thousands of real-world citation benchmarks 
+                  to ensure your bibliography is as accurate as possible.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </header>
-
-      <main className="container mx-auto px-3 sm:px-4 py-8 sm:py-12 max-w-2xl overflow-x-hidden">
-        <h2 className="text-2xl font-bold text-foreground mb-6">About BulkReferences</h2>
-        <Card>
-          <CardContent className="pt-6 space-y-4 text-muted-foreground">
-            <p>
-              BulkReferences helps researchers and students convert references between academic citation styles. Paste mixed-format references from different sources, and get clean output in APA, MLA, Harvard, Chicago, IEEE, or Vancouver.
-            </p>
-            <p>
-              <strong className="text-foreground">Features.</strong> Auto-detection of input style, duplicate clustering, per-citation warnings, batch summary, and export to TXT, PDF, BibTeX, and RIS.
-            </p>
-            <p>
-              <strong className="text-foreground">Accuracy.</strong> The converter uses pattern-based parsing and style-specific rules. On benchmark sets it achieves high accuracy for journal articles, conference papers, and books. Truncated or unusual inputs may need manual review.
-            </p>
-            <p>
-              <strong className="text-foreground">Report an issue.</strong> Use the Report button on any citation to flag parsing or formatting problems. Your feedback helps improve the tool.
-            </p>
-          </CardContent>
-        </Card>
       </main>
+
+      {/* Footer (Simplified as main footer is in Home, or just use the same) */}
+      <footer className="border-t border-border py-12 mt-12 bg-muted/20">
+         <div className="container mx-auto px-4 text-center space-y-4">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="w-8 h-8 bg-gradient-brand rounded-lg flex items-center justify-center">
+                <Quote className="text-white w-4 h-4" />
+              </div>
+              <span className="font-extrabold text-foreground">BulkReferences</span>
+            </div>
+            <p className="text-sm text-muted-foreground">© 2026 Crafted by a solo developer for researchers everywhere.</p>
+         </div>
+      </footer>
     </div>
   );
 }

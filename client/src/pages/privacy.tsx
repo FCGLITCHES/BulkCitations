@@ -1,33 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Quote } from "lucide-react";
-import { Link } from "wouter";
+import { Navbar } from "@/components/navbar";
 
 export default function Privacy() {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-background/90 backdrop-blur-lg shadow-sm border-b border-border overflow-x-hidden sticky top-0 z-50 transition-colors duration-300">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <div className="flex items-center space-x-3">
-              <Link href="/">
-                <div className="w-10 h-10 bg-gradient-brand rounded-xl flex items-center justify-center shadow-md hover:scale-105 transition-transform cursor-pointer">
-                  <Quote className="text-white text-lg" />
-                </div>
-              </Link>
-              <div>
-                <h1 className="text-xl font-semibold text-foreground">BulkReferences</h1>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Privacy Policy</p>
-              </div>
-            </div>
-            <nav className="flex flex-wrap items-center gap-2 sm:gap-4 shrink-0">
-              <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">Home</Link>
-              <Link href="/faq" className="text-muted-foreground hover:text-primary transition-colors">FAQ</Link>
-              <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">About</Link>
-            </nav>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-background font-sans">
+      <Navbar />
+...
       <main className="container mx-auto px-3 sm:px-4 py-8 sm:py-12 max-w-2xl overflow-x-hidden">
         <h2 className="text-2xl font-bold text-foreground mb-6">Privacy Policy</h2>
         <Card>

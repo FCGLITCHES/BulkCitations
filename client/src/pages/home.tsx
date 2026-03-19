@@ -1,144 +1,16 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Navbar } from "@/components/navbar";
+import { FAQSection } from "@/components/faq-section";
+import CitationConverter from "@/components/citation-converter";
+import { motion } from "framer-motion";
+import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Quote, Sparkles, Package, Shield, CheckCircle, Menu, FileText, History, HelpCircle, Info, LogIn, LogOut, FileWarning, LineChart, Moon, Sun } from "lucide-react";
-import { Link, useLocation } from "wouter";
-import { motion } from "framer-motion";
-import CitationConverter from "@/components/citation-converter";
-import { useAuth } from "@/hooks/use-auth";
+import { Quote, Sparkles, Shield, CheckCircle, Package } from "lucide-react";
 
 export default function Home() {
-  const [navOpen, setNavOpen] = useState(false);
-  const { isAdmin, logout } = useAuth();
-  const [, setLocation] = useLocation();
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    // Check initial state from classList or localStorage
-    const isDarkMode = document.documentElement.classList.contains("dark") ||
-      localStorage.getItem("theme") === "dark";
-    setIsDark(isDarkMode);
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    const nextTheme = !isDark;
-    setIsDark(nextTheme);
-    if (nextTheme) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
-    setLocation("/");
-  };
-
   return (
     <div className="min-h-screen bg-background font-sans">
-      {/* Header */}
-      <header className="bg-background/90 backdrop-blur-lg border-b border-border shadow-sm sticky top-0 z-50 overflow-x-hidden transition-colors duration-300">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-              <div className="w-10 h-10 bg-gradient-brand rounded-xl flex items-center justify-center shadow-md">
-                <Quote className="text-white text-lg" />
-              </div>
-              <div className="flex items-center gap-2 min-w-0">
-                <h1 className="text-base sm:text-lg font-extrabold text-foreground tracking-tight truncate">BulkReferences</h1>
-                <Badge variant="secondary" className="text-[10px] uppercase font-bold text-white bg-primary hover:bg-primary/90 hidden sm:inline-flex">Beta</Badge>
-              </div>
-            </div>
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link href="/#converter" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">Converter</Link>
-              <Link href="/history" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">History</Link>
-              <Link href="/faq" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">FAQ</Link>
-              <Link href="/about" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">About</Link>
-              <Link href="/privacy" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">Privacy</Link>
-
-              {isAdmin ? (
-                <>
-                  <Link href="/admin/reports" className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer">Admin Mode</Link>
-                  <button onClick={handleLogout} className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors cursor-pointer border px-3 py-1.5 rounded bg-muted/30">Logout</button>
-                </>
-              ) : (
-                <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">Login</Link>
-              )}
-              <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full w-8 h-8 ml-2" title="Toggle theme">
-                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                <span className="sr-only">Toggle theme</span>
-              </Button>
-            </nav>
-            <Sheet open={navOpen} onOpenChange={setNavOpen}>
-              <div className="flex items-center gap-2 md:hidden">
-                <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full w-8 h-8" title="Toggle theme">
-                  {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                  <span className="sr-only">Toggle theme</span>
-                </Button>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Menu className="h-5 w-5" />
-                    <span className="sr-only">Open menu</span>
-                  </Button>
-                </SheetTrigger>
-              </div>
-              <SheetContent side="right" className="w-[280px] pt-10">
-                <nav className="flex flex-col gap-1">
-                  <Link href="/#converter" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
-                    <FileText className="w-4 h-4 text-muted-foreground" />
-                    Converter
-                  </Link>
-                  <Link href="/history" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
-                    <History className="w-4 h-4 text-muted-foreground" />
-                    History
-                  </Link>
-                  <Link href="/faq" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
-                    <HelpCircle className="w-4 h-4 text-muted-foreground" />
-                    FAQ
-                  </Link>
-                  <Link href="/about" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
-                    <Info className="w-4 h-4 text-muted-foreground" />
-                    About
-                  </Link>
-                  <Link href="/privacy" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
-                    <Shield className="w-4 h-4 text-muted-foreground" />
-                    Privacy
-                  </Link>
-
-                  <div className="my-2 border-t border-border"></div>
-
-                  {isAdmin ? (
-                    <>
-                      <Link href="/admin/reports" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-semibold text-primary hover:text-primary/80 transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
-                        <LineChart className="w-4 h-4" />
-                        Admin Mode
-                      </Link>
-                      <button onClick={() => { handleLogout(); setNavOpen(false); }} className="flex items-center gap-3 text-sm font-medium text-destructive hover:text-destructive/80 transition-colors py-3 px-2 text-left cursor-pointer rounded-md hover:bg-muted/50 w-full">
-                        <LogOut className="w-4 h-4" />
-                        Logout
-                      </button>
-                    </>
-                  ) : (
-                    <Link href="/login" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
-                      <LogIn className="w-4 h-4 text-muted-foreground" />
-                      Login
-                    </Link>
-                  )}
-                </nav>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Main Content */}
       <main className="w-full max-w-[1800px] mx-auto px-3 sm:px-4 py-4 sm:py-6 overflow-x-hidden">
@@ -257,47 +129,20 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Supported Styles Section */}
-        <motion.section
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" as any }}
-          transition={{ duration: 0.6 }}
-          className="bg-card rounded-2xl shadow-sm border border-border p-6 sm:p-8 md:p-12 mb-12 sm:mb-16 relative overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
-          <div className="relative z-10">
-            <h3 className="text-2xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-12 tracking-tight">Supported Citation Styles</h3>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {[
-                { name: 'APA', desc: 'American Psychological Association (7th Edition)' },
-                { name: 'MLA', desc: 'Modern Language Association (9th Edition)' },
-                { name: 'Harvard', desc: 'Harvard Referencing Style' },
-                { name: 'Chicago', desc: 'Chicago Manual of Style (17th Edition)' },
-                { name: 'IEEE', desc: 'Institute of Electrical and Electronics Engineers' },
-                { name: 'Vancouver', desc: 'International Committee of Medical Journal Editors' },
-              ].map((style, i) => (
-                <motion.div
-                  key={style.name}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: i * 0.05 }}
-                  whileHover={{ scale: 1.02 }}
-                  className="flex items-center space-x-4 p-4 rounded-xl bg-background border border-border/50 hover:border-primary/30 hover:shadow-md transition-all duration-300 cursor-default"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <CheckCircle className="text-primary h-5 w-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-foreground text-base tracking-tight">{style.name}</h4>
-                    <p className="text-xs text-muted-foreground mt-0.5">{style.desc}</p>
-                  </div>
-                </motion.div>
+        <section className="mb-16 sm:mb-24">
+          <div className="container mx-auto px-4 text-center">
+            <h3 className="text-xl font-bold text-muted-foreground/60 uppercase tracking-widest text-sm mb-8">Supported Styles</h3>
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-6 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
+              {['APA 7th', 'MLA 9th', 'Harvard', 'Chicago 17th', 'IEEE', 'Vancouver'].map((style) => (
+                <div key={style} className="px-4 py-2 rounded-full border border-border bg-card text-foreground font-semibold text-sm sm:text-base whitespace-nowrap">
+                  {style}
+                </div>
               ))}
             </div>
           </div>
-        </motion.section>
+        </section>
+
+        <FAQSection />
 
         {/* How accurate is it? */}
         <motion.section
@@ -349,8 +194,9 @@ export default function Home() {
             <div>
               <h4 className="font-bold mb-4">Support</h4>
               <ul className="space-y-2 text-sm text-secondary-foreground/80">
-                <li><Link href="/faq" className="hover:text-secondary-foreground transition-colors">FAQ</Link></li>
+                <li><Link href="/#faq" className="hover:text-secondary-foreground transition-colors">FAQ</Link></li>
                 <li><Link href="/about" className="hover:text-secondary-foreground transition-colors">About</Link></li>
+                <li><Link href="/contact" className="hover:text-secondary-foreground transition-colors">Contact Us</Link></li>
                 <li><a href="/admin/reports" className="hover:text-secondary-foreground transition-colors">Report Bug</a></li>
               </ul>
             </div>

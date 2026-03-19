@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Quote, Trash2, ArrowLeft } from "lucide-react";
+import { Trash2, Quote } from "lucide-react";
+import { Navbar } from "@/components/navbar";
 
 interface HistoryItem {
     id: string;
@@ -44,31 +45,7 @@ export default function HistoryPage() {
 
     return (
         <div className="min-h-screen bg-background font-sans">
-            <header className="bg-background/90 backdrop-blur-lg shadow-sm border-b border-border overflow-x-hidden sticky top-0 z-50 transition-colors duration-300">
-                <div className="container mx-auto px-4 py-4">
-                    <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center space-x-3">
-                            <Link href="/">
-                                <div className="w-10 h-10 bg-gradient-brand rounded-xl flex items-center justify-center shadow-md hover:scale-105 transition-transform cursor-pointer">
-                                    <Quote className="text-white text-lg" />
-                                </div>
-                            </Link>
-                            <div>
-                                <h1 className="text-xl font-semibold text-foreground">BulkReferences</h1>
-                                <p className="text-xs text-muted-foreground uppercase tracking-wider">Conversion History</p>
-                            </div>
-                        </div>
-
-                        <nav className="flex items-center gap-4">
-                            <Link href="/">
-                                <Button variant="ghost" size="sm" className="hidden sm:flex text-muted-foreground gap-2 hover:text-primary">
-                                    <ArrowLeft className="w-4 h-4" /> Back to Converter
-                                </Button>
-                            </Link>
-                        </nav>
-                    </div>
-                </div>
-            </header>
+            <Navbar />
 
             <main className="container mx-auto px-4 py-8 sm:py-12 max-w-5xl">
                 <div className="flex items-center justify-between mb-8">

@@ -5,6 +5,7 @@ import Home from './pages/home';
 import FAQ from './pages/faq';
 import Privacy from './pages/privacy';
 import About from './pages/about';
+import Contact from './pages/contact';
 import AdminReportQueue from './components/AdminReportQueue';
 import AdminReportDetail from './components/AdminReportDetail';
 import Login from './pages/login';
@@ -25,6 +26,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/faq" component={FAQ} />
         <Route path="/privacy" component={Privacy} />
         <Route path="/about" component={About} />
+        <Route path="/contact" component={Contact} />
         <Route path="/login" component={Login} />
         <Route path="/history" component={HistoryPage} />
         <Route path="/admin/reports" component={AdminReportQueue} />
