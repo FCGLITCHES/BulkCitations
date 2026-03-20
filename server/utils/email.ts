@@ -243,6 +243,45 @@ export function buildEmailVerificationEmailHtml(data: {
     });
 }
 
+export function buildWaitlistNotificationEmailHtml(data: {
+    email: string;
+    persona: string;
+}) {
+    const safeEmail = escapeHtml(data.email);
+    const safePersona = escapeHtml(data.persona);
+
+    return buildEmailShell({
+        badge: "New Waitlist Signup",
+        title: "A new waitlist signup is in",
+        description: "A user joined the Bulk References waitlist for latest builds and early API access.",
+        sections: joinRows([
+            buildSectionRow("Email", safeEmail, true),
+            buildSectionRow("Persona", safePersona),
+        ]),
+        footer: "Sent from the Bulk References waitlist form.",
+    });
+}
+
+export function buildWaitlistAutoReplyEmailHtml(data: {
+    persona: string;
+}) {
+    const safePersona = escapeHtml(data.persona);
+
+    return buildEmailShell({
+        badge: "Waitlist Confirmed",
+        title: "You're on the list",
+        description: "Thanks for joining the Bulk References waitlist. We'll share latest builds, product updates, and early API access news as they become available.",
+        sections: joinRows([
+            buildSectionRow("Signed up as", safePersona, true),
+            buildBodyRow("What you'll get", `
+                Student-friendly product updates, selected early builds, and API access news as Bulk References expands from individual users into team workflows.
+                ${buildCtaButton("Open Bulk References", APP_URL)}
+            `),
+        ]),
+        footer: "This is an automatic confirmation from Bulk References.",
+    });
+}
+
 async function sendEmail(params: {
     to: string;
     subject: string;
@@ -306,5 +345,28 @@ export async function sendContactAutoReply(data: {
         to: data.email,
         subject: `We received your ${APP_NAME} message`,
         html: buildContactAutoReplyEmailHtml(data),
+    });
+}
+
+export async function sendWaitlistNotification(data: {
+    email: string;
+    persona: string;
+}): Promise<SendEmailResult> {
+    return sendEmail({
+        to: STATIC_TO_EMAIL,
+        subject: `[Bulk References Waitlist] ${data.persona}: ${data.email}`,
+        replyTo: data.email,
+        html: buildWaitlistNotificationEmailHtml(data),
+    });
+}
+
+export async function sendWaitlistAutoReply(data: {
+    email: string;
+    persona: string;
+}): Promise<SendEmailResult> {
+    return sendEmail({
+        to: data.email,
+        subject: `You're on the ${APP_NAME} waitlist`,
+        html: buildWaitlistAutoReplyEmailHtml(data),
     });
 }

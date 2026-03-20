@@ -65,6 +65,13 @@ export interface Cluster {
   };
 }
 
+export interface DuplicateGroup {
+  groupId: string;
+  primaryId: string;
+  method: 'doi' | 'structural' | 'semantic';
+  members: ConvertedReference[];
+}
+
 export type ReferenceType =
   | "journal"
   | "book"
@@ -114,6 +121,8 @@ export interface ConvertedReference {
 export interface ConversionResponse {
   convertedReferences: ConvertedReference[];
   clusters?: Cluster[];
+  duplicateGroups?: DuplicateGroup[];
+  engineVersion?: 'v1' | 'v2';
   errors?: string[];
 }
 
@@ -123,6 +132,7 @@ export interface ConversionRequest {
   outputStyle: string;
   isPro?: boolean;
   enrichWithAuthority?: boolean;
+  engineVersion?: 'v1' | 'v2';
 }
 
 export const CITATION_STYLES = [

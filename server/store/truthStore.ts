@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import type { ApprovedTruthEntry } from "@shared/schema";
 
 const TRUTH_FILE = process.env.VERCEL
   ? path.join("/tmp", "truthStore.v1.jsonl")
@@ -17,14 +18,7 @@ try {
   }
 }
 
-export interface TruthEntry {
-  fingerprint: string; // SHA-256 of normalized text
-  originalText: string;
-  outputStyle: string;
-  validatedOutput: string;
-  validatedBy: string;
-  validatedAt: string;
-}
+export type TruthEntry = ApprovedTruthEntry;
 
 /** Compute a fingerprint for normalized text */
 export function computeFingerprint(text: string): string {

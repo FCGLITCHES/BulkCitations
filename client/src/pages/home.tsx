@@ -1,11 +1,9 @@
 import { Navbar } from "@/components/navbar";
 import { FAQSection } from "@/components/faq-section";
 import CitationConverter from "@/components/citation-converter";
+import { SiteFooter } from "@/components/site-footer";
 import { motion } from "framer-motion";
-import { Link } from "wouter";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Quote, Sparkles, Shield, CheckCircle, Package } from "lucide-react";
+import { Sparkles, Shield, CheckCircle } from "lucide-react";
 
 export default function Home() {
   return (
@@ -19,9 +17,8 @@ export default function Home() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="relative overflow-hidden rounded-xl sm:rounded-2xl mb-4 sm:mb-6 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 dark:from-primary/10 dark:via-transparent dark:to-accent/10 border border-primary/10 dark:border-primary/20 px-4 py-4 sm:px-6 sm:py-6 md:px-6 md:py-8"
+          className="relative overflow-hidden rounded-xl sm:rounded-2xl mb-4 sm:mb-6 bg-primary/5 dark:bg-primary/10 border border-primary/10 dark:border-primary/20 px-4 py-4 sm:px-6 sm:py-6 md:px-6 md:py-8"
         >
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent pointer-events-none" />
           <div className="relative text-center z-10">
             <motion.h2
               initial={{ opacity: 0, y: 10 }}
@@ -88,16 +85,16 @@ export default function Home() {
                 colorClass: "text-primary",
                 bgClass: "bg-primary/10 group-hover:bg-primary/20",
                 shadowClass: "hover:shadow-primary/10",
-                gradientClass: "via-primary"
+                lineClass: "bg-primary/70"
               },
               {
                 title: "Paste 450+ at Once",
                 desc: "Stop converting references one by one. Paste your entire bibliography and get a clean list back in seconds.",
-                icon: Package,
-                colorClass: "text-accent",
-                bgClass: "bg-accent/10 group-hover:bg-accent/20",
-                shadowClass: "hover:shadow-accent/10",
-                gradientClass: "via-accent"
+                icon: CheckCircle,
+                colorClass: "text-primary",
+                bgClass: "bg-primary/10 group-hover:bg-primary/20",
+                shadowClass: "hover:shadow-primary/10",
+                lineClass: "bg-primary/70"
               },
               {
                 title: "100% Private Processing",
@@ -106,7 +103,7 @@ export default function Home() {
                 colorClass: "text-primary",
                 bgClass: "bg-primary/10 group-hover:bg-primary/20",
                 shadowClass: "hover:shadow-primary/10",
-                gradientClass: "via-primary"
+                lineClass: "bg-primary/70"
               }
             ].map((feature, i) => (
               <motion.div
@@ -118,7 +115,7 @@ export default function Home() {
                 whileHover={{ y: -5, transition: { duration: 0.2 } }}
                 className={`group text-center p-6 sm:p-8 rounded-2xl border border-border bg-card hover:shadow-xl ${feature.shadowClass} transition-all duration-300 relative overflow-hidden`}
               >
-                <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${feature.gradientClass} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                <div className={`absolute top-0 left-0 w-full h-1 ${feature.lineClass} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
                 <div className={`w-14 h-14 ${feature.bgClass} rounded-xl flex items-center justify-center mx-auto mb-6 transition-colors duration-300`}>
                   <feature.icon className={`text-2xl ${feature.colorClass}`} />
                 </div>
@@ -150,7 +147,7 @@ export default function Home() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 dark:from-primary/10 dark:to-accent/10 p-6 sm:p-8 md:p-12 mb-10 sm:mb-16 text-center"
+          className="rounded-2xl border border-primary/20 bg-primary/5 dark:bg-primary/10 p-6 sm:p-8 md:p-12 mb-10 sm:mb-16 text-center"
         >
           <h3 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-6 tracking-tight">How accurate is it?</h3>
           <div className="max-w-3xl mx-auto space-y-4 text-muted-foreground text-base sm:text-lg">
@@ -166,53 +163,7 @@ export default function Home() {
         </motion.section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gradient-to-br from-secondary via-secondary to-primary/20 dark:from-background dark:via-background dark:to-primary/10 text-secondary-foreground py-8 sm:py-10 border-t border-primary/10 overflow-x-hidden">
-        <div className="container mx-auto px-3 sm:px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
-            <div>
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-8 h-8 bg-gradient-brand rounded-lg flex items-center justify-center shadow-md">
-                  <Quote className="text-white" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold">BulkReferences</span>
-                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 uppercase font-bold text-white bg-primary hidden sm:inline-flex">Beta</Badge>
-                </div>
-              </div>
-              <p className="text-secondary-foreground/80 text-sm leading-relaxed">Making academic citations simple and accurate for researchers worldwide.</p>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Features</h4>
-              <ul className="space-y-2 text-sm text-secondary-foreground/80">
-                <li><Link href="/#converter" className="hover:text-secondary-foreground transition-colors">Style Converter</Link></li>
-                <li><span className="text-secondary-foreground/60">Batch Processing</span></li>
-                <li><span className="text-secondary-foreground/60">Export Options</span></li>
-                <li><span className="text-secondary-foreground/60">Format Detection</span></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Support</h4>
-              <ul className="space-y-2 text-sm text-secondary-foreground/80">
-                <li><Link href="/#faq" className="hover:text-secondary-foreground transition-colors">FAQ</Link></li>
-                <li><Link href="/about" className="hover:text-secondary-foreground transition-colors">About</Link></li>
-                <li><Link href="/contact" className="hover:text-secondary-foreground transition-colors">Contact Us</Link></li>
-                <li><a href="/admin/reports" className="hover:text-secondary-foreground transition-colors">Report Bug</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm text-secondary-foreground/80">
-                <li><Link href="/privacy" className="hover:text-secondary-foreground transition-colors">Privacy Policy</Link></li>
-              </ul>
-            </div>
-          </div>
-          <Separator className="my-8 border-secondary-foreground/20" />
-          <div className="text-center text-sm text-secondary-foreground/70">
-            <p>&copy; 2026 BulkReferences. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

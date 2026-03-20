@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 export function Navbar() {
   const [navOpen, setNavOpen] = useState(false);
-  const { isAdmin, logout } = useAuth();
+  const { isAdmin, isConfigured, isInitialized, logout } = useAuth();
   const [, setLocation] = useLocation();
   const [isDark, setIsDark] = useState(false);
 
@@ -34,8 +34,9 @@ export function Navbar() {
   };
 
   const handleLogout = () => {
-    logout();
-    setLocation("/");
+    void logout().finally(() => {
+      setLocation("/");
+    });
   };
 
   return (
@@ -58,14 +59,16 @@ export function Navbar() {
             <Link href="/about" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">About</Link>
             <Link href="/contact" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">Contact</Link>
 
-            {isAdmin ? (
-              <>
-                <Link href="/admin/reports" className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer">Admin Mode</Link>
-                <button onClick={handleLogout} className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors cursor-pointer border px-3 py-1.5 rounded bg-muted/30">Logout</button>
-              </>
-            ) : (
-              <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">Login</Link>
-            )}
+            {isInitialized ? (
+              isAdmin ? (
+                <>
+                  <Link href="/admin/reports" className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer">Admin Mode</Link>
+                  <button onClick={handleLogout} className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors cursor-pointer border px-3 py-1.5 rounded bg-muted/30">Logout</button>
+                </>
+              ) : isConfigured ? (
+                <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">Login</Link>
+              ) : null
+            ) : null}
             <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full w-8 h-8 ml-2" title="Toggle theme">
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               <span className="sr-only">Toggle theme</span>
@@ -110,23 +113,25 @@ export function Navbar() {
 
                 <div className="my-2 border-t border-border"></div>
 
-                {isAdmin ? (
-                  <>
-                    <Link href="/admin/reports" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-semibold text-primary hover:text-primary/80 transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
-                      <LineChart className="w-4 h-4" />
-                      Admin Mode
+                {isInitialized ? (
+                  isAdmin ? (
+                    <>
+                      <Link href="/admin/reports" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-semibold text-primary hover:text-primary/80 transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
+                        <LineChart className="w-4 h-4" />
+                        Admin Mode
+                      </Link>
+                      <button onClick={() => { handleLogout(); setNavOpen(false); }} className="flex items-center gap-3 text-sm font-medium text-destructive hover:text-destructive/80 transition-colors py-3 px-2 text-left cursor-pointer rounded-md hover:bg-muted/50 w-full">
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </button>
+                    </>
+                  ) : isConfigured ? (
+                    <Link href="/login" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
+                      <LogIn className="w-4 h-4 text-muted-foreground" />
+                      Login
                     </Link>
-                    <button onClick={() => { handleLogout(); setNavOpen(false); }} className="flex items-center gap-3 text-sm font-medium text-destructive hover:text-destructive/80 transition-colors py-3 px-2 text-left cursor-pointer rounded-md hover:bg-muted/50 w-full">
-                      <LogOut className="w-4 h-4" />
-                      Logout
-                    </button>
-                  </>
-                ) : (
-                  <Link href="/login" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
-                    <LogIn className="w-4 h-4 text-muted-foreground" />
-                    Login
-                  </Link>
-                )}
+                  ) : null
+                ) : null}
               </nav>
             </SheetContent>
           </Sheet>

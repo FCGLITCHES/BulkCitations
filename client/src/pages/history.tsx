@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trash2, Quote } from "lucide-react";
 import { Navbar } from "@/components/navbar";
+import { SiteFooter } from "@/components/site-footer";
 
 interface HistoryItem {
     id: string;
@@ -44,7 +45,7 @@ export default function HistoryPage() {
     };
 
     return (
-        <div className="min-h-screen bg-background font-sans">
+        <div className="min-h-screen bg-background font-sans flex flex-col">
             <Navbar />
 
             <main className="container mx-auto px-4 py-8 sm:py-12 max-w-5xl">
@@ -126,6 +127,7 @@ export default function HistoryPage() {
                     </div>
                 )}
             </main>
+            <SiteFooter />
         </div>
     );
 }

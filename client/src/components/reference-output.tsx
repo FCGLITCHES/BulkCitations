@@ -26,7 +26,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ConvertedReference, Cluster, type AssertionHighlight, type HealthState } from "@/lib/types";
+import { Cluster, ConvertedReference, DuplicateGroup, type AssertionHighlight, type HealthState } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { computeReferenceHealth } from "@/lib/referenceHealth";
@@ -38,11 +38,13 @@ import ReportButton from "./ReportButton";
 interface ReferenceOutputProps {
   convertedReferences: ConvertedReference[];
   clusters?: Cluster[];
+  duplicateGroups?: DuplicateGroup[];
+  engineVersion?: "v1" | "v2";
+  groupDuplicates?: boolean;
   onError: (error: string) => void;
   isPro?: boolean;
   onRecheck?: (referenceId: string) => void;
   onResolveAuthors?: (refId: string, newAuthors: string[]) => Promise<void>;
-  enableClustering?: boolean;
 }
 
 const INPUT_STYLE_LABELS: Record<string, string> = {
@@ -90,6 +92,34 @@ function HighlightedCitationText({ text, highlights }: { text: string; highlight
       dangerouslySetInnerHTML={{ __html: processedHtml }}
     />
   );
+}
+
+function buildDuplicateDiffMarkup(text: string, compareText?: string): string {
+  if (!compareText || compareText === text) {
+    return text;
+  }
+
+  const textTokens = text.match(/\s+|[^\s]+/g) ?? [text];
+  const compareTokens = compareText.match(/\s+|[^\s]+/g) ?? [compareText];
+  let compareIndex = 0;
+
+  return textTokens.map((token) => {
+    if (/^\s+$/.test(token)) return token;
+
+    while (compareIndex < compareTokens.length && /^\s+$/.test(compareTokens[compareIndex])) {
+      compareIndex += 1;
+    }
+
+    const compareToken = compareTokens[compareIndex] ?? "";
+    const normalizedToken = token.replace(/[.,;:()[\]{}"']/g, "").toLowerCase();
+    const normalizedCompare = compareToken.replace(/[.,;:()[\]{}"']/g, "").toLowerCase();
+    const isDifferent = normalizedToken !== normalizedCompare;
+    compareIndex += 1;
+
+    return isDifferent
+      ? `<mark class="rounded bg-amber-500/20 px-0.5 text-amber-200">${token}</mark>`
+      : token;
+  }).join("");
 }
 
 // ---------------------------------------------------------------------------
@@ -174,6 +204,8 @@ function CitationRow({
   userEditedText,
   onSaveEdit,
   health,
+  extraActions,
+  diffAgainstText,
 }: {
   refData: ConvertedReference;
   handleCopyReference: (id: string, text: string) => void;
@@ -189,6 +221,8 @@ function CitationRow({
   userEditedText?: string;
   onSaveEdit?: (id: string, newText: string) => void;
   health?: { state: HealthState; reasons: string[] };
+  extraActions?: React.ReactNode;
+  diffAgainstText?: string;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState("");
@@ -208,6 +242,10 @@ function CitationRow({
     rowWarnings.push("Incomplete: publisher missing");
   }
   const citationText = userEditedText ?? refData.convertedText;
+  const duplicateDiffMarkup = useMemo(
+    () => (diffAgainstText ? buildDuplicateDiffMarkup(citationText, diffAgainstText) : null),
+    [citationText, diffAgainstText],
+  );
   const isLongCitation = citationText.length > 150;
 
   const confidenceBadge = refData.confidence ? (
@@ -344,11 +382,23 @@ function CitationRow({
                 className={`${isExpanded ? "" : "line-clamp-3 sm:line-clamp-none transition-all duration-300"} cursor-pointer sm:cursor-auto`}
                 onClick={() => setIsExpanded(!isExpanded)}
               >
-                <HighlightedCitationText
-                  text={citationText}
-                  highlights={refData.assertionHighlights}
-                />
+                {duplicateDiffMarkup ? (
+                  <p
+                    className="text-foreground leading-relaxed flex-1 min-w-0 font-medium text-sm sm:text-base break-words"
+                    dangerouslySetInnerHTML={{ __html: duplicateDiffMarkup }}
+                  />
+                ) : (
+                  <HighlightedCitationText
+                    text={citationText}
+                    highlights={refData.assertionHighlights}
+                  />
+                )}
               </div>
+              {diffAgainstText && (
+                <p className="mt-2 text-xs text-amber-300">
+                  Highlighted text shows what differs from the selected version.
+                </p>
+              )}
               {!isExpanded && isLongCitation && (
                 <button
                   onClick={() => setIsExpanded(true)}
@@ -410,6 +460,7 @@ function CitationRow({
                   <Copy className="h-3 w-3" />
                 )}
               </Button>
+              {extraActions}
               <ReportButton
                 refId={refData.id}
                 rawInput={refData.originalText}
@@ -451,6 +502,7 @@ function CitationRow({
                 <Copy className="h-3 w-3" />
               )}
             </Button>
+            {extraActions}
             <ReportButton
               refId={refData.id}
               rawInput={refData.originalText}
@@ -480,14 +532,17 @@ function CitationRow({
 // Main Component
 // ---------------------------------------------------------------------------
 const SCROLL_THRESHOLD = 300; // same as ScrollToTop so bar shifts when button appears
+const SHOW_ZERO_DUPLICATES_IN_UI = !import.meta.env.PROD;
 
 export default function ReferenceOutput({
   convertedReferences,
   clusters = [],
+  duplicateGroups = [],
+  engineVersion = "v1",
+  groupDuplicates = true,
   onError,
   isPro = false,
   onRecheck,
-  enableClustering = true,
 }: ReferenceOutputProps) {
   const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
   const [reportedIds, setReportedIds] = useState<Set<string>>(new Set());
@@ -499,6 +554,7 @@ export default function ReferenceOutput({
   const [hasShownDoiToast, setHasShownDoiToast] = useState(false);
   const [healthFilter, setHealthFilter] = useState<HealthState | "all">("all");
   const [isScrollPastThreshold, setIsScrollPastThreshold] = useState(false);
+  const [selectedDuplicates, setSelectedDuplicates] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const onScroll = () => setIsScrollPastThreshold(window.scrollY > SCROLL_THRESHOLD);
@@ -509,16 +565,73 @@ export default function ReferenceOutput({
   const [userEdits, setUserEdits] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
-  const effectiveClusters = enableClustering ? clusters : [];
-
   const healthById = useMemo(() => {
     const map: Record<string, { state: HealthState; reasons: string[] }> = {};
     for (const ref of convertedReferences) {
-      const health = computeReferenceHealth(ref, effectiveClusters as Cluster[] | undefined);
+      const health = computeReferenceHealth(ref);
       map[ref.id] = health;
     }
     return map;
-  }, [convertedReferences, effectiveClusters]);
+  }, [convertedReferences]);
+
+  const detectedGroups = useMemo(() => {
+    if (engineVersion === "v2") {
+      return duplicateGroups.map((group) => ({
+        groupId: group.groupId,
+        primaryId: group.primaryId,
+        members: group.members,
+        label: `${group.members.length - 1} duplicate${group.members.length - 1 === 1 ? "" : "s"}`,
+      }));
+    }
+
+    return clusters.map((cluster) => ({
+      groupId: cluster.clusterId,
+      primaryId: cluster.bestMemberId ?? cluster.members[0]?.id ?? "",
+      members: cluster.members,
+      label: `${Math.max(0, cluster.members.length - 1)} similar version${cluster.members.length - 1 === 1 ? "" : "s"}`,
+    })).filter((group) => group.members.length > 1 && group.primaryId);
+  }, [clusters, duplicateGroups, engineVersion]);
+
+  const displayGroups = useMemo(
+    () => (groupDuplicates ? detectedGroups : []),
+    [detectedGroups, groupDuplicates],
+  );
+
+  const groupedReferenceIds = useMemo(
+    () => new Set(displayGroups.flatMap((group) => group.members.map((member) => member.id))),
+    [displayGroups],
+  );
+
+  useEffect(() => {
+    setSelectedDuplicates((prev) => {
+      let changed = false;
+      const next: Record<string, string> = {};
+
+      for (const group of detectedGroups) {
+        const memberIds = new Set(group.members.map((member) => member.id));
+        const existingSelection = prev[group.groupId];
+        const nextSelection = existingSelection && memberIds.has(existingSelection)
+          ? existingSelection
+          : group.primaryId;
+
+        next[group.groupId] = nextSelection;
+        if (prev[group.groupId] !== nextSelection) changed = true;
+      }
+
+      if (!changed) {
+        const prevKeys = Object.keys(prev);
+        const nextKeys = Object.keys(next);
+        if (
+          prevKeys.length === nextKeys.length
+          && nextKeys.every((key) => prev[key] === next[key])
+        ) {
+          return prev;
+        }
+      }
+
+      return next;
+    });
+  }, [detectedGroups]);
 
   const visibleReferences = useMemo(
     () =>
@@ -560,18 +673,21 @@ export default function ReferenceOutput({
     toast({ title: "Edits Saved", description: "Your changes have been saved and sent for review." });
   };
 
-  // Scan input specifically for DOI stripping toast warning
-  // To avoid blasting the user, we only show it once per batch.
-  if (!hasShownDoiToast && convertedReferences.some(r => /doi:|https?:\/\/doi\.org/i.test(r.originalText))) {
+  useEffect(() => {
+    if (hasShownDoiToast) return;
+    if (!convertedReferences.some((ref) => /doi:|https?:\/\/doi\.org/i.test(ref.originalText))) return;
+
     setHasShownDoiToast(true);
-    setTimeout(() => {
+    const timer = window.setTimeout(() => {
       toast({
         title: "DOIs Removed",
         description: "DOI fields were detected in your input. Per strict style rules, DOIs have been stripped from the output.",
         variant: "default",
       });
     }, 500);
-  }
+
+    return () => window.clearTimeout(timer);
+  }, [convertedReferences, hasShownDoiToast, toast]);
 
   // Function to clean text for copying
   const cleanTextForCopy = (text: string): string => {
@@ -782,11 +898,10 @@ export default function ReferenceOutput({
     }
 
     const duplicates =
-      effectiveClusters?.reduce((sum, c) => sum + Math.max(0, (c.members?.length ?? 0) - 1), 0) ??
-      0;
+      detectedGroups.reduce((sum, group) => sum + Math.max(0, group.members.length - 1), 0);
 
     return { total, clean, review, actionNeeded, duplicates };
-  }, [convertedReferences, effectiveClusters, healthById]);
+  }, [convertedReferences, detectedGroups, healthById]);
 
   useEffect(() => {
     if (!healthStats.total) return;
@@ -882,7 +997,7 @@ export default function ReferenceOutput({
                 </span>
               </button>
             </div>
-            {healthStats.duplicates > 0 && (
+            {(healthStats.duplicates > 0 || SHOW_ZERO_DUPLICATES_IN_UI) && (
               <div className="text-[11px] text-muted-foreground">
                 Includes {healthStats.duplicates} likely duplicate
                 {healthStats.duplicates === 1 ? "" : "s"}.
@@ -911,31 +1026,32 @@ export default function ReferenceOutput({
           >
             {showInputFormat ? "Hide detected source style" : "Show detected source style"}
           </Button>
+          <Badge variant="outline" className="text-xs">
+            Engine {engineVersion.toUpperCase()}
+          </Badge>
         </div>
       </div>
 
       {/* Output Display */}
       <div className="bg-muted/50 rounded-lg p-3 sm:p-4 min-h-[200px] overflow-x-auto">
-        {/* Render Clusters First */}
-        {effectiveClusters && effectiveClusters.length > 0 && effectiveClusters.map(cluster => {
-          const clusterMembers = cluster.members as ConvertedReference[];
+        {displayGroups.map((group, index) => {
+          const selectedId = selectedDuplicates[group.groupId] ?? group.primaryId;
           const filteredMembers =
             healthFilter === "all"
-              ? clusterMembers
-              : clusterMembers.filter((m) => healthById[m.id]?.state === healthFilter);
+              ? group.members
+              : group.members.filter((member) => healthById[member.id]?.state === healthFilter);
           if (filteredMembers.length === 0) return null;
 
           const mainRef =
-            filteredMembers.find((m: ConvertedReference) => m.id === cluster.bestMemberId) ||
-            filteredMembers[0] ||
-            clusterMembers.find((m: ConvertedReference) => m.id === cluster.bestMemberId) ||
-            clusterMembers[0];
+            filteredMembers.find((member) => member.id === selectedId)
+            ?? filteredMembers.find((member) => member.id === group.primaryId)
+            ?? filteredMembers[0];
           if (!mainRef) return null;
 
-          const duplicates = filteredMembers.filter((m: ConvertedReference) => m.id !== mainRef.id);
+          const duplicates = filteredMembers.filter((member) => member.id !== mainRef.id);
 
           return (
-            <div key={cluster.clusterId} className="mb-6 relative">
+            <div key={group.groupId} className="mb-6 relative">
               <div className="absolute -left-3 top-0 bottom-0 w-1 bg-primary/20 rounded-l" />
               <CitationRow
                 refData={mainRef}
@@ -954,72 +1070,52 @@ export default function ReferenceOutput({
                 health={healthById[mainRef.id]}
               />
 
-              {showDebug && (cluster.warnings?.length || cluster.winnerDiagnostics) && (
-                <div className="ml-6 mt-2 text-xs font-mono bg-muted/50 rounded-md p-4 border border-border/60 space-y-2 text-left">
-                  <div>
-                    <span className="text-muted-foreground mr-1">cluster:</span>
-                    <span className="font-semibold">{cluster.clusterId}</span>
-                  </div>
-                  {cluster.warnings && cluster.warnings.length > 0 && (
-                    <div>
-                      <span className="text-muted-foreground mr-1">warnings:</span>
-                      <span className="font-semibold text-amber-600 dark:text-amber-400">{cluster.warnings.join(" | ")}</span>
-                    </div>
-                  )}
-                  {cluster.winnerDiagnostics && (
-                    <>
-                      <div>
-                        <span className="text-muted-foreground mr-1">winner:</span>
-                        <span className="font-semibold">{cluster.winnerDiagnostics.chosenMemberId}</span>
-                        {cluster.winnerDiagnostics.chosenReasons.length > 0 && (
-                          <span className="text-muted-foreground ml-1">({cluster.winnerDiagnostics.chosenReasons.join(", ")})</span>
-                        )}
-                      </div>
-                      <div className="pt-2 border-t border-border/40 space-y-1">
-                        <div className="text-muted-foreground mb-1">memberDiagnostics:</div>
-                        {cluster.winnerDiagnostics.memberDiagnostics.map((d) => (
-                          <div key={d.id} className="grid grid-cols-[auto_1fr] gap-2 pl-2">
-                            <span className="font-semibold">{d.id}</span>
-                            <span className="text-muted-foreground">
-                              <span className="text-foreground mr-2">score={d.score}</span>
-                              {d.reasons.length > 0 ? `[${d.reasons.join(", ")}]` : ""}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-
               {duplicates.length > 0 && (
-                <Collapsible className="pl-6 border-l-2 border-muted mt-2">
+                <Collapsible className="pl-6 border-l-2 border-muted -mt-2">
                   <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground w-full justify-start pl-2 hover:bg-muted mb-2">
+                    <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground w-full justify-start pl-2 hover:bg-muted mb-2">
                       <ChevronDown className="h-3 w-3 mr-1" />
-                      {duplicates.length} Highly Similar Deduplicated Citations
+                      Reveal {duplicates.length} duplicate{duplicates.length === 1 ? "" : "s"}
                     </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    {duplicates.map((dup: ConvertedReference) => (
-                      <CitationRow
-                        key={dup.id}
-                        refData={dup}
-                        handleCopyReference={handleCopyReference}
-                        copiedStates={copiedStates}
-                        getReferenceTypeLabel={getReferenceTypeLabel}
-                        isPro={isPro}
-                        onRecheck={onRecheck}
-                        showDebug={showDebug}
-                        showInputFormat={showInputFormat}
-                        reportedIds={reportedIds}
-                        onReported={(id) => setReportedIds((prev) => new Set(prev).add(id))}
-                        isFailed={healthById[dup.id]?.state === "action_needed"}
-                        userEditedText={userEdits[dup.id]}
-                        onSaveEdit={handleSaveEdit}
-                        health={healthById[dup.id]}
-                      />
-                    ))}
+                    <div className="space-y-3">
+                      {duplicates.map((dup) => {
+                        const isSelected = dup.id === selectedId;
+                        return (
+                          <div key={dup.id} className="relative">
+                            <CitationRow
+                              refData={dup}
+                              handleCopyReference={handleCopyReference}
+                              copiedStates={copiedStates}
+                              getReferenceTypeLabel={getReferenceTypeLabel}
+                              isPro={isPro}
+                              onRecheck={onRecheck}
+                              showDebug={showDebug}
+                              showInputFormat={showInputFormat}
+                              reportedIds={reportedIds}
+                              onReported={(id) => setReportedIds((prev) => new Set(prev).add(id))}
+                              isFailed={healthById[dup.id]?.state === "action_needed"}
+                              userEditedText={userEdits[dup.id]}
+                              onSaveEdit={handleSaveEdit}
+                              health={healthById[dup.id]}
+                              diffAgainstText={userEdits[mainRef.id] ?? mainRef.convertedText}
+                              extraActions={
+                                <Button
+                                  type="button"
+                                  variant={isSelected ? "default" : "ghost"}
+                                  size="sm"
+                                  onClick={() => setSelectedDuplicates((prev) => ({ ...prev, [group.groupId]: dup.id }))}
+                                  className="text-xs"
+                                >
+                                  {isSelected ? "Selected version" : "Select this version"}
+                                </Button>
+                              }
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
                   </CollapsibleContent>
                 </Collapsible>
               )}
@@ -1027,12 +1123,8 @@ export default function ReferenceOutput({
           );
         })}
 
-        {/* Render Independent References (not in any cluster) */}
         {visibleReferences
-          .filter(
-            ref =>
-              !ref.clusterId || !effectiveClusters?.some(c => c.clusterId === ref.clusterId)
-          )
+          .filter((ref) => !groupDuplicates || !groupedReferenceIds.has(ref.id))
           .map((ref) => (
             <CitationRow
               key={ref.id}

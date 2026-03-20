@@ -17,6 +17,26 @@ function hasVenue(parsed: any) {
   return !!(parsed?.journal || parsed?.conferenceTitle || parsed?.bookTitle);
 }
 
+function hasMalformedAuthorShape(parsed: any) {
+  const authors = Array.isArray(parsed?.authors) ? parsed.authors : [];
+  return authors.some((author: string) => {
+    const value = String(author ?? "").trim();
+    if (!value) return true;
+    if (/[,&]\s*&/.test(value) || /\b&\b/.test(value)) return true;
+    if (/,\s*[A-Z](?:\s*,\s*[A-Z]){1,}/.test(value)) return true;
+    if (/^[A-Z][a-z]+,\s*[A-Z]\s*,\s*[A-Z]/.test(value)) return true;
+    if (/^\w+\s+\w+\s+\&/.test(value)) return true;
+    return false;
+  });
+}
+
+function hasPlaceholderFields(parsed: any) {
+  const suspectValues = [parsed?.journal, parsed?.volume, parsed?.issue]
+    .map((value) => String(value ?? "").trim().toLowerCase())
+    .filter(Boolean);
+  return suspectValues.some((value) => value === "vol" || value === "journal" || value === "?" || value === "vol.");
+}
+
 export function computeReferenceHealth(
   ref: ConvertedReference,
   clusters?: Cluster[]
@@ -39,9 +59,12 @@ export function computeReferenceHealth(
     ref.referenceType === "book" && !parsed.publisher;
   const noVenueForStructuredType =
     (ref.referenceType === "journal" || ref.referenceType === "conference") && !hasVenue(parsed);
+  const malformedAuthorShape = hasMalformedAuthorShape(parsed);
+  const placeholderFields = hasPlaceholderFields(parsed);
 
   if (missingAuthors) hardReasons.push("Missing author");
   if (missingYear) hardReasons.push("Missing year");
+  if (malformedAuthorShape) hardReasons.push("Author parsing looks malformed");
   // Do NOT treat unclear source type / missing venue as a hard \"needs fix\" signal.
   // Users can still see when something is classified as Other in the type badge.
   if (veryLowConfidence) hardReasons.push("Very low-confidence parse");
@@ -57,6 +80,12 @@ export function computeReferenceHealth(
   }
   if (missingPublisherForBook) {
     softReasons.push("Book publisher missing");
+  }
+  if (placeholderFields) {
+    softReasons.push("Placeholder or suspicious venue fields present");
+  }
+  if (noVenueForStructuredType) {
+    softReasons.push("Expected venue information is missing");
   }
 
   let state: HealthState;

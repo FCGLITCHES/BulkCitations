@@ -22,6 +22,8 @@ import type {
   ReportStatus,
   FailureCategory,
   FixType,
+  ApprovedCanonicalFields,
+  FieldApprovalMap,
 } from "@shared/schema";
 import {
   saveReport,
@@ -36,6 +38,7 @@ import {
 } from "../store/reportStore.js";
 import { saveTruth } from "../store/truthStore.js";
 import { writePattern } from "../utils/patternWriter.js";
+import { requireAdmin } from "../utils/adminAuth.js";
 
 // ── Validation constants ──
 
@@ -86,6 +89,7 @@ router.post("/", (req, res) => {
       parsedData?: any;
       referenceType?: string;
       confidence?: number;
+      originalEngineOutput?: CitationReport["originalEngineOutput"];
       // Legacy fields (backward compat)
       rawInput?: string;
       detectedInputStyle?: string;
@@ -157,6 +161,12 @@ router.post("/", (req, res) => {
       fingerprint,
       reportCount: 1,
       ipHash: ipHashed,
+      originalEngineOutput: body.originalEngineOutput ?? {
+        convertedText,
+        parsedData: body.parsedData,
+        referenceType: body.referenceType as any,
+        confidence: body.confidence,
+      },
     };
 
     const saved = saveReport(report);
@@ -172,6 +182,8 @@ router.post("/", (req, res) => {
     return res.status(500).json({ message: "Failed to save report" });
   }
 });
+
+router.use(requireAdmin);
 
 /**
  * GET /api/reports — List all reports
@@ -341,8 +353,20 @@ router.post("/:id/resolve", (req, res) => {
         proposedPattern, 
         proposedStyleFix, 
         verifiedBy,
-        saveAsTruth // boolean flag
-    } = req.body as Partial<CitationReport> & { saveAsTruth?: boolean };
+        saveAsTruth,
+        correctedFields,
+        fieldApproval,
+        failureTaxonomy,
+        stageBlame,
+        duplicateDecision
+    } = req.body as Partial<CitationReport> & {
+      saveAsTruth?: boolean;
+      correctedFields?: ApprovedCanonicalFields;
+      fieldApproval?: FieldApprovalMap;
+      failureTaxonomy?: string[];
+      stageBlame?: string[];
+      duplicateDecision?: CitationReport["duplicateDecision"];
+    };
     
     const report = getReportById(id);
     if (!report) return res.status(404).json({ message: "Report not found" });
@@ -356,6 +380,11 @@ router.post("/:id/resolve", (req, res) => {
     // 1. Handle Reference Type / Category Fix
     if (referenceType) updates.referenceType = referenceType;
     if (fixType) updates.fixType = fixType;
+    if (correctedFields) updates.correctedFields = correctedFields;
+    if (fieldApproval) updates.fieldApproval = fieldApproval;
+    if (failureTaxonomy) updates.failureTaxonomy = failureTaxonomy.filter(Boolean);
+    if (stageBlame) updates.stageBlame = stageBlame.filter(Boolean);
+    if (duplicateDecision) updates.duplicateDecision = duplicateDecision;
 
     // 2. Handle Dynamic Pattern Writing
     if (fixType === "dynamic-pattern" && proposedPattern) {
@@ -375,7 +404,18 @@ router.post("/:id/resolve", (req, res) => {
                 originalText: report.originalText,
                 outputStyle: report.outputStyle,
                 validatedOutput: proposedStyleFix,
-                validatedBy: verifiedBy || "admin"
+                validatedBy: verifiedBy || "admin",
+                correctedFields,
+                fieldApproval,
+                failureTaxonomy: failureTaxonomy?.filter(Boolean),
+                stageBlame: stageBlame?.filter(Boolean),
+                duplicateDecision,
+                originalEngineOutput: report.originalEngineOutput ?? {
+                  convertedText: report.convertedText,
+                  parsedData: report.parsedData,
+                  referenceType: report.referenceType,
+                  confidence: report.confidence,
+                },
             });
         }
     }

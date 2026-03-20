@@ -21,6 +21,7 @@
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",
+    "@mozilla/readability": "^0.6.0",
     "@neondatabase/serverless": "^0.10.4",
     "@radix-ui/react-accordion": "^1.2.4",
     "@radix-ui/react-alert-dialog": "^1.1.7",
@@ -66,10 +67,12 @@
     "express": "^4.21.2",
     "express-session": "^1.18.1",
     "file-saver": "^2.0.5",
+    "file-type": "^21.3.3",
     "framer-motion": "^11.13.1",
     "fuzzball": "^2.2.3",
     "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
+    "jsdom": "^29.0.1",
     "jspdf": "^4.2.0",
     "lucide-react": "^0.453.0",
     "mammoth": "^1.11.0",
@@ -132,5 +135,10 @@
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
+  },
+  "pnpm": {
+    "overrides": {
+      "esbuild": "^0.25.12"
+    }
   }
 }

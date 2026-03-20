@@ -1,0 +1,124 @@
+import type {
+  CanonicalAuthor,
+  CanonicalCitation,
+  CitationStyle,
+  InputProfile,
+  StageDiagnostic,
+  V2ConversionRequest,
+  V2ConversionResponse,
+  V2DuplicateEntry,
+  V2StageId,
+} from '@shared/schema';
+import type { V2StageRuntimeConfig } from './config.js';
+
+export interface V2PipelineContext {
+  request: V2ConversionRequest;
+  jobId: string;
+  receivedAt: string;
+  startedAtMs: number;
+  executionMode: 'sync' | 'async';
+  debugEnabled: boolean;
+  rawItems: string[];
+  inputProfile?: InputProfile;
+  citations: CanonicalCitation[];
+  duplicates: V2DuplicateEntry[];
+  groups: Record<string, string[]>;
+  pipelineLog: StageDiagnostic[];
+  stagesRun: string[];
+  fallbacksUsed: string[];
+  partialResult: boolean;
+  partialReasons: string[];
+  jobDebug: Record<string, Record<string, unknown>>;
+  response?: V2ConversionResponse;
+  stageConfig: Record<V2StageId, V2StageRuntimeConfig>;
+}
+
+export interface ClassifierAdapter {
+  readonly id: string;
+  detectStyle(input: string): Promise<{ style: CitationStyle | null; confidence: number }>;
+}
+
+export interface ExtractorAdapter {
+  readonly id: string;
+  extract(input: string, inputStyle: string, options?: {
+    inputProfile?: InputProfile;
+    detectionConfidence?: number;
+  }): Promise<{
+    parsed: {
+      authors?: Array<string | CanonicalAuthor>;
+      title?: string;
+      year?: string;
+      journal?: string;
+      volume?: string;
+      issue?: string;
+      pages?: string;
+      doi?: string;
+      publisher?: string;
+      url?: string;
+      conferenceTitle?: string;
+      bookTitle?: string;
+      institution?: string;
+      edition?: string;
+      editor?: string;
+    };
+    referenceType: CanonicalCitation['referenceType'];
+    method: 'deterministic' | 'llm' | 'hybrid';
+    fallbackUsed: boolean;
+    extractorPath?: 'deterministic' | 'grobid' | 'llm' | 'hybrid';
+    selectedBranch?: 'deterministic_raw' | 'year_anchored_fallback_raw' | 'hybrid';
+    selectionReason?: string;
+    authorParserMode?: string;
+    rejectedCandidates?: string[];
+    debug?: Record<string, unknown>;
+    fieldConfidence: Partial<Record<'authors' | 'title' | 'year' | 'journal' | 'volume' | 'issue' | 'pages' | 'doi' | 'publisher' | 'url', number>>;
+    warnings: string[];
+  }>;
+}
+
+export interface AuthorityLookupAdapter {
+  readonly id: string;
+  lookup(citation: CanonicalCitation): Promise<{
+    status: 'skipped' | 'fetched' | 'no_match' | 'error';
+    data?: {
+      title?: string;
+      authors?: string[];
+      journal?: string;
+      year?: string;
+      url?: string;
+    };
+  }>;
+}
+
+export interface EmbeddingAdapter {
+  readonly id: string;
+  isAvailable(): boolean;
+}
+
+export interface CacheAdapter {
+  readonly id: string;
+  get<T>(key: string): Promise<T | null>;
+  set<T>(key: string, value: T): Promise<void>;
+}
+
+export interface ExportAdapter {
+  readonly id: string;
+  generate(format: 'txt' | 'bib' | 'ris' | 'csv' | 'docx', response: V2ConversionResponse): Promise<{
+    contentType: string;
+    filename: string;
+    body: string | Buffer;
+  }>;
+}
+
+export interface V2AdapterBundle {
+  classifier: ClassifierAdapter;
+  extractor: ExtractorAdapter;
+  authorityLookup: AuthorityLookupAdapter;
+  embedding: EmbeddingAdapter;
+  cache: CacheAdapter;
+  exportAdapter: ExportAdapter;
+}
+
+export interface V2Stage {
+  readonly id: V2StageId;
+  run(context: V2PipelineContext): Promise<V2PipelineContext>;
+}

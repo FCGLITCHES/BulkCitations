@@ -209,7 +209,7 @@ export function ContactForm() {
 
             <Button 
               type="submit" 
-              className="w-full bg-gradient-brand hover:opacity-90 h-10"
+              className="w-full bg-primary hover:bg-primary/90 h-10"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

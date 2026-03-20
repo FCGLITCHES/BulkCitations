@@ -5,6 +5,7 @@ import { ContactForm } from "@/components/contact-form";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { SiteFooter } from "@/components/site-footer";
 
 export default function Contact() {
   const { toast } = useToast();
@@ -21,7 +22,7 @@ export default function Contact() {
   };
 
   return (
-    <div className="min-h-screen bg-background font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-background font-sans overflow-x-hidden flex flex-col">
       <Navbar />
 
       <main className="container mx-auto px-4 py-16 sm:py-24 max-w-5xl">
@@ -41,7 +42,7 @@ export default function Contact() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-4xl sm:text-5xl font-extrabold text-foreground mb-6 tracking-tight"
           >
-            Let's <span className="text-gradient-brand">Get in Touch</span>
+            Let's <span className="text-primary">Get in Touch</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 10 }}
@@ -86,7 +87,7 @@ export default function Contact() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="p-8 rounded-3xl bg-gradient-to-br from-primary/10 via-accent/5 to-transparent border border-primary/10"
+              className="p-8 rounded-3xl bg-primary/10 border border-primary/10"
             >
               <h4 className="font-extrabold flex items-center gap-2 mb-4 text-foreground text-xl">
                 <Sparkles className="h-5 w-5 text-primary" />
@@ -117,12 +118,7 @@ export default function Contact() {
         </div>
       </main>
 
-      {/* Footer (Simplified) */}
-      <footer className="border-t border-border py-12 bg-muted/20">
-         <div className="container mx-auto px-4 text-center space-y-4">
-            <p className="text-sm text-muted-foreground">© 2026 BulkReferences. Powered by research, built for you.</p>
-         </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

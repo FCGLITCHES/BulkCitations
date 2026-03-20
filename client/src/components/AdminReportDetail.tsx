@@ -25,9 +25,60 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import type { CitationReport, FixType } from "@shared/schema";
+import { adminFetch } from "@/lib/admin-api";
+
+type EditableFieldKey =
+  | "authors"
+  | "title"
+  | "year"
+  | "journal"
+  | "volume"
+  | "issue"
+  | "pages"
+  | "doi"
+  | "publisher"
+  | "conferenceTitle"
+  | "bookTitle"
+  | "referenceType";
+
+const EDITABLE_FIELDS: Array<{ key: EditableFieldKey; label: string }> = [
+  { key: "authors", label: "Authors" },
+  { key: "title", label: "Title" },
+  { key: "year", label: "Year" },
+  { key: "journal", label: "Journal" },
+  { key: "conferenceTitle", label: "Conference Title" },
+  { key: "bookTitle", label: "Book Title" },
+  { key: "volume", label: "Volume" },
+  { key: "issue", label: "Issue" },
+  { key: "pages", label: "Pages" },
+  { key: "doi", label: "DOI" },
+  { key: "publisher", label: "Publisher" },
+  { key: "referenceType", label: "Reference Type" },
+];
+
+function initialCorrectedFields(report?: CitationReport | null) {
+  if (!report) return {} as Record<EditableFieldKey, string>;
+  return {
+    authors: Array.isArray(report.correctedFields?.authors)
+      ? report.correctedFields?.authors.map((author) => author.literal || (author.first ? `${author.last}, ${author.first}` : author.last)).join("; ")
+      : Array.isArray(report.parsedData?.authors) ? report.parsedData.authors.join("; ") : "",
+    title: report.correctedFields?.title ?? report.parsedData?.title ?? "",
+    year: report.correctedFields?.year != null ? String(report.correctedFields.year) : report.parsedData?.year ?? "",
+    journal: report.correctedFields?.journal ?? report.parsedData?.journal ?? "",
+    volume: report.correctedFields?.volume ?? report.parsedData?.volume ?? "",
+    issue: report.correctedFields?.issue ?? report.parsedData?.issue ?? "",
+    pages: report.correctedFields?.pages ?? report.parsedData?.pages ?? "",
+    doi: report.correctedFields?.doi ?? report.parsedData?.doi ?? "",
+    publisher: report.correctedFields?.publisher ?? report.parsedData?.publisher ?? "",
+    conferenceTitle: report.correctedFields?.conferenceTitle ?? report.parsedData?.conferenceTitle ?? "",
+    bookTitle: report.correctedFields?.bookTitle ?? report.parsedData?.bookTitle ?? "",
+    referenceType: String(report.correctedFields?.referenceType ?? report.referenceType ?? ""),
+  };
+}
 
 export default function AdminReportDetail() {
   const [, params] = useRoute("/admin/reports/:id");
@@ -39,32 +90,43 @@ export default function AdminReportDetail() {
   const [targetReferenceType, setTargetReferenceType] = useState<string>("");
   const [proposedPattern, setProposedPattern] = useState({ regex: "", replacement: "" });
   const [proposedStyleFix, setProposedStyleFix] = useState("");
+  const [correctedFields, setCorrectedFields] = useState<Record<EditableFieldKey, string>>({} as Record<EditableFieldKey, string>);
+  const [approvedFields, setApprovedFields] = useState<Record<EditableFieldKey, boolean>>({} as Record<EditableFieldKey, boolean>);
+  const [failureTaxonomy, setFailureTaxonomy] = useState("");
+  const [stageBlame, setStageBlame] = useState("");
+  const [duplicateDecision, setDuplicateDecision] = useState<CitationReport["duplicateDecision"]>("not_applicable");
 
   const { data: report, isLoading } = useQuery<CitationReport>({
     queryKey: [`/api/reports/${id}`],
     queryFn: async () => {
-      const res = await fetch(`/api/reports/${id}`);
-      if (!res.ok) throw new Error("Report not found");
-      return res.json();
+      return adminFetch<CitationReport>(`/api/reports/${id}`);
     },
   });
 
   useEffect(() => {
     if (report?.fixType) setFixType(report.fixType);
     if (report?.referenceType) setTargetReferenceType(report.referenceType);
+    if (report) {
+      setCorrectedFields(initialCorrectedFields(report));
+      setApprovedFields(EDITABLE_FIELDS.reduce((acc, field) => ({
+        ...acc,
+        [field.key]: Boolean(report.fieldApproval?.[field.key]?.approved),
+      }), {} as Record<EditableFieldKey, boolean>));
+      setFailureTaxonomy((report.failureTaxonomy ?? []).join(", "));
+      setStageBlame((report.stageBlame ?? []).join(", "));
+      setDuplicateDecision(report.duplicateDecision ?? "not_applicable");
+    }
   }, [report]);
 
 
 
   const rejectMutation = useMutation({
     mutationFn: async (reason: string) => {
-      const res = await fetch(`/api/reports/${id}/reject`, {
+      return adminFetch(`/api/reports/${id}/reject`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason })
       });
-      if (!res.ok) throw new Error("Failed to reject");
-      return res.json();
     },
     onSuccess: () => {
       toast({ title: "Report rejected" });
@@ -74,9 +136,7 @@ export default function AdminReportDetail() {
 
   const duplicateMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`/api/reports/${id}/duplicate`, { method: "POST" });
-      if (!res.ok) throw new Error("Failed to mark as duplicate");
-      return res.json();
+      return adminFetch(`/api/reports/${id}/duplicate`, { method: "POST" });
     },
     onSuccess: () => {
       toast({ title: "Marked as duplicate" });
@@ -88,7 +148,7 @@ export default function AdminReportDetail() {
   // Master Resolution Mutation (Handles everything)
   const resolveMutation = useMutation({
     mutationFn: async ({ saveAsTruth }: { saveAsTruth: boolean }) => {
-      const res = await fetch(`/api/reports/${id}/resolve`, {
+      return adminFetch<{ report: CitationReport }>(`/api/reports/${id}/resolve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -96,14 +156,42 @@ export default function AdminReportDetail() {
             referenceType: targetReferenceType,
             proposedPattern,
             proposedStyleFix,
-            saveAsTruth
+            saveAsTruth,
+            correctedFields: {
+              authors: correctedFields.authors
+                ? correctedFields.authors.split(";").map((author) => author.trim()).filter(Boolean).map((author) => {
+                  const [last, first] = author.includes(",")
+                    ? author.split(",", 2).map((part) => part.trim())
+                    : [author.trim(), null];
+                  return { last, first, initials: null };
+                })
+                : undefined,
+              title: correctedFields.title || null,
+              year: correctedFields.year ? Number.parseInt(correctedFields.year, 10) : null,
+              journal: correctedFields.journal || null,
+              volume: correctedFields.volume || null,
+              issue: correctedFields.issue || null,
+              pages: correctedFields.pages || null,
+              doi: correctedFields.doi || null,
+              publisher: correctedFields.publisher || null,
+              conferenceTitle: correctedFields.conferenceTitle || null,
+              bookTitle: correctedFields.bookTitle || null,
+              referenceType: correctedFields.referenceType || targetReferenceType || report?.referenceType,
+            },
+            fieldApproval: Object.fromEntries(
+              EDITABLE_FIELDS.map((field) => [
+                field.key,
+                {
+                  approved: Boolean(approvedFields[field.key]),
+                  value: correctedFields[field.key] || undefined,
+                },
+              ]),
+            ),
+            failureTaxonomy: failureTaxonomy.split(",").map((item) => item.trim()).filter(Boolean),
+            stageBlame: stageBlame.split(",").map((item) => item.trim()).filter(Boolean),
+            duplicateDecision,
         })
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Failed to resolve report");
-      }
-      return res.json();
     },
     onSuccess: (data) => {
       let title = "Success";
@@ -357,6 +445,73 @@ export default function AdminReportDetail() {
                 </div>
               )}
 
+              <div className="space-y-3 p-3 bg-emerald-50/10 dark:bg-emerald-950/10 rounded border border-emerald-200/40 dark:border-emerald-900/40">
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-emerald-700 dark:text-emerald-300">Field-Level Truth Approval</Label>
+                  <p className="text-[10px] text-muted-foreground">Approve corrected fields so they can become trusted training data for ranking and confidence models.</p>
+                </div>
+                <div className="space-y-2">
+                  {EDITABLE_FIELDS.map((field) => (
+                    <div key={field.key} className="grid grid-cols-[auto,1fr] gap-2 items-start">
+                      <Checkbox
+                        checked={Boolean(approvedFields[field.key])}
+                        onCheckedChange={(checked) => setApprovedFields((current) => ({
+                          ...current,
+                          [field.key]: Boolean(checked),
+                        }))}
+                        className="mt-2"
+                      />
+                      <div className="space-y-1">
+                        <Label className="text-[10px] uppercase text-muted-foreground">{field.label}</Label>
+                        <Input
+                          className="h-8 text-xs"
+                          value={correctedFields[field.key] ?? ""}
+                          onChange={(e) => setCorrectedFields((current) => ({
+                            ...current,
+                            [field.key]: e.target.value,
+                          }))}
+                          placeholder={`Approved ${field.label.toLowerCase()}`}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase text-muted-foreground">Failure Taxonomy</Label>
+                    <Input
+                      className="h-8 text-xs"
+                      value={failureTaxonomy}
+                      onChange={(e) => setFailureTaxonomy(e.target.value)}
+                      placeholder="author_split, placeholder_volume, dedup_miss"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase text-muted-foreground">Stage Blame</Label>
+                    <Input
+                      className="h-8 text-xs"
+                      value={stageBlame}
+                      onChange={(e) => setStageBlame(e.target.value)}
+                      placeholder="extract, validate, dedup"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase text-muted-foreground">Duplicate Decision</Label>
+                    <Select value={duplicateDecision ?? "not_applicable"} onValueChange={(value) => setDuplicateDecision(value as CitationReport["duplicateDecision"])}>
+                      <SelectTrigger className="h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="not_applicable">Not applicable</SelectItem>
+                        <SelectItem value="confirmed_duplicate">Confirmed duplicate</SelectItem>
+                        <SelectItem value="confirmed_unique">Confirmed unique</SelectItem>
+                        <SelectItem value="needs_review">Needs review</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-3 pt-2">
                 {/* Case 1: Master Resolution (Everything) */}
                 {proposedStyleFix && (
@@ -427,8 +582,13 @@ export default function AdminReportDetail() {
                 size="sm" 
                 className="text-xs h-7 px-2"
                 onClick={() => {
-                  fetch(`/api/reports/${id}/add-to-stress`, { method: "POST" })
-                    .then(() => toast({ title: "Added to stress test corpus" }));
+                  adminFetch(`/api/reports/${id}/add-to-stress`, { method: "POST" })
+                    .then(() => toast({ title: "Added to stress test corpus" }))
+                    .catch((error: Error) => toast({
+                      title: "Could not add to stress test corpus",
+                      description: error.message,
+                      variant: "destructive",
+                    }));
                 }}
               >
                  Add to Stress Test Corpus

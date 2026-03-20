@@ -108,6 +108,7 @@ export interface ParsedReference {
   volume?: string;
   issue?: string;
   pages?: string;
+  doi?: string;
   'article-number'?: string;
   publisher?: string;
   placeOfPublication?: string;
@@ -165,7 +166,16 @@ export type AuthorityStatus =
 export interface ConversionResponse {
   convertedReferences: ConvertedReference[];
   clusters?: Cluster[];
+  duplicateGroups?: DuplicateGroup[];
+  engineVersion?: 'v1' | 'v2';
   errors?: string[];
+}
+
+export interface DuplicateGroup {
+  groupId: string;
+  primaryId: string;
+  method: 'doi' | 'structural' | 'semantic';
+  members: ConvertedReference[];
 }
 
 // Validation schemas
@@ -175,6 +185,7 @@ export const conversionRequestSchema = z.object({
   outputStyle: z.string(),
   enrichWithAuthority: z.boolean().optional().default(false),
   isPro: z.boolean().optional().default(false),
+  engineVersion: z.enum(['v1', 'v2']).optional(),
 });
 
 // In-memory storage types
@@ -210,6 +221,9 @@ export type FailureCategory =
   | 'locator'
   | 'title'
   | 'year'
+  | 'dedup'
+  | 'validation'
+  | 'normalization'
   | 'other';
 
 /** Lifecycle status of a failure report */
@@ -264,6 +278,18 @@ export interface CitationReport {
   ipHash?: string;
   /** Auto-queue trigger reasons */
   autoQueueReasons?: string[];
+  correctedFields?: ApprovedCanonicalFields;
+  fieldApproval?: FieldApprovalMap;
+  finalApprovedOutput?: string;
+  failureTaxonomy?: string[];
+  stageBlame?: string[];
+  duplicateDecision?: 'not_applicable' | 'confirmed_duplicate' | 'confirmed_unique' | 'needs_review';
+  originalEngineOutput?: {
+    convertedText?: string;
+    parsedData?: ParsedReference;
+    referenceType?: ReferenceType;
+    confidence?: number;
+  };
 }
 
 /** ── Contact & Feedback ── */
@@ -277,3 +303,344 @@ export const contactRequestSchema = z.object({
 
 export type ContactRequest = z.infer<typeof contactRequestSchema>;
 
+export const waitlistRequestSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  persona: z.enum(["student", "researcher", "educator", "developer", "team"]),
+});
+
+export type WaitlistRequest = z.infer<typeof waitlistRequestSchema>;
+
+// ── v2 Canonical Engine Types ──
+
+export type V2SourceType = 'text' | 'bib' | 'ris' | 'pdf_base64' | 'url' | 'doi_list';
+export type V2FieldSource = 'extracted' | 'authority' | 'merged' | 'user' | 'normalized';
+export type V2StageId =
+  | 'ingest'
+  | 'split'
+  | 'extract'
+  | 'validate'
+  | 'dedup'
+  | 'enrich'
+  | 'group'
+  | 'detect'
+  | 'score'
+  | 'normalize'
+  | 'render'
+  | 'respond';
+
+export type V2StageStatus = 'success' | 'warning' | 'error' | 'skipped';
+export type V2CitationStatus = 'active' | 'duplicate' | 'merged';
+export type CanonicalReferenceType =
+  | 'journal'
+  | 'book'
+  | 'chapter'
+  | 'conference'
+  | 'thesis'
+  | 'website'
+  | 'report'
+  | 'preprint'
+  | 'unknown';
+
+export interface FieldValue<T> {
+  value: T;
+  source: V2FieldSource;
+  confidence: number;
+  stageId: string;
+  mergedFrom?: string[];
+  conflictResolution?: string;
+}
+
+export interface CanonicalAuthor {
+  first: string | null;
+  last: string;
+  initials: string | null;
+  literal?: string;
+  orcid?: string;
+}
+
+export interface StageDiagnostic {
+  stageId: V2StageId | string;
+  status: V2StageStatus;
+  message: string;
+  code?: string;
+  timestamp: string;
+  durationMs?: number;
+  details?: Record<string, unknown>;
+}
+
+export interface ValidationIssue {
+  field?: string;
+  severity: 'error' | 'warning' | 'info';
+  code: string;
+  message: string;
+  extracted?: unknown;
+  expected?: unknown;
+}
+
+export interface DuplicateMetadata {
+  status?: V2CitationStatus;
+  duplicateOf?: string | null;
+  method?: 'doi' | 'structural' | 'semantic';
+  mergedFrom?: string[];
+  clusterKey?: string;
+  mergeReason?: string;
+}
+
+export interface EnrichmentMetadata {
+  status: 'skipped' | 'fetched' | 'no_match' | 'error';
+  provider?: string;
+  sourceUsed?: 'cache' | 'crossref_doi' | 'crossref_title_author' | 'semantic_scholar' | 'pubmed' | 'timeout_fallback' | 'unverifiable' | 'skipped';
+  cacheHit?: boolean;
+  doiFound?: boolean;
+  abstractFound?: boolean;
+  retractedFlag?: boolean;
+  timedOut?: boolean;
+  confidencePenalty?: number;
+  matchedTitle?: string;
+  matchedAuthors?: string[];
+  matchedYear?: number;
+  abstract?: string;
+  url?: string;
+  raw?: Record<string, unknown>;
+}
+
+export interface CitationQualityScore {
+  overall: number;
+  grade: 'A' | 'B' | 'C' | 'F';
+  fieldScores: Record<string, number>;
+  flags: string[];
+  missingRequired: string[];
+  missingOptional: string[];
+}
+
+export interface SplitMetadata {
+  confidence: number;
+  reasons: string[];
+  method: 'structural' | 'llm' | 'hybrid';
+  fallbackUsed: boolean;
+}
+
+export interface ExtractionMetadata {
+  method: 'deterministic' | 'llm' | 'hybrid';
+  fallbackUsed: boolean;
+  extractorPath?: 'deterministic' | 'grobid' | 'llm' | 'hybrid';
+  selectedBranch?: 'deterministic_raw' | 'year_anchored_fallback_raw' | 'hybrid';
+  selectionReason?: string;
+  authorParserMode?: string;
+  rejectedCandidates?: string[];
+}
+
+export interface ValidationMetadata {
+  verificationAttempted: boolean;
+  authoritySource?: string;
+  mismatchFields: string[];
+}
+
+export interface InputProfile {
+  structure: 'structured' | 'semi_structured' | 'unstructured' | 'unknown';
+  confidence: number;
+  inputType: 'bibtex' | 'ris' | 'numbered_list' | 'prose_footnotes' | 'mixed_styles' | 'doi_list' | 'plain_blob' | 'unknown';
+  estimatedCount: number;
+  hasDois: boolean;
+  hasUrls: boolean;
+  styleHints: string[];
+  signals: string[];
+}
+
+export interface ApprovedCanonicalFields {
+  authors?: CanonicalAuthor[];
+  title?: string | null;
+  year?: number | null;
+  journal?: string | null;
+  volume?: string | null;
+  issue?: string | null;
+  pages?: string | null;
+  doi?: string | null;
+  publisher?: string | null;
+  url?: string | null;
+  conferenceTitle?: string | null;
+  bookTitle?: string | null;
+  institution?: string | null;
+  edition?: string | null;
+  editor?: string | null;
+  referenceType?: CanonicalReferenceType | ReferenceType;
+}
+
+export interface FieldApprovalDecision {
+  approved: boolean;
+  value?: unknown;
+  note?: string;
+}
+
+export type FieldApprovalMap = Partial<Record<
+  | 'authors'
+  | 'title'
+  | 'year'
+  | 'journal'
+  | 'volume'
+  | 'issue'
+  | 'pages'
+  | 'doi'
+  | 'publisher'
+  | 'url'
+  | 'conferenceTitle'
+  | 'bookTitle'
+  | 'institution'
+  | 'edition'
+  | 'editor'
+  | 'referenceType',
+  FieldApprovalDecision
+>>;
+
+export interface ApprovedTruthEntry {
+  fingerprint: string;
+  originalText: string;
+  outputStyle: string;
+  validatedOutput: string;
+  validatedBy: string;
+  validatedAt: string;
+  correctedFields?: ApprovedCanonicalFields;
+  fieldApproval?: FieldApprovalMap;
+  failureTaxonomy?: string[];
+  stageBlame?: string[];
+  duplicateDecision?: 'not_applicable' | 'confirmed_duplicate' | 'confirmed_unique' | 'needs_review';
+  originalEngineOutput?: {
+    convertedText?: string;
+    parsedData?: ParsedReference;
+    referenceType?: ReferenceType;
+    confidence?: number;
+  };
+}
+
+export interface NormalizationMetadata {
+  doiNormalized: boolean;
+  unicodeRepairedFields: string[];
+  titleCaseApplied: boolean;
+  journalNormalizationHookAvailable: boolean;
+}
+
+export interface CitationRenderedOutput {
+  outputStyle: string;
+  formatted: string;
+  warnings: string[];
+  sanitized?: boolean;
+  assertionSummary?: AssertionSummary;
+  assertionHighlights?: AssertionHighlight[];
+}
+
+export interface V2CitationStageDebug {
+  [stageId: string]: Record<string, unknown>;
+}
+
+export interface V2CitationDebugTrace {
+  citationId: string;
+  raw: string;
+  status: V2CitationStatus;
+  stages: V2CitationStageDebug;
+}
+
+export interface V2DebugPayload {
+  enabled: boolean;
+  jobStages: Record<string, Record<string, unknown>>;
+  citations: V2CitationDebugTrace[];
+}
+
+export interface CanonicalCitation {
+  id: string;
+  raw: string;
+  status: V2CitationStatus;
+  referenceType: CanonicalReferenceType;
+  authors: FieldValue<CanonicalAuthor[]>;
+  title: FieldValue<string | null>;
+  year: FieldValue<number | null>;
+  journal: FieldValue<string | null>;
+  volume: FieldValue<string | null>;
+  issue: FieldValue<string | null>;
+  pages: FieldValue<string | null>;
+  doi: FieldValue<string | null>;
+  publisher: FieldValue<string | null>;
+  url: FieldValue<string | null>;
+  conferenceTitle: FieldValue<string | null>;
+  bookTitle: FieldValue<string | null>;
+  institution: FieldValue<string | null>;
+  edition: FieldValue<string | null>;
+  editor: FieldValue<string | null>;
+  detectedStyle: FieldValue<string | null>;
+  split?: SplitMetadata;
+  extraction?: ExtractionMetadata;
+  validation?: ValidationMetadata;
+  normalization?: NormalizationMetadata;
+  validationIssues: ValidationIssue[];
+  duplicate?: DuplicateMetadata | null;
+  enrichment?: EnrichmentMetadata | null;
+  quality?: CitationQualityScore;
+  rendered?: CitationRenderedOutput;
+  stageDebug?: V2CitationStageDebug;
+  stageLog: StageDiagnostic[];
+}
+
+export interface V2DuplicateEntry {
+  originalId: string;
+  duplicateId: string;
+  method: 'doi' | 'structural' | 'semantic';
+  mergedId?: string;
+}
+
+export interface V2ConversionStats {
+  input_count: number;
+  unique_count: number;
+  duplicate_count: number;
+  enriched_count: number;
+  avg_confidence: number;
+  retracted_count: number;
+  llm_fallback_count: number;
+}
+
+export interface V2Exports {
+  txt: string;
+  bib: string;
+  ris: string;
+  csv: string;
+  docx: string;
+}
+
+export interface V2ProcessingPath {
+  stagesRun: string[];
+  fallbacksUsed: string[];
+  durationMs: number;
+  partialResult: boolean;
+  executionMode?: 'sync' | 'async';
+  extractorPathsUsed?: string[];
+  partialReasons?: string[];
+}
+
+export interface V2ConversionResponse {
+  job_id: string;
+  processed_at: string;
+  stats: V2ConversionStats;
+  citations: CanonicalCitation[];
+  groups: Record<string, string[]>;
+  duplicates: V2DuplicateEntry[];
+  exports: V2Exports;
+  processingPath: V2ProcessingPath;
+  debug?: V2DebugPayload;
+  pipeline_log: StageDiagnostic[];
+  inputProfile?: InputProfile;
+}
+
+export const v2ConversionRequestSchema = z.object({
+  sourceType: z.enum(['text', 'bib', 'ris', 'pdf_base64', 'url', 'doi_list']),
+  content: z.string().min(1),
+  inputStyle: z.string().optional().default('auto'),
+  outputStyle: z.string().optional().default('apa'),
+  enrich: z.boolean().optional().default(true),
+  dedup: z.boolean().optional().default(true),
+  group: z.boolean().optional().default(false),
+  debug: z.boolean().optional().default(false),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+export type V2ConversionRequest = z.infer<typeof v2ConversionRequestSchema>;
+
+export const v2ExportFormatSchema = z.enum(['txt', 'bib', 'ris', 'csv', 'docx']);
+export type V2ExportFormat = z.infer<typeof v2ExportFormatSchema>;

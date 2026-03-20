@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Quote } from "lucide-react";
 import { Link } from "wouter";
+import { SiteFooter } from "@/components/site-footer";
 
 export default function FAQ() {
   const faqs = [
@@ -32,7 +32,7 @@ export default function FAQ() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <header className="bg-background/90 backdrop-blur-lg shadow-sm border-b border-border overflow-x-hidden sticky top-0 z-50 transition-colors duration-300">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2 min-w-0">
@@ -71,6 +71,7 @@ export default function FAQ() {
           ))}
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

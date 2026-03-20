@@ -2,10 +2,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Quote, User, Rocket, Shield, Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/navbar";
+import { SiteFooter } from "@/components/site-footer";
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-background font-sans">
+    <div className="min-h-screen bg-background font-sans flex flex-col">
       <Navbar />
 
       <main className="container mx-auto px-4 py-16 sm:py-24 max-w-4xl overflow-x-hidden">
@@ -16,7 +17,7 @@ export default function About() {
           className="text-center mb-16"
         >
           <h2 className="text-4xl sm:text-5xl font-extrabold text-foreground mb-6 tracking-tight">
-            About <span className="text-gradient-brand">BulkReferences</span>
+            About <span className="text-primary">BulkReferences</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Simplifying academic citations for researchers, students, and writers worldwide.
@@ -113,18 +114,7 @@ export default function About() {
         </div>
       </main>
 
-      {/* Footer (Simplified as main footer is in Home, or just use the same) */}
-      <footer className="border-t border-border py-12 mt-12 bg-muted/20">
-         <div className="container mx-auto px-4 text-center space-y-4">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <div className="w-8 h-8 bg-gradient-brand rounded-lg flex items-center justify-center">
-                <Quote className="text-white w-4 h-4" />
-              </div>
-              <span className="font-extrabold text-foreground">BulkReferences</span>
-            </div>
-            <p className="text-sm text-muted-foreground">© 2026 Crafted by a solo developer for researchers everywhere.</p>
-         </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

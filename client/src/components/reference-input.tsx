@@ -20,6 +20,9 @@ interface ReferenceInputProps {
   isProcessing: boolean;
   isPro?: boolean;
   onOutputStyleChange?: (style: string) => void;
+  engineVersion?: "v1" | "v2";
+  groupDuplicates?: boolean;
+  onGroupDuplicatesChange?: (value: boolean) => void;
   /** Prefill from extension capture batch (one ref per block, joined with \n\n). */
   initialCaptureText?: string;
 }
@@ -32,6 +35,9 @@ export default function ReferenceInput({
   isProcessing,
   isPro = false,
   onOutputStyleChange,
+  engineVersion = "v1",
+  groupDuplicates = true,
+  onGroupDuplicatesChange,
   initialCaptureText = "",
 }: ReferenceInputProps) {
   const [inputText, setInputText] = useState(initialCaptureText);
@@ -276,6 +282,7 @@ export default function ReferenceInput({
       outputStyle,
       isPro,
       enrichWithAuthority: isPro,
+      engineVersion,
     });
   };
 
@@ -385,6 +392,25 @@ Or use numbered format:
         >
           <Trash2 className="mr-1 h-3 w-3" />
           Clear All
+        </Button>
+      </div>
+
+      <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
+        <div>
+          <p className="text-sm font-medium text-foreground">Duplicate grouping</p>
+          <p className="text-xs text-muted-foreground">
+            {groupDuplicates
+              ? "Likely duplicates will be collapsed under one citation in the output."
+              : "Likely duplicates will stay separate in the output."}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant={groupDuplicates ? "default" : "outline"}
+          size="sm"
+          onClick={() => onGroupDuplicatesChange?.(!groupDuplicates)}
+        >
+          {groupDuplicates ? "Disable duplicates" : "Enable duplicates"}
         </Button>
       </div>
 

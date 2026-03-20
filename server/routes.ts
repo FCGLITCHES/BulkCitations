@@ -7,11 +7,24 @@ const pdfParse: (buffer: Buffer) => Promise<{ text: string }> =
   typeof pdfParseModule === "function" ? pdfParseModule : (pdfParseModule?.default ?? pdfParseModule);
 import { storage } from "./storage";
 import reportsRouter from "./routes/reports";
-import { conversionRequestSchema, contactRequestSchema, type ConvertedReference, type ConversionResponse } from "@shared/schema";
+import v2Router from "./routes/v2";
+import { conversionRequestSchema, contactRequestSchema, waitlistRequestSchema, type ConvertedReference, type ConversionResponse, type DuplicateGroup } from "@shared/schema";
 import { processReferences, reformatReferences, initCSLStyles } from "./engine/index";
+import { processV2Conversion } from "./engine/v2/index.js";
+import { mapV2ResponseToLegacyRecords } from "./engine/v2/compat.js";
 import { getAuthorityData } from "../shared/authorityLookup";
 import { calculateConfidence } from "../shared/confidence";
-import { sendContactAutoReply, sendContactNotification } from "./utils/email";
+import { sendContactAutoReply, sendContactNotification, sendWaitlistAutoReply, sendWaitlistNotification } from "./utils/email";
+import {
+  checkAdminLoginRateLimit,
+  clearAdminLoginFailures,
+  clearAdminSessionCookie,
+  getAdminSessionStatus,
+  isAdminAuthConfigured,
+  recordFailedAdminLogin,
+  setAdminSessionCookie,
+  verifyAdminPassword,
+} from "./utils/adminAuth.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize CSL styles at startup
@@ -23,40 +36,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
   });
 
+  app.get("/api/admin/session", (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.json(getAdminSessionStatus(req));
+  });
+
+  app.post("/api/admin/login", (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+
+    const { password } = req.body as { password?: unknown };
+    if (typeof password !== "string" || password.trim().length === 0) {
+      return res.status(400).json({ message: "Password is required." });
+    }
+
+    if (!isAdminAuthConfigured()) {
+      return res.status(503).json({
+        message: "Admin access is not configured. Add ADMIN_PASSWORD and ADMIN_SESSION_SECRET.",
+      });
+    }
+
+    const rateLimit = checkAdminLoginRateLimit(req);
+    if (!rateLimit.allowed) {
+      res.setHeader("Retry-After", String(rateLimit.retryAfterSeconds));
+      return res.status(429).json({
+        message: "Too many login attempts. Please try again later.",
+      });
+    }
+
+    if (!verifyAdminPassword(password)) {
+      recordFailedAdminLogin(req);
+      return res.status(401).json({ message: "Invalid credentials." });
+    }
+
+    clearAdminLoginFailures(req);
+    setAdminSessionCookie(req, res);
+    return res.json({ success: true });
+  });
+
+  app.post("/api/admin/logout", (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    clearAdminLoginFailures(req);
+    clearAdminSessionCookie(req, res);
+    res.json({ success: true });
+  });
+
   app.use("/api/reports", reportsRouter);
+  app.use("/api/v2", v2Router);
 
   // Convert citations endpoint — thin wrapper around engine pipeline
   app.post("/api/convert", async (req, res) => {
     try {
       const validatedData = conversionRequestSchema.parse(req.body);
-      const { references, inputStyle, outputStyle } = validatedData;
+      const envUseV2Engine = /^(1|true|yes|on)$/i.test(process.env.USE_V2_ENGINE ?? '');
+      const useV2Engine = validatedData.engineVersion === 'v2'
+        ? true
+        : validatedData.engineVersion === 'v1'
+          ? false
+          : envUseV2Engine;
 
-      const result = await processReferences(references, {
-        inputStyle,
-        outputStyle,
-        enrichWithAuthority: validatedData.enrichWithAuthority,
-        isPro: validatedData.isPro,
+      if (!useV2Engine) {
+        const pipelineResult = await processReferences(validatedData.references, {
+          inputStyle: validatedData.inputStyle,
+          outputStyle: validatedData.outputStyle,
+          enrichWithAuthority: validatedData.enrichWithAuthority,
+          isPro: validatedData.isPro,
+        });
+
+        const storedRefs = await storage.createReferences(
+          pipelineResult.storageData.map(({ _uiData, ...record }) => record)
+        );
+
+        const convertResults: ConvertedReference[] = pipelineResult.storageData.map((record, idx) => ({
+          ...record._uiData,
+          id: storedRefs[idx].id.toString(),
+        }));
+
+        const response: ConversionResponse = {
+          convertedReferences: convertResults,
+          clusters: pipelineResult.clusters,
+          duplicateGroups: [],
+          engineVersion: 'v1',
+          errors: pipelineResult.errors.length > 0 ? pipelineResult.errors : undefined,
+        };
+
+        return res.json(response);
+      }
+
+      const sourceContent = validatedData.references.join("\n\n");
+      const { response: v2Response } = await processV2Conversion({
+        sourceType: 'text',
+        content: sourceContent,
+        inputStyle: validatedData.inputStyle,
+        outputStyle: validatedData.outputStyle,
+        enrich: validatedData.enrichWithAuthority && validatedData.isPro,
+        dedup: true,
+        group: false,
+      }, {
+        executionMode: 'sync',
       });
 
-      // Batch store references
+      const legacyRecords = mapV2ResponseToLegacyRecords(v2Response, {
+        inputStyle: validatedData.inputStyle,
+        outputStyle: validatedData.outputStyle,
+      });
+
       const storedRefs = await storage.createReferences(
-        result.storageData.map(({ _uiData, ...rest }) => rest)
+        legacyRecords.map((record) => record.storageData)
       );
 
-      // Map storage IDs back to UI references
-      const convertResults: ConvertedReference[] = result.storageData.map((sd, idx) => ({
-        ...sd._uiData,
+      const convertResults: ConvertedReference[] = legacyRecords.map((record, idx) => ({
+        ...record.uiData,
         id: storedRefs[idx].id.toString(),
       }));
-
-      // Re-cluster with IDs assigned
-      const { clusterCitations } = await import("../shared/clustering");
-      const clusters = clusterCitations(convertResults, 80);
+      const uiRecordBySourceId = new Map(
+        legacyRecords.map((record, idx) => [record.sourceId, convertResults[idx]])
+      );
+      const duplicateGroups: DuplicateGroup[] = v2Response.citations
+        .filter((citation) => citation.status === 'merged' && citation.duplicate?.mergedFrom?.length)
+        .map((citation) => {
+          const members = (citation.duplicate?.mergedFrom ?? [])
+            .map((sourceId) => uiRecordBySourceId.get(sourceId))
+            .filter((member): member is ConvertedReference => Boolean(member));
+          const primarySourceId =
+            v2Response.duplicates.find((entry) => entry.mergedId === citation.id)?.originalId
+            ?? citation.duplicate?.mergedFrom?.[0]
+            ?? '';
+          const primaryId = uiRecordBySourceId.get(primarySourceId)?.id ?? members[0]?.id ?? '';
+          return {
+            groupId: citation.id,
+            primaryId,
+            method: citation.duplicate?.method ?? 'structural',
+            members,
+          };
+        })
+        .filter((group) => group.members.length > 1 && Boolean(group.primaryId));
 
       const response: ConversionResponse = {
         convertedReferences: convertResults,
-        clusters: clusters.length > 0 ? clusters : undefined,
-        errors: result.errors.length > 0 ? result.errors : undefined,
+        clusters: undefined,
+        duplicateGroups,
+        engineVersion: 'v2',
+        errors: undefined,
       };
 
       res.json(response);
@@ -298,6 +418,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(400).json({
         message: "Invalid contact form data",
         error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post("/api/waitlist", async (req, res) => {
+    try {
+      const { email, persona } = waitlistRequestSchema.parse(req.body);
+
+      const notificationResult = await sendWaitlistNotification({ email, persona });
+
+      if (!notificationResult.success) {
+        console.error("[routes] Waitlist notification failed:", notificationResult.error ?? "Unknown email error");
+        return res.status(502).json({
+          message: "Waitlist signup could not be delivered",
+          error: notificationResult.error ?? "Email provider rejected the request",
+        });
+      }
+
+      sendWaitlistAutoReply({ email, persona }).catch((err) => {
+        console.error("[routes] Waitlist auto-reply failed:", err instanceof Error ? err.message : String(err));
+      });
+
+      res.json({ success: true, message: "You've been added to the waitlist." });
+    } catch (error) {
+      console.error("Waitlist error:", error);
+      res.status(400).json({
+        message: "Invalid waitlist form data",
+        error: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });

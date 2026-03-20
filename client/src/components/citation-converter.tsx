@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ReferenceInput from "./reference-input";
 import ReferenceOutput from "./reference-output";
 import ProcessingStatus from "./processing-status";
 import ErrorToast from "./error-toast";
-import { ConvertedReference, ConversionResponse } from "@/lib/types";
-import { apiRequest } from "@/lib/queryClient";
+import { ConvertedReference, ConversionResponse, DuplicateGroup } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 const CAPTURE_BATCH_KEY = "bulkcitations_capture_batch";
 
@@ -30,8 +30,15 @@ function readCaptureBatch(): string {
 export default function CitationConverter() {
   const [convertedReferences, setConvertedReferences] = useState<ConvertedReference[]>([]);
   const [clusters, setClusters] = useState<ConversionResponse["clusters"]>(undefined);
-  const [clusterEnabled, setClusterEnabled] = useState(true);
+  const [duplicateGroups, setDuplicateGroups] = useState<DuplicateGroup[]>([]);
+  const [groupDuplicates, setGroupDuplicates] = useState(true);
   const [isPro, setIsPro] = useState(true); // Pro by default for development; wire to auth when ready
+  const [engineVersion, setEngineVersion] = useState<"v1" | "v2">(() => {
+    if (typeof window === "undefined") return "v1";
+    const saved = window.localStorage.getItem("bulkcitations_engine_version");
+    return saved === "v2" ? "v2" : "v1";
+  });
+  const [lastEngineUsed, setLastEngineUsed] = useState<"v1" | "v2">("v1");
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState({ visible: false, title: "", message: "" });
   const [errorToast, setErrorToast] = useState({ visible: false, title: "", message: "", variant: "error" as "error" | "warning" });
@@ -63,9 +70,15 @@ export default function CitationConverter() {
     return () => window.removeEventListener("bulkcitations-capture-batch", onCaptureBatch);
   }, [toast]);
 
+  useEffect(() => {
+    window.localStorage.setItem("bulkcitations_engine_version", engineVersion);
+  }, [engineVersion]);
+
   const handleConversionResult = (response: ConversionResponse) => {
     setConvertedReferences(response.convertedReferences);
     setClusters(response.clusters ?? undefined);
+    setDuplicateGroups(response.duplicateGroups ?? []);
+    setLastEngineUsed(response.engineVersion ?? engineVersion);
 
     // Save to local storage history
     if (response.convertedReferences && response.convertedReferences.length > 0) {
@@ -216,24 +229,30 @@ export default function CitationConverter() {
                 isPro={isPro}
                 onOutputStyleChange={handleOutputStyleChange}
                 initialCaptureText={initialCaptureText || undefined}
+                engineVersion={engineVersion}
+                groupDuplicates={groupDuplicates}
+                onGroupDuplicatesChange={setGroupDuplicates}
               />
 
-              <div className="mt-4 flex items-center justify-between">
-                <div className="text-xs sm:text-sm text-muted-foreground">
-                  <span className="font-semibold">Clustering</span>
-                  <span className="ml-1">
-                    {clusterEnabled
-                      ? "Similar references will be grouped together."
-                      : "Duplicates will be kept separate in the output."}
-                  </span>
+              <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Admin Engine
+                  </Label>
+                  <Select value={engineVersion} onValueChange={(value: "v1" | "v2") => setEngineVersion(value)}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="v1">v1 engine</SelectItem>
+                      <SelectItem value="v2">v2 engine</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setClusterEnabled(prev => !prev)}
-                  className="text-xs sm:text-sm font-medium px-3 py-1.5 rounded-full border border-border hover:bg-muted transition-colors"
-                >
-                  {clusterEnabled ? "Disable clustering" : "Enable clustering"}
-                </button>
+                <div className="text-xs sm:text-sm text-muted-foreground sm:text-right">
+                  <span className="font-semibold">Last run:</span>
+                  <span className="ml-1">{lastEngineUsed.toUpperCase()}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -263,7 +282,9 @@ export default function CitationConverter() {
               <ReferenceOutput
                 convertedReferences={convertedReferences}
                 clusters={clusters}
-                enableClustering={clusterEnabled}
+                duplicateGroups={duplicateGroups}
+                engineVersion={lastEngineUsed}
+                groupDuplicates={groupDuplicates}
                 onError={handleError}
                 isPro={isPro}
                 onRecheck={handleRecheck}

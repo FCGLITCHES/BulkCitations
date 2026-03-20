@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import type { CitationReport, ReportStatus } from "@shared/schema";
+import { adminFetch } from "@/lib/admin-api";
 
 interface GroupedReport {
   fingerprint: string;
@@ -42,9 +43,7 @@ export default function AdminReportQueue() {
   const { data: groups, isLoading } = useQuery<GroupedReport[]>({
     queryKey: ["/api/reports/grouped", statusFilter],
     queryFn: async () => {
-      const res = await fetch(`/api/reports/grouped?status=${statusFilter}`);
-      if (!res.ok) throw new Error("Failed to fetch reports");
-      return res.json();
+      return adminFetch<GroupedReport[]>(`/api/reports/grouped?status=${statusFilter}`);
     },
   });
 

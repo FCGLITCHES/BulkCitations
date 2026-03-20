@@ -1,31 +1,89 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from "react";
+
+const AUTH_EVENT_NAME = "bulkreferences-admin-auth-changed";
+
+type AdminSessionResponse = {
+  authenticated?: boolean;
+  configured?: boolean;
+};
+
+type AdminLoginResult =
+  | { success: true }
+  | { success: false; message: string };
 
 export function useAuth() {
-    const [isAdmin, setIsAdmin] = useState<boolean>(false);
-    const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isConfigured, setIsConfigured] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-    useEffect(() => {
-        // Read from localStorage on mount
-        const storedAdminState = localStorage.getItem('bulkcitations_is_admin');
-        if (storedAdminState === 'true') {
-            setIsAdmin(true);
-        }
-        setIsInitialized(true);
-    }, []);
+  const refreshAuth = useCallback(async () => {
+    try {
+      const response = await fetch("/api/admin/session", {
+        credentials: "include",
+        cache: "no-store",
+      });
 
-    const login = (password: string) => {
-        if (password === 'admin123') {
-            setIsAdmin(true);
-            localStorage.setItem('bulkcitations_is_admin', 'true');
-            return true;
-        }
-        return false;
+      if (!response.ok) {
+        throw new Error("Failed to load admin session");
+      }
+
+      const data = await response.json() as AdminSessionResponse;
+      setIsAdmin(Boolean(data.authenticated));
+      setIsConfigured(Boolean(data.configured ?? true));
+    } catch {
+      setIsAdmin(false);
+    } finally {
+      setIsInitialized(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshAuth();
+
+    const handleAuthChange = () => {
+      void refreshAuth();
     };
 
-    const logout = () => {
-        setIsAdmin(false);
-        localStorage.removeItem('bulkcitations_is_admin');
+    window.addEventListener(AUTH_EVENT_NAME, handleAuthChange);
+    return () => {
+      window.removeEventListener(AUTH_EVENT_NAME, handleAuthChange);
     };
+  }, [refreshAuth]);
 
-    return { isAdmin, isInitialized, login, logout };
+  const login = useCallback(async (password: string): Promise<AdminLoginResult> => {
+    const response = await fetch("/api/admin/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ password }),
+    });
+
+    const data = await response.json().catch(() => ({ message: "Login failed." })) as { message?: string };
+
+    if (!response.ok) {
+      return {
+        success: false,
+        message: data.message ?? "Login failed.",
+      };
+    }
+
+    window.dispatchEvent(new Event(AUTH_EVENT_NAME));
+    await refreshAuth();
+    return { success: true };
+  }, [refreshAuth]);
+
+  const logout = useCallback(async () => {
+    try {
+      await fetch("/api/admin/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } finally {
+      setIsAdmin(false);
+      window.dispatchEvent(new Event(AUTH_EVENT_NAME));
+      void refreshAuth();
+    }
+  }, [refreshAuth]);
+
+  return { isAdmin, isConfigured, isInitialized, login, logout, refreshAuth };
 }

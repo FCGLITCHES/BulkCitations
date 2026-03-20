@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,15 +10,30 @@ import { motion } from "framer-motion";
 export default function Login() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
-    const { login } = useAuth();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { isAdmin, isConfigured, isInitialized, login } = useAuth();
     const [, setLocation] = useLocation();
 
-    const handleLogin = (e: React.FormEvent) => {
+    useEffect(() => {
+        if (isInitialized && isAdmin) {
+            setLocation("/admin/reports");
+        }
+    }, [isAdmin, isInitialized, setLocation]);
+
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (login(password)) {
-            setLocation("/");
-        } else {
-            setError("Invalid password");
+        setIsSubmitting(true);
+
+        try {
+            const result = await login(password);
+            if (result.success) {
+                setLocation("/admin/reports");
+                return;
+            }
+
+            setError(result.message ?? "Invalid credentials");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -41,9 +56,14 @@ export default function Login() {
                 <Card className="shadow-xl border-border/50 bg-white/80 dark:bg-card/80 backdrop-blur-lg">
                     <CardHeader className="text-center pb-2">
                         <CardTitle className="text-2xl font-bold tracking-tight">Admin Login</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-2">Enter the admin passcode to access reports.</p>
+                        <p className="text-sm text-muted-foreground mt-2">Enter the server-managed admin password to access the review queue.</p>
                     </CardHeader>
                     <CardContent>
+                        {!isConfigured && isInitialized && (
+                            <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                                Admin access is disabled until <code>ADMIN_PASSWORD</code> and <code>ADMIN_SESSION_SECRET</code> are set.
+                            </div>
+                        )}
                         <form onSubmit={handleLogin} className="space-y-4">
                             <div className="space-y-2">
                                 <Input
@@ -54,12 +74,17 @@ export default function Login() {
                                         setPassword(e.target.value);
                                         setError("");
                                     }}
+                                    disabled={!isConfigured || isSubmitting}
                                     className={error ? "border-destructive focus-visible:ring-destructive" : ""}
                                 />
                                 {error && <p className="text-xs text-destructive font-medium">{error}</p>}
                             </div>
-                            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
-                                Sign In
+                            <Button
+                                type="submit"
+                                disabled={!isConfigured || isSubmitting}
+                                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                            >
+                                {isSubmitting ? "Signing In..." : "Sign In"}
                             </Button>
                         </form>
                         <div className="mt-6 text-center">

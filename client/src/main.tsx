@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { Router, Route } from 'wouter';
+import { Router, Route, useLocation } from 'wouter';
 import Home from './pages/home';
 import FAQ from './pages/faq';
 import Privacy from './pages/privacy';
@@ -11,11 +11,55 @@ import AdminReportDetail from './components/AdminReportDetail';
 import Login from './pages/login';
 import HistoryPage from './pages/history';
 import ScrollToTop from './components/scroll-to-top';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/queryClient';
+import { useAuth } from './hooks/use-auth';
 import './index.css';
 
+function RequireAdmin({ children }: { children: React.ReactNode }) {
+  const { isAdmin, isInitialized } = useAuth();
+  const [, setLocation] = useLocation();
 
-const queryClient = new QueryClient();
+  React.useEffect(() => {
+    if (isInitialized && !isAdmin) {
+      setLocation('/login');
+    }
+  }, [isAdmin, isInitialized, setLocation]);
+
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4 text-sm text-muted-foreground">
+        Checking admin session...
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4 text-sm text-muted-foreground">
+        Redirecting to admin login...
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
+function AdminQueueRoute() {
+  return (
+    <RequireAdmin>
+      <AdminReportQueue />
+    </RequireAdmin>
+  );
+}
+
+function AdminDetailRoute() {
+  return (
+    <RequireAdmin>
+      <AdminReportDetail />
+    </RequireAdmin>
+  );
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -29,8 +73,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/contact" component={Contact} />
         <Route path="/login" component={Login} />
         <Route path="/history" component={HistoryPage} />
-        <Route path="/admin/reports" component={AdminReportQueue} />
-        <Route path="/admin/reports/:id" component={AdminReportDetail} />
+        <Route path="/admin/reports" component={AdminQueueRoute} />
+        <Route path="/admin/reports/:id" component={AdminDetailRoute} />
       </Router>
     </QueryClientProvider>
   </React.StrictMode>

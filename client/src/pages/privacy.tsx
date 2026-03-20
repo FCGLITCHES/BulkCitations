@@ -1,9 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Navbar } from "@/components/navbar";
+import { SiteFooter } from "@/components/site-footer";
 
 export default function Privacy() {
   return (
-    <div className="min-h-screen bg-background font-sans">
+    <div className="min-h-screen bg-background font-sans flex flex-col">
       <Navbar />
 ...
       <main className="container mx-auto px-3 sm:px-4 py-8 sm:py-12 max-w-2xl overflow-x-hidden">
@@ -28,6 +29,7 @@ export default function Privacy() {
           </CardContent>
         </Card>
       </main>
+      <SiteFooter />
     </div>
   );
 }

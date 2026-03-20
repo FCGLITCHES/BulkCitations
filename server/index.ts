@@ -11,8 +11,40 @@ function isVercelRuntime() {
 /** Build and return the Express app (and optional server for listen). Used by Vercel serverless. */
 export async function createApp(): Promise<{ app: express.Express; server: Awaited<ReturnType<typeof registerRoutes>> }> {
   const app = express();
+  const isProduction = process.env.NODE_ENV === "production";
+
+  app.disable("x-powered-by");
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
+  app.use((_req, res, next) => {
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+
+    if (isProduction) {
+      res.setHeader(
+        "Content-Security-Policy",
+        [
+          "default-src 'self'",
+          "base-uri 'self'",
+          "form-action 'self'",
+          "frame-ancestors 'none'",
+          "img-src 'self' data: blob: https:",
+          "script-src 'self'",
+          "style-src 'self' 'unsafe-inline'",
+          "font-src 'self' data:",
+          "connect-src 'self'",
+          "object-src 'none'",
+          "worker-src 'self' blob:",
+          "manifest-src 'self'",
+          "upgrade-insecure-requests",
+        ].join("; "),
+      );
+    }
+
+    next();
+  });
 
   app.use((req, res, next) => {
     const start = Date.now();
