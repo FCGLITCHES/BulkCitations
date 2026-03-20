@@ -16,8 +16,16 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
     async run(context) {
       const startedAt = Date.now();
       const fallbacksUsed = [...context.fallbacksUsed];
-      const extractConcurrency = Number.parseInt(process.env.V2_EXTRACT_CONCURRENCY ?? '6', 10);
-      const limit = pLimit(Number.isFinite(extractConcurrency) && extractConcurrency > 0 ? extractConcurrency : 6);
+      const grobidEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_GROBID_EXTRACTOR ?? '');
+      const defaultExtractConcurrency = grobidEnabled ? 2 : 6;
+      const configuredExtractConcurrency = Number.parseInt(
+        process.env.V2_EXTRACT_CONCURRENCY ?? String(defaultExtractConcurrency),
+        10,
+      );
+      const effectiveExtractConcurrency = Number.isFinite(configuredExtractConcurrency) && configuredExtractConcurrency > 0
+        ? configuredExtractConcurrency
+        : defaultExtractConcurrency;
+      const limit = pLimit(effectiveExtractConcurrency);
 
       const citations = await Promise.all(context.citations.map((citation, citationIndex) => limit(async () => {
         const effectiveStyle = citation.detectedStyle.value ?? context.request.inputStyle;
@@ -134,6 +142,7 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
             extract: {
               adapter: extractor.id,
               citationCount: citations.length,
+              extractConcurrency: effectiveExtractConcurrency,
               fallbacksUsed,
               extractorPathsUsed: [...new Set(citations.map((citation) => citation.extraction?.extractorPath).filter(Boolean))],
             },

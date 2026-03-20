@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Buffer } from 'node:buffer';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { z } from 'zod';

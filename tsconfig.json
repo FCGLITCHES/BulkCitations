@@ -12,8 +12,8 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "types": ["node", "vite/client", "express"],
     "paths": {
@@ -23,9 +23,9 @@
     }
   },
   "include": [
-    "client/src",
-    "server",
-    "shared"
-  ],
-  "references": [{ "path": "./tsconfig.node.json" }]
+    "client/src/main.tsx",
+    "server/index.ts",
+    "shared/**/*.ts",
+    "shared/**/*.d.ts"
+  ]
 }

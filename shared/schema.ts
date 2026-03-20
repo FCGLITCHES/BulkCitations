@@ -146,6 +146,8 @@ export interface ConvertedReference {
   styleDetectionFailed?: boolean;
   assertionSummary?: AssertionSummary;
   assertionHighlights?: AssertionHighlight[];
+  healthState?: 'clean' | 'review' | 'action_needed';
+  healthReasons?: string[];
   /** True when authors are initials-only (e.g. "Smith, J."); keep initials unless we have high-confidence metadata. */
   authorInitialsOnly?: boolean;
   /** True when full names were filled from DOI/metadata lookup (confidence-gated only). */

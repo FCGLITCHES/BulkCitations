@@ -49,6 +49,36 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, stageId: V2Stage
   });
 }
 
+function resolveStageTimeoutMs(
+  context: V2PipelineContext,
+  stageId: V2StageId,
+  baseTimeoutMs: number,
+): number {
+  if (stageId !== 'extract') return baseTimeoutMs;
+
+  const citationCount = Math.max(
+    context.citations.length,
+    context.rawItems.length,
+    context.inputProfile?.estimatedCount ?? 0,
+    1,
+  );
+  const grobidEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_GROBID_EXTRACTOR ?? '');
+  const defaultConcurrency = grobidEnabled ? 2 : 6;
+  const configuredConcurrency = Number.parseInt(
+    process.env.V2_EXTRACT_CONCURRENCY ?? String(defaultConcurrency),
+    10,
+  );
+  const concurrency = Number.isFinite(configuredConcurrency) && configuredConcurrency > 0
+    ? configuredConcurrency
+    : defaultConcurrency;
+  const batches = Math.ceil(citationCount / Math.max(concurrency, 1));
+  const perBatchBudgetMs = grobidEnabled ? 3_500 : 1_200;
+  const overheadMs = grobidEnabled ? 4_000 : 2_000;
+  const calculatedTimeoutMs = (batches * perBatchBudgetMs) + overheadMs;
+
+  return Math.max(baseTimeoutMs, calculatedTimeoutMs);
+}
+
 export async function processV2Conversion(
   request: V2ConversionRequest,
   options?: {
@@ -106,7 +136,7 @@ export async function processV2Conversion(
       stagesRun: [...context.stagesRun, stageId],
     };
     try {
-      context = await withTimeout(stage.run(context), config.timeoutMs, stageId);
+      context = await withTimeout(stage.run(context), resolveStageTimeoutMs(context, stageId, config.timeoutMs), stageId);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       context = {

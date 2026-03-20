@@ -68,4 +68,21 @@ describe('reference health regression checks', () => {
     expect(health.state).toBe('review');
     expect(health.reasons).toContain('Placeholder or suspicious venue fields present');
   });
+
+  it('prefers backend health state and reasons when v2 provides them', () => {
+    const ref = makeReference({
+      healthState: 'review',
+      healthReasons: ['Authority verification found mismatched fields'],
+      styleDetectionFailed: true,
+      confidence: {
+        score: 95,
+        breakdown: { rules: 95 },
+        isSuspicious: false,
+      },
+    });
+
+    const health = computeReferenceHealth(ref);
+    expect(health.state).toBe('review');
+    expect(health.reasons).toEqual(['Authority verification found mismatched fields']);
+  });
 });

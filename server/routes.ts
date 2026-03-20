@@ -131,6 +131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         enrich: validatedData.enrichWithAuthority && validatedData.isPro,
         dedup: true,
         group: false,
+        debug: false,
       }, {
         executionMode: 'sync',
       });

@@ -41,6 +41,13 @@ export function computeReferenceHealth(
   ref: ConvertedReference,
   clusters?: Cluster[]
 ): HealthSignals {
+  if (ref.healthState) {
+    return {
+      state: ref.healthState,
+      reasons: ref.healthReasons ?? [],
+    };
+  }
+
   const parsed = ref.parsedData ?? {};
   const warnings = ref.warnings ?? [];
   const reasons: string[] = [];
@@ -68,7 +75,7 @@ export function computeReferenceHealth(
   // Do NOT treat unclear source type / missing venue as a hard \"needs fix\" signal.
   // Users can still see when something is classified as Other in the type badge.
   if (veryLowConfidence) hardReasons.push("Very low-confidence parse");
-  if (styleFailed) hardReasons.push("Auto-detect uncertain; style fell back to best-guess");
+  if (styleFailed) softReasons.push("Auto-detect uncertain; style fell back to best-guess");
   // Don't escalate \"Other\" into a hard failure; it's informational only.
   if (hasErrorWarning) hardReasons.push("Critical formatting or parsing errors");
 

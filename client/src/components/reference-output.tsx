@@ -462,7 +462,6 @@ function CitationRow({
               </Button>
               {extraActions}
               <ReportButton
-                refId={refData.id}
                 rawInput={refData.originalText}
                 detectedInputStyle={refData.inputStyle}
                 targetStyle={refData.outputStyle}
@@ -504,7 +503,6 @@ function CitationRow({
             </Button>
             {extraActions}
             <ReportButton
-              refId={refData.id}
               rawInput={refData.originalText}
               detectedInputStyle={refData.inputStyle}
               targetStyle={refData.outputStyle}

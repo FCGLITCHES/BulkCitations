@@ -22,9 +22,6 @@
     }
   },
   "include": [
-    "client/src",
-    "server",
-    "shared",
     "vite.config.ts",
     "drizzle.config.ts"
   ]

@@ -318,8 +318,12 @@ export class CitationParser {
       mla: 0,
       harvard: 0,
       chicago: 0,
+      'harvard-ctr': 0,
+      'chicago-ad': 0,
+      'chicago-nb': 0,
       ieee: 0,
       vancouver: 0,
+      auto: 0,
     };
 
     // === IEEE: starts with [number] ===

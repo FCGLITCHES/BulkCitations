@@ -7,6 +7,7 @@ import ReferenceOutput from "./reference-output";
 import ProcessingStatus from "./processing-status";
 import ErrorToast from "./error-toast";
 import { ConvertedReference, ConversionResponse, DuplicateGroup } from "@/lib/types";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 

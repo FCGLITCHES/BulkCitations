@@ -11,6 +11,72 @@ import { canonicalToParsedReference, canonicalReferenceTypeToParsed } from './ut
 import { computeWorkKey } from '../../utils/workKey.js';
 import { hasAuthorInitialsOnly } from '../../utils/authorResolution.js';
 
+function friendlyQualityFlag(flag: string): string | null {
+  switch (flag) {
+    case 'malformed_authors':
+    case 'author_parse_failed':
+      return 'Author parsing looks malformed';
+    case 'placeholder_fields':
+      return 'Placeholder or suspicious venue fields present';
+    case 'missing_doi':
+      return 'DOI missing';
+    case 'unverified':
+      return 'Authority verification found mismatched fields';
+    case 'retracted':
+      return 'Citation is flagged as retracted';
+    case 'review':
+      return 'Validation or rendering warnings are present';
+    default:
+      return null;
+  }
+}
+
+function mapLegacyHealth(citation: CanonicalCitation): {
+  state: 'clean' | 'review' | 'action_needed';
+  reasons: string[];
+} {
+  const reasons = citation.validationIssues.map((issue) => issue.message);
+  const validationCodes = new Set(citation.validationIssues.map((issue) => issue.code));
+  const qualityFlags = new Set(citation.quality?.flags ?? []);
+  const missingRequired = citation.quality?.missingRequired ?? [];
+  const score = citation.quality?.overall ?? 0;
+  const grade = citation.quality?.grade ?? 'F';
+
+  for (const flag of qualityFlags) {
+    const message = friendlyQualityFlag(flag);
+    if (message && !reasons.includes(message)) reasons.push(message);
+  }
+
+  if (qualityFlags.has('retracted')) {
+    return { state: 'action_needed', reasons };
+  }
+
+  if (
+    missingRequired.length > 0
+    || score < 0.45
+    || grade === 'F'
+    || validationCodes.has('connector_as_author')
+    || validationCodes.has('alternating_surname_given_tokens')
+    || qualityFlags.has('malformed_authors')
+    || qualityFlags.has('author_parse_failed')
+  ) {
+    return { state: 'action_needed', reasons };
+  }
+
+  if (
+    grade === 'C'
+    || score < 0.75
+    || citation.validationIssues.some((issue) => issue.severity === 'warning')
+    || qualityFlags.has('placeholder_fields')
+    || qualityFlags.has('review')
+    || qualityFlags.has('unverified')
+  ) {
+    return { state: 'review', reasons };
+  }
+
+  return { state: 'clean', reasons };
+}
+
 function mapAuthorityStatus(citation: CanonicalCitation): AuthorityStatus {
   const status = citation.enrichment?.status;
   if (!status) return 'none';
@@ -55,6 +121,7 @@ export function mapV2ResponseToLegacyRecords(
     const confidenceScore = Math.round((citation.quality?.overall ?? 0) * 100);
     const authorityData = toLegacyAuthorityData(citation);
     const inputStyle = citation.detectedStyle.value ?? request.inputStyle;
+    const health = mapLegacyHealth(citation);
 
     return {
       sourceId: citation.id,
@@ -78,6 +145,8 @@ export function mapV2ResponseToLegacyRecords(
         styleDetectionFailed: request.inputStyle === 'auto' && !citation.detectedStyle.value,
         assertionSummary: citation.rendered?.assertionSummary,
         assertionHighlights: citation.rendered?.assertionHighlights,
+        healthState: health.state,
+        healthReasons: health.reasons,
         authorInitialsOnly: hasAuthorInitialsOnly(parsedData),
       },
       storageData: {

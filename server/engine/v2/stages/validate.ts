@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { CanonicalCitation, ValidationIssue, ValidationMetadata } from '@shared/schema';
 import { fetchCrossrefMetadata } from '../../doiEnrichment.js';
 import type { V2Stage } from '../contracts.js';

@@ -81,13 +81,20 @@ describe('legacy /api/convert routed through v2 engine', () => {
 
       expect(response.ok).toBe(true);
       const payload = await response.json() as {
-        convertedReferences: Array<{ convertedText: string; parsedData: { conferenceTitle?: string; title?: string } }>;
+        convertedReferences: Array<{
+          convertedText: string;
+          parsedData: { conferenceTitle?: string; title?: string };
+          healthState?: 'clean' | 'review' | 'action_needed';
+          healthReasons?: string[];
+        }>;
       };
       expect(payload.convertedReferences).toHaveLength(1);
       expect(payload.convertedReferences[0].convertedText).toContain('Gomes');
       expect(payload.convertedReferences[0].convertedText).toContain('Kovaleski');
       expect(payload.convertedReferences[0].convertedText).toContain('Pagani');
       expect(payload.convertedReferences[0].parsedData.title).toContain('Machine learning applied to healthcare');
+      expect(payload.convertedReferences[0].healthState).toBeTruthy();
+      expect(Array.isArray(payload.convertedReferences[0].healthReasons)).toBe(true);
     } finally {
       delete process.env.USE_V2_ENGINE;
     }
