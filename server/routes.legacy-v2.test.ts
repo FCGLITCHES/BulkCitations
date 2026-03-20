@@ -99,4 +99,37 @@ describe('legacy /api/convert routed through v2 engine', () => {
       delete process.env.USE_V2_ENGINE;
     }
   });
+
+  it('does not time out on larger legacy v2 bridge batches', async () => {
+    process.env.USE_V2_ENGINE = 'true';
+    try {
+      const references = Array.from(
+        { length: 80 },
+        (_, index) => `Smith, J. (${2020 + (index % 3)}). Example title ${index + 1}. Journal of Quality, 10(2), 11-19.`,
+      );
+
+      const response = await fetch(`${baseUrl}/api/convert`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          references,
+          inputStyle: 'auto',
+          outputStyle: 'apa',
+          enrichWithAuthority: false,
+          isPro: false,
+          engineVersion: 'v2',
+        }),
+      });
+
+      expect(response.ok).toBe(true);
+      const payload = await response.json() as {
+        convertedReferences: Array<{ id: string; convertedText: string }>;
+        engineVersion?: 'v1' | 'v2';
+      };
+      expect(payload.engineVersion).toBe('v2');
+      expect(payload.convertedReferences).toHaveLength(80);
+    } finally {
+      delete process.env.USE_V2_ENGINE;
+    }
+  });
 });

@@ -94,32 +94,56 @@ function HighlightedCitationText({ text, highlights }: { text: string; highlight
   );
 }
 
-function buildDuplicateDiffMarkup(text: string, compareText?: string): string {
+function buildDuplicateDiffMarkup(text: string, compareText?: string): { html: string; differenceCount: number } {
   if (!compareText || compareText === text) {
-    return text;
+    return { html: text, differenceCount: 0 };
   }
 
   const textTokens = text.match(/\s+|[^\s]+/g) ?? [text];
   const compareTokens = compareText.match(/\s+|[^\s]+/g) ?? [compareText];
-  let compareIndex = 0;
+  const textWords = textTokens
+    .map((token, index) => ({ token, index, normalized: token.replace(/[.,;:()[\]{}"']/g, "").toLowerCase() }))
+    .filter((entry) => entry.normalized && !/^\s+$/.test(entry.token));
+  const compareWords = compareTokens
+    .map((token) => ({ normalized: token.replace(/[.,;:()[\]{}"']/g, "").toLowerCase() }))
+    .filter((entry) => entry.normalized);
 
-  return textTokens.map((token) => {
-    if (/^\s+$/.test(token)) return token;
-
-    while (compareIndex < compareTokens.length && /^\s+$/.test(compareTokens[compareIndex])) {
-      compareIndex += 1;
+  const dp = Array.from({ length: textWords.length + 1 }, () => Array(compareWords.length + 1).fill(0));
+  for (let i = textWords.length - 1; i >= 0; i -= 1) {
+    for (let j = compareWords.length - 1; j >= 0; j -= 1) {
+      if (textWords[i].normalized === compareWords[j].normalized) {
+        dp[i][j] = dp[i + 1][j + 1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i + 1][j], dp[i][j + 1]);
+      }
     }
+  }
 
-    const compareToken = compareTokens[compareIndex] ?? "";
-    const normalizedToken = token.replace(/[.,;:()[\]{}"']/g, "").toLowerCase();
-    const normalizedCompare = compareToken.replace(/[.,;:()[\]{}"']/g, "").toLowerCase();
-    const isDifferent = normalizedToken !== normalizedCompare;
-    compareIndex += 1;
+  const matchedIndexes = new Set<number>();
+  let i = 0;
+  let j = 0;
+  while (i < textWords.length && j < compareWords.length) {
+    if (textWords[i].normalized === compareWords[j].normalized) {
+      matchedIndexes.add(textWords[i].index);
+      i += 1;
+      j += 1;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      i += 1;
+    } else {
+      j += 1;
+    }
+  }
 
-    return isDifferent
-      ? `<mark class="rounded bg-amber-500/20 px-0.5 text-amber-200">${token}</mark>`
-      : token;
+  let differenceCount = 0;
+  const html = textTokens.map((token, index) => {
+    if (/^\s+$/.test(token)) return token;
+    const normalized = token.replace(/[.,;:()[\]{}"']/g, "").toLowerCase();
+    if (!normalized || matchedIndexes.has(index)) return token;
+    differenceCount += 1;
+    return `<mark class="rounded bg-amber-500/20 px-0.5 text-amber-200">${token}</mark>`;
   }).join("");
+
+  return { html, differenceCount };
 }
 
 // ---------------------------------------------------------------------------
@@ -247,7 +271,6 @@ function CitationRow({
     [citationText, diffAgainstText],
   );
   const isLongCitation = citationText.length > 150;
-
   const confidenceBadge = refData.confidence ? (
     <ScholarPreview
       confidence={refData.confidence}
@@ -256,6 +279,7 @@ function CitationRow({
       isPro={isPro}
       referenceId={refData.id}
       onRecheck={onRecheck}
+      healthState={health?.state}
     />
   ) : null;
 
@@ -305,11 +329,15 @@ function CitationRow({
             variant={
               health.state === "clean"
                 ? "outline"
-                : health.state === "review"
-                  ? "secondary"
-                  : "destructive"
+                : "outline"
             }
-            className="text-xs cursor-help flex items-center gap-1"
+            className={`text-xs cursor-help flex items-center gap-1 ${
+              health.state === "clean"
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+                : health.state === "review"
+                  ? "border-amber-500/40 text-amber-100"
+                  : "border-red-500/40 bg-red-500/15 text-red-100"
+            }`}
           >
             {health.state === "clean" && <ShieldCheck className="w-3 h-3" />}
             {health.state === "review" && <ClipboardList className="w-3 h-3" />}
@@ -360,7 +388,13 @@ function CitationRow({
 
   return (
     <Card
-      className={`border-l-4 mb-4 ${isFailed ? "border-l-destructive bg-destructive/5" : "border-l-primary"}`}
+      className={`border-l-4 mb-4 ${
+        health?.state === "action_needed"
+          ? "border-l-destructive bg-destructive/5"
+          : health?.state === "review"
+            ? "border-l-amber-400"
+            : "border-l-primary"
+      }`}
     >
       <CardContent className="p-3 sm:p-4">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3 min-w-0">
@@ -382,10 +416,10 @@ function CitationRow({
                 className={`${isExpanded ? "" : "line-clamp-3 sm:line-clamp-none transition-all duration-300"} cursor-pointer sm:cursor-auto`}
                 onClick={() => setIsExpanded(!isExpanded)}
               >
-                {duplicateDiffMarkup ? (
+                {duplicateDiffMarkup && duplicateDiffMarkup.differenceCount > 0 ? (
                   <p
                     className="text-foreground leading-relaxed flex-1 min-w-0 font-medium text-sm sm:text-base break-words"
-                    dangerouslySetInnerHTML={{ __html: duplicateDiffMarkup }}
+                    dangerouslySetInnerHTML={{ __html: duplicateDiffMarkup.html }}
                   />
                 ) : (
                   <HighlightedCitationText
@@ -394,7 +428,7 @@ function CitationRow({
                   />
                 )}
               </div>
-              {diffAgainstText && (
+              {duplicateDiffMarkup && duplicateDiffMarkup.differenceCount > 0 && (
                 <p className="mt-2 text-xs text-amber-300">
                   Highlighted text shows what differs from the selected version.
                 </p>

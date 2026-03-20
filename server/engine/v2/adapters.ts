@@ -15,6 +15,15 @@ import {
   parseAuthorsForStyle,
   parsedReferenceTypeToCanonical,
 } from './utils.js';
+import {
+  analyzeParsedAuthorStrings,
+  getRequirementProfile,
+  hasParsedVenue,
+  isLocatorLike,
+  isPlaceholderValue,
+  proceedingsSignal,
+  sanitizeParsedReference,
+} from './qualityRules.js';
 import type {
   AuthorityLookupAdapter,
   CacheAdapter,
@@ -227,28 +236,29 @@ function isPlaceholderVenue(value: string | undefined): boolean {
   return normalized === 'vol' || normalized === 'vol.' || normalized === 'journal' || normalized === '?';
 }
 
-function proceedingsSignal(parsed: ParsedReference | null | undefined): boolean {
-  const venue = normalizeWhitespace(parsed?.conferenceTitle ?? parsed?.bookTitle ?? parsed?.journal ?? '').toLowerCase();
-  return /\b(proceedings|conference|symposium|workshop|congress)\b/.test(venue);
-}
-
 function scoreCandidate(parsed: ParsedReference | null | undefined, referenceType?: string): number {
   if (!parsed) return -999;
+  const requirements = getRequirementProfile(referenceType ?? 'journal');
+  const authorSignals = analyzeParsedAuthorStrings(parsed.authors);
   let score = 0;
   if (parsed.title && parsed.title.split(/\s+/).length >= 4 && !looksLikeDateFragment(parsed.title)) score += 4;
-  else if (parsed.title) score += 1;
-  if (parsed.year) score += 2;
-  if (parsed.journal || parsed.conferenceTitle || parsed.bookTitle) score += 3;
-  if (parsed.volume) score += 1;
-  if (parsed.issue) score += 1;
-  if (parsed.pages) score += 1;
-  if (parsed.publisher || parsed.institution) score += 1;
-  if (parsed.authors?.length) score += 3;
-  if (parsed.authors && looksLikeAlternatingTokenArray(parsed.authors)) score -= 5;
+  else if (parsed.title) score += 1.5;
+  if (parsed.year) score += 2.5;
+  if (hasParsedVenue(parsed)) score += 3;
+  if (parsed.publisher || parsed.institution) score += 1.5;
+  if (parsed.authors?.length) score += 3.5;
+  if (parsed.volume) score += requirements.expected.includes('volume') ? 1 : 0.3;
+  if (parsed.issue) score += requirements.expected.includes('issue') ? 1 : 0.3;
+  if (isLocatorLike(parsed.pages)) score += requirements.expected.includes('locator') ? 1.2 : 0.4;
+  if (parsed.authors && looksLikeAlternatingTokenArray(parsed.authors)) score -= 2;
   if (parsed.authors?.some((author) => looksLikeMergedAuthorBlob(author))) score -= 4;
+  if (authorSignals.mergedBlobCount > 0) score -= authorSignals.mergedBlobCount * 2.5;
+  if (authorSignals.initialsOnlyCount > Math.ceil((parsed.authors?.length ?? 0) / 2)) score -= 2;
+  if (authorSignals.singleCharacterTailCount > 0) score -= authorSignals.singleCharacterTailCount * 1.2;
+  score += authorSignals.richness * 1.5;
   if (parsed.authors?.some((author) => author.length > 120 || /\. .+\./.test(author))) score -= 3;
   if (isPlaceholderVenue(parsed.journal) || isPlaceholderVenue(parsed.volume) || isPlaceholderVenue(parsed.issue)) score -= 3;
-  if (proceedingsSignal(parsed) && (parsed.conferenceTitle || parsed.bookTitle || parsed.journal)) score += 1;
+  if (proceedingsSignal(parsed.conferenceTitle ?? parsed.bookTitle ?? parsed.journal) && (parsed.conferenceTitle || parsed.bookTitle || parsed.journal)) score += 1;
   if (referenceType && referenceType !== 'unknown') score += 1;
   return score;
 }
@@ -282,15 +292,18 @@ function fillMissingFromFallback(selected: ParsedReference, fallback: ParsedRefe
   return merged;
 }
 
-function buildFieldConfidence(parsed: ParsedReference) {
+function buildFieldConfidence(parsed: ParsedReference, referenceType: string) {
+  const authorSignals = analyzeParsedAuthorStrings(parsed.authors);
   return {
-    authors: parsed.authors?.length ? (looksLikeAlternatingTokenArray(parsed.authors) ? 0.35 : 0.85) : 0.2,
+    authors: parsed.authors?.length
+      ? Math.max(0.25, Math.min(0.92, 0.84 + (authorSignals.richness * 0.04) - (authorSignals.mergedBlobCount * 0.12) - (authorSignals.singleCharacterTailCount * 0.08)))
+      : 0.2,
     title: parsed.title ? (looksLikeDateFragment(parsed.title) ? 0.2 : 0.88) : 0.2,
     year: parsed.year ? 0.92 : 0.1,
-    journal: parsed.journal || parsed.conferenceTitle || parsed.bookTitle ? 0.8 : 0.15,
-    volume: parsed.volume ? 0.78 : 0.1,
-    issue: parsed.issue ? 0.76 : 0.1,
-    pages: parsed.pages ? 0.77 : 0.1,
+    journal: hasParsedVenue(parsed) ? 0.82 : (referenceType === 'journal' ? 0.18 : 0.12),
+    volume: parsed.volume ? 0.82 : 0.1,
+    issue: parsed.issue ? 0.8 : 0.1,
+    pages: isLocatorLike(parsed.pages) ? 0.82 : 0.1,
     doi: parsed.doi ? 0.96 : 0.05,
     publisher: parsed.publisher || parsed.institution ? 0.74 : 0.1,
     url: parsed.url ? 0.9 : 0.05,
@@ -447,15 +460,35 @@ class DefaultClassifierAdapter implements ClassifierAdapter {
 class DefaultExtractorAdapter implements ExtractorAdapter {
   readonly id = 'default-parser-extractor';
 
-  async extract(input: string, inputStyle: string, options?: { inputProfile?: { structure: string }; detectionConfidence?: number }) {
-    const deterministic = buildDeterministicCandidate(input, inputStyle);
-    const fallback = buildYearAnchoredCandidate(input);
+  async extract(input: string, inputStyle: string, options?: {
+    inputProfile?: { structure: string; estimatedCount?: number };
+    detectionConfidence?: number;
+    batchSize?: number;
+  }) {
+    const deterministicBase = buildDeterministicCandidate(input, inputStyle);
+    const deterministicSanitized = sanitizeParsedReference(deterministicBase.parsed, deterministicBase.referenceType);
+    const deterministic = {
+      ...deterministicBase,
+      parsed: deterministicSanitized.parsed,
+      referenceType: deterministicSanitized.referenceType,
+    };
+    const fallbackBase = buildYearAnchoredCandidate(input);
+    const fallback = fallbackBase
+      ? (() => {
+          const sanitized = sanitizeParsedReference(fallbackBase.parsed, fallbackBase.referenceType);
+          return {
+            ...fallbackBase,
+            parsed: sanitized.parsed,
+            referenceType: sanitized.referenceType,
+          };
+        })()
+      : null;
     const deterministicAuthorParse = parseAuthorsForStyle(deterministic.parsed.authors ?? [], inputStyle);
     const fallbackAuthorParse = parseAuthorsForStyle(fallback?.parsed.authors ?? [], inputStyle);
     const deterministicScore = scoreCandidate(deterministic.parsed, deterministic.referenceType)
       - (deterministicAuthorParse.warningFlags.length * 2)
       - (deterministicAuthorParse.rejectedCandidates.length * 1.5)
-      + ((deterministicAuthorParse.parserMode === 'alternating_pairs' || deterministicAuthorParse.parserMode === 'surname_given_pairs') ? 4 : 0);
+      + ((deterministicAuthorParse.parserMode === 'alternating_pairs' || deterministicAuthorParse.parserMode === 'surname_given_pairs') ? 8 : 0);
     const fallbackScore = scoreCandidate(fallback?.parsed, fallback?.referenceType)
       - (fallbackAuthorParse.warningFlags.length * 2)
       - (fallbackAuthorParse.rejectedCandidates.length * 1.5);
@@ -464,20 +497,56 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     let mergedSelection = fillMissingFromFallback(selectedBase.parsed, selectedBranch === 'deterministic_raw' ? fallback?.parsed ?? null : deterministic.parsed);
     let selectedReferenceType = selectedBranch === 'year_anchored_fallback_raw' && fallback ? fallback.referenceType : deterministic.referenceType;
     const selectedReason = selectionReason(selectedBranch, deterministic.parsed, fallback?.parsed ?? null);
-    let selectedFieldConfidence = buildFieldConfidence(mergedSelection);
+    let selectedFieldConfidence = buildFieldConfidence(mergedSelection, selectedReferenceType);
     let extractorPath: 'deterministic' | 'grobid' | 'llm' | 'hybrid' = 'deterministic';
     const rejectedCandidates: string[] = [];
     if (looksLikeAlternatingTokenArray(deterministic.parsed.authors ?? [])) rejectedCandidates.push('deterministic_alternating_author_tokens');
     if (fallback?.parsed.title && looksLikeDateFragment(fallback.parsed.title)) rejectedCandidates.push('year_anchored_title_looks_like_date_fragment');
 
     const inputStructure = options?.inputProfile?.structure ?? 'unknown';
-    const shouldTryGrobid = /^(1|true|yes|on)$/i.test(process.env.ENABLE_GROBID_EXTRACTOR ?? '')
-      && inputStructure !== 'unstructured';
+    const batchSize = options?.batchSize ?? options?.inputProfile?.estimatedCount ?? 1;
+    const grobidEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_GROBID_EXTRACTOR ?? '');
+    const detectionConfidence = options?.detectionConfidence ?? 0;
+    const weakDeterministicSelection =
+      needsLlmFallback(mergedSelection, selectedFieldConfidence)
+      || deterministicScore < 8
+      || deterministicAuthorParse.warningFlags.length > 0
+      || deterministicAuthorParse.rejectedCandidates.length > 0;
+    const profilePrefersGrobid = inputStructure === 'semi_structured' || inputStructure === 'unstructured';
+    const grobidRouteReason = weakDeterministicSelection
+      ? 'weak_deterministic_parse'
+      : detectionConfidence < 0.65
+        ? 'low_detection_confidence'
+        : profilePrefersGrobid && detectionConfidence < 0.9
+          ? 'noisy_profile_medium_confidence'
+          : 'not_needed';
+    const shouldTryGrobid = grobidEnabled && grobidRouteReason !== 'not_needed';
+
+    if (grobidEnabled && !shouldTryGrobid) {
+      console.log(JSON.stringify({
+        stage: 'extract',
+        adapter: 'grobid',
+        event: 'skipped',
+        reason: grobidRouteReason,
+        batchSize,
+        detectionConfidence,
+        inputStructure,
+      }));
+    }
 
     let grobidCandidate: ReturnType<typeof parseGrobidTei> | null = null;
     let grobidScore = -999;
     if (shouldTryGrobid) {
       try {
+        console.log(JSON.stringify({
+          stage: 'extract',
+          adapter: 'grobid',
+          event: 'attempting',
+          batchSize,
+          detectionConfidence,
+          inputStructure,
+          reason: grobidRouteReason,
+        }));
         grobidCandidate = await extractWithGrobid(input);
         if (grobidCandidate) {
           grobidScore = scoreCandidate(grobidCandidate.parsed, grobidCandidate.referenceType) + 1;
@@ -493,16 +562,51 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             mergedSelection = fillMissingFromFallback(grobidCandidate.parsed, mergedSelection);
             selectedReferenceType = grobidCandidate.referenceType;
             selectedFieldConfidence = {
-              ...buildFieldConfidence(mergedSelection),
-              authors: Math.max(buildFieldConfidence(mergedSelection).authors, 0.9),
-              title: Math.max(buildFieldConfidence(mergedSelection).title, 0.9),
-              year: Math.max(buildFieldConfidence(mergedSelection).year, 0.9),
+              ...buildFieldConfidence(mergedSelection, selectedReferenceType),
+              authors: Math.max(buildFieldConfidence(mergedSelection, selectedReferenceType).authors, 0.9),
+              title: Math.max(buildFieldConfidence(mergedSelection, selectedReferenceType).title, 0.9),
+              year: Math.max(buildFieldConfidence(mergedSelection, selectedReferenceType).year, 0.9),
             };
             extractorPath = 'grobid';
+            console.log(JSON.stringify({
+              stage: 'extract',
+              adapter: 'grobid',
+              event: 'selected',
+              batchSize,
+              detectionConfidence,
+              inputStructure,
+              reason: grobidRouteReason,
+              grobidScore,
+              deterministicScore,
+              fallbackScore,
+            }));
+          } else {
+            console.log(JSON.stringify({
+              stage: 'extract',
+              adapter: 'grobid',
+              event: 'attempted_not_selected',
+              batchSize,
+              detectionConfidence,
+              inputStructure,
+              reason: grobidRouteReason,
+              grobidScore,
+              deterministicScore,
+              fallbackScore,
+            }));
           }
         }
       } catch (error) {
         rejectedCandidates.push(`grobid_failed:${error instanceof Error ? error.message : String(error)}`);
+        console.log(JSON.stringify({
+          stage: 'extract',
+          adapter: 'grobid',
+          event: 'failed',
+          batchSize,
+          detectionConfidence,
+          inputStructure,
+          reason: grobidRouteReason,
+          error: error instanceof Error ? error.message : String(error),
+        }));
       }
     }
 
@@ -563,16 +667,21 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       }
 
       const merged = mergeLlmWithDeterministic({ parsed: mergedSelection, referenceType: selectedReferenceType }, llm);
+      const sanitizedHybrid = sanitizeParsedReference(merged.parsed, merged.referenceType);
+      const hybridFieldConfidence = {
+        ...merged.fieldConfidence,
+        ...buildFieldConfidence(sanitizedHybrid.parsed, sanitizedHybrid.referenceType),
+      };
       return {
-        parsed: merged.parsed,
-        referenceType: merged.referenceType,
+        parsed: sanitizedHybrid.parsed,
+        referenceType: sanitizedHybrid.referenceType,
         method: 'hybrid' as const,
         fallbackUsed: true,
         extractorPath: extractorPath === 'grobid' ? 'hybrid' : 'llm',
         selectedBranch: 'hybrid' as const,
         selectionReason: `${selectedReason}_with_llm_fill`,
         rejectedCandidates,
-        fieldConfidence: merged.fieldConfidence,
+        fieldConfidence: hybridFieldConfidence,
         warnings: [...deterministic.warnings, ...(fallback?.warnings ?? []), 'llm_fallback_applied'],
         debug: {
           deterministic_raw: deterministic.parsed,

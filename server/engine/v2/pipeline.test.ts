@@ -220,6 +220,71 @@ describe('v2 pipeline', () => {
     expect(response.citations[0]?.title.value).toBe('Structured extraction from local GROBID');
   });
 
+  it('still routes weak citations to grobid inside large batches', async () => {
+    process.env.ENABLE_GROBID_EXTRACTOR = 'true';
+    process.env.GROBID_URL = 'http://localhost:8070';
+
+    const adapters = createDefaultAdapters();
+    const fetchMock = vi.fn(async (input: string | URL) => {
+      const url = String(input);
+      if (url.includes('/api/processCitation')) {
+        return new Response([
+          '<biblStruct>',
+          '<analytic>',
+          '<title level="a">Recovered by GROBID in large batch</title>',
+          '<author><persName><forename type="first">Jane</forename><surname>Smith</surname></persName></author>',
+          '</analytic>',
+          '<monogr>',
+          '<title level="j">Journal of Quality</title>',
+          '<imprint><date when="2020"/><biblScope unit="volume">10</biblScope><biblScope unit="issue">2</biblScope><biblScope unit="page" from="11" to="19"/></imprint>',
+          '</monogr>',
+          '</biblStruct>',
+        ].join(''), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    vi.stubGlobal('fetch', fetchMock as any);
+
+    const result = await adapters.extractor.extract(
+      'Smith J Recovered by GROBID in large batch Journal of Quality 2020 10 2 11-19',
+      'auto',
+      {
+        inputProfile: { structure: 'semi_structured', estimatedCount: 200 },
+        detectionConfidence: 0.4,
+        batchSize: 200,
+      },
+    );
+
+    expect(result.extractorPath).toBe('grobid');
+    expect(result.parsed.title).toBe('Recovered by GROBID in large batch');
+    expect(fetchMock).toHaveBeenCalled();
+  });
+
+  it('treats crossref rate limits as informational instead of review damage', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL) => {
+      const url = String(input);
+      if (url.includes('api.crossref.org')) {
+        return new Response('', { status: 429 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as any);
+
+    const { response } = await processV2Conversion({
+      sourceType: 'text',
+      content: 'McCoy, L. G., Banja, J. D., Ghassemi, M., & Celi, L. A. (2020). Ensuring machine learning for healthcare works for all. BMJ Health & Care Informatics, 27(3), e100237. https://doi.org/10.1136/bmjhci-2020-100237',
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: false,
+      dedup: false,
+      group: false,
+    });
+
+    expect(response.citations[0]?.validationIssues.some((issue) => issue.code === 'authority_rate_limited')).toBe(true);
+    expect(response.citations[0]?.quality?.flags).not.toContain('review');
+    expect(response.citations[0]?.quality?.overall).toBeGreaterThan(0.7);
+  });
+
   it('profiles explicit doi lists during ingestion', async () => {
     const { response } = await processV2Conversion({
       sourceType: 'doi_list',

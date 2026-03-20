@@ -123,15 +123,31 @@ export default function CitationConverter() {
 
   const handleRecheck = async (referenceId: string) => {
     try {
-      const res = await apiRequest("POST", "/api/recheck", { referenceId });
+      const res = await apiRequest("POST", "/api/recheck", { referenceId, force: true });
       const data = await res.json() as { authorityData?: ConvertedReference["authorityData"]; authorityStatus?: ConvertedReference["authorityStatus"]; confidence?: ConvertedReference["confidence"] };
       setConvertedReferences((prev) =>
         prev.map((r) =>
           r.id === referenceId
-            ? { ...r, authorityData: data.authorityData, authorityStatus: data.authorityStatus, confidence: data.confidence }
+            ? {
+                ...r,
+                authorityData: data.authorityData,
+                authorityStatus: data.authorityStatus,
+                confidence: data.confidence,
+                healthState: undefined,
+                healthReasons: undefined,
+              }
             : r
         )
       );
+      toast({
+        title: data.authorityStatus === "fetched" || data.authorityStatus === "cache_hit" ? "Recheck complete" : "Recheck finished",
+        description:
+          data.authorityStatus === "no_match"
+            ? "No authority match was found for this citation."
+            : data.authorityStatus === "error"
+              ? "Authority lookup returned an error."
+              : "Citation authority data was refreshed.",
+      });
     } catch (e) {
       setErrorToast({
         visible: true,

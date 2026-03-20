@@ -113,8 +113,8 @@ export const STYLE_ASSERTIONS: StyleAssertions = {
         },
         {
             id: 'apa:volume_issue_format',
-            description: 'Volume(issue) must appear as "Vol(Issue)," e.g. "5(2),".',
-            test: (o, f) => !f.volume || /\d+\(\d+\),/.test(o) || !f.issue,
+            description: 'Volume(issue) must appear as "Vol(Issue)" with punctuation appropriate to the locator that follows.',
+            test: (o, f) => !f.volume || /\d+\(\d+\)(?:,|\.)/.test(o) || !f.issue,
             severity: 'warning'
         },
     ],

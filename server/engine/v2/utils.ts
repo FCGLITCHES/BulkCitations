@@ -576,11 +576,20 @@ export function parseAuthorsForStyle(
       };
     }
 
+    const compactVancouver = !normalized.includes(',') ? parseCompactVancouverAuthor(normalized) : null;
+    if (compactVancouver) {
+      return compactVancouver;
+    }
     if (normalizedStyle === 'vancouver') {
-      return parseCompactVancouverAuthor(normalized) ?? parseAuthorToCanonical(normalized);
+      return parseAuthorToCanonical(normalized);
+    }
+
+    const initialsFirst = parseInitialsFirstAuthor(normalized);
+    if (initialsFirst && !normalized.includes(',')) {
+      return initialsFirst;
     }
     if (normalizedStyle === 'ieee') {
-      return parseInitialsFirstAuthor(normalized) ?? parseAuthorToCanonical(normalized);
+      return parseAuthorToCanonical(normalized);
     }
     if (normalizedStyle === 'mla') {
       return parseMixedMlaAuthor(normalized) ?? parseAuthorToCanonical(normalized);

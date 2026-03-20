@@ -1,18 +1,18 @@
 /**
  * Vercel serverless entry: handles /api/* only.
  * Static SPA is served from dist/public via outputDirectory.
+ *
+ * Use a static import so Vercel traces the built server bundle into the
+ * serverless function package. The old dynamic path import worked locally
+ * but could leave `dist/index.js` out of the production function bundle.
  */
-import path from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
+import { createApp } from '../dist/index.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let appPromise = null;
 
 export default async function handler(req, res) {
   try {
     if (!appPromise) {
-      const serverPath = path.join(__dirname, '..', 'dist', 'index.js');
-      const { createApp } = await import(pathToFileURL(serverPath).href);
       appPromise = createApp();
     }
     const { app } = await appPromise;

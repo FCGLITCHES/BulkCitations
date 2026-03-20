@@ -66,7 +66,9 @@ export async function fetchCrossrefMetadata(doi: string): Promise<Record<string,
 
         if (!response.ok) {
             console.warn(`Crossref API returned ${response.status} for DOI: ${cleanDoi}`);
-            return null;
+            const error = new Error(`Crossref API returned ${response.status} for DOI: ${cleanDoi}`) as Error & { status?: number };
+            error.status = response.status;
+            throw error;
         }
 
         const data = await response.json();
@@ -82,6 +84,9 @@ export async function fetchCrossrefMetadata(doi: string): Promise<Record<string,
 
         return cslData;
     } catch (error) {
+        if (typeof error === 'object' && error && 'status' in error) {
+            throw error;
+        }
         console.warn(`Crossref fetch failed for DOI ${cleanDoi}:`, error instanceof Error ? error.message : String(error));
         return null;
     }

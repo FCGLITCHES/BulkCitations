@@ -41,6 +41,17 @@ function mapLegacyHealth(citation: CanonicalCitation): {
   const missingRequired = citation.quality?.missingRequired ?? [];
   const score = citation.quality?.overall ?? 0;
   const grade = citation.quality?.grade ?? 'F';
+  const hasReviewLevelValidation = [
+    'placeholder_volume',
+    'placeholder_journal',
+    'venue_missing_for_conference',
+    'weak_proceedings_venue',
+    'initials_as_surname',
+    'title_short_or_missing',
+    'doi_invalid_shape',
+    'pages_invalid_shape',
+    'locator_missing_from_source',
+  ].some((code) => validationCodes.has(code));
 
   for (const flag of qualityFlags) {
     const message = friendlyQualityFlag(flag);
@@ -53,10 +64,8 @@ function mapLegacyHealth(citation: CanonicalCitation): {
 
   if (
     missingRequired.length > 0
-    || score < 0.45
-    || grade === 'F'
+    || score < 0.2
     || validationCodes.has('connector_as_author')
-    || validationCodes.has('alternating_surname_given_tokens')
     || qualityFlags.has('malformed_authors')
     || qualityFlags.has('author_parse_failed')
   ) {
@@ -64,12 +73,12 @@ function mapLegacyHealth(citation: CanonicalCitation): {
   }
 
   if (
-    grade === 'C'
-    || score < 0.75
-    || citation.validationIssues.some((issue) => issue.severity === 'warning')
+    score < 0.5
+    || (grade === 'C' && score < 0.6)
+    || grade === 'F'
+    || hasReviewLevelValidation
     || qualityFlags.has('placeholder_fields')
     || qualityFlags.has('review')
-    || qualityFlags.has('unverified')
   ) {
     return { state: 'review', reasons };
   }
@@ -118,10 +127,10 @@ export function mapV2ResponseToLegacyRecords(
     const referenceType = canonicalReferenceTypeToParsed(citation.referenceType);
     const warnings = mapWarnings(citation);
     const authorityStatus = mapAuthorityStatus(citation);
-    const confidenceScore = Math.round((citation.quality?.overall ?? 0) * 100);
     const authorityData = toLegacyAuthorityData(citation);
     const inputStyle = citation.detectedStyle.value ?? request.inputStyle;
     const health = mapLegacyHealth(citation);
+    const confidenceScore = Math.round((citation.quality?.overall ?? 0) * 100);
 
     return {
       sourceId: citation.id,

@@ -32,6 +32,7 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
         const result = await extractor.extract(citation.raw, effectiveStyle ?? context.request.inputStyle, {
           inputProfile: context.inputProfile,
           detectionConfidence: citation.detectedStyle.confidence,
+          batchSize: context.inputProfile?.estimatedCount ?? context.citations.length,
         });
         const authorParseResult = parseAuthorsForStyle(result.parsed.authors ?? [], effectiveStyle);
         const yearValue = result.parsed.year ? Number.parseInt(result.parsed.year, 10) : null;

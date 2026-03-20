@@ -43,6 +43,7 @@ export interface ExtractorAdapter {
   extract(input: string, inputStyle: string, options?: {
     inputProfile?: InputProfile;
     detectionConfidence?: number;
+    batchSize?: number;
   }): Promise<{
     parsed: {
       authors?: Array<string | CanonicalAuthor>;

@@ -11,6 +11,7 @@ import type { AuthorityData, ConfidenceResult, AuthorityStatus } from "@shared/s
 import { Button } from "./ui/button";
 import { RefreshCw } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
+import type { HealthState } from "@/lib/types";
 
 interface ScholarPreviewProps {
     confidence?: ConfidenceResult;
@@ -18,7 +19,8 @@ interface ScholarPreviewProps {
     authorityStatus?: AuthorityStatus;
     isPro?: boolean;
     referenceId?: string;
-    onRecheck?: (referenceId: string) => void;
+    onRecheck?: (referenceId: string) => Promise<void> | void;
+    healthState?: HealthState;
 }
 
 function authorityStatusLabel(status: AuthorityStatus): string {
@@ -33,7 +35,7 @@ function authorityStatusLabel(status: AuthorityStatus): string {
     }
 }
 
-export function ScholarPreview({ confidence, authorityData, authorityStatus, isPro = false, referenceId, onRecheck }: ScholarPreviewProps) {
+export function ScholarPreview({ confidence, authorityData, authorityStatus, isPro = false, referenceId, onRecheck, healthState }: ScholarPreviewProps) {
     if (!confidence) return null;
 
     if (!isPro) {
@@ -57,11 +59,20 @@ export function ScholarPreview({ confidence, authorityData, authorityStatus, isP
     let badgeVariant: "default" | "secondary" | "destructive" | "outline" = "outline";
     let icon = null;
     let bandLabel = "";
+    let badgeClassName = "cursor-help flex items-center text-[10px] sm:text-xs h-6 px-2 font-normal";
 
-    if (confidence.isSuspicious || confidence.score < 50) {
+    const canRecheck = Boolean(onRecheck && referenceId && (confidence.score < 95 || authorityStatus === "no_match" || authorityStatus === "error"));
+    const [isRechecking, setIsRechecking] = useState(false);
+
+    if (healthState === "action_needed" || confidence.isSuspicious || confidence.score < 35) {
         badgeVariant = "destructive";
         icon = <AlertTriangle className="w-3 h-3 mr-1" />;
-        bandLabel = "Needs review";
+        bandLabel = "Needs fix";
+    } else if (healthState === "review" || confidence.score < 70 || authorityStatus === "no_match" || authorityStatus === "error") {
+        badgeVariant = "outline";
+        icon = <AlertTriangle className="w-3 h-3 mr-1" />;
+        bandLabel = "Worth reviewing";
+        badgeClassName += " border-amber-500/40 text-amber-100 hover:bg-amber-500/10";
     } else if (confidence.score >= 90) {
         badgeVariant = "default";
         icon = <CheckCircle2 className="w-3 h-3 mr-1" />;
@@ -70,8 +81,9 @@ export function ScholarPreview({ confidence, authorityData, authorityStatus, isP
         badgeVariant = "secondary";
         bandLabel = "High confidence";
     } else {
-        badgeVariant = "secondary";
+        badgeVariant = "outline";
         bandLabel = "Worth reviewing";
+        badgeClassName += " border-amber-500/40 text-amber-100 hover:bg-amber-500/10";
     }
 
     const statusLabel = authorityStatus ? authorityStatusLabel(authorityStatus) : "";
@@ -165,10 +177,24 @@ export function ScholarPreview({ confidence, authorityData, authorityStatus, isP
                 </div>
             )}
 
-            {onRecheck && referenceId && (confidence.score < 95 || authorityStatus === "no_match" || authorityStatus === "error") && (
+            {canRecheck && (
                 <div className="mt-4 pt-4 border-t">
-                    <Button variant="outline" size="sm" className="w-full" onClick={() => onRecheck(referenceId)}>
-                        <RefreshCw className="w-3 h-3 mr-1" />
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        disabled={isRechecking}
+                        onClick={async () => {
+                            if (!onRecheck || !referenceId) return;
+                            setIsRechecking(true);
+                            try {
+                                await onRecheck(referenceId);
+                            } finally {
+                                setIsRechecking(false);
+                            }
+                        }}
+                    >
+                        <RefreshCw className={`w-3 h-3 mr-1 ${isRechecking ? "animate-spin" : ""}`} />
                         Recheck
                     </Button>
                 </div>
@@ -182,7 +208,7 @@ export function ScholarPreview({ confidence, authorityData, authorityStatus, isP
                 <TooltipTrigger asChild>
                     <Badge
                         variant={badgeVariant}
-                        className="cursor-help flex items-center text-[10px] sm:text-xs h-6 px-2 font-normal"
+                        className={badgeClassName}
                         aria-label={`Confidence: ${confidence.score}%, ${bandLabel}`}
                         tabIndex={0}
                         role="button"

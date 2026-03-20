@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from 'express';
+import { pathToFileURL } from "url";
 import { registerRoutes } from './routes';
 import { setupVite, serveStatic, log } from './vite';
 
@@ -32,8 +33,8 @@ export async function createApp(): Promise<{ app: express.Express; server: Await
           "frame-ancestors 'none'",
           "img-src 'self' data: blob: https:",
           "script-src 'self'",
-          "style-src 'self' 'unsafe-inline'",
-          "font-src 'self' data:",
+          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+          "font-src 'self' data: https://fonts.gstatic.com",
           "connect-src 'self'",
           "object-src 'none'",
           "worker-src 'self' blob:",
@@ -70,7 +71,7 @@ export async function createApp(): Promise<{ app: express.Express; server: Await
     res.status(status).json({ message });
   });
 
-  const isDev = app.get('env') === 'development' || process.env.NODE_ENV !== 'production';
+  const isDev = !isProduction && !isVercelRuntime();
   if (isDev) {
     await setupVite(app, server);
   } else {
@@ -89,6 +90,10 @@ async function main() {
   });
 }
 
-if (!isVercelRuntime()) {
+const isDirectRun = process.argv[1]
+  ? pathToFileURL(process.argv[1]).href === import.meta.url
+  : false;
+
+if (isDirectRun && !isVercelRuntime()) {
   main();
 }

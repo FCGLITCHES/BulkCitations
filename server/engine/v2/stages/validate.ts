@@ -10,12 +10,18 @@ import {
   normalizeWhitespace,
   runWithTimeout,
 } from '../utils.js';
+import {
+  getMissingRequiredFields,
+  hasCanonicalMalformedAuthors,
+  isLocatorLike,
+  isPlaceholderValue,
+  proceedingsSignal,
+  rawSuggestsLocator,
+} from '../qualityRules.js';
 
 const DOI_PATTERN = /^10\.\d{4,}\/\S+$/i;
 const PAGE_PATTERN = /^[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?$/;
 const CURRENT_YEAR = new Date().getFullYear();
-const PLACEHOLDER_VALUES = new Set(['vol', 'vol.', 'journal', '?']);
-
 function normalized(value: string | null | undefined): string {
   return normalizeWhitespace((value ?? '').toLowerCase());
 }
@@ -165,10 +171,19 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
     });
   }
 
+  if (hasCanonicalMalformedAuthors(citation.authors.value)) {
+    issues.push({
+      field: 'authors',
+      severity: 'error',
+      code: 'author_structure_unstable',
+      message: 'Author structure still looks unstable after parsing and should be corrected upstream.',
+    });
+  }
+
   if (citation.extraction?.rejectedCandidates?.some((candidate) => candidate.includes('alternating'))) {
     issues.push({
       field: 'authors',
-      severity: 'warning',
+      severity: 'info',
       code: 'alternating_surname_given_tokens',
       message: 'Author tokens were rescued from an alternating malformed pattern.',
     });
@@ -183,7 +198,7 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
     });
   }
 
-  if (citation.volume.value && PLACEHOLDER_VALUES.has(citation.volume.value.trim().toLowerCase())) {
+  if (citation.volume.value && isPlaceholderValue(citation.volume.value)) {
     issues.push({
       field: 'volume',
       severity: 'warning',
@@ -193,7 +208,7 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
     });
   }
 
-  if (citation.journal.value && PLACEHOLDER_VALUES.has(citation.journal.value.trim().toLowerCase())) {
+  if (citation.journal.value && isPlaceholderValue(citation.journal.value)) {
     issues.push({
       field: 'journal',
       severity: 'warning',
@@ -205,7 +220,7 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
 
   if (citation.referenceType === 'conference') {
     const venue = normalized(citation.conferenceTitle.value ?? citation.bookTitle.value ?? citation.journal.value ?? '');
-    if (venue && !/(proceedings|conference|symposium|workshop|congress)/.test(venue)) {
+    if (venue && !proceedingsSignal(venue)) {
       issues.push({
         field: 'conferenceTitle',
         severity: 'info',
@@ -222,6 +237,31 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
       severity: 'warning',
       code: 'venue_missing_for_conference',
       message: 'Conference citation is missing a conference or book venue field.',
+    });
+  }
+
+  for (const missingField of getMissingRequiredFields(citation)) {
+    if (missingField === 'venue') {
+      issues.push({
+        field: 'journal',
+        severity: 'error',
+        code: 'missing_required_venue',
+        message: 'A required source/venue field is missing for this reference type.',
+      });
+    }
+  }
+
+  if (
+    rawSuggestsLocator(citation.raw)
+    && ['journal', 'conference', 'bookChapter'].includes(citation.referenceType)
+    && !isLocatorLike(citation.pages.value)
+  ) {
+    issues.push({
+      field: 'pages',
+      severity: 'warning',
+      code: 'locator_missing_from_source',
+      message: 'The raw citation appears to contain pages or an article locator that was not preserved.',
+      extracted: citation.pages.value,
     });
   }
 
@@ -262,6 +302,24 @@ async function buildValidationResult(citation: CanonicalCitation): Promise<{ iss
         issues.push(...comparisons);
       }
     } catch (error) {
+      const status = typeof error === 'object' && error && 'status' in error ? Number((error as { status?: unknown }).status) : undefined;
+      if (status === 404) {
+        issues.push({
+          field: 'doi',
+          severity: 'info',
+          code: 'authority_not_found',
+          message: 'Crossref did not return a record for this DOI.',
+          extracted: citation.doi.value,
+        });
+      } else if (status === 429) {
+        issues.push({
+          field: 'doi',
+          severity: 'info',
+          code: 'authority_rate_limited',
+          message: 'Crossref rate limited this verification request.',
+          extracted: citation.doi.value,
+        });
+      } else {
       issues.push({
         field: 'doi',
         severity: 'info',
@@ -269,6 +327,7 @@ async function buildValidationResult(citation: CanonicalCitation): Promise<{ iss
         message: error instanceof Error ? error.message : 'Crossref verification failed.',
         extracted: citation.doi.value,
       });
+      }
     }
   }
 

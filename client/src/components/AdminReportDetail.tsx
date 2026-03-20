@@ -16,7 +16,8 @@ import {
   Zap,
   ChevronRight,
   Code,
-  Settings
+  Settings,
+  Info
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import type { CitationReport, FixType } from "@shared/schema";
@@ -59,6 +61,23 @@ const EDITABLE_FIELDS: Array<{ key: EditableFieldKey; label: string }> = [
   { key: "publisher", label: "Publisher" },
   { key: "referenceType", label: "Reference Type" },
 ];
+
+function FieldHint({ text }: { text: string }) {
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button type="button" className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors">
+            <Info className="h-3.5 w-3.5" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs text-xs leading-5">
+          {text}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 function initialCorrectedFields(report?: CitationReport | null) {
   if (!report) return {} as Record<EditableFieldKey, string>;
@@ -147,7 +166,7 @@ export default function AdminReportDetail() {
 
   // Master Resolution Mutation (Handles everything)
   const resolveMutation = useMutation({
-    mutationFn: async ({ saveAsTruth }: { saveAsTruth: boolean }) => {
+    mutationFn: async ({ saveAsTruth, modeLabel }: { saveAsTruth: boolean; modeLabel: string }) => {
       return adminFetch<{ report: CitationReport }>(`/api/reports/${id}/resolve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -193,9 +212,9 @@ export default function AdminReportDetail() {
         })
       });
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       let title = "Success";
-      let description = "Your fixes have been applied successfully.";
+      let description = `${variables.modeLabel} has been applied and the report has been updated.`;
       
       const status = data.report.status;
       if (status === "accepted") {
@@ -206,6 +225,7 @@ export default function AdminReportDetail() {
         title = "Marked as Duplicate";
       }
 
+      queryClient.setQueryData([`/api/reports/${id}`], data.report);
       toast({ title, description });
       queryClient.invalidateQueries({ queryKey: [`/api/reports/${id}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/reports/grouped"] });
@@ -227,11 +247,17 @@ export default function AdminReportDetail() {
     "report",
     "webpage",
   ];
+  const confidenceScore =
+    typeof report.confidence === "number"
+      ? report.confidence
+      : typeof (report.confidence as unknown as { score?: unknown } | undefined)?.score === "number"
+        ? (report.confidence as unknown as { score: number }).score
+        : 0;
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container mx-auto py-8 px-4 max-w-5xl space-y-6">
+      <main className="mx-auto py-8 px-4 xl:px-6 max-w-[1650px] space-y-6">
         <div className="flex items-center gap-4 mb-2">
           <Link href="/admin/reports">
             <Button variant="ghost" size="sm" className="gap-2">
@@ -255,9 +281,9 @@ export default function AdminReportDetail() {
           )}
         </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         {/* Left Column: Input/Output */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="xl:col-span-7 space-y-6">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center justify-between">
@@ -270,16 +296,16 @@ export default function AdminReportDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Original Input</Label>
-                  <div className="p-3 bg-red-50/20 dark:bg-red-950/20 rounded-md font-mono text-xs break-words border border-red-100 dark:border-red-900 min-h-[100px]">
+                  <div className="p-3 bg-red-50/20 dark:bg-red-950/20 rounded-md font-mono text-xs leading-6 break-words border border-red-100 dark:border-red-900 h-[220px] overflow-auto">
                     {report.originalText}
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Engine Output</Label>
-                  <div className="p-3 bg-muted/30 rounded-md font-mono text-xs break-words border border-border min-h-[100px]">
+                  <div className="p-3 bg-muted/30 rounded-md font-mono text-xs leading-6 break-words border border-border h-[220px] overflow-auto">
                     {report.convertedText}
                   </div>
                 </div>
@@ -288,7 +314,7 @@ export default function AdminReportDetail() {
                     {report.source === "user-edit" ? "User's Ground Truth (Edit)" : "Proposed Style Fix"}
                   </Label>
                   <Textarea 
-                    className={`p-3 rounded-md font-mono text-xs break-words border min-h-[100px] h-full ${proposedStyleFix ? "bg-green-50/20 border-green-200 dark:bg-green-950/20" : "bg-muted/10 border-dashed"}`}
+                    className={`p-3 rounded-md font-mono text-xs leading-6 break-words border h-[220px] resize-none ${proposedStyleFix ? "bg-green-50/20 border-green-200 dark:bg-green-950/20" : "bg-muted/10 border-dashed"}`}
                     value={proposedStyleFix}
                     onChange={(e) => setProposedStyleFix(e.target.value)}
                     placeholder="Enter the canonical golden format here..."
@@ -329,8 +355,8 @@ export default function AdminReportDetail() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg">Parsed Interpretation</CardTitle>
-              <Badge variant={report.confidence && report.confidence > 70 ? "secondary" : "destructive"}>
-                {(report.confidence || 0)}% Confidence
+              <Badge variant={confidenceScore > 70 ? "secondary" : "destructive"}>
+                {confidenceScore}% Confidence
               </Badge>
             </CardHeader>
             <CardContent>
@@ -356,7 +382,7 @@ export default function AdminReportDetail() {
         </div>
 
         {/* Right Column: Resolution Command Panel */}
-        <div className="space-y-6">
+        <div className="xl:col-span-5 space-y-6">
           <Card className="border-blue-200 dark:border-blue-900 shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -366,148 +392,161 @@ export default function AdminReportDetail() {
               <CardDescription>Determine what needs to be fixed to solve this issue.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Resolution Type</Label>
-                <Select value={fixType} onValueChange={(v) => setFixType(v as FixType)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="dynamic-pattern">
-                      <div className="flex items-center gap-2">
-                        <Code className="h-4 w-4 text-green-500" />
-                        <span>Dynamic Pattern (patterns.json)</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="parser-logic">
-                      <div className="flex items-center gap-2">
-                        <Wrench className="h-4 w-4 text-orange-500" />
-                        <span>Parser Logic (Code change)</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="scoring-tweak">
-                      <div className="flex items-center gap-2">
-                        <Settings className="h-4 w-4 text-blue-500" />
-                        <span>Scoring Tweak (detectStyle)</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="renderer-fix">
-                      <div className="flex items-center gap-2">
-                        <Brush className="h-4 w-4 text-purple-500" />
-                        <span>Renderer Fix (Formatting)</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="type-correction">
-                      <div className="flex items-center gap-2">
-                        <Filter className="h-4 w-4 text-pink-500" />
-                        <span>Type Correction (Wrong category)</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="other-fix">
-                      <div className="flex items-center gap-2">
-                        <AlertCircle className="h-4 w-4 text-gray-500" />
-                        <span>Other / Edge Case</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {fixType === "type-correction" && (
-                <div className="space-y-2 p-3 bg-pink-50/20 dark:bg-pink-950/20 rounded border border-pink-100 dark:border-pink-900 border-dashed">
-                  <Label className="text-xs font-bold text-pink-700 dark:text-pink-300">Corrected Reference Type</Label>
-                  <Select value={targetReferenceType} onValueChange={setTargetReferenceType}>
-                    <SelectTrigger className="h-8">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {referenceTypes.map(t => (
-                        <SelectItem key={t} value={t}>{t}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[10px] text-muted-foreground">The data is parsed correctly, it's just in the wrong category.</p>
-                </div>
-              )}
-
-              {fixType === "dynamic-pattern" && (
-                <div className="space-y-3 p-3 bg-muted rounded border border-dashed text-xs">
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px]">Regex Pattern</Label>
-                    <Input 
-                      className="font-mono h-8 text-xs" 
-                      placeholder="e.g. ^(.*?),\\s*(\\d{4});" 
-                      value={proposedPattern.regex}
-                      onChange={(e) => setProposedPattern({...proposedPattern, regex: e.target.value})}
-                    />
-                  </div>
-                  <p className="text-[9px] text-muted-foreground">Will be auto-added to patterns.json on Accept.</p>
-                </div>
-              )}
-
-              <div className="space-y-3 p-3 bg-emerald-50/10 dark:bg-emerald-950/10 rounded border border-emerald-200/40 dark:border-emerald-900/40">
-                <div className="space-y-1">
-                  <Label className="text-xs font-bold text-emerald-700 dark:text-emerald-300">Field-Level Truth Approval</Label>
-                  <p className="text-[10px] text-muted-foreground">Approve corrected fields so they can become trusted training data for ranking and confidence models.</p>
-                </div>
-                <div className="space-y-2">
-                  {EDITABLE_FIELDS.map((field) => (
-                    <div key={field.key} className="grid grid-cols-[auto,1fr] gap-2 items-start">
-                      <Checkbox
-                        checked={Boolean(approvedFields[field.key])}
-                        onCheckedChange={(checked) => setApprovedFields((current) => ({
-                          ...current,
-                          [field.key]: Boolean(checked),
-                        }))}
-                        className="mt-2"
-                      />
-                      <div className="space-y-1">
-                        <Label className="text-[10px] uppercase text-muted-foreground">{field.label}</Label>
-                        <Input
-                          className="h-8 text-xs"
-                          value={correctedFields[field.key] ?? ""}
-                          onChange={(e) => setCorrectedFields((current) => ({
-                            ...current,
-                            [field.key]: e.target.value,
-                          }))}
-                          placeholder={`Approved ${field.label.toLowerCase()}`}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-[10px] uppercase text-muted-foreground">Failure Taxonomy</Label>
-                    <Input
-                      className="h-8 text-xs"
-                      value={failureTaxonomy}
-                      onChange={(e) => setFailureTaxonomy(e.target.value)}
-                      placeholder="author_split, placeholder_volume, dedup_miss"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-[10px] uppercase text-muted-foreground">Stage Blame</Label>
-                    <Input
-                      className="h-8 text-xs"
-                      value={stageBlame}
-                      onChange={(e) => setStageBlame(e.target.value)}
-                      placeholder="extract, validate, dedup"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-[10px] uppercase text-muted-foreground">Duplicate Decision</Label>
-                    <Select value={duplicateDecision ?? "not_applicable"} onValueChange={(value) => setDuplicateDecision(value as CitationReport["duplicateDecision"])}>
-                      <SelectTrigger className="h-8">
+              <div className="space-y-4">
+                <div className="space-y-4 rounded-lg border border-border/60 bg-muted/20 p-4">
+                  <div className="space-y-2">
+                    <Label>Resolution Type</Label>
+                    <Select value={fixType} onValueChange={(v) => setFixType(v as FixType)}>
+                      <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="not_applicable">Not applicable</SelectItem>
-                        <SelectItem value="confirmed_duplicate">Confirmed duplicate</SelectItem>
-                        <SelectItem value="confirmed_unique">Confirmed unique</SelectItem>
-                        <SelectItem value="needs_review">Needs review</SelectItem>
+                        <SelectItem value="dynamic-pattern">
+                          <div className="flex items-center gap-2">
+                            <Code className="h-4 w-4 text-green-500" />
+                            <span>Dynamic Pattern (patterns.json)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="parser-logic">
+                          <div className="flex items-center gap-2">
+                            <Wrench className="h-4 w-4 text-orange-500" />
+                            <span>Parser Logic (Code change)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="scoring-tweak">
+                          <div className="flex items-center gap-2">
+                            <Settings className="h-4 w-4 text-blue-500" />
+                            <span>Scoring Tweak (detectStyle)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="renderer-fix">
+                          <div className="flex items-center gap-2">
+                            <Brush className="h-4 w-4 text-purple-500" />
+                            <span>Renderer Fix (Formatting)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="type-correction">
+                          <div className="flex items-center gap-2">
+                            <Filter className="h-4 w-4 text-pink-500" />
+                            <span>Type Correction (Wrong category)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="other-fix">
+                          <div className="flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4 text-gray-500" />
+                            <span>Other / Edge Case</span>
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  {fixType === "type-correction" && (
+                    <div className="space-y-2 p-3 bg-pink-50/20 dark:bg-pink-950/20 rounded border border-pink-100 dark:border-pink-900 border-dashed">
+                      <Label className="text-xs font-bold text-pink-700 dark:text-pink-300">Corrected Reference Type</Label>
+                      <Select value={targetReferenceType} onValueChange={setTargetReferenceType}>
+                        <SelectTrigger className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {referenceTypes.map(t => (
+                            <SelectItem key={t} value={t}>{t}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[10px] text-muted-foreground">The data is parsed correctly, it's just in the wrong category.</p>
+                    </div>
+                  )}
+
+                  {fixType === "dynamic-pattern" && (
+                    <div className="space-y-3 p-3 bg-muted rounded border border-dashed text-xs">
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px]">Regex Pattern</Label>
+                        <Input 
+                          className="font-mono h-8 text-xs" 
+                          placeholder="e.g. ^(.*?),\\s*(\\d{4});" 
+                          value={proposedPattern.regex}
+                          onChange={(e) => setProposedPattern({...proposedPattern, regex: e.target.value})}
+                        />
+                      </div>
+                      <p className="text-[9px] text-muted-foreground">Will be auto-added to patterns.json on Accept.</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3 p-4 bg-emerald-50/10 dark:bg-emerald-950/10 rounded border border-emerald-200/40 dark:border-emerald-900/40">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-bold text-emerald-700 dark:text-emerald-300">Field-Level Truth Approval</Label>
+                    <p className="text-[10px] text-muted-foreground">Approve corrected fields so they can become trusted training data for ranking and confidence models.</p>
+                  </div>
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                    {EDITABLE_FIELDS.map((field) => (
+                      <div key={field.key} className="grid grid-cols-[auto,1fr] gap-2 items-start">
+                        <Checkbox
+                          checked={Boolean(approvedFields[field.key])}
+                          onCheckedChange={(checked) => setApprovedFields((current) => ({
+                            ...current,
+                            [field.key]: Boolean(checked),
+                          }))}
+                          className="mt-2"
+                        />
+                        <div className="space-y-1">
+                          <Label className="text-[10px] uppercase text-muted-foreground">{field.label}</Label>
+                          <Input
+                            className="h-8 text-xs"
+                            value={correctedFields[field.key] ?? ""}
+                            onChange={(e) => setCorrectedFields((current) => ({
+                              ...current,
+                              [field.key]: e.target.value,
+                            }))}
+                            placeholder={`Approved ${field.label.toLowerCase()}`}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 pt-2">
+                    <div className="space-y-1">
+                      <Label className="text-[10px] uppercase text-muted-foreground inline-flex items-center gap-1.5">
+                        Failure Taxonomy
+                        <FieldHint text="Short tags for the type of failure, such as author parsing, locator formatting, deduplication miss, or style-detection error." />
+                      </Label>
+                      <Input
+                        className="h-8 text-xs"
+                        value={failureTaxonomy}
+                        onChange={(e) => setFailureTaxonomy(e.target.value)}
+                        placeholder="author_split, placeholder_volume, dedup_miss"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[10px] uppercase text-muted-foreground inline-flex items-center gap-1.5">
+                        Stage Blame
+                        <FieldHint text="Which pipeline stage most likely introduced the problem, for example extract, validate, dedup, renderer, or clustering." />
+                      </Label>
+                      <Input
+                        className="h-8 text-xs"
+                        value={stageBlame}
+                        onChange={(e) => setStageBlame(e.target.value)}
+                        placeholder="extract, validate, dedup"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[10px] uppercase text-muted-foreground inline-flex items-center gap-1.5">
+                        Duplicate Decision
+                        <FieldHint text="Record whether this citation is truly unique, a confirmed duplicate, or still needs review for duplicate handling." />
+                      </Label>
+                      <Select value={duplicateDecision ?? "not_applicable"} onValueChange={(value) => setDuplicateDecision(value as CitationReport["duplicateDecision"])}>
+                        <SelectTrigger className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="not_applicable">Not applicable</SelectItem>
+                          <SelectItem value="confirmed_duplicate">Confirmed duplicate</SelectItem>
+                          <SelectItem value="confirmed_unique">Confirmed unique</SelectItem>
+                          <SelectItem value="needs_review">Needs review</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -518,7 +557,7 @@ export default function AdminReportDetail() {
                   <Button 
                       className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-9 text-xs"
                       disabled={report.status === "accepted"}
-                      onClick={() => resolveMutation.mutate({ saveAsTruth: true })}
+                      onClick={() => resolveMutation.mutate({ saveAsTruth: true, modeLabel: "Complete resolution and truth save" })}
                   >
                       <Zap className="h-4 w-4 mr-1.5" />
                       Complete Resolution & Save Truth
@@ -531,7 +570,7 @@ export default function AdminReportDetail() {
                     variant="default"
                     className="w-full bg-blue-600 hover:bg-blue-700 h-9 text-xs" 
                     disabled={report.status === "accepted"}
-                    onClick={() => resolveMutation.mutate({ saveAsTruth: false })}
+                    onClick={() => resolveMutation.mutate({ saveAsTruth: false, modeLabel: "Fix resolution" })}
                   >
                     <CheckCircle2 className="h-4 w-4 mr-1.5" />
                     Accept Fix & Resolve Only
@@ -543,7 +582,7 @@ export default function AdminReportDetail() {
                         variant="outline"
                         className="w-full border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 h-9 text-xs"
                         disabled={report.status === "accepted"}
-                        onClick={() => resolveMutation.mutate({ saveAsTruth: true })}
+                        onClick={() => resolveMutation.mutate({ saveAsTruth: true, modeLabel: "Truth save" })}
                     >
                         <ShieldCheck className="h-4 w-4 mr-1.5" />
                         Save as Truth Only

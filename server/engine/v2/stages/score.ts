@@ -1,6 +1,11 @@
 import type { CanonicalCitation, CitationQualityScore } from '@shared/schema';
 import type { V2Stage } from '../contracts.js';
 import { addCitationStageLog, average, createStageDiagnostic } from '../utils.js';
+import {
+  countStructuralValidationIssues,
+  getMissingExpectedFields,
+  getMissingRequiredFields,
+} from '../qualityRules.js';
 
 function grade(overall: number): 'A' | 'B' | 'C' | 'F' {
   if (overall >= 0.9) return 'A';
@@ -20,29 +25,42 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
     pages: citation.pages.confidence,
     doi: citation.doi.confidence,
     publisher: citation.publisher.confidence,
+    institution: citation.institution.confidence,
     url: citation.url.confidence,
   };
 
-  let overall = average([
-    fieldScores.authors,
-    fieldScores.title,
-    fieldScores.year,
-    Math.max(fieldScores.journal, fieldScores.publisher),
-    Math.max(fieldScores.doi, fieldScores.url),
-  ]);
+  const requiredScores: number[] = [];
+  const missingRequired = getMissingRequiredFields(citation);
+  const missingExpected = getMissingExpectedFields(citation);
 
-  const errorCount = citation.validationIssues.filter((issue) => issue.severity === 'error').length;
-  const warningCount = citation.validationIssues.filter((issue) => issue.severity === 'warning').length;
-  overall = Math.max(0, overall - (errorCount * 0.15) - (warningCount * 0.05));
+  requiredScores.push(fieldScores.authors, fieldScores.title, fieldScores.year);
+  if (citation.referenceType === 'book') requiredScores.push(fieldScores.publisher);
+  else if (citation.referenceType === 'thesis') requiredScores.push(Math.max(fieldScores.publisher, fieldScores.institution));
+  else requiredScores.push(Math.max(fieldScores.journal, fieldScores.publisher));
+
+  let overall = average(requiredScores);
+
+  const expectedBonuses: number[] = [];
+  if (citation.volume.value) expectedBonuses.push(fieldScores.volume);
+  if (citation.issue.value) expectedBonuses.push(fieldScores.issue);
+  if (citation.pages.value) expectedBonuses.push(fieldScores.pages);
+  if (citation.publisher.value && ['conference', 'bookChapter', 'report', 'book'].includes(citation.referenceType)) {
+    expectedBonuses.push(fieldScores.publisher);
+  }
+  if (expectedBonuses.length > 0) {
+    overall = Math.min(1, overall + (average(expectedBonuses) * 0.08));
+  }
 
   const validationCodes = new Set(citation.validationIssues.map((issue) => issue.code));
-  if (validationCodes.has('connector_as_author')) overall = Math.min(overall, 0.35);
-  if (validationCodes.has('placeholder_volume') || validationCodes.has('placeholder_journal')) {
-    overall = Math.max(0, overall - 0.15);
-  }
-  if (validationCodes.has('venue_missing_for_conference') || validationCodes.has('weak_proceedings_venue')) {
-    overall = Math.max(0, overall - 0.08);
-  }
+  const structuralIssues = countStructuralValidationIssues(citation);
+  overall = Math.max(0, overall - (structuralIssues.severe * 0.18) - (structuralIssues.review * 0.04));
+
+  if (validationCodes.has('connector_as_author') || validationCodes.has('author_structure_unstable')) overall = Math.min(overall, 0.32);
+  if (validationCodes.has('placeholder_volume') || validationCodes.has('placeholder_journal')) overall = Math.max(0, overall - 0.12);
+  if (validationCodes.has('venue_missing_for_conference') || validationCodes.has('weak_proceedings_venue')) overall = Math.max(0, overall - 0.08);
+  if (validationCodes.has('locator_missing_from_source')) overall = Math.max(0, overall - 0.06);
+  if (validationCodes.has('authority_mismatch')) overall = Math.max(0, overall - 0.02);
+  if (validationCodes.has('initials_as_surname')) overall = Math.max(0, overall - 0.08);
 
   if (citation.extraction?.method === 'llm') overall *= 0.9;
   if (citation.extraction?.method === 'hybrid') overall *= 0.95;
@@ -57,12 +75,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   }
 
   const flags: string[] = [];
-  const missingRequired: string[] = [];
   const missingOptional: string[] = [];
-
-  if (citation.authors.value.length === 0) missingRequired.push('authors');
-  if (!citation.title.value) missingRequired.push('title');
-  if (citation.year.value == null) missingRequired.push('year');
 
   for (const optionalField of ['doi', 'journal', 'volume', 'issue', 'pages', 'publisher', 'url'] as const) {
     if (!citation[optionalField].value) {
@@ -77,8 +90,10 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   if (citation.title.confidence < 0.5) flags.push('low_confidence_title');
   if (citation.authors.value.some((author) => Boolean(author.literal))) flags.push('author_parse_failed');
   if (validationCodes.has('placeholder_volume') || validationCodes.has('placeholder_journal')) flags.push('placeholder_fields');
-  if (validationCodes.has('connector_as_author') || validationCodes.has('alternating_surname_given_tokens')) flags.push('malformed_authors');
-  if (warningCount > 0 || errorCount > 0) flags.push('review');
+  if (validationCodes.has('connector_as_author') || validationCodes.has('author_structure_unstable') || validationCodes.has('initials_as_surname')) flags.push('malformed_authors');
+  if (structuralIssues.severe > 0 || structuralIssues.review > 0) flags.push('review');
+  if (validationCodes.has('authority_rate_limited')) flags.push('authority_rate_limited');
+  if (validationCodes.has('authority_not_found')) flags.push('authority_not_found');
   if (citation.enrichment?.retractedFlag) {
     flags.push('retracted');
     overall = Math.min(overall, 0.4);
@@ -89,6 +104,9 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   }
   if (missingRequired.length > 0) {
     overall = Math.min(overall, 0.59);
+  }
+  if (missingExpected.length > 0 && missingRequired.length === 0) {
+    overall = Math.max(0, overall - Math.min(0.08, missingExpected.length * 0.02));
   }
 
   overall = Number(overall.toFixed(2));
