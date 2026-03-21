@@ -13,7 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { ParsedReference, ReferenceType } from "@shared/schema";
+import type { ParsedReference, ReferenceType, ReportEngineSnapshot } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 
 const CATEGORIES = [
   { value: "author", label: "Author name incorrect" },
@@ -34,6 +35,7 @@ export interface ReportButtonProps {
   parsedData?: ParsedReference;
   referenceType?: ReferenceType;
   confidence?: number;
+  reportEngineSnapshot?: ReportEngineSnapshot;
   reported?: boolean;
   onReported?: () => void;
 }
@@ -46,6 +48,7 @@ export default function ReportButton({
   parsedData,
   referenceType,
   confidence,
+  reportEngineSnapshot,
   reported = false,
   onReported,
 }: ReportButtonProps) {
@@ -55,6 +58,7 @@ export default function ReportButton({
   const [submitting, setSubmitting] = useState(false);
   const [showOriginalInput, setShowOriginalInput] = useState(false);
   const includesOther = categories.includes("other");
+  const { toast } = useToast();
 
   const toggleCategory = (value: string, checked: boolean | "indeterminate") => {
     setCategories((current) => {
@@ -83,6 +87,7 @@ export default function ReportButton({
           parsedData,
           referenceType,
           confidence,
+          engineSnapshot: reportEngineSnapshot,
         }),
       });
       if (!res.ok) {
@@ -93,9 +98,18 @@ export default function ReportButton({
       setCategories([]);
       setUserNote("");
       setShowOriginalInput(false);
+      toast({
+        title: "Report submitted",
+        description: "Thanks. Your feedback has been saved.",
+      });
       onReported?.();
     } catch (err) {
       console.error(err);
+      toast({
+        title: "Report failed",
+        description: err instanceof Error ? err.message : "Failed to save report",
+        variant: "destructive",
+      });
     } finally {
       setSubmitting(false);
     }

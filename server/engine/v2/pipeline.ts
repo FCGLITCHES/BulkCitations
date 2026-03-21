@@ -15,6 +15,7 @@ import { createRenderStage } from './stages/render.js';
 import { createRespondStage } from './stages/respond.js';
 import { createScoreStage } from './stages/score.js';
 import { createSplitStage } from './stages/split.js';
+import { createTruthStage } from './stages/truth.js';
 import { createValidateStage } from './stages/validate.js';
 import { createStageDiagnostic, nowIso } from './utils.js';
 
@@ -24,6 +25,7 @@ function createStageMap(adapters: V2AdapterBundle): Record<V2StageId, V2Stage> {
     split: createSplitStage(),
     extract: createExtractStage(adapters.extractor),
     validate: createValidateStage(),
+    truth: createTruthStage(),
     dedup: createDedupStage(),
     enrich: createEnrichStage(adapters.authorityLookup, adapters.cache),
     group: createGroupStage(),

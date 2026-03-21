@@ -116,6 +116,45 @@ export interface ConvertedReference {
   authorsExpandedFromMetadata?: boolean;
   healthState?: HealthState;
   healthReasons?: string[];
+  truthProvenance?: {
+    truthApplied: boolean;
+    truthMatchType?: 'fingerprint' | 'doi' | 'workKey';
+    truthId?: string;
+    appliedFields?: string[];
+    usedValidatedOutput?: boolean;
+    staleTruth?: boolean;
+  };
+  reportEngineSnapshot?: {
+    engineVersion?: 'v1' | 'v2';
+    processingPath?: {
+      stagesRun?: string[];
+      fallbacksUsed?: string[];
+      extractorPathsUsed?: string[];
+      partialResult?: boolean;
+      partialReasons?: string[];
+    };
+    stageLogSummary?: Array<{
+      stageId: string;
+      status: 'success' | 'warning' | 'error' | 'skipped' | 'unknown';
+      code?: string;
+      message: string;
+    }>;
+    extractorPath?: 'deterministic' | 'grobid' | 'llm' | 'hybrid' | 'hybrid-v1';
+    validationCodes?: string[];
+    qualityFlags?: string[];
+    splitContaminationFlags?: string[];
+    inputProfile?: {
+      structure: 'structured' | 'semi_structured' | 'unstructured' | 'unknown';
+      confidence: number;
+      inputType: 'bibtex' | 'ris' | 'numbered_list' | 'prose_footnotes' | 'mixed_styles' | 'doi_list' | 'plain_blob' | 'unknown';
+      estimatedCount: number;
+      hasDois: boolean;
+      hasUrls: boolean;
+      styleHints: string[];
+      signals: string[];
+    };
+    truthProvenance?: ConvertedReference['truthProvenance'];
+  };
   debug?: {
     extractionPath: 'deterministic' | 'grobid' | 'llm' | 'hybrid';
     splitMethod: 'structural' | 'llm' | 'hybrid';

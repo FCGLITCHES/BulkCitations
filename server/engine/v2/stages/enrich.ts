@@ -99,7 +99,7 @@ export function createEnrichStage(authorityLookup: AuthorityLookupAdapter, cache
         const localFallbacks: string[] = [];
         let localPartialResult = false;
 
-        if (!context.request.enrich || citation.status === 'duplicate') {
+        if (citation.status === 'duplicate') {
           const skippedCitation = attachCitationDebug({
             ...citation,
             enrichment: { status: 'skipped', provider: authorityLookup.id, sourceUsed: 'skipped' },
@@ -110,7 +110,7 @@ export function createEnrichStage(authorityLookup: AuthorityLookupAdapter, cache
           return {
             citation: addCitationStageLog(
               skippedCitation,
-              createStageDiagnostic('enrich', 'skipped', 'Enrichment skipped for this citation.'),
+              createStageDiagnostic('enrich', 'skipped', 'Enrichment skipped for duplicate citation.'),
             ),
             fallbacksUsed: localFallbacks,
             partialResult: localPartialResult,

@@ -21,6 +21,8 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
     title: citation.title.confidence,
     year: citation.year.value != null ? Math.max(citation.year.confidence, 0.85) : citation.year.confidence,
     journal: citation.journal.confidence,
+    conferenceTitle: citation.conferenceTitle.confidence,
+    bookTitle: citation.bookTitle.confidence,
     volume: citation.volume.confidence,
     issue: citation.issue.confidence,
     pages: citation.pages.confidence,
@@ -33,10 +35,17 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   const requiredScores: number[] = [];
   const missingRequired = getMissingRequiredFields(citation);
   const missingExpected = getMissingExpectedFields(citation);
+  const venueScore = Math.max(
+    citation.journal.value ? fieldScores.journal : 0,
+    citation.conferenceTitle.value ? Math.max(fieldScores.conferenceTitle, 0.82) : 0,
+    citation.bookTitle.value ? Math.max(fieldScores.bookTitle, 0.82) : 0,
+  );
 
   requiredScores.push(fieldScores.authors, fieldScores.title, fieldScores.year);
   if (citation.referenceType === 'book') requiredScores.push(fieldScores.publisher);
   else if (citation.referenceType === 'thesis') requiredScores.push(Math.max(fieldScores.publisher, fieldScores.institution));
+  else if (citation.referenceType === 'conference') requiredScores.push(Math.max(venueScore, fieldScores.publisher));
+  else if (citation.referenceType === 'chapter') requiredScores.push(Math.max(fieldScores.bookTitle, fieldScores.publisher));
   else requiredScores.push(Math.max(fieldScores.journal, fieldScores.publisher));
 
   let overall = average(requiredScores);
@@ -82,20 +91,11 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   if (validationCodes.has('placeholder_volume') || validationCodes.has('placeholder_journal')) overall = Math.max(0, overall - 0.12);
   if (hasVenueMissingForConference || hasWeakProceedingsVenue) overall = Math.max(0, overall - 0.08);
   if (hasDroppedLocatorWarning) overall = Math.max(0, overall - 0.06);
-  if (validationCodes.has('authority_mismatch')) overall = Math.max(0, overall - 0.02);
   if (validationCodes.has('initials_as_surname')) overall = Math.max(0, overall - 0.08);
 
   if (citation.extraction?.method === 'llm') overall *= 0.9;
   if (citation.extraction?.method === 'hybrid') overall *= 0.95;
   if (citation.extraction?.fallbackUsed) overall = Math.max(0, overall - 0.04);
-
-  if (citation.validation?.verificationAttempted && citation.validation.mismatchFields.length === 0) {
-    overall = Math.min(1, overall + 0.15);
-  }
-
-  if (citation.enrichment?.confidencePenalty) {
-    overall = Math.max(0, overall + citation.enrichment.confidencePenalty);
-  }
 
   const flags: string[] = [];
   const missingOptional: string[] = [];
@@ -106,7 +106,6 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
     }
   }
 
-  if (!citation.doi.value) flags.push('missing_doi');
   if (citation.status === 'duplicate') flags.push('duplicate');
   if (citation.extraction?.fallbackUsed) flags.push('llm_extracted');
   if (citation.validation?.verificationAttempted && citation.validation.mismatchFields.length > 0) flags.push('unverified');

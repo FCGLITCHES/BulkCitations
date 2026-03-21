@@ -7,6 +7,8 @@ export interface RegressionFixture {
   expectedUniqueCount?: number;
   expectedMergedTitle?: string;
   expectedMergedAuthors?: string[];
+  expectedOutputText?: string;
+  expectedReferenceType?: string;
   forbiddenOutputPatterns?: RegExp[];
 }
 

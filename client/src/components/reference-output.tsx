@@ -545,6 +545,10 @@ function CitationRow({
                 detectedInputStyle={refData.inputStyle}
                 targetStyle={refData.outputStyle}
                 convertedOutput={citationText}
+                parsedData={refData.parsedData}
+                referenceType={refData.referenceType}
+                confidence={refData.confidence?.score}
+                reportEngineSnapshot={refData.reportEngineSnapshot as any}
                 reported={reportedIds?.has(refData.id)}
                 onReported={onReported ? () => onReported(refData.id) : undefined}
               />
@@ -586,6 +590,10 @@ function CitationRow({
               detectedInputStyle={refData.inputStyle}
               targetStyle={refData.outputStyle}
               convertedOutput={citationText}
+              parsedData={refData.parsedData}
+              referenceType={refData.referenceType}
+              confidence={refData.confidence?.score}
+              reportEngineSnapshot={refData.reportEngineSnapshot as any}
               reported={reportedIds?.has(refData.id)}
               onReported={onReported ? () => onReported(refData.id) : undefined}
             />

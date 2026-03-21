@@ -152,6 +152,8 @@ export interface ConvertedReference {
   authorInitialsOnly?: boolean;
   /** True when full names were filled from DOI/metadata lookup (confidence-gated only). */
   authorsExpandedFromMetadata?: boolean;
+  truthProvenance?: TruthProvenance;
+  reportEngineSnapshot?: ReportEngineSnapshot;
   debug?: {
     extractionPath: 'deterministic' | 'grobid' | 'llm' | 'hybrid';
     splitMethod: 'structural' | 'llm' | 'hybrid';
@@ -238,6 +240,101 @@ export type FailureCategory =
 /** Lifecycle status of a failure report */
 export type ReportStatus = 'pending' | 'proposed' | 'accepted' | 'rejected' | 'duplicate';
 
+export type TruthMatchType = 'fingerprint' | 'doi' | 'workKey';
+
+export type TruthAliasType = TruthMatchType;
+
+export type TruthStalenessReason =
+  | 'engine_version_changed'
+  | 'renderer_changed'
+  | 'canonical_shape_changed'
+  | 'csl_schema_changed'
+  | 'manual';
+
+export interface TruthProvenance {
+  truthApplied: boolean;
+  truthMatchType?: TruthMatchType;
+  truthId?: string;
+  appliedFields?: string[];
+  usedValidatedOutput?: boolean;
+  staleTruth?: boolean;
+}
+
+export interface StageBlameAlternative {
+  stage: V2StageId | 'unknown';
+  confidence: number;
+}
+
+export interface StageBlameSummary {
+  likelyStage: V2StageId | 'unknown';
+  confidence: number;
+  evidence: string[];
+  alternatives: StageBlameAlternative[];
+}
+
+export interface StageLogSummary {
+  stageId: string;
+  status: V2StageStatus | 'unknown';
+  code?: string;
+  message: string;
+}
+
+export interface ReportEngineSnapshot {
+  engineVersion?: 'v1' | 'v2';
+  processingPath?: {
+    stagesRun?: string[];
+    fallbacksUsed?: string[];
+    extractorPathsUsed?: string[];
+    partialResult?: boolean;
+    partialReasons?: string[];
+  };
+  stageLogSummary?: StageLogSummary[];
+  extractorPath?: 'deterministic' | 'grobid' | 'llm' | 'hybrid' | 'hybrid-v1';
+  validationCodes?: string[];
+  qualityFlags?: string[];
+  splitContaminationFlags?: string[];
+  inputProfile?: InputProfile;
+  truthProvenance?: TruthProvenance;
+}
+
+export interface ReviewEvent {
+  id: string;
+  type: 'comment' | 'assign' | 'resolve' | 'duplicate' | 'reject' | 'truth_saved' | 'pattern_exported' | 'regression_generated';
+  actor: string;
+  createdAt: string;
+  message?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ResolutionTrace {
+  resolvedByCommit?: string;
+  resolvedByVersion?: string;
+  resolvedAt?: string;
+  note?: string;
+}
+
+export interface PatternExportArtifact {
+  filePath: string;
+  content: string;
+  generatedAt: string;
+  generatedBy?: string;
+}
+
+export interface GeneratedRegressionFixtureMeta {
+  id: string;
+  generatedAt: string;
+  generatedBy?: string;
+  skipped?: boolean;
+  skipReason?: string;
+  storageKey?: string;
+  exportArtifact?: PatternExportArtifact;
+}
+
+export interface TruthAlias {
+  aliasType: TruthAliasType;
+  aliasValue: string;
+}
+
 /**
  * What kind of fix is needed.
  * - dynamic-pattern: can be applied to patterns.json (instant, no deploy)
@@ -294,6 +391,16 @@ export interface CitationReport {
   failureTaxonomy?: string[];
   stageBlame?: string[];
   duplicateDecision?: 'not_applicable' | 'confirmed_duplicate' | 'confirmed_unique' | 'needs_review';
+  engineSnapshot?: ReportEngineSnapshot;
+  likelyStageBlame?: StageBlameSummary;
+  assigneeName?: string;
+  reviewEvents?: ReviewEvent[];
+  resolutionTrace?: ResolutionTrace;
+  truthId?: string;
+  patternExport?: PatternExportArtifact;
+  regressionFixtureId?: string;
+  resolvedByCommit?: string;
+  resolvedByVersion?: string;
   originalEngineOutput?: {
     convertedText?: string;
     parsedData?: ParsedReference;
@@ -329,6 +436,7 @@ export type V2StageId =
   | 'split'
   | 'extract'
   | 'validate'
+  | 'truth'
   | 'dedup'
   | 'enrich'
   | 'group'
@@ -503,17 +611,25 @@ export type FieldApprovalMap = Partial<Record<
 >>;
 
 export interface ApprovedTruthEntry {
+  truthId: string;
+  truthFamilyId: string;
   fingerprint: string;
   originalText: string;
   outputStyle: string;
   validatedOutput: string;
   validatedBy: string;
   validatedAt: string;
+  aliases?: TruthAlias[];
+  sourceReportId?: string;
   correctedFields?: ApprovedCanonicalFields;
   fieldApproval?: FieldApprovalMap;
   failureTaxonomy?: string[];
   stageBlame?: string[];
   duplicateDecision?: 'not_applicable' | 'confirmed_duplicate' | 'confirmed_unique' | 'needs_review';
+  resolvedByCommit?: string;
+  resolvedByVersion?: string;
+  staleAfterVersion?: string;
+  staleReason?: TruthStalenessReason;
   originalEngineOutput?: {
     convertedText?: string;
     parsedData?: ParsedReference;
@@ -580,6 +696,10 @@ export interface CanonicalCitation {
   extraction?: ExtractionMetadata;
   validation?: ValidationMetadata;
   normalization?: NormalizationMetadata;
+  truth?: TruthProvenance & {
+    resolvedCanonical?: ApprovedCanonicalFields;
+    validatedOutput?: string;
+  };
   validationIssues: ValidationIssue[];
   duplicate?: DuplicateMetadata | null;
   enrichment?: EnrichmentMetadata | null;

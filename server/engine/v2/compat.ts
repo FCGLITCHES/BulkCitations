@@ -24,8 +24,6 @@ function friendlyQualityFlag(flag: string): string | null {
       return 'Author parsing looks malformed';
     case 'placeholder_fields':
       return 'Placeholder or suspicious venue fields present';
-    case 'missing_doi':
-      return 'DOI missing';
     case 'unverified':
       return 'Authority verification found mismatched fields';
     case 'retracted':
@@ -41,7 +39,9 @@ function mapLegacyHealth(citation: CanonicalCitation): {
   state: 'clean' | 'review' | 'action_needed';
   reasons: string[];
 } {
-  const reasons = citation.validationIssues.map((issue) => issue.message);
+  const reasons = citation.validationIssues
+    .filter((issue) => issue.severity !== 'info')
+    .map((issue) => issue.message);
   const validationCodes = new Set(citation.validationIssues.map((issue) => issue.code));
   const qualityFlags = new Set(citation.quality?.flags ?? []);
   const missingRequired = citation.quality?.missingRequired ?? [];
@@ -108,6 +108,52 @@ function mapWarnings(citation: CanonicalCitation): string[] {
   return [...validationWarnings, ...renderWarnings];
 }
 
+function buildReportEngineSnapshot(citation: CanonicalCitation, response: V2ConversionResponse): ConvertedReference['reportEngineSnapshot'] {
+  const splitContaminationFlags = response.debug?.enabled
+    ? (citation.stageDebug?.split?.contaminationFlags as string[] | undefined) ?? []
+    : citation.validationIssues
+        .map((issue) => issue.code)
+        .filter((code) => (
+          code.startsWith('header_bleed_')
+          || code.startsWith('doi_orphan_')
+          || code.startsWith('multiline_truncation_')
+          || code.startsWith('page_artifact_')
+          || code.startsWith('oversized_chunk_')
+        ));
+
+  return {
+    engineVersion: 'v2',
+    processingPath: {
+      stagesRun: response.processingPath.stagesRun,
+      fallbacksUsed: response.processingPath.fallbacksUsed,
+      extractorPathsUsed: response.processingPath.extractorPathsUsed,
+      partialResult: response.processingPath.partialResult,
+      partialReasons: response.processingPath.partialReasons,
+    },
+    stageLogSummary: citation.stageLog.map((entry) => ({
+      stageId: entry.stageId,
+      status: entry.status,
+      code: entry.code,
+      message: entry.message,
+    })),
+    extractorPath: citation.extraction?.extractorPath,
+    validationCodes: citation.validationIssues.map((issue) => issue.code),
+    qualityFlags: citation.quality?.flags ?? [],
+    splitContaminationFlags,
+    inputProfile: response.inputProfile,
+    truthProvenance: citation.truth?.truthApplied
+      ? {
+          truthApplied: true,
+          truthId: citation.truth.truthId,
+          truthMatchType: citation.truth.truthMatchType,
+          appliedFields: citation.truth.appliedFields,
+          usedValidatedOutput: citation.truth.usedValidatedOutput,
+          staleTruth: citation.truth.staleTruth,
+        }
+      : { truthApplied: false },
+  };
+}
+
 export interface LegacyCompatRecord {
   uiData: Omit<ConvertedReference, 'id'>;
   storageData: InsertReference;
@@ -167,6 +213,17 @@ export function mapV2ResponseToLegacyRecords(
         healthState: health.state,
         healthReasons: health.reasons,
         authorInitialsOnly: hasAuthorInitialsOnly(parsedData),
+        truthProvenance: citation.truth?.truthApplied
+          ? {
+              truthApplied: true,
+              truthId: citation.truth.truthId,
+              truthMatchType: citation.truth.truthMatchType,
+              appliedFields: citation.truth.appliedFields,
+              usedValidatedOutput: citation.truth.usedValidatedOutput,
+              staleTruth: citation.truth.staleTruth,
+            }
+          : { truthApplied: false },
+        reportEngineSnapshot: buildReportEngineSnapshot(citation, response),
         debug,
       },
       storageData: {

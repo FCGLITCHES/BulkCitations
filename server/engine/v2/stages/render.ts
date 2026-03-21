@@ -49,6 +49,34 @@ export function createRenderStage(): V2Stage {
       let partialResult = context.partialResult;
 
       const citations = context.citations.map((citation, index) => {
+        if (citation.truth?.usedValidatedOutput && citation.truth.validatedOutput) {
+          const trustedOutput = sanitizeCitation(postCslCleanup(citation.truth.validatedOutput));
+          const nextCitation = attachCitationDebug({
+            ...citation,
+            rendered: {
+              outputStyle: context.request.outputStyle,
+              formatted: trustedOutput,
+              warnings: citation.rendered?.warnings ?? [],
+              sanitized: trustedOutput !== citation.truth.validatedOutput,
+              assertionSummary: citation.rendered?.assertionSummary,
+              assertionHighlights: citation.rendered?.assertionHighlights,
+            },
+          }, 'render', {
+            trustedTruthOutputUsed: true,
+            truthId: citation.truth.truthId,
+          }, context.debugEnabled);
+
+          return addCitationStageLog(
+            nextCitation,
+            createStageDiagnostic(
+              'render',
+              'success',
+              'Rendered citation from approved truth output.',
+              { truthId: citation.truth.truthId },
+            ),
+          );
+        }
+
         const parsed = canonicalToParsedReference(citation);
         const referenceType = canonicalReferenceTypeToParsed(citation.referenceType);
         const cslData = parsedReferenceToCSL(parsed, referenceType, citation.id || `v2-ref-${index + 1}`);

@@ -17,7 +17,12 @@ import {
   ChevronRight,
   Code,
   Settings,
-  Info
+  Info,
+  GitBranch,
+  MessageSquare,
+  Clock3,
+  ArrowRightLeft,
+  CopyCheck
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -114,6 +119,10 @@ export default function AdminReportDetail() {
   const [failureTaxonomy, setFailureTaxonomy] = useState("");
   const [stageBlame, setStageBlame] = useState("");
   const [duplicateDecision, setDuplicateDecision] = useState<CitationReport["duplicateDecision"]>("not_applicable");
+  const [assigneeName, setAssigneeName] = useState("");
+  const [newComment, setNewComment] = useState("");
+  const [resolvedByCommit, setResolvedByCommit] = useState("");
+  const [resolvedByVersion, setResolvedByVersion] = useState("");
 
   const { data: report, isLoading } = useQuery<CitationReport>({
     queryKey: [`/api/reports/${id}`],
@@ -134,10 +143,52 @@ export default function AdminReportDetail() {
       setFailureTaxonomy((report.failureTaxonomy ?? []).join(", "));
       setStageBlame((report.stageBlame ?? []).join(", "));
       setDuplicateDecision(report.duplicateDecision ?? "not_applicable");
+      setAssigneeName(report.assigneeName ?? "");
+      setResolvedByCommit(report.resolvedByCommit ?? report.resolutionTrace?.resolvedByCommit ?? "");
+      setResolvedByVersion(report.resolvedByVersion ?? report.resolutionTrace?.resolvedByVersion ?? "");
     }
   }, [report]);
 
 
+
+  const assignMutation = useMutation({
+    mutationFn: async () => {
+      return adminFetch<{ report: CitationReport }>(`/api/reports/${id}/assign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assigneeName,
+          actor: "admin",
+        }),
+      });
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData([`/api/reports/${id}`], data.report);
+      toast({ title: "Assignment updated" });
+      queryClient.invalidateQueries({ queryKey: [`/api/reports/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/grouped"] });
+    },
+  });
+
+  const commentMutation = useMutation({
+    mutationFn: async () => {
+      return adminFetch<{ report: CitationReport }>(`/api/reports/${id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          actor: "admin",
+          message: newComment,
+        }),
+      });
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData([`/api/reports/${id}`], data.report);
+      setNewComment("");
+      toast({ title: "Comment added" });
+      queryClient.invalidateQueries({ queryKey: [`/api/reports/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/grouped"] });
+    },
+  });
 
   const rejectMutation = useMutation({
     mutationFn: async (reason: string) => {
@@ -209,6 +260,8 @@ export default function AdminReportDetail() {
             failureTaxonomy: failureTaxonomy.split(",").map((item) => item.trim()).filter(Boolean),
             stageBlame: stageBlame.split(",").map((item) => item.trim()).filter(Boolean),
             duplicateDecision,
+            resolvedByCommit: resolvedByCommit || undefined,
+            resolvedByVersion: resolvedByVersion || undefined,
         })
       });
     },
@@ -379,10 +432,257 @@ export default function AdminReportDetail() {
               )}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Resolution Snapshot</CardTitle>
+              <CardDescription>Compare the original engine understanding, approved fields, and final approved output side by side.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Original engine output</Label>
+                <div className="rounded-md border border-border/60 bg-muted/20 p-3 text-xs space-y-2">
+                  <div><span className="text-muted-foreground">Type:</span> {report.originalEngineOutput?.referenceType ?? report.referenceType ?? "N/A"}</div>
+                  <div><span className="text-muted-foreground">Confidence:</span> {report.originalEngineOutput?.confidence ?? report.confidence ?? "N/A"}</div>
+                  <div className="break-words font-mono text-[11px]">{report.originalEngineOutput?.convertedText ?? report.convertedText}</div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Approved fields</Label>
+                <div className="rounded-md border border-border/60 bg-muted/20 p-3 text-xs space-y-2">
+                  {Object.entries(report.correctedFields ?? {}).length === 0 ? (
+                    <p className="text-muted-foreground">No corrected fields stored yet.</p>
+                  ) : (
+                    Object.entries(report.correctedFields ?? {}).map(([field, value]) => (
+                      <div key={field} className="grid grid-cols-[110px,1fr] gap-2">
+                        <span className="font-medium capitalize text-muted-foreground">{field}</span>
+                        <span className="break-words">
+                          {Array.isArray(value)
+                            ? value.map((entry) => ("literal" in entry && entry.literal ? entry.literal : "first" in entry && entry.first ? `${entry.last}, ${entry.first}` : "last" in entry ? entry.last : String(entry))).join("; ")
+                            : value == null
+                              ? "null"
+                              : String(value)}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Final approved output</Label>
+                <div className="rounded-md border border-emerald-200/50 bg-emerald-50/10 p-3 text-xs leading-6">
+                  {report.finalApprovedOutput || proposedStyleFix || report.proposedStyleFix || "No final approved output stored yet."}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Right Column: Resolution Command Panel */}
         <div className="xl:col-span-5 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <ArrowRightLeft className="h-4 w-4 text-blue-500" />
+                Workflow & Provenance
+              </CardTitle>
+              <CardDescription>
+                Review stage blame, assign ownership, and keep a visible timeline without opening debug payloads.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Likely failing stage</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <Badge variant={report.likelyStageBlame && report.likelyStageBlame.confidence >= 0.8 ? "default" : report.likelyStageBlame && report.likelyStageBlame.confidence >= 0.5 ? "secondary" : "outline"}>
+                        {report.likelyStageBlame?.likelyStage ?? "unknown"}
+                      </Badge>
+                      <span className="text-sm font-medium">
+                        {report.likelyStageBlame ? `${Math.round(report.likelyStageBlame.confidence * 100)}% confidence` : "No stage blame captured"}
+                      </span>
+                    </div>
+                  </div>
+                  {report.engineSnapshot?.truthProvenance?.truthApplied && (
+                    <Badge variant="outline" className="text-[10px]">
+                      Truth applied
+                    </Badge>
+                  )}
+                </div>
+                {!!report.likelyStageBlame?.evidence?.length && (
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Evidence</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {report.likelyStageBlame.evidence.map((entry) => (
+                        <Badge key={entry} variant="outline" className="text-[10px]">
+                          {entry}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {!!report.likelyStageBlame?.alternatives?.length && (
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Alternatives</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {report.likelyStageBlame.alternatives.map((alternative) => (
+                        <Badge key={`${alternative.stage}-${alternative.confidence}`} variant="outline" className="text-[10px]">
+                          {alternative.stage} {Math.round(alternative.confidence * 100)}%
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase text-muted-foreground inline-flex items-center gap-1.5">
+                    Assignee
+                    <GitBranch className="h-3.5 w-3.5" />
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      className="h-8 text-xs"
+                      value={assigneeName}
+                      onChange={(e) => setAssigneeName(e.target.value)}
+                      placeholder="Assign reviewer name"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-8 text-xs"
+                      onClick={() => assignMutation.mutate()}
+                      disabled={!assigneeName.trim() || assignMutation.isPending}
+                    >
+                      Assign
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase text-muted-foreground">Resolved by commit</Label>
+                    <Input
+                      className="h-8 text-xs font-mono"
+                      value={resolvedByCommit}
+                      onChange={(e) => setResolvedByCommit(e.target.value)}
+                      placeholder="abc1234"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase text-muted-foreground">Resolved by version</Label>
+                    <Input
+                      className="h-8 text-xs font-mono"
+                      value={resolvedByVersion}
+                      onChange={(e) => setResolvedByVersion(e.target.value)}
+                      placeholder="2.4.1"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase text-muted-foreground inline-flex items-center gap-1.5">
+                    Review comment
+                    <MessageSquare className="h-3.5 w-3.5" />
+                  </Label>
+                  <Textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    rows={3}
+                    className="resize-none text-xs"
+                    placeholder="Add reviewer context, commit notes, or why this is stage-specific."
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-8 text-xs"
+                    onClick={() => commentMutation.mutate()}
+                    disabled={!newComment.trim() || commentMutation.isPending}
+                  >
+                    Add comment
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Truth</p>
+                  <div className="mt-2 text-xs">
+                    {report.truthId ? (
+                      <div className="space-y-1">
+                        <p className="font-medium">Truth linked</p>
+                        <p className="font-mono break-all text-muted-foreground">{report.truthId}</p>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">No truth entry linked yet.</p>
+                    )}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Pattern export</p>
+                  <div className="mt-2 text-xs">
+                    {report.patternExport ? (
+                      <div className="space-y-2">
+                        <p className="font-mono break-all text-muted-foreground">{report.patternExport.filePath}</p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-7 text-xs"
+                          onClick={() => navigator.clipboard.writeText(report.patternExport?.content ?? "")}
+                        >
+                          <CopyCheck className="mr-1.5 h-3.5 w-3.5" />
+                          Copy snippet
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">No pattern export generated.</p>
+                    )}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Regression fixture</p>
+                  <div className="mt-2 text-xs">
+                    {report.regressionFixtureId ? (
+                      <div className="space-y-1">
+                        <p className="font-medium">Generated</p>
+                        <p className="font-mono break-all text-muted-foreground">{report.regressionFixtureId}</p>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">No generated fixture linked yet.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase text-muted-foreground inline-flex items-center gap-1.5">
+                  Review timeline
+                  <Clock3 className="h-3.5 w-3.5" />
+                </Label>
+                <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-border/60 bg-muted/10 p-3">
+                  {(report.reviewEvents ?? []).length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No review events recorded yet.</p>
+                  ) : (
+                    (report.reviewEvents ?? []).map((event) => (
+                      <div key={event.id} className="rounded border border-border/60 bg-background/80 p-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-[10px] uppercase">{event.type}</Badge>
+                            <span className="text-xs font-medium">{event.actor}</span>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground">{new Date(event.createdAt).toLocaleString()}</span>
+                        </div>
+                        {event.message && <p className="mt-2 text-xs leading-5">{event.message}</p>}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="border-blue-200 dark:border-blue-900 shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -469,7 +769,7 @@ export default function AdminReportDetail() {
                           onChange={(e) => setProposedPattern({...proposedPattern, regex: e.target.value})}
                         />
                       </div>
-                      <p className="text-[9px] text-muted-foreground">Will be auto-added to patterns.json on Accept.</p>
+                      <p className="text-[9px] text-muted-foreground">An export snippet will be generated for source control. Direct file writes stay opt-in.</p>
                     </div>
                   )}
                 </div>

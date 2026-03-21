@@ -12,6 +12,7 @@ import { Button } from "./ui/button";
 import { RefreshCw } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import type { HealthState } from "@/lib/types";
+import { CONFIDENCE_THRESHOLDS } from "@shared/confidenceThresholds";
 
 interface ScholarPreviewProps {
     confidence?: ConfidenceResult;
@@ -28,7 +29,7 @@ function authorityStatusLabel(status: AuthorityStatus): string {
         case "cache_hit": return "Validated (cache)";
         case "fetched": return "Validated";
         case "no_match": return "No match";
-        case "error": return "Error";
+        case "error": return "Validation unavailable";
         case "blocked": return "Upgrade to validate";
         case "skipped": return "Validation skipped";
         default: return "";
@@ -51,33 +52,38 @@ export function ScholarPreview({ confidence, authorityData, authorityStatus, isP
         );
     }
 
-    // Bands tuned to keep authority as a light, reassuring signal:
-    // - <50 or suspicious: Needs review (red)
-    // - 90+: Authority validated
-    // - 70–89: High confidence
-    // - 50–69: Worth reviewing
+    // Bands are rules-only now.
+    // External validation is shown separately and must not change the score label.
     let badgeVariant: "default" | "secondary" | "destructive" | "outline" = "outline";
     let icon = null;
     let bandLabel = "";
     let badgeClassName = "cursor-help flex items-center text-[10px] sm:text-xs h-6 px-2 font-normal";
 
-    const canRecheck = Boolean(onRecheck && referenceId && (confidence.score < 95 || authorityStatus === "no_match" || authorityStatus === "error"));
+    const canRecheck = Boolean(
+        onRecheck
+        && referenceId
+        && (
+            confidence.score < CONFIDENCE_THRESHOLDS.recheckCeiling
+            || authorityStatus === "no_match"
+            || authorityStatus === "error"
+        )
+    );
     const [isRechecking, setIsRechecking] = useState(false);
 
-    if (healthState === "action_needed" || confidence.isSuspicious || confidence.score < 35) {
+    if (healthState === "action_needed" || confidence.isSuspicious || confidence.score < CONFIDENCE_THRESHOLDS.actionNeeded) {
         badgeVariant = "destructive";
         icon = <AlertTriangle className="w-3 h-3 mr-1" />;
         bandLabel = "Needs fix";
-    } else if (healthState === "review" || confidence.score < 70 || authorityStatus === "no_match" || authorityStatus === "error") {
+    } else if (healthState === "review" || confidence.score <= CONFIDENCE_THRESHOLDS.review) {
         badgeVariant = "outline";
         icon = <AlertTriangle className="w-3 h-3 mr-1" />;
         bandLabel = "Worth reviewing";
         badgeClassName += " border-amber-500/40 text-amber-100 hover:bg-amber-500/10";
-    } else if (confidence.score >= 90) {
+    } else if (confidence.score >= CONFIDENCE_THRESHOLDS.authorityValidated) {
         badgeVariant = "default";
         icon = <CheckCircle2 className="w-3 h-3 mr-1" />;
-        bandLabel = "Authority Validated";
-    } else if (confidence.score >= 70) {
+        bandLabel = "Ready";
+    } else if (confidence.score > CONFIDENCE_THRESHOLDS.review) {
         badgeVariant = "secondary";
         bandLabel = "High confidence";
     } else {
@@ -116,29 +122,16 @@ export function ScholarPreview({ confidence, authorityData, authorityStatus, isP
                 <span>{confidence.breakdown.rules}/100</span>
             </div>
 
-            {/* Explain “not 100%” only for high scores that are capped by lack of external check. */}
-            {!authorityData && confidence.score >= 95 && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                    This score is slightly below 100% because there was no external metadata check;
-                    it reflects formatting and parsing rules only.
-                </p>
-            )}
+            <p className="mt-1 text-xs text-muted-foreground">
+                This score reflects parsing and formatting rules only. External validation status is shown separately and does not raise or lower the score.
+            </p>
 
             {authorityData && (
                 <>
-                    <div className="text-sm text-muted-foreground flex justify-between">
-                        <span>Journal Match:</span>
-                        <span>{confidence.breakdown.journal || 0}/100</span>
-                    </div>
-                    <div className="text-sm text-muted-foreground flex justify-between">
-                        <span>Fields Match:</span>
-                        <span>{confidence.breakdown.fields || 0}/100</span>
-                    </div>
-
                     <div className="mt-4 pt-4 border-t">
                         <h5 className="text-xs font-semibold mb-2 flex items-center text-primary">
                             <Link className="h-3 w-3 mr-1" />
-                            Authority Record (Semantic Scholar)
+                            External validation record
                         </h5>
                         <p className="text-xs font-medium leading-tight">
                             {authorityData.title}
@@ -164,7 +157,7 @@ export function ScholarPreview({ confidence, authorityData, authorityStatus, isP
 
             {authorityStatus && statusLabel && (
                 <div className="text-xs text-muted-foreground pt-1">
-                    {statusLabel}
+                    Validation status: {statusLabel}
                 </div>
             )}
 

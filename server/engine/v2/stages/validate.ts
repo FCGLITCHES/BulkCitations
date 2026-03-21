@@ -19,6 +19,7 @@ import {
   rawSuggestsDroppedLocator,
 } from '../qualityRules.js';
 import { OVERSIZED_CHUNK_CHARS, OVERSIZED_CHUNK_LINES } from './split.js';
+import { isGroupAuthor } from '../../shared/citationSemantics.js';
 
 const DOI_PATTERN = /^10\.\d{4,}\/\S+$/i;
 const PAGE_PATTERN = /^[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?$/;
@@ -196,11 +197,11 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
       field: 'authors',
       severity: 'info',
       code: 'alternating_surname_given_tokens',
-      message: 'Author tokens were rescued from an alternating malformed pattern.',
+      message: 'Author names were normalized from a compact alternating token pattern.',
     });
   }
 
-  if (citation.authors.value.some((author) => Boolean(author.literal) && /(group|consortium|committee)/i.test(author.literal ?? ''))) {
+  if (citation.authors.value.some((author) => Boolean(author.literal) && isGroupAuthor(author.literal ?? author.last))) {
     issues.push({
       field: 'authors',
       severity: 'info',

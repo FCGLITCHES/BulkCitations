@@ -168,8 +168,8 @@ export async function processReferences(
             // Stage 8: Confidence scoring
             let baseRulesScore = 100;
             for (const w of warnings) {
-                if (w.startsWith('error:')) baseRulesScore -= 30;
-                else if (w.startsWith('warning:')) baseRulesScore -= 15;
+                if (w.startsWith('error:')) baseRulesScore -= 20;
+                else if (w.startsWith('warning:')) baseRulesScore -= 5;
             }
             baseRulesScore = Math.max(0, baseRulesScore);
 
@@ -286,8 +286,8 @@ export function reformatReferences(
 
             let baseRulesScore = 100;
             for (const w of assertionResult.warnings) {
-                if (w.startsWith('error:')) baseRulesScore -= 30;
-                else if (w.startsWith('warning:')) baseRulesScore -= 15;
+                if (w.startsWith('error:')) baseRulesScore -= 20;
+                else if (w.startsWith('warning:')) baseRulesScore -= 5;
             }
             baseRulesScore = Math.max(0, baseRulesScore);
 

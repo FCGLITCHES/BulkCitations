@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { computeFingerprint, getTruth, saveTruth } from './truthStore.js';
 
 describe('truthStore', () => {
-  it('persists approved field-level truth metadata alongside final output', () => {
+  it('persists approved field-level truth metadata alongside final output', async () => {
     const originalText = 'Example Author. Example title. Example Journal. 2024.';
     const outputStyle = 'apa';
     const fingerprint = computeFingerprint(originalText);
 
-    saveTruth({
+    await saveTruth({
       fingerprint,
       originalText,
       outputStyle,
@@ -29,10 +29,13 @@ describe('truthStore', () => {
         convertedText: 'Broken output',
         confidence: 41,
       },
+      sourceReportId: 'report-1',
+      resolvedByVersion: '2.4.1',
     });
 
-    const truth = getTruth(originalText, outputStyle);
+    const truth = await getTruth(originalText, outputStyle);
     expect(truth).toBeTruthy();
+    expect(truth?.truthId).toBeTruthy();
     expect(truth?.correctedFields?.title).toBe('Example title');
     expect(truth?.fieldApproval?.title?.approved).toBe(true);
     expect(truth?.failureTaxonomy).toContain('title_cleanup');

@@ -281,7 +281,7 @@ export default function ReferenceInput({
       inputStyle,
       outputStyle,
       isPro,
-      enrichWithAuthority: isPro,
+      enrichWithAuthority: true,
       engineVersion,
     });
   };

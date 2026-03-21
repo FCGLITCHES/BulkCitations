@@ -15,6 +15,22 @@ type TemplateOptions = {
     footer?: string;
 };
 
+function sanitizeHeaderValue(value: string) {
+    return value.replace(/[\r\n]+/g, " ").trim();
+}
+
+function formatMailbox(name: string | undefined, email: string) {
+    const safeEmail = sanitizeHeaderValue(email);
+    const safeName = sanitizeHeaderValue(name ?? "");
+
+    if (!safeName) {
+        return safeEmail;
+    }
+
+    const quotedName = safeName.replace(/"/g, '\\"');
+    return `"${quotedName}" <${safeEmail}>`;
+}
+
 function escapeHtml(value: string) {
     return value
         .replace(/&/g, "&amp;")
@@ -287,9 +303,13 @@ async function sendEmail(params: {
     subject: string;
     html: string;
     replyTo?: string;
+    replyToName?: string;
 }): Promise<SendEmailResult> {
     const apiKey = process.env.RESEND_API_KEY;
     const fromEmail = process.env.CONTACT_EMAIL_FROM || DEFAULT_FROM_EMAIL;
+    const formattedReplyTo = params.replyTo
+        ? formatMailbox(params.replyToName, params.replyTo)
+        : undefined;
 
     if (!apiKey) {
         console.warn("[email] RESEND_API_KEY is missing. Add it to Vercel/Environment variables.");
@@ -298,13 +318,21 @@ async function sendEmail(params: {
 
     try {
         const resend = new Resend(apiKey);
-        console.log(`[email] Attempting to send from ${fromEmail} to ${params.to}...`);
+        console.log(
+            `[email] Attempting to send from ${fromEmail} to ${params.to}${formattedReplyTo ? ` with reply-to ${formattedReplyTo}` : ""}...`,
+        );
 
         const emailResult = await resend.emails.send({
             from: fromEmail,
             to: params.to,
             subject: params.subject,
-            replyTo: params.replyTo,
+            replyTo: formattedReplyTo,
+            headers: formattedReplyTo
+                ? {
+                    "Reply-To": formattedReplyTo,
+                    "X-Reply-To": formattedReplyTo,
+                }
+                : undefined,
             html: params.html,
         });
 
@@ -332,6 +360,7 @@ export async function sendContactNotification(data: {
         to: STATIC_TO_EMAIL,
         subject: `[Bulk References Contact] ${data.subject}: from ${data.name}`,
         replyTo: data.email,
+        replyToName: data.name,
         html: buildContactNotificationEmailHtml(data),
     });
 }
@@ -356,6 +385,7 @@ export async function sendWaitlistNotification(data: {
         to: STATIC_TO_EMAIL,
         subject: `[Bulk References Waitlist] ${data.persona}: ${data.email}`,
         replyTo: data.email,
+        replyToName: data.persona,
         html: buildWaitlistNotificationEmailHtml(data),
     });
 }

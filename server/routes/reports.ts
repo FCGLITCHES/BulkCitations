@@ -1,85 +1,94 @@
-/**
- * Reports Router — Community failure reporting + admin review API
- *
- * Public endpoints:
- *   POST /api/reports          — Submit a user failure report
- *
- * Admin endpoints:
- *   GET  /api/reports          — List all reports (with optional status filter)
- *   GET  /api/reports/grouped  — Grouped failures sorted by frequency
- *   GET  /api/reports/:id      — Single report detail
- *   PATCH /api/reports/:id     — Update report fields (status, fixType, proposedPattern, etc.)
- *   POST /api/reports/:id/accept    — Accept fix → write pattern + mark accepted
- *   POST /api/reports/:id/reject    — Mark rejected with reason
- *   POST /api/reports/:id/duplicate — Mark as duplicate
- *   POST /api/reports/:id/add-to-stress — Add raw input to stress test corpus
- */
-
-import { Router } from "express";
-import { randomUUID } from "crypto";
+import { Router } from 'express';
+import { randomUUID } from 'node:crypto';
 import type {
-  CitationReport,
-  ReportStatus,
-  FailureCategory,
-  FixType,
   ApprovedCanonicalFields,
+  CitationReport,
+  FailureCategory,
   FieldApprovalMap,
-} from "@shared/schema";
+  FixType,
+  ProposedPattern,
+  ReportEngineSnapshot,
+  ReportStatus,
+} from '@shared/schema';
 import {
-  saveReport,
-  loadReports,
-  updateReport,
-  getReportById,
-  getGroupedReports,
   addToStressTest,
-  computeFingerprint,
-  hashIP,
+  appendReviewEvent,
   checkRateLimit,
-} from "../store/reportStore.js";
-import { saveTruth } from "../store/truthStore.js";
-import { writePattern } from "../utils/patternWriter.js";
-import { requireAdmin } from "../utils/adminAuth.js";
-
-// ── Validation constants ──
+  computeFingerprint,
+  getGroupedReports,
+  getReportById,
+  hashIP,
+  loadReports,
+  saveReport,
+  updateReport,
+} from '../store/reportStore.js';
+import { saveGeneratedRegressionFixture } from '../store/generatedRegressionStore.js';
+import { saveTruth } from '../store/truthStore.js';
+import { requireAdmin } from '../utils/adminAuth.js';
+import { readPatterns, validatePattern, writePattern } from '../utils/patternWriter.js';
+import {
+  buildGeneratedRegressionRecord,
+  buildPatternExportArtifact,
+  buildResolutionTrace,
+  computeLikelyStageBlame,
+  createReviewEvent,
+} from '../utils/reportWorkflow.js';
 
 const VALID_CATEGORIES: FailureCategory[] = [
-  "author",
-  "style-detection",
-  "reference-type",
-  "venue",
-  "locator",
-  "title",
-  "year",
-  "other",
+  'author',
+  'style-detection',
+  'reference-type',
+  'venue',
+  'locator',
+  'title',
+  'year',
+  'dedup',
+  'validation',
+  'normalization',
+  'other',
 ];
 
-/** Backward-compatible: map old category strings to new enum */
 const LEGACY_CATEGORY_MAP: Record<string, FailureCategory> = {
-  "Year missing or incorrect": "year",
-  "Author name incorrect": "author",
-  "Title missing or incorrect": "title",
-  "Journal / venue incorrect": "venue",
-  "Pages missing or incorrect": "locator",
-  "Wrong citation style detected": "style-detection",
-  "Other...": "other",
+  'Year missing or incorrect': 'year',
+  'Author name incorrect': 'author',
+  'Title missing or incorrect': 'title',
+  'Journal / venue incorrect': 'venue',
+  'Pages missing or incorrect': 'locator',
+  'Wrong citation style detected': 'style-detection',
+  'Other...': 'other',
 };
 
-const VALID_STATUSES: ReportStatus[] = ["pending", "proposed", "accepted", "rejected", "duplicate"];
-
-const VALID_FIX_TYPES: FixType[] = ["dynamic-pattern", "parser-logic", "scoring-tweak", "renderer-fix", "type-correction", "other-fix"];
-
-// ── Router ──
+const VALID_STATUSES: ReportStatus[] = ['pending', 'proposed', 'accepted', 'rejected', 'duplicate'];
+const VALID_FIX_TYPES: FixType[] = ['dynamic-pattern', 'parser-logic', 'scoring-tweak', 'renderer-fix', 'type-correction', 'other-fix'];
 
 const router: Router = Router();
 
-/**
- * POST /api/reports — User submission
- * Accepts both old-format fields (rawInput, userCategory) and new-format fields.
- */
-router.post("/", (req, res) => {
+function normalizeCategory(value: string): FailureCategory | null {
+  if (VALID_CATEGORIES.includes(value as FailureCategory)) {
+    return value as FailureCategory;
+  }
+  return LEGACY_CATEGORY_MAP[value] ?? null;
+}
+
+function actorName(value: unknown, fallback = 'admin'): string {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : fallback;
+}
+
+function parsePatternExport(pattern?: ProposedPattern, generatedBy?: string) {
+  if (!pattern) return undefined;
+  if (!pattern.id || !pattern.regex || !pattern.fields || Object.keys(pattern.fields).length === 0) {
+    return undefined;
+  }
+  const validationError = validatePattern(pattern);
+  if (validationError) {
+    return { error: validationError };
+  }
+  return { artifact: buildPatternExportArtifact(pattern, generatedBy) };
+}
+
+router.post('/', async (req, res) => {
   try {
     const body = req.body as {
-      // New fields
       originalText?: string;
       detectedStyle?: string;
       outputStyle?: string;
@@ -90,8 +99,8 @@ router.post("/", (req, res) => {
       parsedData?: any;
       referenceType?: string;
       confidence?: number;
-      originalEngineOutput?: CitationReport["originalEngineOutput"];
-      // Legacy fields (backward compat)
+      originalEngineOutput?: CitationReport['originalEngineOutput'];
+      engineSnapshot?: ReportEngineSnapshot;
       rawInput?: string;
       detectedInputStyle?: string;
       targetStyle?: string;
@@ -99,35 +108,24 @@ router.post("/", (req, res) => {
       userCategory?: string;
     };
 
-    // Normalize: accept both old and new field names
-    const originalText = (body.originalText || body.rawInput || "").trim();
-    const detectedStyle = (body.detectedStyle || body.detectedInputStyle || "").trim();
-    const outputStyle = (body.outputStyle || body.targetStyle || "").trim();
-    const convertedText = (body.convertedText || body.convertedOutput || "").trim();
-    const rawCategory = body.failureCategory || body.userCategory || "";
+    const originalText = (body.originalText || body.rawInput || '').trim();
+    const detectedStyle = (body.detectedStyle || body.detectedInputStyle || '').trim();
+    const outputStyle = (body.outputStyle || body.targetStyle || '').trim();
+    const convertedText = (body.convertedText || body.convertedOutput || '').trim();
+    const rawCategory = body.failureCategory || body.userCategory || '';
     const rawCategories = Array.isArray(body.failureCategories)
-      ? body.failureCategories.filter((value): value is string => typeof value === "string")
+      ? body.failureCategories.filter((value): value is string => typeof value === 'string')
       : [];
-    const userNote = body.userNote;
 
-    // Validate required fields
     if (!originalText) {
-      return res.status(400).json({ message: "originalText (or rawInput) is required" });
+      return res.status(400).json({ message: 'originalText (or rawInput) is required' });
     }
     if (!convertedText) {
-      return res.status(400).json({ message: "convertedText (or convertedOutput) is required" });
+      return res.status(400).json({ message: 'convertedText (or convertedOutput) is required' });
     }
-
-    // Map category
-    const normalizeCategory = (value: string): FailureCategory | null => {
-      if (VALID_CATEGORIES.includes(value as FailureCategory)) {
-        return value as FailureCategory;
-      }
-      if (LEGACY_CATEGORY_MAP[value]) {
-        return LEGACY_CATEGORY_MAP[value];
-      }
-      return null;
-    };
+    if (body.userNote != null && (typeof body.userNote !== 'string' || body.userNote.length > 500)) {
+      return res.status(400).json({ message: 'userNote must be a string with max 500 characters' });
+    }
 
     const normalizedFailureCategories = Array.from(new Set(
       rawCategories
@@ -135,38 +133,27 @@ router.post("/", (req, res) => {
         .filter((value): value is FailureCategory => Boolean(value)),
     ));
 
-    let failureCategory = normalizeCategory(rawCategory)
+    const failureCategory = normalizeCategory(rawCategory)
       ?? normalizedFailureCategories[0]
-      ?? "other";
+      ?? 'other';
+    const failureCategories = Array.from(new Set([failureCategory, ...normalizedFailureCategories]));
 
-    const failureCategories = Array.from(new Set([
-      failureCategory,
-      ...normalizedFailureCategories,
-    ]));
-
-    // Validate user note length
-    if (userNote != null && (typeof userNote !== "string" || userNote.length > 500)) {
-      return res.status(400).json({ message: "userNote must be a string with max 500 characters" });
-    }
-
-    // Rate limiting
-    const clientIP = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim()
+    const clientIP = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
       || req.socket.remoteAddress
-      || "unknown";
+      || 'unknown';
     const ipHashed = hashIP(clientIP);
     const rateCheck = checkRateLimit(ipHashed);
     if (!rateCheck.allowed) {
       return res.status(429).json({
-        message: "Rate limit exceeded. Maximum 10 reports per day.",
+        message: 'Rate limit exceeded. Maximum 10 reports per day.',
         remaining: 0,
       });
     }
 
-    const fingerprint = computeFingerprint(originalText);
-
+    const engineSnapshot = body.engineSnapshot;
     const report: CitationReport = {
       id: randomUUID(),
-      source: "user",
+      source: 'user',
       originalText,
       detectedStyle,
       outputStyle,
@@ -176,10 +163,10 @@ router.post("/", (req, res) => {
       confidence: body.confidence,
       failureCategory,
       failureCategories,
-      userNote: userNote?.trim() || undefined,
-      status: "pending",
+      userNote: body.userNote?.trim() || undefined,
+      status: 'pending',
       createdAt: new Date().toISOString(),
-      fingerprint,
+      fingerprint: computeFingerprint(originalText),
       reportCount: 1,
       ipHash: ipHashed,
       originalEngineOutput: body.originalEngineOutput ?? {
@@ -188,81 +175,72 @@ router.post("/", (req, res) => {
         referenceType: body.referenceType as any,
         confidence: body.confidence,
       },
+      engineSnapshot,
+      likelyStageBlame: computeLikelyStageBlame(engineSnapshot),
+      reviewEvents: [
+        createReviewEvent('comment', 'system', 'Report submitted', {
+          source: 'user',
+        }),
+      ],
     };
 
-    const saved = saveReport(report);
-
+    const saved = await saveReport(report);
     return res.json({
       success: true,
       id: saved.id,
-      deduplicated: saved.id !== report.id, // true if merged into existing
+      deduplicated: saved.id !== report.id,
       remaining: rateCheck.remaining,
     });
-  } catch (err) {
-    console.error("POST /api/reports error:", err instanceof Error ? err.message : String(err));
-    return res.status(500).json({ message: "Failed to save report" });
+  } catch (error) {
+    console.error('POST /api/reports error:', error instanceof Error ? error.message : String(error));
+    return res.status(500).json({ message: 'Failed to save report' });
   }
 });
 
 router.use(requireAdmin);
 
-/**
- * GET /api/reports — List all reports
- * Query params: ?status=pending&source=user
- */
-router.get("/", (_req, res) => {
+router.get('/', async (req, res) => {
   try {
-    let reports = loadReports();
-    const { status, source } = _req.query;
-    if (status && typeof status === "string") {
-      reports = reports.filter((r) => r.status === status);
+    let reports = await loadReports();
+    const { status, source } = req.query;
+    if (status && typeof status === 'string') {
+      reports = reports.filter((report) => report.status === status);
     }
-    if (source && typeof source === "string") {
-      reports = reports.filter((r) => r.source === source);
+    if (source && typeof source === 'string') {
+      reports = reports.filter((report) => report.source === source);
     }
     return res.json(reports);
-  } catch (err) {
-    console.error("GET /api/reports error:", err instanceof Error ? err.message : String(err));
-    return res.status(500).json({ message: "Failed to load reports" });
+  } catch (error) {
+    console.error('GET /api/reports error:', error instanceof Error ? error.message : String(error));
+    return res.status(500).json({ message: 'Failed to load reports' });
   }
 });
 
-/**
- * GET /api/reports/grouped — Grouped failures sorted by frequency
- * Query params: ?status=pending
- */
-router.get("/grouped", (_req, res) => {
+router.get('/grouped', async (req, res) => {
   try {
-    const status = _req.query.status as ReportStatus | undefined;
-    const groups = getGroupedReports(
-      status && VALID_STATUSES.includes(status) ? status : undefined
+    const status = req.query.status as ReportStatus | undefined;
+    const groups = await getGroupedReports(
+      status && VALID_STATUSES.includes(status) ? status : undefined,
     );
     return res.json(groups);
-  } catch (err) {
-    console.error("GET /api/reports/grouped error:", err instanceof Error ? err.message : String(err));
-    return res.status(500).json({ message: "Failed to load grouped reports" });
+  } catch (error) {
+    console.error('GET /api/reports/grouped error:', error instanceof Error ? error.message : String(error));
+    return res.status(500).json({ message: 'Failed to load grouped reports' });
   }
 });
 
-/**
- * GET /api/reports/:id — Single report
- */
-router.get("/:id", (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const report = getReportById(req.params.id);
-    if (!report) return res.status(404).json({ message: "Report not found" });
+    const report = await getReportById(req.params.id);
+    if (!report) return res.status(404).json({ message: 'Report not found' });
     return res.json(report);
-  } catch (err) {
-    console.error("GET /api/reports/:id error:", err instanceof Error ? err.message : String(err));
-    return res.status(500).json({ message: "Failed to load report" });
+  } catch (error) {
+    console.error('GET /api/reports/:id error:', error instanceof Error ? error.message : String(error));
+    return res.status(500).json({ message: 'Failed to load report' });
   }
 });
 
-/**
- * PATCH /api/reports/:id — Update report fields
- * Body can include: status, fixType, proposedPattern, proposedStyleFix, verifiedBy
- */
-router.patch("/:id", (req, res) => {
+router.patch('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -273,238 +251,340 @@ router.patch("/:id", (req, res) => {
       verifiedBy,
       failureCategory,
       referenceType,
+      assigneeName,
     } = req.body as Partial<CitationReport>;
 
     const updates: Partial<CitationReport> = {};
-
     if (status) {
       if (!VALID_STATUSES.includes(status)) {
-        return res.status(400).json({ message: `status must be one of: ${VALID_STATUSES.join(", ")}` });
+        return res.status(400).json({ message: `status must be one of: ${VALID_STATUSES.join(', ')}` });
       }
       updates.status = status;
-      if (status === "accepted" || status === "rejected") {
+      if (status === 'accepted' || status === 'rejected') {
         updates.resolvedAt = new Date().toISOString();
       }
     }
-
     if (fixType) {
       if (!VALID_FIX_TYPES.includes(fixType)) {
-        return res.status(400).json({ message: `fixType must be one of: ${VALID_FIX_TYPES.join(", ")}` });
+        return res.status(400).json({ message: `fixType must be one of: ${VALID_FIX_TYPES.join(', ')}` });
       }
       updates.fixType = fixType;
     }
-
     if (proposedPattern !== undefined) updates.proposedPattern = proposedPattern;
     if (proposedStyleFix !== undefined) updates.proposedStyleFix = proposedStyleFix;
     if (verifiedBy !== undefined) updates.verifiedBy = verifiedBy;
+    if (assigneeName !== undefined) updates.assigneeName = assigneeName;
     if (failureCategory && VALID_CATEGORIES.includes(failureCategory)) {
       updates.failureCategory = failureCategory;
     }
     if (referenceType) updates.referenceType = referenceType;
 
-    if (Object.keys(updates).length === 0) {
-      return res.status(400).json({ message: "No valid fields to update" });
-    }
-
-    const updated = updateReport(id, updates);
-    if (!updated) return res.status(404).json({ message: "Report not found" });
-
+    const updated = await updateReport(id, updates);
+    if (!updated) return res.status(404).json({ message: 'Report not found' });
     return res.json({ success: true, report: updated });
-  } catch (err) {
-    console.error("PATCH /api/reports/:id error:", err instanceof Error ? err.message : String(err));
-    return res.status(500).json({ message: "Failed to update report" });
+  } catch (error) {
+    console.error('PATCH /api/reports/:id error:', error instanceof Error ? error.message : String(error));
+    return res.status(500).json({ message: 'Failed to update report' });
   }
 });
 
-/**
- * POST /api/reports/:id/accept — Accept a fix
- * If fixType is "dynamic-pattern" and proposedPattern exists, writes to patterns.json.
- * Otherwise just marks as accepted (code changes handled manually).
- */
-router.post("/:id/accept", (req, res) => {
+router.post('/:id/assign', async (req, res) => {
   try {
-    const { id } = req.params;
-    const report = getReportById(id);
-    if (!report) return res.status(404).json({ message: "Report not found" });
+    const report = await getReportById(req.params.id);
+    if (!report) return res.status(404).json({ message: 'Report not found' });
 
-    // If dynamic-pattern fix, write the pattern
-    if (report.fixType === "dynamic-pattern" && report.proposedPattern) {
-      const result = writePattern(report.proposedPattern);
-      if (!result.success) {
-        return res.status(400).json({
-          message: `Pattern write failed: ${result.error}`,
-          patternError: true,
-        });
+    const assigneeName = actorName(req.body?.assigneeName, 'admin');
+    const updated = await updateReport(report.id, { assigneeName });
+    if (!updated) return res.status(404).json({ message: 'Report not found' });
+
+    const event = createReviewEvent('assign', actorName(req.body?.actor, assigneeName), `Assigned to ${assigneeName}`, {
+      assigneeName,
+    });
+    const withEvent = await appendReviewEvent(report.id, event);
+    return res.json({ success: true, report: withEvent ?? updated });
+  } catch (error) {
+    console.error('POST /api/reports/:id/assign error:', error instanceof Error ? error.message : String(error));
+    return res.status(500).json({ message: 'Failed to assign report' });
+  }
+});
+
+router.post('/:id/comments', async (req, res) => {
+  try {
+    const report = await getReportById(req.params.id);
+    if (!report) return res.status(404).json({ message: 'Report not found' });
+    const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
+    if (!message) {
+      return res.status(400).json({ message: 'message is required' });
+    }
+
+    const event = createReviewEvent('comment', actorName(req.body?.actor, 'admin'), message);
+    const updated = await appendReviewEvent(report.id, event);
+    return res.json({ success: true, report: updated });
+  } catch (error) {
+    console.error('POST /api/reports/:id/comments error:', error instanceof Error ? error.message : String(error));
+    return res.status(500).json({ message: 'Failed to add comment' });
+  }
+});
+
+router.post('/:id/accept', async (req, res) => {
+  try {
+    const report = await getReportById(req.params.id);
+    if (!report) return res.status(404).json({ message: 'Report not found' });
+
+    const verifiedBy = actorName(req.body?.verifiedBy, 'admin');
+    const writePatternDirectly = req.body?.writePatternDirectly === true;
+    let patternWritten = false;
+    let patternExport = report.patternExport;
+
+    if ((req.body?.fixType || report.fixType) === 'dynamic-pattern' && report.proposedPattern) {
+      const exportResult = parsePatternExport(report.proposedPattern, verifiedBy);
+      if (exportResult?.error) {
+        return res.status(400).json({ message: exportResult.error, patternError: true });
+      }
+      patternExport = exportResult?.artifact;
+
+      if (writePatternDirectly) {
+        const result = writePattern(report.proposedPattern);
+        if (!result.success) {
+          return res.status(400).json({ message: `Pattern write failed: ${result.error}`, patternError: true });
+        }
+        patternWritten = true;
       }
     }
 
-    const updated = updateReport(id, {
-      status: "accepted",
+    const updated = await updateReport(report.id, {
+      status: 'accepted',
       resolvedAt: new Date().toISOString(),
-      verifiedBy: req.body.verifiedBy || "admin",
-      referenceType: req.body.referenceType || report.referenceType,
-      fixType: req.body.fixType || report.fixType,
+      verifiedBy,
+      fixType: (req.body?.fixType || report.fixType) as FixType | undefined,
+      referenceType: req.body?.referenceType || report.referenceType,
+      patternExport,
     });
+    if (!updated) return res.status(404).json({ message: 'Report not found' });
 
-    // Also add to stress test corpus
+    const withEvent = await appendReviewEvent(updated.id, createReviewEvent(
+      'resolve',
+      verifiedBy,
+      'Accepted report',
+      { patternWritten },
+    ));
+
     if (report.originalText) {
       try { addToStressTest(report.originalText); } catch { /* non-fatal */ }
     }
 
     return res.json({
       success: true,
-      report: updated,
-      patternWritten: report.fixType === "dynamic-pattern" && !!report.proposedPattern,
+      report: withEvent ?? updated,
+      patternWritten,
     });
-  } catch (err) {
-    console.error("POST /api/reports/:id/accept error:", err instanceof Error ? err.message : String(err));
-    return res.status(500).json({ message: "Failed to accept report" });
+  } catch (error) {
+    console.error('POST /api/reports/:id/accept error:', error instanceof Error ? error.message : String(error));
+    return res.status(500).json({ message: 'Failed to accept report' });
   }
 });
 
-/**
- * POST /api/reports/:id/resolve — Master Resolution (handles everything: Type, Pattern, Truth)
- */
-router.post("/:id/resolve", (req, res) => {
+router.post('/:id/resolve', async (req, res) => {
   try {
-    const { id } = req.params;
-    const { 
-        fixType, 
-        referenceType, 
-        proposedPattern, 
-        proposedStyleFix, 
-        verifiedBy,
-        saveAsTruth,
+    const report = await getReportById(req.params.id);
+    if (!report) return res.status(404).json({ message: 'Report not found' });
+
+    const verifiedBy = actorName(req.body?.verifiedBy, 'admin');
+    const fixType = req.body?.fixType as FixType | undefined;
+    if (fixType && !VALID_FIX_TYPES.includes(fixType)) {
+      return res.status(400).json({ message: `fixType must be one of: ${VALID_FIX_TYPES.join(', ')}` });
+    }
+
+    const proposedPattern = req.body?.proposedPattern as ProposedPattern | undefined;
+    const proposedStyleFix = typeof req.body?.proposedStyleFix === 'string'
+      ? req.body.proposedStyleFix.trim()
+      : '';
+    const correctedFields = req.body?.correctedFields as ApprovedCanonicalFields | undefined;
+    const fieldApproval = req.body?.fieldApproval as FieldApprovalMap | undefined;
+    const failureTaxonomy = Array.isArray(req.body?.failureTaxonomy) ? req.body.failureTaxonomy.filter(Boolean) : undefined;
+    const stageBlame = Array.isArray(req.body?.stageBlame) ? req.body.stageBlame.filter(Boolean) : undefined;
+    const duplicateDecision = req.body?.duplicateDecision as CitationReport['duplicateDecision'] | undefined;
+    const saveAsTruth = req.body?.saveAsTruth === true;
+    const writePatternDirectly = req.body?.writePatternDirectly === true;
+    const resolvedByCommit = typeof req.body?.resolvedByCommit === 'string' ? req.body.resolvedByCommit.trim() : process.env.GIT_COMMIT_SHA;
+    const resolvedByVersion = typeof req.body?.resolvedByVersion === 'string' ? req.body.resolvedByVersion.trim() : (process.env.APP_VERSION ?? process.env.npm_package_version);
+
+    let patternExport = report.patternExport;
+    let patternWritten = false;
+    if (fixType === 'dynamic-pattern' && proposedPattern) {
+      const exportResult = parsePatternExport(proposedPattern, verifiedBy);
+      if (exportResult?.error) {
+        return res.status(400).json({ message: exportResult.error, patternError: true });
+      }
+      patternExport = exportResult?.artifact;
+      if (writePatternDirectly) {
+        const result = writePattern(proposedPattern);
+        if (!result.success) {
+          return res.status(400).json({ message: `Pattern write failed: ${result.error}`, patternError: true });
+        }
+        patternWritten = true;
+      }
+    }
+
+    let truthId = report.truthId;
+    if (saveAsTruth && proposedStyleFix) {
+      const truthEntry = await saveTruth({
+        fingerprint: computeFingerprint(report.originalText),
+        originalText: report.originalText,
+        outputStyle: report.outputStyle,
+        validatedOutput: proposedStyleFix,
+        validatedBy: verifiedBy,
         correctedFields,
         fieldApproval,
         failureTaxonomy,
         stageBlame,
-        duplicateDecision
-    } = req.body as Partial<CitationReport> & {
-      saveAsTruth?: boolean;
-      correctedFields?: ApprovedCanonicalFields;
-      fieldApproval?: FieldApprovalMap;
-      failureTaxonomy?: string[];
-      stageBlame?: string[];
-      duplicateDecision?: CitationReport["duplicateDecision"];
-    };
-    
-    const report = getReportById(id);
-    if (!report) return res.status(404).json({ message: "Report not found" });
-
-    const updates: Partial<CitationReport> = {
-        status: "accepted",
-        resolvedAt: new Date().toISOString(),
-        verifiedBy: verifiedBy || "admin"
-    };
-
-    // 1. Handle Reference Type / Category Fix
-    if (referenceType) updates.referenceType = referenceType;
-    if (fixType) updates.fixType = fixType;
-    if (correctedFields) updates.correctedFields = correctedFields;
-    if (fieldApproval) updates.fieldApproval = fieldApproval;
-    if (failureTaxonomy) updates.failureTaxonomy = failureTaxonomy.filter(Boolean);
-    if (stageBlame) updates.stageBlame = stageBlame.filter(Boolean);
-    if (duplicateDecision) updates.duplicateDecision = duplicateDecision;
-
-    // 2. Handle Dynamic Pattern Writing
-    if (fixType === "dynamic-pattern" && proposedPattern) {
-      const result = writePattern(proposedPattern);
-      if (!result.success) {
-        return res.status(400).json({ message: `Pattern write failed: ${result.error}`, patternError: true });
-      }
-      updates.proposedPattern = proposedPattern;
+        duplicateDecision,
+        originalEngineOutput: report.originalEngineOutput ?? {
+          convertedText: report.convertedText,
+          parsedData: report.parsedData,
+          referenceType: report.referenceType,
+          confidence: report.confidence,
+        },
+        sourceReportId: report.id,
+        resolvedByCommit,
+        resolvedByVersion,
+      });
+      truthId = truthEntry.truthId;
     }
 
-    // 3. Handle Style Fix / Truth Store
-    if (proposedStyleFix) {
-        updates.proposedStyleFix = proposedStyleFix;
-        if (saveAsTruth) {
-            saveTruth({
-                fingerprint: computeFingerprint(report.originalText),
-                originalText: report.originalText,
-                outputStyle: report.outputStyle,
-                validatedOutput: proposedStyleFix,
-                validatedBy: verifiedBy || "admin",
-                correctedFields,
-                fieldApproval,
-                failureTaxonomy: failureTaxonomy?.filter(Boolean),
-                stageBlame: stageBlame?.filter(Boolean),
-                duplicateDecision,
-                originalEngineOutput: report.originalEngineOutput ?? {
-                  convertedText: report.convertedText,
-                  parsedData: report.parsedData,
-                  referenceType: report.referenceType,
-                  confidence: report.confidence,
-                },
-            });
-        }
+    const baseUpdated: CitationReport = {
+      ...report,
+      status: 'accepted',
+      resolvedAt: new Date().toISOString(),
+      verifiedBy,
+      fixType: fixType ?? report.fixType,
+      referenceType: req.body?.referenceType || report.referenceType,
+      proposedPattern: proposedPattern ?? report.proposedPattern,
+      proposedStyleFix: proposedStyleFix || report.proposedStyleFix,
+      correctedFields: correctedFields ?? report.correctedFields,
+      fieldApproval: fieldApproval ?? report.fieldApproval,
+      failureTaxonomy: failureTaxonomy ?? report.failureTaxonomy,
+      stageBlame: stageBlame ?? report.stageBlame,
+      duplicateDecision: duplicateDecision ?? report.duplicateDecision,
+      finalApprovedOutput: proposedStyleFix || report.finalApprovedOutput || report.proposedStyleFix || report.convertedText,
+      truthId,
+      patternExport,
+      resolvedByCommit,
+      resolvedByVersion,
+      resolutionTrace: buildResolutionTrace({
+        ...report,
+        resolvedByCommit,
+        resolvedByVersion,
+      }, verifiedBy, typeof req.body?.resolutionNote === 'string' ? req.body.resolutionNote : undefined),
+    };
+
+    const generatedRegression = buildGeneratedRegressionRecord(baseUpdated, verifiedBy);
+    const savedGeneratedRegression = await saveGeneratedRegressionFixture(generatedRegression);
+    baseUpdated.regressionFixtureId = savedGeneratedRegression.id;
+
+    const updated = await updateReport(report.id, baseUpdated);
+    if (!updated) return res.status(404).json({ message: 'Report not found' });
+
+    const reviewEvents = [
+      createReviewEvent('resolve', verifiedBy, 'Resolved report', {
+        fixType: baseUpdated.fixType,
+        truthId,
+        regressionFixtureId: savedGeneratedRegression.id,
+        patternWritten,
+      }),
+      ...(truthId ? [createReviewEvent('truth_saved', verifiedBy, 'Saved approved truth', { truthId })] : []),
+      ...(patternExport ? [createReviewEvent('pattern_exported', verifiedBy, 'Generated pattern export artifact', { filePath: patternExport.filePath, patternWritten })] : []),
+      [createReviewEvent(
+        'regression_generated',
+        verifiedBy,
+        savedGeneratedRegression.skipped ? 'Skipped generated regression fixture' : 'Generated regression fixture',
+        savedGeneratedRegression.skipped
+          ? { skipReason: savedGeneratedRegression.skipReason }
+          : { regressionFixtureId: savedGeneratedRegression.id },
+      )],
+    ].flat();
+
+    let latest = updated;
+    for (const event of reviewEvents) {
+      latest = (await appendReviewEvent(report.id, event)) ?? latest;
     }
 
-    // 4. Final Updates & Add to Stress Test
-    const updated = updateReport(id, updates);
     if (report.originalText) {
-        try { addToStressTest(report.originalText); } catch { /* non-fatal */ }
+      try { addToStressTest(report.originalText); } catch { /* non-fatal */ }
     }
 
-    return res.json({ success: true, report: updated });
-  } catch (err) {
-    console.error("POST /api/reports/:id/resolve error:", err instanceof Error ? err.message : String(err));
-    return res.status(500).json({ message: "Failed to resolve report" });
-  }
-});
-router.post("/:id/reject", (req, res) => {
-  try {
-    const { id } = req.params;
-    const { reason } = req.body as { reason?: string };
-
-    const updates: Partial<CitationReport> = {
-      status: "rejected",
-      resolvedAt: new Date().toISOString(),
-    };
-    if (reason) {
-      updates.proposedStyleFix = `Rejected: ${reason}`;
-    }
-
-    const updated = updateReport(id, updates);
-    if (!updated) return res.status(404).json({ message: "Report not found" });
-
-    return res.json({ success: true });
-  } catch (err) {
-    console.error("POST /api/reports/:id/reject error:", err instanceof Error ? err.message : String(err));
-    return res.status(500).json({ message: "Failed to reject report" });
-  }
-});
-
-/**
- * POST /api/reports/:id/duplicate — Mark as duplicate
- */
-router.post("/:id/duplicate", (req, res) => {
-  try {
-    const updated = updateReport(req.params.id, {
-      status: "duplicate",
-      resolvedAt: new Date().toISOString(),
+    return res.json({
+      success: true,
+      report: latest,
+      patternWritten,
+      generatedRegression: savedGeneratedRegression,
     });
-    if (!updated) return res.status(404).json({ message: "Report not found" });
-    return res.json({ success: true });
-  } catch (err) {
-    console.error("POST /api/reports/:id/duplicate error:", err instanceof Error ? err.message : String(err));
-    return res.status(500).json({ message: "Failed to mark as duplicate" });
+  } catch (error) {
+    console.error('POST /api/reports/:id/resolve error:', error instanceof Error ? error.message : String(error));
+    return res.status(500).json({ message: 'Failed to resolve report' });
   }
 });
 
-/**
- * POST /api/reports/:id/add-to-stress — Add to stress test corpus
- */
-router.post("/:id/add-to-stress", (req, res) => {
+router.post('/:id/reject', async (req, res) => {
   try {
-    const report = getReportById(req.params.id);
-    if (!report) return res.status(404).json({ message: "Report not found" });
+    const report = await getReportById(req.params.id);
+    if (!report) return res.status(404).json({ message: 'Report not found' });
+
+    const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : undefined;
+    const updated = await updateReport(report.id, {
+      status: 'rejected',
+      resolvedAt: new Date().toISOString(),
+      proposedStyleFix: reason ? `Rejected: ${reason}` : report.proposedStyleFix,
+      resolutionTrace: buildResolutionTrace(report, actorName(req.body?.actor, 'admin'), reason),
+    });
+    if (!updated) return res.status(404).json({ message: 'Report not found' });
+
+    const withEvent = await appendReviewEvent(report.id, createReviewEvent(
+      'reject',
+      actorName(req.body?.actor, 'admin'),
+      reason || 'Rejected report',
+    ));
+
+    return res.json({ success: true, report: withEvent ?? updated });
+  } catch (error) {
+    console.error('POST /api/reports/:id/reject error:', error instanceof Error ? error.message : String(error));
+    return res.status(500).json({ message: 'Failed to reject report' });
+  }
+});
+
+router.post('/:id/duplicate', async (req, res) => {
+  try {
+    const report = await getReportById(req.params.id);
+    if (!report) return res.status(404).json({ message: 'Report not found' });
+    const updated = await updateReport(report.id, {
+      status: 'duplicate',
+      resolvedAt: new Date().toISOString(),
+      resolutionTrace: buildResolutionTrace(report, actorName(req.body?.actor, 'admin'), 'Marked as duplicate'),
+    });
+    if (!updated) return res.status(404).json({ message: 'Report not found' });
+
+    const withEvent = await appendReviewEvent(report.id, createReviewEvent(
+      'duplicate',
+      actorName(req.body?.actor, 'admin'),
+      'Marked as duplicate',
+    ));
+
+    return res.json({ success: true, report: withEvent ?? updated });
+  } catch (error) {
+    console.error('POST /api/reports/:id/duplicate error:', error instanceof Error ? error.message : String(error));
+    return res.status(500).json({ message: 'Failed to mark as duplicate' });
+  }
+});
+
+router.post('/:id/add-to-stress', async (req, res) => {
+  try {
+    const report = await getReportById(req.params.id);
+    if (!report) return res.status(404).json({ message: 'Report not found' });
     addToStressTest(report.originalText);
     return res.json({ success: true });
-  } catch (err) {
-    console.error("POST /api/reports/:id/add-to-stress error:", err instanceof Error ? err.message : String(err));
-    return res.status(500).json({ message: "Failed to add to stress test" });
+  } catch (error) {
+    console.error('POST /api/reports/:id/add-to-stress error:', error instanceof Error ? error.message : String(error));
+    return res.status(500).json({ message: 'Failed to add to stress test' });
   }
 });
 

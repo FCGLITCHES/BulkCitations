@@ -7,6 +7,10 @@ import {
   Bot,
   Filter,
   Edit,
+  AlertCircle,
+  GitBranch,
+  MessageSquare,
+  ShieldCheck,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
@@ -42,6 +46,31 @@ interface GroupedReport {
 
 type SortKey = "freq" | "category" | "source" | "targetStyle";
 type SortDirection = "asc" | "desc";
+
+function StageBadge({ report }: { report: CitationReport }) {
+  const blame = report.likelyStageBlame;
+  if (!blame) {
+    return (
+      <Badge variant="outline" className="text-[10px]">
+        Unknown
+      </Badge>
+    );
+  }
+
+  const variant =
+    blame.confidence >= 0.8
+      ? "default"
+      : blame.confidence >= 0.5
+        ? "secondary"
+        : "outline";
+
+  return (
+    <Badge variant={variant} className="text-[10px] uppercase">
+      {blame.likelyStage}
+      <span className="ml-1 opacity-70">{Math.round(blame.confidence * 100)}%</span>
+    </Badge>
+  );
+}
 
 export default function AdminReportQueue() {
   const [statusFilter, setStatusFilter] = useState<ReportStatus>("pending");
@@ -196,23 +225,25 @@ export default function AdminReportQueue() {
                 <TableHead>
                   <SortHeader label="Source" value="source" />
                 </TableHead>
-                <TableHead>Original Citation</TableHead>
-                <TableHead>
-                  <SortHeader label="Target Style" value="targetStyle" />
-                </TableHead>
-                <TableHead className="text-right">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+              <TableHead>Original Citation</TableHead>
+              <TableHead>
+                <SortHeader label="Target Style" value="targetStyle" />
+              </TableHead>
+              <TableHead>Stage</TableHead>
+              <TableHead>Workflow</TableHead>
+              <TableHead className="text-right">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
                     Loading failure queue...
                   </TableCell>
                 </TableRow>
               ) : groups?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
                     No reports found for this filter.
                   </TableCell>
                 </TableRow>
@@ -252,6 +283,46 @@ export default function AdminReportQueue() {
                           <Badge variant="outline" className="uppercase text-[10px]">
                             {latest.outputStyle}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <StageBadge report={latest} />
+                            {latest.likelyStageBlame && latest.likelyStageBlame.confidence < 0.5 && (
+                              <span className="text-[10px] text-muted-foreground">uncertain</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {latest.assigneeName ? (
+                              <Badge variant="secondary" className="text-[10px]">
+                                <GitBranch className="mr-1 h-3 w-3" />
+                                {latest.assigneeName}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px]">
+                                Unassigned
+                              </Badge>
+                            )}
+                            {latest.truthId && (
+                              <Badge variant="outline" className="text-[10px]">
+                                <ShieldCheck className="mr-1 h-3 w-3" />
+                                Truth
+                              </Badge>
+                            )}
+                            {latest.regressionFixtureId && (
+                              <Badge variant="outline" className="text-[10px]">
+                                <AlertCircle className="mr-1 h-3 w-3" />
+                                Regression
+                              </Badge>
+                            )}
+                            {!!latest.reviewEvents?.length && (
+                              <Badge variant="outline" className="text-[10px]">
+                                <MessageSquare className="mr-1 h-3 w-3" />
+                                {latest.reviewEvents.length}
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <Link href={`/admin/reports/${latest.id}`}>

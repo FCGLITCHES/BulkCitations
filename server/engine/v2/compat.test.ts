@@ -128,6 +128,68 @@ describe('legacy v2 compat health and confidence mapping', () => {
     expect(record.uiData.confidence?.score).toBe(71);
   });
 
+  it('does not surface missing optional DOI as a health reason', () => {
+    const record = mapSingleCitation({
+      quality: {
+        overall: 0.96,
+        grade: 'A',
+        fieldScores: {
+          authors: 0.94,
+          title: 0.95,
+          year: 0.95,
+          journal: 0.93,
+          volume: 0.9,
+          issue: 0.9,
+          pages: 0.9,
+          doi: 0,
+          publisher: 0,
+          url: 0,
+        },
+        flags: ['missing_doi'],
+        missingRequired: [],
+        missingOptional: ['doi'],
+      },
+    });
+
+    expect(record.uiData.healthState).toBe('clean');
+    expect(record.uiData.healthReasons ?? []).not.toContain('DOI missing');
+  });
+
+  it('does not surface info-only author recovery notes as review reasons', () => {
+    const record = mapSingleCitation({
+      validationIssues: [
+        {
+          field: 'authors',
+          severity: 'info',
+          code: 'alternating_surname_given_tokens',
+          message: 'Author names were normalized from a compact alternating token pattern.',
+        },
+      ],
+      quality: {
+        overall: 0.96,
+        grade: 'A',
+        fieldScores: {
+          authors: 0.9,
+          title: 0.95,
+          year: 0.95,
+          journal: 0.93,
+          volume: 0.9,
+          issue: 0.9,
+          pages: 0.9,
+          doi: 0,
+          publisher: 0,
+          url: 0,
+        },
+        flags: [],
+        missingRequired: [],
+        missingOptional: [],
+      },
+    });
+
+    expect(record.uiData.healthState).toBe('clean');
+    expect(record.uiData.healthReasons ?? []).toEqual([]);
+  });
+
   it('keeps incomplete source placeholders in review instead of action needed', () => {
     const record = mapSingleCitation({
       raw: 'Haynes, W. M. (2014). CRC Handbook of Chemistry and Physics. Journal, ?.',

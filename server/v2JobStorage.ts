@@ -4,6 +4,7 @@ import type { V2ConversionRequest, V2ConversionResponse } from '@shared/schema';
 import { eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { getUsableDatabaseUrl } from './store/databaseUrl.js';
 
 export type V2JobStatus = 'queued' | 'processing' | 'completed' | 'failed';
 
@@ -100,8 +101,12 @@ class MemoryV2JobStorage implements IV2JobStorage {
 }
 
 class PostgresV2JobStorage implements IV2JobStorage {
-  private db = drizzle(neon(process.env.DATABASE_URL!));
+  private db;
   private ready: Promise<void> | null = null;
+
+  constructor(connectionString: string) {
+    this.db = drizzle(neon(connectionString));
+  }
 
   private async ensureReady(): Promise<void> {
     if (!this.ready) {
@@ -221,6 +226,8 @@ class PostgresV2JobStorage implements IV2JobStorage {
   }
 }
 
-export const v2JobStorage: IV2JobStorage = process.env.DATABASE_URL
-  ? new PostgresV2JobStorage()
+const databaseUrl = getUsableDatabaseUrl();
+
+export const v2JobStorage: IV2JobStorage = databaseUrl
+  ? new PostgresV2JobStorage(databaseUrl)
   : new MemoryV2JobStorage();

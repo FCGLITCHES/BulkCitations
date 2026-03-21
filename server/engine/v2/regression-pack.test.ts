@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { processV2Conversion } from './pipeline.js';
-import { regressionFixtures } from './regressionFixtures.js';
+import { loadRegressionFixtures } from './regressionFixtureLoader.js';
 
 describe('v2 regression pack', () => {
-  for (const fixture of regressionFixtures) {
-    const runner = fixture.expectedToFail ? it.fails : it;
-    runner(fixture.id, async () => {
+  it('runs static and generated regression fixtures', async () => {
+    const fixtures = await loadRegressionFixtures();
+    for (const fixture of fixtures) {
+      const execute = async () => {
       const { response } = await processV2Conversion({
         sourceType: 'text',
         content: fixture.references.join('\n\n'),
@@ -27,7 +28,14 @@ describe('v2 regression pack', () => {
       }
 
       const merged = response.citations.find((citation) => citation.status === 'merged');
-      expect(merged, `${fixture.id} should produce a merged citation`).toBeTruthy();
+      if (
+        fixture.expectedDuplicateCount != null
+        || fixture.expectedUniqueCount != null && fixture.references.length > 1
+        || fixture.expectedMergedTitle
+        || fixture.expectedMergedAuthors
+      ) {
+        expect(merged, `${fixture.id} should produce a merged citation`).toBeTruthy();
+      }
 
       if (fixture.expectedMergedTitle) {
         expect(merged?.title.value).toBe(fixture.expectedMergedTitle);
@@ -35,6 +43,16 @@ describe('v2 regression pack', () => {
 
       if (fixture.expectedMergedAuthors) {
         expect(merged?.authors.value.map((author) => author.last)).toEqual(fixture.expectedMergedAuthors);
+      }
+
+      if (fixture.expectedOutputText) {
+        const activeCitation = response.citations.find((citation) => citation.status === 'active');
+        expect(activeCitation?.rendered?.formatted).toBe(fixture.expectedOutputText);
+      }
+
+      if (fixture.expectedReferenceType) {
+        const activeCitation = response.citations.find((citation) => citation.status === 'active');
+        expect(activeCitation?.referenceType).toBe(fixture.expectedReferenceType);
       }
 
       if (fixture.forbiddenOutputPatterns?.length) {
@@ -45,6 +63,13 @@ describe('v2 regression pack', () => {
           expect(formattedOutput).not.toMatch(pattern);
         }
       }
-    });
-  }
+      };
+
+      if (fixture.expectedToFail) {
+        await expect(execute()).rejects.toThrow();
+      } else {
+        await execute();
+      }
+    }
+  });
 });

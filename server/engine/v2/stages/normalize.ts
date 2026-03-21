@@ -1,9 +1,11 @@
 import type { CanonicalAuthor, CanonicalCitation, FieldValue, NormalizationMetadata } from '@shared/schema';
+import { isGroupAuthor, normalizeGroupAuthor, normalizeKnownContainerName } from '../../shared/citationSemantics.js';
 import type { V2Stage } from '../contracts.js';
 import {
   addCitationStageLog,
   attachCitationDebug,
   createStageDiagnostic,
+  createFieldValue,
   fixUnicodeText,
   isLikelyAllCaps,
   logStructuredDebug,
@@ -63,6 +65,20 @@ function buildNormalizationMetadata(
   };
 }
 
+function normalizeEditionValue(value: string): string {
+  const normalized = normalizeWhitespace(value)
+    .replace(/\bedition\b/gi, 'ed.')
+    .replace(/\bed\.$/i, 'ed.')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return normalized
+    .replace(/^first\s+ed\.?$/i, '1st ed.')
+    .replace(/^second\s+ed\.?$/i, '2nd ed.')
+    .replace(/^third\s+ed\.?$/i, '3rd ed.')
+    .replace(/^fourth\s+ed\.?$/i, '4th ed.');
+}
+
 export function createNormalizeStage(): V2Stage {
   return {
     id: 'normalize',
@@ -95,10 +111,13 @@ export function createNormalizeStage(): V2Stage {
         const publisherResult = normalizeNullableField(citation.publisher, fixUnicodeText, 'normalize');
         const urlResult = normalizeNullableField(citation.url, (value) => normalizeWhitespace(value).replace(/\.$/, ''), 'normalize');
         const doiResult = normalizeNullableField(citation.doi, normalizeDoiValue, 'normalize');
-        const conferenceResult = normalizeNullableField(citation.conferenceTitle, fixUnicodeText, 'normalize');
-        const bookTitleResult = normalizeNullableField(citation.bookTitle, fixUnicodeText, 'normalize');
-        const institutionResult = normalizeNullableField(citation.institution, fixUnicodeText, 'normalize');
-        const editionResult = normalizeNullableField(citation.edition, normalizeWhitespace, 'normalize');
+        const conferenceResult = normalizeNullableField(citation.conferenceTitle, normalizeKnownContainerName, 'normalize');
+        const bookTitleResult = normalizeNullableField(citation.bookTitle, normalizeKnownContainerName, 'normalize');
+        const institutionResult = normalizeNullableField(citation.institution, (value) => {
+          const fixed = fixUnicodeText(value);
+          return isGroupAuthor(fixed) ? normalizeGroupAuthor(fixed) : fixed;
+        }, 'normalize');
+        const editionResult = normalizeNullableField(citation.edition, normalizeEditionValue, 'normalize');
         const editorResult = normalizeNullableField(citation.editor, fixUnicodeText, 'normalize');
         const authorsResult = normalizeAuthors(citation.authors);
         const doiNormalized = Boolean(citation.doi.value && doiResult.field.value && citation.doi.value !== doiResult.field.value);
@@ -122,6 +141,67 @@ export function createNormalizeStage(): V2Stage {
           normalization: buildNormalizationMetadata(doiNormalized, unicodeRepairedFields, titleCaseApplied),
         };
 
+        if (publisherResult.field.value && isGroupAuthor(publisherResult.field.value)) {
+          normalizedCitation = {
+            ...normalizedCitation,
+            publisher: createFieldValue(normalizeGroupAuthor(publisherResult.field.value), 'normalized', publisherResult.field.confidence, 'normalize'),
+          };
+        }
+
+        if (
+          normalizedCitation.referenceType === 'report'
+          && !normalizedCitation.institution.value
+          && normalizedCitation.publisher.value
+          && isGroupAuthor(normalizedCitation.publisher.value)
+        ) {
+          normalizedCitation = {
+            ...normalizedCitation,
+            institution: createFieldValue(normalizeGroupAuthor(normalizedCitation.publisher.value), 'normalized', normalizedCitation.publisher.confidence, 'normalize'),
+          };
+        }
+
+        if (
+          ['report', 'book'].includes(normalizedCitation.referenceType)
+          && normalizedCitation.authors.value.length === 0
+        ) {
+          const institutionalAuthor = normalizedCitation.institution.value ?? normalizedCitation.publisher.value;
+          if (institutionalAuthor && isGroupAuthor(institutionalAuthor)) {
+            normalizedCitation = {
+              ...normalizedCitation,
+              authors: createFieldValue([normalizeCanonicalAuthor({
+                first: null,
+                last: normalizeGroupAuthor(institutionalAuthor),
+                initials: null,
+                literal: normalizeGroupAuthor(institutionalAuthor),
+              })], 'normalized', 0.88, 'normalize'),
+            };
+          }
+        }
+
+        if (
+          ['book', 'chapter'].includes(normalizedCitation.referenceType)
+          && !normalizedCitation.bookTitle.value
+          && normalizedCitation.journal.value
+          && /\b(handbook|manual|guide|encyclopedia|textbook)\b/i.test(normalizedCitation.journal.value)
+        ) {
+          normalizedCitation = {
+            ...normalizedCitation,
+            bookTitle: createFieldValue(normalizeKnownContainerName(normalizedCitation.journal.value), 'normalized', normalizedCitation.journal.confidence, 'normalize'),
+          };
+        }
+
+        if (
+          normalizedCitation.referenceType === 'report'
+          && !normalizedCitation.institution.value
+          && normalizedCitation.journal.value
+          && isGroupAuthor(normalizedCitation.journal.value)
+        ) {
+          normalizedCitation = {
+            ...normalizedCitation,
+            institution: createFieldValue(normalizeGroupAuthor(normalizedCitation.journal.value), 'normalized', normalizedCitation.journal.confidence, 'normalize'),
+          };
+        }
+
         const changed = [
           titleResult.changed,
           journalResult.changed,
@@ -143,6 +223,8 @@ export function createNormalizeStage(): V2Stage {
           doiNormalized,
           unicodeRepairedFields,
           titleCaseApplied,
+          reportInstitutionPromoted: normalizedCitation.referenceType === 'report' && Boolean(normalizedCitation.institution.value),
+          bookTitlePromoted: normalizedCitation.referenceType !== citation.referenceType || Boolean(normalizedCitation.bookTitle.value && !citation.bookTitle.value),
         }, context.debugEnabled);
         logStructuredDebug(context, 'normalize', context.citations.findIndex((item) => item.id === citation.id), normalizedCitation, {
           warningFlags: unicodeRepairedFields,

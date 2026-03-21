@@ -1,27 +1,35 @@
-import fs from "fs";
-import path from "path";
-import { createHash } from "crypto";
+import fs from 'node:fs';
+import path from 'node:path';
+import { createHash } from 'node:crypto';
+import { neon } from '@neondatabase/serverless';
+import { eq, sql } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/neon-http';
+import { jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import type {
   CitationReport,
-  ReportStatus,
   FailureCategory,
   FailureSource,
-} from "@shared/schema";
+  ReportStatus,
+  ReviewEvent,
+} from '@shared/schema';
+import {
+  appendMigrationLog,
+  getDataDir,
+  readJsonlFile,
+  readMigrationLog,
+  resolveDataFile,
+  stableFileMigrationKey,
+  writeJsonlFile,
+} from './persistence.js';
+import { getUsableDatabaseUrl } from './databaseUrl.js';
 
-// Re-export shared types so consumers don't need two imports
 export type { CitationReport, ReportStatus, FailureCategory, FailureSource };
 
-// ── Paths ──
+const DATA_DIR = getDataDir();
 
-const DATA_DIR = process.env.VERCEL
-  ? "/tmp"
-  : path.resolve(process.cwd(), "data");
-
-const V2_FILE = path.join(DATA_DIR, "reports.v2.jsonl");
-const V1_FILE = path.join(DATA_DIR, "reports.jsonl");
-const V1_BAK_PREFIX = path.join(DATA_DIR, "reports.v1.bak");
-
-// ── Old V1 schema (for migration) ──
+const REPORTS_FILE = resolveDataFile('reports.v2.jsonl');
+const LEGACY_REPORTS_FILE = path.join(DATA_DIR, 'reports.jsonl');
+const MIGRATION_LOG_FILE = resolveDataFile('store-migrations.jsonl');
 
 interface V1Report {
   id: string;
@@ -32,233 +40,428 @@ interface V1Report {
   convertedOutput: string;
   userCategory: string;
   userNote?: string;
-  status: "open" | "fixed" | "rejected";
+  status: 'open' | 'fixed' | 'rejected';
 }
 
-// ── Category mapping from old free-text to new enum ──
-
 const CATEGORY_MAP: Record<string, FailureCategory> = {
-  "Year missing or incorrect": "year",
-  "Author name incorrect": "author",
-  "Title missing or incorrect": "title",
-  "Journal / venue incorrect": "venue",
-  "Pages missing or incorrect": "locator",
-  "Wrong citation style detected": "style-detection",
-  "Other...": "other",
+  'Year missing or incorrect': 'year',
+  'Author name incorrect': 'author',
+  'Title missing or incorrect': 'title',
+  'Journal / venue incorrect': 'venue',
+  'Pages missing or incorrect': 'locator',
+  'Wrong citation style detected': 'style-detection',
+  'Other...': 'other',
 };
 
 const STATUS_MAP: Record<string, ReportStatus> = {
-  open: "pending",
-  fixed: "accepted",
-  rejected: "rejected",
+  open: 'pending',
+  fixed: 'accepted',
+  rejected: 'rejected',
 };
 
-// ── Helpers ──
+interface GroupedReports {
+  fingerprint: string;
+  reports: CitationReport[];
+  totalCount: number;
+  category: string;
+}
 
-function ensureDataDir(): void {
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-  } catch (err) {
-    if (process.env.VERCEL) {
-      // Silently ignore on Vercel as /tmp should exist or we can't do anything anyway
+interface IReportStore {
+  saveReport(report: CitationReport): Promise<CitationReport>;
+  loadReports(): Promise<CitationReport[]>;
+  getReportById(id: string): Promise<CitationReport | null>;
+  updateReport(id: string, updates: Partial<CitationReport>): Promise<CitationReport | null>;
+}
+
+const reportRows = pgTable('citation_reports', {
+  id: text('id').primaryKey(),
+  fingerprint: text('fingerprint'),
+  status: text('status').notNull(),
+  payload: jsonb('payload').$type<CitationReport>().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+});
+
+const migrationRows = pgTable('store_migrations', {
+  key: text('key').primaryKey(),
+  sourcePath: text('source_path').notNull(),
+  stats: jsonb('stats').$type<{ migrated: number; skipped: number; failed: number }>().notNull(),
+  completedAt: timestamp('completed_at', { withTimezone: true }).notNull(),
+});
+
+function hydrateReport(report: CitationReport): CitationReport {
+  return {
+    ...report,
+    reportCount: report.reportCount ?? 1,
+    reviewEvents: report.reviewEvents ?? [],
+  };
+}
+
+function mapLegacyReport(v1: V1Report): CitationReport {
+  return {
+    id: v1.id,
+    source: 'user',
+    originalText: v1.rawInput,
+    detectedStyle: v1.detectedInputStyle || '',
+    outputStyle: v1.targetStyle || '',
+    convertedText: v1.convertedOutput,
+    failureCategory: CATEGORY_MAP[v1.userCategory] ?? 'other',
+    userNote: v1.userNote,
+    status: STATUS_MAP[v1.status] ?? 'pending',
+    createdAt: v1.timestamp,
+    reportCount: 1,
+    fingerprint: computeFingerprint(v1.rawInput),
+    reviewEvents: [],
+  };
+}
+
+class FileReportStore implements IReportStore {
+  private migrationReady = false;
+
+  private ensureLegacyMigration(): void {
+    if (this.migrationReady) return;
+    this.migrationReady = true;
+
+    if (!fs.existsSync(LEGACY_REPORTS_FILE) || fs.existsSync(REPORTS_FILE)) {
       return;
     }
-    console.error(`[reportStore] CRITICAL: Failed to create data directory ${DATA_DIR}:`, err instanceof Error ? err.message : err);
-  }
-}
 
-/**
- * Compute a SHA-256 fingerprint of normalised text for dedup grouping.
- * Strips whitespace, lowercases, removes punctuation.
- */
-export function computeFingerprint(text: string): string {
-  const normalised = text
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .replace(/[^\w\s]/g, "")
-    .trim();
-  return createHash("sha256").update(normalised).digest("hex").slice(0, 32);
-}
+    const migrationKey = stableFileMigrationKey(LEGACY_REPORTS_FILE);
+    const existingLog = readMigrationLog(MIGRATION_LOG_FILE).find((entry) => entry.key === migrationKey);
+    if (existingLog) return;
 
-/**
- * One-way hash an IP address for rate-limit tracking.
- * We never store the raw IP.
- */
-export function hashIP(ip: string): string {
-  return createHash("sha256").update(`cite-report:${ip}`).digest("hex").slice(0, 16);
-}
+    const rawLines = fs.readFileSync(LEGACY_REPORTS_FILE, 'utf8').split('\n').filter(Boolean);
+    const migrated: CitationReport[] = [];
+    let failed = 0;
 
-// ── Migration ──
-
-let migrationDone = false;
-
-/**
- * Migrate V1 reports.jsonl → V2 format.
- * - Reads old rows, maps fields to new schema
- * - Writes to reports.v2.jsonl
- * - Renames original to reports.v1.bak.<timestamp>
- * - Idempotent: only runs once per process, skips if V2 already exists
- */
-function migrateV1toV2(): void {
-  if (migrationDone) return;
-  migrationDone = true;
-
-  // If V2 already exists, no migration needed
-  if (fs.existsSync(V2_FILE)) return;
-  // If V1 doesn't exist, nothing to migrate
-  if (!fs.existsSync(V1_FILE)) return;
-
-  console.log("[reportStore] Migrating V1 reports → V2...");
-
-  const raw = fs.readFileSync(V1_FILE, "utf8");
-  const lines = raw.split("\n").filter(Boolean);
-  const v2Reports: CitationReport[] = [];
-
-  for (const line of lines) {
-    try {
-      const v1 = JSON.parse(line) as V1Report;
-      const v2: CitationReport = {
-        id: v1.id,
-        source: "user",
-        originalText: v1.rawInput,
-        detectedStyle: v1.detectedInputStyle || "",
-        outputStyle: v1.targetStyle || "",
-        convertedText: v1.convertedOutput,
-        failureCategory: CATEGORY_MAP[v1.userCategory] ?? "other",
-        userNote: v1.userNote,
-        status: STATUS_MAP[v1.status] ?? "pending",
-        createdAt: v1.timestamp,
-        reportCount: 1,
-        fingerprint: computeFingerprint(v1.rawInput),
-      };
-      v2Reports.push(v2);
-    } catch (e) {
-      console.warn("[reportStore] Skipping malformed V1 line:", e);
-    }
-  }
-
-  ensureDataDir();
-
-  // Write V2 file
-  const v2Content = v2Reports.map((r) => JSON.stringify(r)).join("\n") + "\n";
-  fs.writeFileSync(V2_FILE, v2Content, "utf8");
-
-  // Backup V1 with timestamp
-  const ts = new Date().toISOString().replace(/[:.]/g, "-");
-  const bakPath = `${V1_BAK_PREFIX}.${ts}`;
-  fs.renameSync(V1_FILE, bakPath);
-
-  console.log(`[reportStore] Migrated ${v2Reports.length} reports. V1 backup: ${bakPath}`);
-}
-
-// ── CRUD ──
-
-export function saveReport(r: CitationReport): CitationReport {
-  migrateV1toV2();
-  ensureDataDir();
-
-  // Dedup: if an existing pending/proposed report has the same fingerprint, increment count
-  if (r.fingerprint) {
-    const existing = loadReports();
-    const dupe = existing.find(
-      (e) =>
-        e.fingerprint === r.fingerprint &&
-        (e.status === "pending" || e.status === "proposed")
-    );
-    if (dupe) {
-      dupe.reportCount = (dupe.reportCount ?? 1) + 1;
-      // Merge user note if different
-      if (r.userNote && r.userNote !== dupe.userNote) {
-        dupe.userNote = dupe.userNote
-          ? `${dupe.userNote} | ${r.userNote}`
-          : r.userNote;
+    for (const line of rawLines) {
+      try {
+        migrated.push(mapLegacyReport(JSON.parse(line) as V1Report));
+      } catch (error) {
+        failed += 1;
+        console.warn('[reportStore] Skipping malformed legacy report row:', error instanceof Error ? error.message : String(error));
       }
-      writeAll(existing);
-      return dupe;
     }
-  }
 
-  try {
-    fs.appendFileSync(V2_FILE, JSON.stringify(r) + "\n", "utf8");
-  } catch (err) {
-    console.warn(`[reportStore] Failed to append to ${V2_FILE}:`, err instanceof Error ? err.message : err);
-  }
-  return r;
-}
-
-export function loadReports(): CitationReport[] {
-  migrateV1toV2();
-  if (!fs.existsSync(V2_FILE)) return [];
-  return fs
-    .readFileSync(V2_FILE, "utf8")
-    .split("\n")
-    .filter(Boolean)
-    .map((l) => {
-      const parsed = JSON.parse(l) as CitationReport;
-      // Ensure reportCount defaults to 1 for legacy rows
-      if (!parsed.reportCount) parsed.reportCount = 1;
-      return parsed;
+    writeJsonlFile(REPORTS_FILE, migrated);
+    appendMigrationLog(MIGRATION_LOG_FILE, {
+      key: migrationKey,
+      sourcePath: LEGACY_REPORTS_FILE,
+      completedAt: new Date().toISOString(),
+      stats: {
+        migrated: migrated.length,
+        skipped: 0,
+        failed,
+      },
     });
+  }
+
+  async saveReport(report: CitationReport): Promise<CitationReport> {
+    this.ensureLegacyMigration();
+    const rows = await this.loadReports();
+
+    if (report.fingerprint) {
+      const existingIndex = rows.findIndex((candidate) => (
+        candidate.fingerprint === report.fingerprint
+        && (candidate.status === 'pending' || candidate.status === 'proposed')
+      ));
+      if (existingIndex >= 0) {
+        const existing = rows[existingIndex];
+        const merged: CitationReport = {
+          ...existing,
+          reportCount: (existing.reportCount ?? 1) + 1,
+          userNote: report.userNote && report.userNote !== existing.userNote
+            ? existing.userNote
+              ? `${existing.userNote} | ${report.userNote}`
+              : report.userNote
+            : existing.userNote,
+          failureCategories: Array.from(new Set([...(existing.failureCategories ?? [existing.failureCategory]), ...(report.failureCategories ?? [report.failureCategory])])),
+          reviewEvents: existing.reviewEvents ?? [],
+        };
+        rows[existingIndex] = merged;
+        writeJsonlFile(REPORTS_FILE, rows);
+        return merged;
+      }
+    }
+
+    const next = hydrateReport(report);
+    rows.push(next);
+    writeJsonlFile(REPORTS_FILE, rows);
+    return next;
+  }
+
+  async loadReports(): Promise<CitationReport[]> {
+    this.ensureLegacyMigration();
+    return readJsonlFile<CitationReport>(REPORTS_FILE).map(hydrateReport);
+  }
+
+  async getReportById(id: string): Promise<CitationReport | null> {
+    const rows = await this.loadReports();
+    return rows.find((report) => report.id === id) ?? null;
+  }
+
+  async updateReport(id: string, updates: Partial<CitationReport>): Promise<CitationReport | null> {
+    const rows = await this.loadReports();
+    const index = rows.findIndex((report) => report.id === id);
+    if (index === -1) return null;
+
+    const current = rows[index];
+    const merged = hydrateReport({
+      ...current,
+      ...updates,
+      reviewEvents: updates.reviewEvents ?? current.reviewEvents ?? [],
+    });
+    rows[index] = merged;
+    writeJsonlFile(REPORTS_FILE, rows);
+    return merged;
+  }
 }
 
-export function getReportById(id: string): CitationReport | null {
-  const reports = loadReports();
-  return reports.find((r) => r.id === id) ?? null;
+class PostgresReportStore implements IReportStore {
+  private db;
+  private ready: Promise<void> | null = null;
+
+  constructor(connectionString: string) {
+    this.db = drizzle(neon(connectionString));
+  }
+
+  private async ensureReady(): Promise<void> {
+    if (!this.ready) {
+      this.ready = Promise.all([
+        this.db.execute(sql`
+          create table if not exists citation_reports (
+            id text primary key,
+            fingerprint text,
+            status text not null,
+            payload jsonb not null,
+            created_at timestamptz not null,
+            updated_at timestamptz not null
+          )
+        `),
+        this.db.execute(sql`
+          create table if not exists store_migrations (
+            key text primary key,
+            source_path text not null,
+            stats jsonb not null,
+            completed_at timestamptz not null
+          )
+        `),
+      ]).then(() => undefined);
+    }
+    await this.ready;
+    await this.backfillJsonl(REPORTS_FILE, (row) => row);
+    await this.backfillJsonl(LEGACY_REPORTS_FILE, mapLegacyReport);
+  }
+
+  private async backfillJsonl(
+    sourcePath: string,
+    mapper: (row: any) => CitationReport,
+  ): Promise<void> {
+    if (!fs.existsSync(sourcePath)) return;
+
+    const migrationKey = stableFileMigrationKey(sourcePath);
+    const existing = await this.db.select()
+      .from(migrationRows)
+      .where(eq(migrationRows.key, migrationKey))
+      .limit(1);
+    if (existing[0]) return;
+
+    const sourceRows = readJsonlFile<any>(sourcePath);
+    let migrated = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    for (const row of sourceRows) {
+      try {
+        const report = hydrateReport(mapper(row));
+        await this.db.insert(reportRows).values({
+          id: report.id,
+          fingerprint: report.fingerprint ?? null,
+          status: report.status,
+          payload: report,
+          createdAt: new Date(report.createdAt),
+          updatedAt: new Date(report.resolvedAt ?? report.createdAt),
+        }).onConflictDoNothing();
+        migrated += 1;
+      } catch (error) {
+        failed += 1;
+        console.warn('[reportStore] Migration row failed:', error instanceof Error ? error.message : String(error));
+      }
+    }
+
+    await this.db.insert(migrationRows).values({
+      key: migrationKey,
+      sourcePath,
+      stats: { migrated, skipped, failed },
+      completedAt: new Date(),
+    }).onConflictDoNothing();
+  }
+
+  async saveReport(report: CitationReport): Promise<CitationReport> {
+    await this.ensureReady();
+
+    if (report.fingerprint) {
+      const rows = await this.db.select()
+        .from(reportRows)
+        .where(eq(reportRows.fingerprint, report.fingerprint));
+      const existing = rows
+        .map((row) => hydrateReport(row.payload))
+        .find((candidate) => candidate.status === 'pending' || candidate.status === 'proposed');
+      if (existing) {
+        const merged: CitationReport = {
+          ...existing,
+          reportCount: (existing.reportCount ?? 1) + 1,
+          userNote: report.userNote && report.userNote !== existing.userNote
+            ? existing.userNote
+              ? `${existing.userNote} | ${report.userNote}`
+              : report.userNote
+            : existing.userNote,
+          failureCategories: Array.from(new Set([...(existing.failureCategories ?? [existing.failureCategory]), ...(report.failureCategories ?? [report.failureCategory])])),
+        };
+        await this.updateReport(existing.id, merged);
+        return merged;
+      }
+    }
+
+    const next = hydrateReport(report);
+    const now = new Date();
+    await this.db.insert(reportRows).values({
+      id: next.id,
+      fingerprint: next.fingerprint ?? null,
+      status: next.status,
+      payload: next,
+      createdAt: new Date(next.createdAt),
+      updatedAt: now,
+    }).onConflictDoUpdate({
+      target: reportRows.id,
+      set: {
+        fingerprint: next.fingerprint ?? null,
+        status: next.status,
+        payload: next,
+        updatedAt: now,
+      },
+    });
+    return next;
+  }
+
+  async loadReports(): Promise<CitationReport[]> {
+    await this.ensureReady();
+    const rows = await this.db.select().from(reportRows);
+    return rows.map((row) => hydrateReport(row.payload));
+  }
+
+  async getReportById(id: string): Promise<CitationReport | null> {
+    await this.ensureReady();
+    const rows = await this.db.select().from(reportRows).where(eq(reportRows.id, id)).limit(1);
+    return rows[0] ? hydrateReport(rows[0].payload) : null;
+  }
+
+  async updateReport(id: string, updates: Partial<CitationReport>): Promise<CitationReport | null> {
+    await this.ensureReady();
+    const current = await this.getReportById(id);
+    if (!current) return null;
+
+    const next = hydrateReport({
+      ...current,
+      ...updates,
+      reviewEvents: updates.reviewEvents ?? current.reviewEvents ?? [],
+    });
+    await this.db.update(reportRows).set({
+      fingerprint: next.fingerprint ?? null,
+      status: next.status,
+      payload: next,
+      updatedAt: new Date(),
+    }).where(eq(reportRows.id, id));
+    return next;
+  }
 }
 
-export function updateReport(id: string, updates: Partial<CitationReport>): CitationReport | null {
-  const reports = loadReports();
-  const index = reports.findIndex((r) => r.id === id);
-  if (index === -1) return null;
+const databaseUrl = getUsableDatabaseUrl();
 
-  reports[index] = { ...reports[index], ...updates };
-  writeAll(reports);
-  return reports[index];
+const reportStore: IReportStore = databaseUrl
+  ? new PostgresReportStore(databaseUrl)
+  : new FileReportStore();
+
+export function computeFingerprint(text: string): string {
+  const normalized = text
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[^\w\s]/g, '')
+    .trim();
+  return createHash('sha256').update(normalized).digest('hex').slice(0, 32);
 }
 
-/** Convenience: update just the status field */
-export function updateReportStatus(id: string, status: ReportStatus): boolean {
+export function hashIP(ip: string): string {
+  return createHash('sha256').update(`cite-report:${ip}`).digest('hex').slice(0, 16);
+}
+
+export async function saveReport(report: CitationReport): Promise<CitationReport> {
+  return reportStore.saveReport(report);
+}
+
+export async function loadReports(): Promise<CitationReport[]> {
+  return reportStore.loadReports();
+}
+
+export async function getReportById(id: string): Promise<CitationReport | null> {
+  return reportStore.getReportById(id);
+}
+
+export async function updateReport(id: string, updates: Partial<CitationReport>): Promise<CitationReport | null> {
+  return reportStore.updateReport(id, updates);
+}
+
+export async function appendReviewEvent(id: string, event: ReviewEvent): Promise<CitationReport | null> {
+  const report = await getReportById(id);
+  if (!report) return null;
+  return updateReport(id, {
+    reviewEvents: [...(report.reviewEvents ?? []), event],
+  });
+}
+
+export async function updateReportStatus(id: string, status: ReportStatus): Promise<boolean> {
   const updates: Partial<CitationReport> = { status };
-  if (status === "accepted" || status === "rejected") {
+  if (status === 'accepted' || status === 'rejected') {
     updates.resolvedAt = new Date().toISOString();
   }
-  return updateReport(id, updates) !== null;
+  return (await updateReport(id, updates)) !== null;
 }
 
-/** Get reports grouped by fingerprint, sorted by aggregate reportCount desc */
-export function getGroupedReports(
-  statusFilter?: ReportStatus
-): Array<{ fingerprint: string; reports: CitationReport[]; totalCount: number; category: string }> {
-  const reports = loadReports();
-  const filtered = statusFilter ? reports.filter((r) => r.status === statusFilter) : reports;
+export async function getGroupedReports(
+  statusFilter?: ReportStatus,
+): Promise<GroupedReports[]> {
+  const reports = await loadReports();
+  const filtered = statusFilter
+    ? reports.filter((report) => report.status === statusFilter)
+    : reports;
 
   const groups = new Map<string, CitationReport[]>();
-  for (const r of filtered) {
-    const key = r.fingerprint || r.id; // fallback to id if no fingerprint
-    const existing = groups.get(key) || [];
-    existing.push(r);
+  for (const report of filtered) {
+    const key = report.fingerprint || report.id;
+    const existing = groups.get(key) ?? [];
+    existing.push(report);
     groups.set(key, existing);
   }
 
   return Array.from(groups.entries())
-    .map(([fingerprint, members]) => ({
+    .map(([fingerprint, reportsInGroup]) => ({
       fingerprint,
-      reports: members,
-      totalCount: members.reduce((sum, r) => sum + (r.reportCount ?? 1), 0),
-      category: members[0].failureCategory,
+      reports: reportsInGroup,
+      totalCount: reportsInGroup.reduce((sum, report) => sum + (report.reportCount ?? 1), 0),
+      category: reportsInGroup[0]?.failureCategory ?? 'other',
     }))
-    .sort((a, b) => b.totalCount - a.totalCount);
+    .sort((left, right) => right.totalCount - left.totalCount);
 }
-
-// ── Rate limiting (in-memory, resets on cold start — acceptable for MVP) ──
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_MAX = 10;
-const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
+const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export function checkRateLimit(ipHash: string): { allowed: boolean; remaining: number } {
+  if (process.env.NODE_ENV !== 'production') {
+    return { allowed: true, remaining: RATE_LIMIT_MAX };
+  }
+
   const now = Date.now();
   const entry = rateLimitMap.get(ipHash);
 
@@ -275,30 +478,17 @@ export function checkRateLimit(ipHash: string): { allowed: boolean; remaining: n
   return { allowed: true, remaining: RATE_LIMIT_MAX - entry.count };
 }
 
-// ── Stress test integration ──
-
 export function addToStressTest(rawInput: string): void {
   if (process.env.VERCEL) return;
-  const curatedPath = path.resolve(process.cwd(), "scripts/data/real_citations_curated.json");
+  const curatedPath = path.resolve(process.cwd(), 'scripts/data/real_citations_curated.json');
   let curated: string[] = [];
   if (fs.existsSync(curatedPath)) {
-    curated = JSON.parse(fs.readFileSync(curatedPath, "utf8")) as string[];
+    curated = JSON.parse(fs.readFileSync(curatedPath, 'utf8')) as string[];
   }
   if (!curated.includes(rawInput)) {
     curated.push(rawInput);
     const dir = path.dirname(curatedPath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(curatedPath, JSON.stringify(curated, null, 2), "utf8");
+    fs.writeFileSync(curatedPath, JSON.stringify(curated, null, 2), 'utf8');
   }
-}
-
-// ── Internal ──
-
-function writeAll(reports: CitationReport[]): void {
-  ensureDataDir();
-  fs.writeFileSync(
-    V2_FILE,
-    reports.map((r) => JSON.stringify(r)).join("\n") + "\n",
-    "utf8"
-  );
 }

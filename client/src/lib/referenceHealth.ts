@@ -5,12 +5,56 @@ import {
   hasMalformedAuthorShape,
   hasPlaceholderFieldValue,
 } from "@shared/referenceHealthHeuristics";
+import { CONFIDENCE_THRESHOLDS } from "@shared/confidenceThresholds";
 import type { Cluster, ConvertedReference, HealthState, ReferenceType } from "./types";
 
 type HealthSignals = {
   state: HealthState;
   reasons: string[];
 };
+
+function formatFieldLabel(field: string) {
+  switch (field) {
+    case "authors": return "author";
+    case "title": return "title";
+    case "year": return "year";
+    case "publisher": return "publisher";
+    case "venue": return "journal or venue";
+    case "locator": return "page number or article number";
+    case "bookTitle": return "book title";
+    case "institution": return "institution";
+    case "url": return "URL";
+    case "volume": return "volume";
+    case "issue": return "issue";
+    default: return field;
+  }
+}
+
+function getMissingRequiredFieldReason(field: string) {
+  return `Required field missing: ${formatFieldLabel(field)}`;
+}
+
+function getMissingReviewFieldReason(field: string) {
+  return `Review suggested: ${formatFieldLabel(field)} is missing or incomplete`;
+}
+
+function getPlaceholderFieldReasons(parsed: any) {
+  const reasons: string[] = [];
+  const placeholderChecks: Array<[string, unknown]> = [
+    ["journal", parsed?.journal],
+    ["volume", parsed?.volume],
+    ["issue", parsed?.issue],
+  ];
+
+  for (const [field, value] of placeholderChecks) {
+    const normalized = String(value ?? "").trim().toLowerCase();
+    if (normalized && hasPlaceholderFieldValue(normalized)) {
+      reasons.push(`Placeholder value detected in ${formatFieldLabel(field)}`);
+    }
+  }
+
+  return reasons;
+}
 
 function hasVenue(parsed: any) {
   return !!(parsed?.journal || parsed?.conferenceTitle || parsed?.bookTitle);
@@ -77,6 +121,17 @@ function hasParsedField(parsed: any, field: string) {
   }
 }
 
+function getMissingLocatorReason(originalText: string) {
+  const raw = String(originalText ?? "");
+  if (/\bArt(?:icle)?\.?\s*(?:no\.?\s*)?[A-Z]?\d+/i.test(raw) || /\barticle\s+[A-Z]?\d+/i.test(raw)) {
+    return "Article number shown in the original input is missing in the output";
+  }
+  if (/\bp+\.\s*[A-Z]?\d+/i.test(raw) || /\bpp+\.\s*[A-Z]?\d+/i.test(raw) || /\b:\s*[A-Z]?\d+(?:[-–][A-Z]?\d+)?\b/.test(raw)) {
+    return "Page number shown in the original input is missing in the output";
+  }
+  return "Locator shown in the original input is missing in the output";
+}
+
 export function computeReferenceHealth(
   ref: ConvertedReference,
   clusters?: Cluster[],
@@ -101,26 +156,33 @@ export function computeReferenceHealth(
   const missingRequiredFields = profile.required.filter((field) => !hasParsedField(parsed, field));
   const missingReviewFields = profile.reviewIfMissing.filter((field) => !hasParsedField(parsed, field));
   const hasErrorWarning = warnings.some((warning) => warning.startsWith("error:"));
+  const hasLocatorWarning = warningCodes.includes("locator_missing_from_source");
   const hasReviewWarning = warningCodes.some((code) => [
     "placeholder_volume",
     "placeholder_journal",
     "venue_missing_for_conference",
-    "locator_missing_from_source",
     "missing_field",
     "missing_locator",
     "render_output_empty_or_invalid",
   ].includes(code));
-  const veryLowConfidence = (ref.confidence?.score ?? 100) < 40;
-  const mediumLowConfidence = (ref.confidence?.score ?? 100) < 70;
+  const veryLowConfidence = (ref.confidence?.score ?? 100) <= CONFIDENCE_THRESHOLDS.lowReview;
+  const mediumLowConfidence = (ref.confidence?.score ?? 100) <= CONFIDENCE_THRESHOLDS.review;
   const styleFailed = !!ref.styleDetectionFailed;
   const missingPublisherForBook = ref.referenceType === "book" && !parsed.publisher;
   const noVenueForStructuredType =
     (ref.referenceType === "journal" || ref.referenceType === "conference") && !hasVenue(parsed);
   const malformedAuthorShape = hasMalformedAuthorShape(parsed.authors);
   const placeholderFields = hasPlaceholderFields(parsed);
+  const hasConcreteReviewSignal =
+    hasReviewWarning
+    || missingRequiredFields.length > 0
+    || missingReviewFields.length > 0
+    || styleFailed
+    || placeholderFields
+    || noVenueForStructuredType;
 
   if (malformedAuthorShape) {
-    actionReasons.push("Author parsing looks malformed");
+    actionReasons.push("Author names were parsed in an unstable format");
   }
   if (hasInventedPlaceholderVenue(parsed, ref.originalText)) {
     actionReasons.push("Placeholder venue text appears to have been invented by the parser");
@@ -136,48 +198,43 @@ export function computeReferenceHealth(
   if (warningCodes.includes("initials_as_surname")) {
     actionReasons.push("An author surname field contains initials only");
   }
-  if (warningCodes.includes("locator_missing_from_source")) {
-    actionReasons.push("A locator present in the source was not preserved");
+  if (hasLocatorWarning) {
+    actionReasons.push(getMissingLocatorReason(ref.originalText));
   }
 
   if (styleFailed) {
-    softReasons.push("Auto-detect uncertain; style fell back to best-guess");
+    softReasons.push("Style detection failed on the first pass; review the detected source style");
   }
   if (hasErrorWarning && actionReasons.length === 0) {
     softReasons.push("Critical formatting or parsing errors");
   }
   if (veryLowConfidence) {
     softReasons.push("Very low-confidence parse");
-  } else if (!missingRequiredFields.includes("year") && mediumLowConfidence) {
+  } else if (
+    !missingRequiredFields.includes("year")
+    && mediumLowConfidence
+    && hasConcreteReviewSignal
+  ) {
     softReasons.push("Moderate confidence - a quick review is suggested");
   }
-  if (missingRequiredFields.includes("authors")) softReasons.push("Missing author");
-  if (missingRequiredFields.includes("year")) softReasons.push("Missing year");
-  if (missingRequiredFields.includes("title")) softReasons.push("Missing title");
-  if (missingRequiredFields.includes("publisher")) softReasons.push("Missing publisher");
-  if (missingRequiredFields.includes("institution")) softReasons.push("Missing institution");
-  if (missingRequiredFields.includes("url")) softReasons.push("Missing URL");
-  if (missingRequiredFields.includes("venue")) softReasons.push("Missing required venue");
-  if (hasReviewWarning) {
+  for (const field of missingRequiredFields) {
+    softReasons.push(getMissingRequiredFieldReason(field));
+  }
+  if (hasReviewWarning && !hasLocatorWarning) {
     softReasons.push("Style or formatting warnings present");
   }
   if (missingPublisherForBook) {
-    softReasons.push("Book publisher missing");
+    softReasons.push("Required field missing: publisher");
   }
   if (placeholderFields) {
-    softReasons.push("Placeholder or suspicious venue fields present");
+    softReasons.push(...getPlaceholderFieldReasons(parsed));
   }
-  if (missingReviewFields.includes("authors")) {
-    softReasons.push("Author information may be missing");
-  }
-  if (missingReviewFields.includes("year")) {
-    softReasons.push("Year information may be missing");
-  }
-  if (missingReviewFields.includes("locator") && mediumLowConfidence) {
-    softReasons.push("Locator information may be missing");
+  for (const field of missingReviewFields) {
+    if (field === "locator" && !mediumLowConfidence) continue;
+    softReasons.push(getMissingReviewFieldReason(field));
   }
   if (noVenueForStructuredType && mediumLowConfidence) {
-    softReasons.push("Expected venue information is missing");
+    softReasons.push("Review suggested: journal or venue is missing from the parsed result");
   }
 
   let state: HealthState;

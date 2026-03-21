@@ -10,8 +10,11 @@ import reportsRouter from "./routes/reports";
 import v2Router from "./routes/v2";
 import { conversionRequestSchema, contactRequestSchema, waitlistRequestSchema, type ConvertedReference, type ConversionResponse, type DuplicateGroup } from "@shared/schema";
 import { processReferences, reformatReferences, initCSLStyles } from "./engine/index";
+import { runAssertions } from "./engine/strictRenderer.js";
 import { processV2Conversion } from "./engine/v2/index.js";
 import { mapV2ResponseToLegacyRecords } from "./engine/v2/compat.js";
+import { applyTruthToLegacyReference } from "./engine/shared/truthResolver.js";
+import { runSanityCheck } from "./engine/stages/sanityCheck.js";
 import { getAuthorityData } from "../shared/authorityLookup";
 import { calculateConfidence } from "../shared/confidence";
 import { sendContactAutoReply, sendContactNotification, sendWaitlistAutoReply, sendWaitlistNotification } from "./utils/email";
@@ -35,6 +38,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     storage: multer.memoryStorage(),
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
   });
+
+  function getRulesScoreForStoredReference(ref: Awaited<ReturnType<typeof storage.getReference>>) {
+    if (!ref?.parsedData || !ref.convertedText || !ref.outputStyle) {
+      return ref?.confidenceScore ?? 100;
+    }
+
+    let warnings = runAssertions(ref.outputStyle, ref.convertedText, ref.parsedData).warnings;
+    const parseWarnings = (ref.parsedData?.parseWarnings ?? []).map((warning: string) => `parse: ${warning}`);
+    if (parseWarnings.length > 0) warnings = [...parseWarnings, ...warnings];
+    const sanityWarnings = runSanityCheck(ref.convertedText, ref.outputStyle).warnings;
+    if (sanityWarnings.length > 0) warnings = [...warnings, ...sanityWarnings];
+
+    let rulesScore = 100;
+    for (const warning of warnings) {
+      if (warning.startsWith("error:")) rulesScore -= 20;
+      else if (warning.startsWith("warning:")) rulesScore -= 5;
+    }
+
+    return Math.max(0, rulesScore);
+  }
+
+  function getStableConfidenceForStoredReference(ref: Awaited<ReturnType<typeof storage.getReference>>) {
+    if (!ref?.parsedData) {
+      return undefined;
+    }
+
+    if (typeof ref.confidenceScore === "number" && Number.isFinite(ref.confidenceScore)) {
+      return calculateConfidence(ref.parsedData, ref.confidenceScore);
+    }
+
+    return calculateConfidence(ref.parsedData, getRulesScoreForStoredReference(ref));
+  }
 
   app.get("/api/admin/session", (req, res) => {
     res.setHeader("Cache-Control", "no-store");
@@ -87,6 +122,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/convert", async (req, res) => {
     try {
       const validatedData = conversionRequestSchema.parse(req.body);
+      // Initial conversion should always attempt validation so the first result
+      // matches what users see after a manual recheck. Validation is informational
+      // only and does not affect the confidence score.
+      const shouldAttemptValidation = true;
       const envUseV2Engine = !/^(0|false|no|off)$/i.test(process.env.USE_V2_ENGINE ?? 'true');
       const useV2Engine = validatedData.engineVersion === 'v2'
         ? true
@@ -98,15 +137,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const pipelineResult = await processReferences(validatedData.references, {
           inputStyle: validatedData.inputStyle,
           outputStyle: validatedData.outputStyle,
-          enrichWithAuthority: validatedData.enrichWithAuthority,
-          isPro: validatedData.isPro,
+          enrichWithAuthority: shouldAttemptValidation,
+          isPro: true,
         });
 
-        const storedRefs = await storage.createReferences(
-          pipelineResult.storageData.map(({ _uiData, ...record }) => record)
+        const truthAdjustedStorageData = await Promise.all(
+          pipelineResult.storageData.map(async (record) => {
+            const adjustedUiData = await applyTruthToLegacyReference(record._uiData, validatedData.outputStyle);
+            return {
+              ...record,
+              parsedData: adjustedUiData.parsedData,
+              convertedText: adjustedUiData.convertedText,
+              referenceType: adjustedUiData.referenceType,
+              confidenceScore: adjustedUiData.confidence?.score ?? record.confidenceScore,
+              workKey: adjustedUiData.workKey ?? record.workKey,
+              _uiData: adjustedUiData,
+            };
+          }),
         );
 
-        const convertResults: ConvertedReference[] = pipelineResult.storageData.map((record, idx) => ({
+        const storedRefs = await storage.createReferences(
+          truthAdjustedStorageData.map(({ _uiData, ...record }) => record)
+        );
+
+        const convertResults: ConvertedReference[] = truthAdjustedStorageData.map((record, idx) => ({
           ...record._uiData,
           id: storedRefs[idx].id.toString(),
         }));
@@ -128,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: sourceContent,
         inputStyle: validatedData.inputStyle,
         outputStyle: validatedData.outputStyle,
-        enrich: validatedData.enrichWithAuthority && validatedData.isPro,
+        enrich: shouldAttemptValidation,
         dedup: true,
         group: false,
         debug: false,
@@ -319,7 +373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await getAuthorityData(ref.parsedData, { force: !!force });
       const authorityData = result.data ?? undefined;
       const authorityStatus = result.status;
-      const confidence = calculateConfidence(ref.parsedData, 100, authorityData); // assume full rules score for recheck
+      const confidence = getStableConfidenceForStoredReference(ref);
       res.json({ authorityData, authorityStatus, confidence });
     } catch (error) {
       console.error("Recheck error:", error);

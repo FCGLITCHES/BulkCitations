@@ -48,6 +48,7 @@ const authorityCache = new LRUCache<string, AuthorityData | null>(500);
 // Free tier without key is 100 per 5 mins (~0.33 TPS).
 const authorityLimit = pLimit(1); 
 const WAIT_MS = 1500; // 1.5s spacing
+const MAX_QUERY_LENGTH = 100;
 
 /**
  * Normalizes title for cache keying
@@ -125,7 +126,7 @@ export async function getAuthorityData(fields: ParsedReference, options?: { forc
         queryParts.push(fields.authors[0].split(',')[0]);
     }
 
-    const query = encodeURIComponent(queryParts.join(' ').substring(0, 100));
+    const query = encodeURIComponent(queryParts.join(' ').substring(0, MAX_QUERY_LENGTH));
     const apiUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${query}&limit=1&fields=title,authors,year,venue,journal,url,pages`;
 
     try {
@@ -137,7 +138,6 @@ export async function getAuthorityData(fields: ParsedReference, options?: { forc
 
         if (!response.ok) {
             console.warn(`Semantic Scholar API failed with status ${response.status}`);
-            authorityCache.set(cacheKey, null);
             return { data: null, status: 'error' };
         }
 
