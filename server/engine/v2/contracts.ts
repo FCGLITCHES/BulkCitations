@@ -47,6 +47,14 @@ export interface V2SplitArtifact {
   lineCount: number;
 }
 
+export interface V2LlmBudget {
+  maxCalls: number;
+  totalCalls: number;
+  splitCalls: number;
+  extractCalls: number;
+  capReached: boolean;
+}
+
 export interface V2PipelineContext {
   request: V2ConversionRequest;
   jobId: string;
@@ -67,6 +75,7 @@ export interface V2PipelineContext {
   jobDebug: Record<string, Record<string, unknown>>;
   workingChunkByCitationId: Record<string, string>;
   splitArtifactsByCitationId: Record<string, V2SplitArtifact>;
+  llmBudget: V2LlmBudget;
   response?: V2ConversionResponse;
   stageConfig: Record<V2StageId, V2StageRuntimeConfig>;
 }
@@ -83,6 +92,7 @@ export interface ExtractorAdapter {
     detectionConfidence?: number;
     batchSize?: number;
     splitArtifact?: V2SplitArtifact;
+    llmBudget?: V2LlmBudget;
   }): Promise<{
     parsed: {
       authors?: Array<string | CanonicalAuthor>;
@@ -92,6 +102,7 @@ export interface ExtractorAdapter {
       volume?: string;
       issue?: string;
       pages?: string;
+      'article-number'?: string;
       doi?: string;
       publisher?: string;
       url?: string;
@@ -109,6 +120,7 @@ export interface ExtractorAdapter {
     selectionReason?: string;
     authorParserMode?: string;
     rejectedCandidates?: string[];
+    llmCapReached?: boolean;
     debug?: Record<string, unknown>;
     fieldConfidence: Partial<Record<'authors' | 'title' | 'year' | 'journal' | 'volume' | 'issue' | 'pages' | 'doi' | 'publisher' | 'url', number>>;
     warnings: string[];

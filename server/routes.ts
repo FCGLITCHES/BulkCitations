@@ -87,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/convert", async (req, res) => {
     try {
       const validatedData = conversionRequestSchema.parse(req.body);
-      const envUseV2Engine = /^(1|true|yes|on)$/i.test(process.env.USE_V2_ENGINE ?? '');
+      const envUseV2Engine = !/^(0|false|no|off)$/i.test(process.env.USE_V2_ENGINE ?? 'true');
       const useV2Engine = validatedData.engineVersion === 'v2'
         ? true
         : validatedData.engineVersion === 'v1'

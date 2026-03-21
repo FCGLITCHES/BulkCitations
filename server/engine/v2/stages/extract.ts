@@ -17,7 +17,7 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
       const startedAt = Date.now();
       const fallbacksUsed = [...context.fallbacksUsed];
       const grobidEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_GROBID_EXTRACTOR ?? '');
-      const defaultExtractConcurrency = grobidEnabled ? 2 : 6;
+      const defaultExtractConcurrency = grobidEnabled ? 1 : 6;
       const configuredExtractConcurrency = Number.parseInt(
         process.env.V2_EXTRACT_CONCURRENCY ?? String(defaultExtractConcurrency),
         10,
@@ -36,11 +36,15 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           detectionConfidence: citation.detectedStyle.confidence,
           batchSize: context.inputProfile?.estimatedCount ?? context.citations.length,
           splitArtifact,
+          llmBudget: context.llmBudget,
         });
         const authorParseResult = parseAuthorsForStyle(result.parsed.authors ?? [], effectiveStyle);
         const yearValue = result.parsed.year ? Number.parseInt(result.parsed.year, 10) : null;
         if (result.fallbackUsed) {
           fallbacksUsed.push(`extract:${result.method}`);
+        }
+        if (result.llmCapReached) {
+          fallbacksUsed.push('extract:llm_cap_reached');
         }
 
         let nextCitation: CanonicalCitation = {
@@ -52,7 +56,7 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           journal: createFieldValue(result.parsed.journal ?? null, 'extracted', result.fieldConfidence.journal ?? 0, 'extract'),
           volume: createFieldValue(result.parsed.volume ?? null, 'extracted', result.fieldConfidence.volume ?? 0, 'extract'),
           issue: createFieldValue(result.parsed.issue ?? null, 'extracted', result.fieldConfidence.issue ?? 0, 'extract'),
-          pages: createFieldValue(result.parsed.pages ?? null, 'extracted', result.fieldConfidence.pages ?? 0, 'extract'),
+          pages: createFieldValue(result.parsed.pages ?? result.parsed['article-number'] ?? null, 'extracted', result.fieldConfidence.pages ?? 0, 'extract'),
           doi: createFieldValue(result.parsed.doi ?? null, 'extracted', result.fieldConfidence.doi ?? 0, 'extract'),
           publisher: createFieldValue(result.parsed.publisher ?? null, 'extracted', result.fieldConfidence.publisher ?? 0, 'extract'),
           url: createFieldValue(result.parsed.url ?? null, 'extracted', result.fieldConfidence.url ?? 0, 'extract'),
@@ -142,9 +146,11 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
         citations,
         fallbacksUsed,
         partialResult: context.partialResult || fallbacksUsed.length > context.fallbacksUsed.length,
-        partialReasons: fallbacksUsed.length > context.fallbacksUsed.length
-          ? [...context.partialReasons, 'extract:fallback_used']
-          : context.partialReasons,
+        partialReasons: [...new Set([
+          ...context.partialReasons,
+          ...(fallbacksUsed.length > context.fallbacksUsed.length ? ['extract:fallback_used'] : []),
+          ...(fallbacksUsed.includes('extract:llm_cap_reached') ? ['extract:llm_cap_reached'] : []),
+        ])],
         jobDebug: context.debugEnabled
           ? {
             ...context.jobDebug,
@@ -154,6 +160,7 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
               extractConcurrency: effectiveExtractConcurrency,
               fallbacksUsed,
               extractorPathsUsed: [...new Set(citations.map((citation) => citation.extraction?.extractorPath).filter(Boolean))],
+              llmBudget: context.llmBudget,
             },
           }
           : context.jobDebug,

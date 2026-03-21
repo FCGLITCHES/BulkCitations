@@ -1,11 +1,13 @@
 import type { CanonicalAuthor, CanonicalCitation, ParsedReference } from '@shared/schema';
+import {
+  classifyLocatorToken,
+  normalizeKnownContainerName,
+} from '../shared/citationSemantics.js';
 import { normalizeWhitespace } from './utils.js';
 
 const PLACEHOLDER_VALUES = new Set(['vol', 'vol.', 'journal', '?']);
-const LOCATOR_PATTERN = /^(?:article\s+)?[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?$/i;
-const ARTICLE_LOCATOR_PATTERN = /^(?:e|article\s+e?|art(?:icle)?\.?\s*)[A-Za-z]?\d+$/i;
-const RAW_LOCATOR_PATTERN = /\bpp?\.?\s*[A-Z]?\d|\bArt(?:icle)?\.?\s*(?:no\.?\s*)?[A-Z]?\d|\b\d+\(\d+\)\s*:\s*[A-Z]?\d|\bS\d+(?:[-–]S?\d+)?\b/i;
-const STRONG_LOCATOR_PATTERN = /\b(?:pp?\.?\s*[A-Z]?\d+(?:\s*[-–]\s*[A-Z]?\d+)?|pages?\s+[A-Z]?\d+(?:\s*[-–]\s*[A-Z]?\d+)?|Art(?:icle)?\.?\s*(?:no\.?\s*)?[A-Z]?\d+|(?:^|[\s(,;:])e\d{4,}(?=$|[\s),.;:])|\bS\d+(?:[-–]S?\d+)?)\b/i;
+const RAW_LOCATOR_PATTERN = /\bpp?\.?\s*[A-Z]?\d|\bArt(?:icle)?\.?\s*(?:no\.?\s*)?[A-Z]?\d|\b\d+\(\d+\)\s*:\s*[A-Z]?\d|\bS\d+(?:[-–]S?\d+)?\b|(?:^|[\s(,;:])[A-Za-z]\d{2,}(?=$|[\s),.;:])|(?:^|[\s(,;:])\d{6,}(?=$|[\s),.;:])/i;
+const STRONG_LOCATOR_PATTERN = /\b(?:pp?\.?\s*[A-Z]?\d+(?:\s*[-–]\s*[A-Z]?\d+)?|pages?\s+[A-Z]?\d+(?:\s*[-–]\s*[A-Z]?\d+)?|Art(?:icle)?\.?\s*(?:no\.?\s*)?[A-Z]?\d+|(?:^|[\s(,;:])[A-Za-z]\d{2,}(?=$|[\s),.;:])|(?:^|[\s(,;:])\d{6,}(?=$|[\s),.;:])|\bS\d+(?:[-–]S?\d+)?)\b/i;
 
 export type RequirementProfile = {
   required: string[];
@@ -81,7 +83,7 @@ export function rawSuggestsDroppedLocator(raw: string): boolean {
 export function isLocatorLike(value: string | null | undefined): boolean {
   const normalized = normalizeWhitespace(value ?? '');
   if (!normalized) return false;
-  return LOCATOR_PATTERN.test(normalized) || ARTICLE_LOCATOR_PATTERN.test(normalized);
+  return classifyLocatorToken(normalized).kind !== 'title_fragment';
 }
 
 export function looksWeakConferenceVenue(value: string | null | undefined): boolean {
@@ -104,15 +106,11 @@ export function normalizeLocatorValue(value: string | null | undefined): string 
   const normalized = normalizeWhitespace(value ?? '')
     .replace(/^pp?\.?\s*/i, '')
     .replace(/^p\.?\s*/i, '')
-    .replace(/^art(?:icle)?\.?\s*no\.?\s*/i, 'Article ')
-    .replace(/^article\s+/i, 'Article ')
     .replace(/[;,.]+$/g, '')
     .trim();
 
   if (!normalized) return null;
-  if (/^[eE]\d+$/.test(normalized)) return normalized;
-  if (/^Article\s+\S+$/i.test(normalized)) return normalized;
-  return normalized;
+  return classifyLocatorToken(normalized).value ?? normalized;
 }
 
 export function bestVenueFromParsed(parsed: ParsedReference): string | null {
@@ -240,18 +238,32 @@ export function sanitizeParsedReference(
   parsed: ParsedReference,
   referenceType: string,
 ): { parsed: ParsedReference; referenceType: string } {
+  const normalizedPages = normalizeLocatorValue(parsed.pages);
+  const normalizedArticleNumber = normalizeWhitespace(parsed['article-number'] ?? '') || undefined;
+  const classifiedPageLocator = normalizedPages ? classifyLocatorToken(normalizedPages) : null;
+  const pages =
+    classifiedPageLocator?.kind === 'pages'
+      ? classifiedPageLocator.value ?? undefined
+      : normalizedArticleNumber
+        ? normalizedPages ?? undefined
+        : undefined;
+  const articleNumber =
+    normalizedArticleNumber
+      ?? (classifiedPageLocator?.kind === 'article-number' ? classifiedPageLocator.value ?? undefined : undefined);
+
   const sanitized: ParsedReference = {
     ...parsed,
     title: normalizeWhitespace(parsed.title ?? '') || undefined,
     year: normalizeWhitespace(parsed.year ?? '') || undefined,
-    journal: normalizeWhitespace(parsed.journal ?? '') || undefined,
+    journal: normalizeKnownContainerName(normalizeWhitespace(parsed.journal ?? '')) || undefined,
     volume: normalizeWhitespace(parsed.volume ?? '') || undefined,
     issue: normalizeWhitespace(parsed.issue ?? '') || undefined,
-    pages: normalizeLocatorValue(parsed.pages),
+    pages,
+    'article-number': articleNumber,
     publisher: normalizeWhitespace(parsed.publisher ?? '') || undefined,
     url: normalizeWhitespace(parsed.url ?? '') || undefined,
-    conferenceTitle: normalizeWhitespace(parsed.conferenceTitle ?? '') || undefined,
-    bookTitle: normalizeWhitespace(parsed.bookTitle ?? '') || undefined,
+    conferenceTitle: normalizeKnownContainerName(normalizeWhitespace(parsed.conferenceTitle ?? '')) || undefined,
+    bookTitle: normalizeKnownContainerName(normalizeWhitespace(parsed.bookTitle ?? '')) || undefined,
     institution: normalizeWhitespace(parsed.institution ?? '') || undefined,
     edition: normalizeWhitespace(parsed.edition ?? '') || undefined,
     editor: normalizeWhitespace(parsed.editor ?? '') || undefined,

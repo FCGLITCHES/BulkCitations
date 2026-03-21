@@ -11,6 +11,13 @@ import type {
   V2StageId,
   V2StageStatus,
 } from '@shared/schema';
+import {
+  classifyLocatorToken,
+  isGroupAuthor,
+  normalizeGroupAuthor,
+  normalizeKnownContainerName,
+  repairGroupAuthorFragments,
+} from '../shared/citationSemantics.js';
 
 export function nowIso(): string {
   return new Date().toISOString();
@@ -226,6 +233,16 @@ export function parseAuthorToCanonical(author: string): CanonicalAuthor {
     };
   }
 
+  if (isGroupAuthor(normalized)) {
+    const group = normalizeGroupAuthor(normalized);
+    return {
+      first: null,
+      last: group,
+      initials: null,
+      literal: group,
+    };
+  }
+
   if (normalized.includes(',')) {
     const [last, rest] = normalized.split(',', 2);
     const first = normalizeWhitespace(rest ?? '') || null;
@@ -320,10 +337,6 @@ function normalizeAuthorTokens(tokens: string[]): string[] {
     .filter(Boolean);
 }
 
-function looksLikeGroupAuthor(value: string): boolean {
-  return /\b(group|consortium|committee|collaboration|team|network|working group)\b/i.test(value);
-}
-
 function buildPairedAuthorsFromAlternatingTokens(tokens: string[]): string[] {
   const normalizedTokens = normalizeAuthorTokens(tokens);
   const paired: string[] = [];
@@ -337,15 +350,19 @@ function buildPairedAuthorsFromAlternatingTokens(tokens: string[]): string[] {
 }
 
 function splitAuthorBlob(author: string): string[] {
-  const normalized = fixUnicodeText(author)
+  const normalized = normalizeGroupAuthor(fixUnicodeText(author)
     .replace(/\s+(?:and|&)\s+/gi, ', ')
     .replace(/\s*,\s*/g, ', ')
     .replace(/\s+/g, ' ')
-    .trim();
+    .trim());
   if (!normalized) return [];
-  if (looksLikeGroupAuthor(normalized) && !normalized.includes(',')) return [normalized];
+  if (isGroupAuthor(normalized) && !normalized.includes(',')) return [normalized];
 
   const commaTokens = normalized.split(/\s*,\s*/).map((token) => token.trim()).filter(Boolean);
+  const repairedGroupTokens = repairGroupAuthorFragments(commaTokens);
+  if (repairedGroupTokens.length !== commaTokens.length) {
+    return repairedGroupTokens;
+  }
   if (commaTokens.length >= 4 && commaTokens.length % 2 === 0 && looksLikeSurnameGivenAlternatingArray(commaTokens)) {
     return buildPairedAuthorsFromAlternatingTokens(commaTokens);
   }
@@ -567,12 +584,13 @@ export function parseAuthorsForStyle(
     if (typeof author !== 'string') return normalizeCanonicalAuthor(author);
     const normalized = fixUnicodeText(author);
 
-    if (looksLikeGroupAuthor(normalized)) {
+    if (isGroupAuthor(normalized)) {
+      const group = normalizeGroupAuthor(normalized);
       return {
         first: null,
-        last: normalized.replace(/^group,\s*/i, '').trim(),
+        last: group,
         initials: null,
-        literal: normalized.replace(/^group,\s*/i, '').trim(),
+        literal: group,
       };
     }
 
@@ -692,19 +710,21 @@ function normalizePersonLastName(value: string): string {
 }
 
 export function canonicalToParsedReference(citation: CanonicalCitation): ParsedReference {
+  const locator = classifyLocatorToken(citation.pages.value ?? '');
   return {
     authors: citation.authors.value.map(canonicalAuthorToDisplay),
     title: citation.title.value ?? undefined,
     year: citation.year.value != null ? String(citation.year.value) : undefined,
-    journal: citation.journal.value ?? undefined,
+    journal: citation.journal.value ? normalizeKnownContainerName(citation.journal.value) : undefined,
     volume: citation.volume.value ?? undefined,
     issue: citation.issue.value ?? undefined,
-    pages: citation.pages.value ?? undefined,
+    pages: locator.kind === 'pages' ? locator.value ?? undefined : undefined,
+    'article-number': locator.kind === 'article-number' ? locator.value ?? undefined : undefined,
     doi: citation.doi.value ?? undefined,
     publisher: citation.publisher.value ?? undefined,
     url: citation.url.value ?? undefined,
-    conferenceTitle: citation.conferenceTitle.value ?? undefined,
-    bookTitle: citation.bookTitle.value ?? undefined,
+    conferenceTitle: citation.conferenceTitle.value ? normalizeKnownContainerName(citation.conferenceTitle.value) : undefined,
+    bookTitle: citation.bookTitle.value ? normalizeKnownContainerName(citation.bookTitle.value) : undefined,
     institution: citation.institution.value ?? undefined,
     edition: citation.edition.value ?? undefined,
     editor: citation.editor.value ? canonicalAuthorToDisplay(parseAuthorToCanonical(citation.editor.value)) : undefined,

@@ -116,6 +116,13 @@ export interface ConvertedReference {
   authorsExpandedFromMetadata?: boolean;
   healthState?: HealthState;
   healthReasons?: string[];
+  debug?: {
+    extractionPath: 'deterministic' | 'grobid' | 'llm' | 'hybrid';
+    splitMethod: 'structural' | 'llm' | 'hybrid';
+    fallbacksUsed: string[];
+    splitConfidence: number;
+    detectedStyle: string;
+  };
 }
 
 export interface ConversionResponse {

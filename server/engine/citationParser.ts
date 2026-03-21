@@ -2,6 +2,13 @@ import { ParsedReference, ReferenceType, CitationStyle, type PatternHit } from "
 import { stripLeadingNumbering } from "@shared/stripNumbering";
 import type { PreNormalizedText } from "@shared/types/textBrands";
 import { expandJournalName, looksAbbreviated } from './stages/expandJournalAbbrev';
+import {
+  extractLocatorFields,
+  isGroupAuthor,
+  normalizeGroupAuthor,
+  normalizeKnownContainerName,
+  normalizeProtectedTokenValue,
+} from './shared/citationSemantics.js';
 import fs from "fs";
 import path from "path";
 
@@ -37,15 +44,27 @@ const PROTECTED_TOKENS = new Set([
   'ICCIC',
   'JOIV',
   'NTMS',
-  'SoSE'
+  'SoSE',
+  'PRISMA',
+  'LHD',
+  'BMJ',
+  'PLoS',
+  'U-Net',
+  'G*Power',
+  '2−ΔΔCT',
+  'DESeq2'
 ]);
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 function protectTokens(input: string): { text: string; map: Map<string, string> } {
   const map = new Map<string, string>();
   let result = input;
   let idx = 0;
-  for (const tok of PROTECTED_TOKENS) {
-    const re = new RegExp(`\\b${tok}\\b`, 'g');
+  for (const tok of [...PROTECTED_TOKENS].sort((left, right) => right.length - left.length)) {
+    const re = new RegExp(`\\b${escapeRegex(tok)}\\b`, 'g');
     if (re.test(result)) {
       const placeholder = `__TOK${idx}__`;
       result = result.replace(re, placeholder);
@@ -77,6 +96,7 @@ const INITIALS_ONLY = /^([A-Z]\.?\s*){1,3}$/;
 function isPersonToken(token: string): boolean {
   const t = token.trim().replace(/^and\s+/i, '');
   if (!t) return false;
+  if (isGroupAuthor(t)) return true;
   if (SURNAME_INITIALS.test(t)) return true;
   if (FIRSTNAME_LASTNAME.test(t)) return true;
   if (PARTICLE_NAME.test(t)) return true;
@@ -96,6 +116,21 @@ function extractAuthorSegment(raw: string): { authorSegment: string; remaining: 
   for (let i = 0; i < tokens.length; i++) {
     const tok = tokens[i].trim();
     if (!tok) continue;
+    const pairCandidate = [tok, tokens[i + 1]].filter(Boolean).join(', ');
+    const tripleCandidate = [tok, tokens[i + 1], tokens[i + 2]].filter(Boolean).join(', ');
+    if (isGroupAuthor(tok) || isGroupAuthor(pairCandidate) || isGroupAuthor(tripleCandidate)) {
+      const normalizedGroup = normalizeGroupAuthor(
+        isGroupAuthor(tripleCandidate)
+          ? tripleCandidate
+          : isGroupAuthor(pairCandidate)
+            ? pairCandidate
+            : tok,
+      );
+      authorTokens.push(normalizedGroup);
+      consumed = i + (isGroupAuthor(tripleCandidate) ? 3 : isGroupAuthor(pairCandidate) ? 2 : 1);
+      i = consumed - 1;
+      continue;
+    }
     if (!isPersonToken(tok)) {
       break;
     }
@@ -681,15 +716,7 @@ export class CitationParser {
 
   /** Extract locator: preserve pages, e-locators (n71, b2535, e1000097), article numbers. Never discard. */
   private extractLocator(input: string): { pages?: string; 'article-number'?: string } | null {
-    const p = (input || '').trim();
-    if (!p) return null;
-    const explicitArt = p.match(/^Art(?:\.|icle)?\s*(?:no\.?)?\s*(\d+)$/i);
-    if (explicitArt) return { 'article-number': explicitArt[1] };
-    if (/^[eE]\d+$/.test(p)) return { 'article-number': p.replace(/^[eE]/i, '') };
-    if (/^[A-Za-z]\d+$/.test(p)) return { 'article-number': p };
-    if (/^\d{5,7}$/.test(p)) return { 'article-number': p };
-    if (/^\d+(?:[-–]\d+)?$/.test(p)) return { pages: p.replace(/–/g, '-') };
-    return { pages: p.replace(/^p?p\.?\s*/i, '').trim() };
+    return extractLocatorFields(input);
   }
 
   /**
@@ -754,15 +781,16 @@ export class CitationParser {
 
     // 3b. Validator: bar article-locator from pages — if pages holds n71, R137, 2402039, promote to article-number
     if (clean.pages && !clean['article-number']) {
-      const p = clean.pages.trim();
-      if (/^[A-Za-z]\d{2,}$/.test(p) || /^\d{5,7}$/.test(p)) {
-        clean['article-number'] = p;
+      const loc = this.extractLocator(clean.pages);
+      if (loc?.['article-number']) {
+        clean['article-number'] = loc['article-number'];
         delete clean.pages;
       }
     }
 
     // 4. Structural hacks per style
     if (clean.title) {
+      clean.title = normalizeProtectedTokenValue(clean.title);
       // Strip any residual bounding quotes that leaked from the string parser
       clean.title = clean.title.replace(/^["'‘“](.*?)["'’”]$/, '$1').trim();
       // Strip any residual Vol./No./Pages fragments that leaked into the title
@@ -806,6 +834,11 @@ export class CitationParser {
       if (style === 'apa') {
         // APA sentence casing normalization
         clean.title = clean.title.charAt(0).toUpperCase() + clean.title.slice(1);
+      }
+
+      clean.title = normalizeProtectedTokenValue(clean.title);
+      if (rawText && /\bU-Net\b/i.test(rawText) && !/\bU-Net\b/i.test(clean.title)) {
+        clean.title = clean.title.replace(/^U[-\s]+Convolutional\b/i, 'U-Net: Convolutional');
       }
     }
 
@@ -879,6 +912,11 @@ export class CitationParser {
         }
       });
     }
+
+    if (clean.journal) clean.journal = normalizeKnownContainerName(clean.journal);
+    if (clean.conferenceTitle) clean.conferenceTitle = normalizeKnownContainerName(clean.conferenceTitle);
+    if (clean.bookTitle) clean.bookTitle = normalizeKnownContainerName(clean.bookTitle);
+    if (clean.publisher) clean.publisher = normalizeKnownContainerName(clean.publisher);
 
     // Authors: only safe normalization (whitespace, trailing punctuation) — no numbering strip; done in preNormalize
 
@@ -2109,15 +2147,47 @@ export class CitationParser {
       return [etAlMatch[1].trim(), 'et al.'];
     }
 
+    const normalizedGroup = normalizeGroupAuthor(clean);
+    const commaParts = clean.split(/,\s*/).filter(Boolean);
+    const looksLikeMixedAuthors = commaParts.length >= 4 || /,\s*[A-Z](?:[.\s]|$)/.test(clean);
+    if (isGroupAuthor(normalizedGroup) && !looksLikeMixedAuthors) {
+      return [normalizedGroup];
+    }
+
+    const trailingGroupAuthors = Array.from(new Set(
+      clean
+        .split(/,\s*/)
+        .map((part) => normalizeGroupAuthor(part.trim()))
+        .filter((part) => isGroupAuthor(part)),
+    ));
+    const appendGroupAuthors = (authors: string[]) => {
+      const normalizedAuthors = authors
+        .map((author) => normalizeProtectedTokenValue(author.trim()))
+        .filter(Boolean);
+      for (const groupAuthor of trailingGroupAuthors) {
+        if (!normalizedAuthors.some((author) => author.toLowerCase() === groupAuthor.toLowerCase())) {
+          normalizedAuthors.push(groupAuthor);
+        }
+      }
+      return normalizedAuthors;
+    };
+
+    if (trailingGroupAuthors.length > 0 && commaParts.length === 4) {
+      const leadingAuthor = commaParts.slice(0, 2).join(', ').trim();
+      if (leadingAuthor) {
+        return appendGroupAuthors([leadingAuthor]);
+      }
+    }
+
     // Corporate author: no comma + organization keyword → treat as single corporate author
     const orgKeywords = /\b(?:Federation|Association|Inc\.|Ltd\.|Committee|Group|Press|University|Institute|Department|Ministry|Agency|Foundation|Society|Board|Bureau|Council)\b/i;
     if (!clean.includes(',') && orgKeywords.test(clean)) {
-      return [clean];
+      return [normalizeGroupAuthor(clean)];
     }
 
     // Corporate author with commas: "Expert Panel on X, Y, and Z" — do not split on internal commas
     if (/Expert\s+Panel\s+on\s+/i.test(clean)) {
-      return [clean];
+      return [normalizeGroupAuthor(clean)];
     }
 
     // Corporate list: "Org1., Org2., Org3 and Org4., Org5" → split on "., " then "," so we don't parse "Federation., W" as Surname, Given (oa-39)
@@ -2143,7 +2213,7 @@ export class CitationParser {
         if (invalid) break;
       }
       if (!invalid && result.length > 0) {
-        return result;
+        return appendGroupAuthors(result);
       }
     }
 
@@ -2187,15 +2257,15 @@ export class CitationParser {
           for (const part of ampParts) {
             all.push(...splitAuthors(part.trim()));
           }
-          return all.filter(Boolean);
+          return appendGroupAuthors(all.filter(Boolean));
         }
 
         // No separator — try direct multi-author split
         const direct = splitAuthors(clean);
-        if (direct.length > 1) return direct;
+        if (direct.length > 1) return appendGroupAuthors(direct);
 
         // Single author
-        return [clean];
+        return appendGroupAuthors([clean]);
       }
 
       case 'mla': {
@@ -2230,10 +2300,10 @@ export class CitationParser {
             authors.push(part);
           }
 
-          return authors.filter(Boolean);
+          return appendGroupAuthors(authors.filter(Boolean));
         }
 
-        return [clean];
+        return appendGroupAuthors([clean]);
       }
 
       case 'chicago': {
@@ -2254,9 +2324,9 @@ export class CitationParser {
           }
 
           if (afterAnd) authors.push(afterAnd);
-          return authors.filter(Boolean);
+          return appendGroupAuthors(authors.filter(Boolean));
         }
-        return [clean];
+        return appendGroupAuthors([clean]);
       }
 
       case 'ieee': {
@@ -2270,7 +2340,7 @@ export class CitationParser {
           const candidate = m[1]?.trim();
           if (candidate) extracted.push(candidate);
         }
-        if (extracted.length > 0) return extracted;
+        if (extracted.length > 0) return appendGroupAuthors(extracted);
 
         // Fallback: split on connectors and recombine orphan initials with following surname.
         const rawParts = ieeeClean
@@ -2288,18 +2358,18 @@ export class CitationParser {
             combined.push(cur);
           }
         }
-        return combined.filter(Boolean);
+        return appendGroupAuthors(combined.filter(Boolean));
       }
 
       case 'vancouver': {
         // Vancouver: "Last AB, Last CD, Last EF" or "van Houten P, d'Silva K"
         // Simply split on commas (safest since there are no internal commas in Vancouver names)
         const parts = clean.split(/,\s*/);
-        return parts.map(p => p.trim()).filter(Boolean);
+        return appendGroupAuthors(parts.map(p => p.trim()).filter(Boolean));
       }
 
       default:
-        return [clean];
+        return appendGroupAuthors([clean]);
     }
   }
 

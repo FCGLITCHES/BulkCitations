@@ -152,6 +152,13 @@ export interface ConvertedReference {
   authorInitialsOnly?: boolean;
   /** True when full names were filled from DOI/metadata lookup (confidence-gated only). */
   authorsExpandedFromMetadata?: boolean;
+  debug?: {
+    extractionPath: 'deterministic' | 'grobid' | 'llm' | 'hybrid';
+    splitMethod: 'structural' | 'llm' | 'hybrid';
+    fallbacksUsed: string[];
+    splitConfidence: number;
+    detectedStyle: string;
+  };
 }
 
 // Authority lookup status (trust + analytics)

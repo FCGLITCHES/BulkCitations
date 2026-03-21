@@ -1,4 +1,5 @@
 import type { CanonicalCitation, CitationQualityScore } from '@shared/schema';
+import { isGroupAuthor } from '../../shared/citationSemantics.js';
 import type { V2Stage } from '../contracts.js';
 import { addCitationStageLog, average, createStageDiagnostic } from '../utils.js';
 import {
@@ -110,7 +111,9 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   if (citation.extraction?.fallbackUsed) flags.push('llm_extracted');
   if (citation.validation?.verificationAttempted && citation.validation.mismatchFields.length > 0) flags.push('unverified');
   if (citation.title.confidence < 0.5) flags.push('low_confidence_title');
-  if (citation.authors.value.some((author) => Boolean(author.literal))) flags.push('author_parse_failed');
+  if (citation.authors.value.some((author) => Boolean(author.literal) && !isGroupAuthor(author.literal ?? ''))) {
+    flags.push('author_parse_failed');
+  }
   if (validationCodes.has('placeholder_volume') || validationCodes.has('placeholder_journal')) flags.push('placeholder_fields');
   if (validationCodes.has('connector_as_author') || validationCodes.has('author_structure_unstable') || validationCodes.has('initials_as_surname')) flags.push('malformed_authors');
   if (structuralIssues.severe > 0 || structuralIssues.review > 0) flags.push('review');

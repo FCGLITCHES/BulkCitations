@@ -6,6 +6,8 @@ describe('v2 pipeline', () => {
   afterEach(() => {
     delete process.env.ENABLE_GROBID_EXTRACTOR;
     delete process.env.GROBID_URL;
+    delete process.env.ENABLE_LLM_EXTRACTOR;
+    delete process.env.OPENAI_API_KEY;
     vi.unstubAllGlobals();
   });
 
@@ -36,6 +38,21 @@ describe('v2 pipeline', () => {
     expect(response.stats.input_count).toBe(2);
     expect(response.stats.unique_count).toBe(1);
     expect(response.stats.duplicate_count).toBe(1);
+  });
+
+  it('omits the debug envelope unless debug mode is explicitly enabled', async () => {
+    const { response } = await processV2Conversion({
+      sourceType: 'text',
+      content: 'Smith, J. (2020). The future of testing. Journal of Quality, 10(2), 11-19.',
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: false,
+      dedup: false,
+      group: false,
+      debug: false,
+    });
+
+    expect(response.debug).toBeUndefined();
   });
 
   it('recovers the healthcare regression fixture without pseudo-authors and preserves conference venue data', async () => {
@@ -218,6 +235,32 @@ describe('v2 pipeline', () => {
     expect(response.citations[0]?.extraction?.extractorPath).toBe('grobid');
     expect(response.processingPath.extractorPathsUsed).toContain('grobid');
     expect(response.citations[0]?.title.value).toBe('Structured extraction from local GROBID');
+  });
+
+  it('does not call grobid when the sidecar is disabled', async () => {
+    delete process.env.ENABLE_GROBID_EXTRACTOR;
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.ENABLE_LLM_EXTRACTOR;
+
+    const adapters = createDefaultAdapters();
+    const fetchMock = vi.fn(async () => {
+      throw new Error('fetch should not be called when both GROBID and LLM are disabled');
+    });
+
+    vi.stubGlobal('fetch', fetchMock as any);
+
+    const result = await adapters.extractor.extract(
+      'Smith, J. (2020). The future of testing. Journal of Quality, 10(2), 11-19.',
+      'auto',
+      {
+        inputProfile: { structure: 'structured', estimatedCount: 1 },
+        detectionConfidence: 0.95,
+        batchSize: 1,
+      },
+    );
+
+    expect(result.extractorPath).toBe('deterministic');
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('still routes weak citations to grobid inside large batches', async () => {

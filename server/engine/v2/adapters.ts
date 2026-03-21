@@ -24,6 +24,7 @@ import {
   proceedingsSignal,
   sanitizeParsedReference,
 } from './qualityRules.js';
+import { getOpenAiExtractTimeoutMs, tryConsumeLlmCall } from './llmConfig.js';
 import type {
   AuthorityLookupAdapter,
   CacheAdapter,
@@ -37,6 +38,10 @@ import type {
 
 const DOI_PATTERN = /\b10\.\d{4,}\/\S+\b/i;
 const REQUIRED_EXTRACTION_FIELDS: Array<keyof ParsedReference> = ['title', 'year'];
+const DEFAULT_GROBID_TIMEOUT_MS = 3000;
+const DEFAULT_GROBID_COOLDOWN_MS = 30000;
+
+let grobidCooldownUntil = 0;
 
 const canonicalAuthorSchema = z.object({
   first: z.string().trim().min(1).nullable().optional(),
@@ -70,6 +75,27 @@ function extractJsonContent(value: string): string {
   const trimmed = value.trim();
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
   return fenced?.[1]?.trim() ?? trimmed;
+}
+
+function readPositiveIntEnv(name: string, fallback: number): number {
+  const parsed = Number.parseInt(process.env[name] ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function isGrobidCoolingDown() {
+  return Date.now() < grobidCooldownUntil;
+}
+
+function openGrobidCooldown(reason: string) {
+  const cooldownMs = readPositiveIntEnv('GROBID_COOLDOWN_MS', DEFAULT_GROBID_COOLDOWN_MS);
+  grobidCooldownUntil = Date.now() + cooldownMs;
+  console.log(JSON.stringify({
+    stage: 'extract',
+    adapter: 'grobid',
+    event: 'cooldown_opened',
+    reason,
+    cooldownMs,
+  }));
 }
 
 function buildDeterministicCandidate(input: string, inputStyle: string) {
@@ -195,29 +221,44 @@ async function extractWithGrobid(input: string): Promise<ReturnType<typeof parse
   if (!/^(1|true|yes|on)$/i.test(process.env.ENABLE_GROBID_EXTRACTOR ?? '')) {
     return null;
   }
+  if (isGrobidCoolingDown()) {
+    return null;
+  }
   const baseUrl = (process.env.GROBID_URL ?? 'http://localhost:8070').replace(/\/$/, '');
   const body = new URLSearchParams({
     citations: input,
     consolidateCitations: '0',
     includeRawCitations: '1',
   });
+  const timeoutMs = readPositiveIntEnv('GROBID_TIMEOUT_MS', DEFAULT_GROBID_TIMEOUT_MS);
 
-  const response = await fetch(`${baseUrl}/api/processCitation`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body,
-    signal: AbortSignal.timeout(Number.parseInt(process.env.GROBID_TIMEOUT_MS ?? '3000', 10)),
-  });
+  try {
+    const response = await fetch(`${baseUrl}/api/processCitation`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body,
+      signal: AbortSignal.timeout(timeoutMs),
+    });
 
-  if (!response.ok) {
-    throw new Error(`GROBID ${response.status}`);
+    if (!response.ok) {
+      if (response.status === 429 || response.status === 503) {
+        openGrobidCooldown(`status_${response.status}`);
+      }
+      throw new Error(`GROBID ${response.status}`);
+    }
+
+    const tei = await response.text();
+    if (!tei.trim()) return null;
+    return parseGrobidTei(tei);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes('timed out') || message.includes('TimeoutError') || message.includes('AbortError')) {
+      openGrobidCooldown('timeout');
+    }
+    throw error;
   }
-
-  const tei = await response.text();
-  if (!tei.trim()) return null;
-  return parseGrobidTei(tei);
 }
 
 function looksLikeDateFragment(value: string | undefined): boolean {
@@ -241,6 +282,7 @@ function scoreCandidate(parsed: ParsedReference | null | undefined, referenceTyp
   if (!parsed) return -999;
   const requirements = getRequirementProfile(referenceType ?? 'journal');
   const authorSignals = analyzeParsedAuthorStrings(parsed.authors);
+  const locatorValue = parsed.pages ?? parsed['article-number'];
   let score = 0;
   if (parsed.title && parsed.title.split(/\s+/).length >= 4 && !looksLikeDateFragment(parsed.title)) score += 4;
   else if (parsed.title) score += 1.5;
@@ -250,7 +292,7 @@ function scoreCandidate(parsed: ParsedReference | null | undefined, referenceTyp
   if (parsed.authors?.length) score += 3.5;
   if (parsed.volume) score += requirements.expected.includes('volume') ? 1 : 0.3;
   if (parsed.issue) score += requirements.expected.includes('issue') ? 1 : 0.3;
-  if (isLocatorLike(parsed.pages)) score += requirements.expected.includes('locator') ? 1.2 : 0.4;
+  if (isLocatorLike(locatorValue)) score += requirements.expected.includes('locator') ? 1.2 : 0.4;
   if (parsed.authors && looksLikeAlternatingTokenArray(parsed.authors)) score -= 2;
   if (parsed.authors?.some((author) => looksLikeMergedAuthorBlob(author))) score -= 4;
   if (authorSignals.mergedBlobCount > 0) score -= authorSignals.mergedBlobCount * 2.5;
@@ -282,7 +324,7 @@ function selectionReason(
 function fillMissingFromFallback(selected: ParsedReference, fallback: ParsedReference | null): ParsedReference {
   if (!fallback) return selected;
   const merged: ParsedReference = { ...selected };
-  for (const field of ['title', 'year', 'journal', 'conferenceTitle', 'bookTitle', 'volume', 'issue', 'pages', 'publisher', 'url', 'doi', 'institution', 'edition', 'editor'] as const) {
+  for (const field of ['title', 'year', 'journal', 'conferenceTitle', 'bookTitle', 'volume', 'issue', 'pages', 'article-number', 'publisher', 'url', 'doi', 'institution', 'edition', 'editor'] as const) {
     if (!merged[field] && fallback[field]) {
       merged[field] = fallback[field];
     }
@@ -295,6 +337,7 @@ function fillMissingFromFallback(selected: ParsedReference, fallback: ParsedRefe
 
 function buildFieldConfidence(parsed: ParsedReference, referenceType: string) {
   const authorSignals = analyzeParsedAuthorStrings(parsed.authors);
+  const locatorValue = parsed.pages ?? parsed['article-number'];
   return {
     authors: parsed.authors?.length
       ? Math.max(0.25, Math.min(0.92, 0.84 + (authorSignals.richness * 0.04) - (authorSignals.mergedBlobCount * 0.12) - (authorSignals.singleCharacterTailCount * 0.08)))
@@ -304,7 +347,7 @@ function buildFieldConfidence(parsed: ParsedReference, referenceType: string) {
     journal: hasParsedVenue(parsed) ? 0.82 : (referenceType === 'journal' ? 0.18 : 0.12),
     volume: parsed.volume ? 0.82 : 0.1,
     issue: parsed.issue ? 0.8 : 0.1,
-    pages: isLocatorLike(parsed.pages) ? 0.82 : 0.1,
+    pages: isLocatorLike(locatorValue) ? 0.82 : 0.1,
     doi: parsed.doi ? 0.96 : 0.05,
     publisher: parsed.publisher || parsed.institution ? 0.74 : 0.1,
     url: parsed.url ? 0.9 : 0.05,
@@ -384,7 +427,7 @@ async function extractWithLlm(input: string): Promise<z.infer<typeof llmExtracti
         },
       ],
     }),
-    signal: AbortSignal.timeout(4500),
+    signal: AbortSignal.timeout(getOpenAiExtractTimeoutMs()),
   });
 
   if (!response.ok) {
@@ -419,6 +462,7 @@ function mergeLlmWithDeterministic(
     volume: llm.volume ?? deterministic.parsed.volume,
     issue: llm.issue ?? deterministic.parsed.issue,
     pages: llm.pages ?? deterministic.parsed.pages,
+    'article-number': deterministic.parsed['article-number'],
     doi: llm.doi ? normalizeDoiValue(llm.doi) : deterministic.parsed.doi,
     publisher: llm.publisher ?? deterministic.parsed.publisher,
     url: llm.url ?? deterministic.parsed.url,
@@ -499,6 +543,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     detectionConfidence?: number;
     batchSize?: number;
     splitArtifact?: V2SplitArtifact;
+    llmBudget?: { maxCalls: number; totalCalls: number; splitCalls: number; extractCalls: number; capReached: boolean };
   }) {
     const deterministicBase = buildDeterministicCandidate(input, inputStyle);
     const deterministicSanitized = sanitizeParsedReference(deterministicBase.parsed, deterministicBase.referenceType);
@@ -549,20 +594,63 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     const inputStructure = options?.inputProfile?.structure ?? 'unknown';
     const batchSize = options?.batchSize ?? options?.inputProfile?.estimatedCount ?? 1;
     const grobidEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_GROBID_EXTRACTOR ?? '');
+    const llmEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_LLM_EXTRACTOR ?? '1') && Boolean(process.env.OPENAI_API_KEY);
     const detectionConfidence = options?.detectionConfidence ?? 0;
+    const profilePrefersGrobid = inputStructure === 'semi_structured'
+      || inputStructure === 'unstructured'
+      || splitContaminationFlags.some((flag) => ['header_bleed_suspected', 'page_artifact_present', 'multiline_truncation_suspected', 'oversized_chunk'].includes(flag));
+
+    let llmApplied = false;
+    let llmAttempted = false;
+    let llmCapReached = false;
+    const llmWarnings: string[] = [];
+
     const weakDeterministicSelection =
       needsLlmFallback(mergedSelection, selectedFieldConfidence)
       || (deterministicScore - contaminationScorePenalty) < 8
       || deterministicAuthorParse.warningFlags.length > 0
       || deterministicAuthorParse.rejectedCandidates.length > 0
       || splitContaminationFlags.length > 0;
-    const profilePrefersGrobid = inputStructure === 'semi_structured'
-      || inputStructure === 'unstructured'
-      || splitContaminationFlags.some((flag) => ['header_bleed_suspected', 'page_artifact_present', 'multiline_truncation_suspected', 'oversized_chunk'].includes(flag));
-    const grobidRouteReason = weakDeterministicSelection
+
+    if (llmEnabled && weakDeterministicSelection) {
+      llmAttempted = true;
+      if (!tryConsumeLlmCall(options?.llmBudget, 'extract')) {
+        llmCapReached = true;
+        rejectedCandidates.push('llm_cap_reached');
+        llmWarnings.push('llm_cap_reached');
+      } else {
+        try {
+          const llm = await extractWithLlm(selectedBase.normalized);
+          if (llm) {
+            const merged = mergeLlmWithDeterministic({ parsed: mergedSelection, referenceType: selectedReferenceType }, llm);
+            const sanitizedHybrid = sanitizeParsedReference(merged.parsed, merged.referenceType);
+            mergedSelection = sanitizedHybrid.parsed;
+            selectedReferenceType = sanitizedHybrid.referenceType;
+            selectedFieldConfidence = {
+              ...merged.fieldConfidence,
+              ...applySplitPenaltyToFieldConfidence(buildFieldConfidence(mergedSelection, selectedReferenceType), splitPenalty),
+            };
+            extractorPath = 'llm';
+            llmApplied = true;
+            llmWarnings.push('llm_fallback_applied');
+          } else {
+            rejectedCandidates.push('llm_unavailable');
+            llmWarnings.push('llm_fallback_unavailable');
+          }
+        } catch (error) {
+          rejectedCandidates.push('llm_invalid_or_failed');
+          llmWarnings.push(`llm_fallback_failed:${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+    }
+
+    const currentSelectionScore = scoreCandidate(mergedSelection, selectedReferenceType);
+    const grobidRouteReason = (
+      needsLlmFallback(mergedSelection, selectedFieldConfidence)
+      || (currentSelectionScore - contaminationScorePenalty) < 8
+      || splitContaminationFlags.length > 0
+    )
       ? 'weak_deterministic_parse'
-      : splitContaminationFlags.length > 0
-        ? 'split_contamination'
       : detectionConfidence < 0.65
         ? 'low_detection_confidence'
         : profilePrefersGrobid && detectionConfidence < 0.9
@@ -598,24 +686,21 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
         grobidCandidate = await extractWithGrobid(input);
         if (grobidCandidate) {
           grobidScore = scoreCandidate(grobidCandidate.parsed, grobidCandidate.referenceType) + 1;
-          const profilePrefersGrobid = ['structured', 'semi_structured'].includes(inputStructure);
-          const deterministicBestScore = Math.max(deterministicScore, fallbackScore);
+          const grobidPreferredProfile = ['structured', 'semi_structured'].includes(inputStructure);
+          const currentBestScore = Math.max(currentSelectionScore, deterministicScore, fallbackScore);
           const grobidLooksUsable = Boolean(grobidCandidate.parsed.title) && Boolean(grobidCandidate.parsed.authors?.length);
           if (
-            (grobidLooksUsable && profilePrefersGrobid)
-            || 
-            grobidScore > deterministicBestScore + 0.5
-            || (profilePrefersGrobid && grobidLooksUsable && grobidScore >= deterministicBestScore - 0.25)
+            (grobidLooksUsable && grobidPreferredProfile)
+            || grobidScore > currentBestScore + 0.5
+            || (grobidPreferredProfile && grobidLooksUsable && grobidScore >= currentBestScore - 0.25)
           ) {
             mergedSelection = fillMissingFromFallback(grobidCandidate.parsed, mergedSelection);
             selectedReferenceType = grobidCandidate.referenceType;
-            selectedFieldConfidence = {
-              ...applySplitPenaltyToFieldConfidence(buildFieldConfidence(mergedSelection, selectedReferenceType), splitPenalty),
-              authors: Math.max(applySplitPenaltyToFieldConfidence(buildFieldConfidence(mergedSelection, selectedReferenceType), splitPenalty).authors, 0.9 - Math.min(0.18, splitPenalty)),
-              title: Math.max(applySplitPenaltyToFieldConfidence(buildFieldConfidence(mergedSelection, selectedReferenceType), splitPenalty).title, 0.9 - Math.min(0.18, splitPenalty)),
-              year: Math.max(applySplitPenaltyToFieldConfidence(buildFieldConfidence(mergedSelection, selectedReferenceType), splitPenalty).year, 0.9 - Math.min(0.18, splitPenalty)),
-            };
-            extractorPath = 'grobid';
+            selectedFieldConfidence = applySplitPenaltyToFieldConfidence(
+              buildFieldConfidence(mergedSelection, selectedReferenceType),
+              splitPenalty,
+            );
+            extractorPath = llmApplied ? 'hybrid' : 'grobid';
             console.log(JSON.stringify({
               stage: 'extract',
               adapter: 'grobid',
@@ -627,6 +712,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
               grobidScore,
               deterministicScore,
               fallbackScore,
+              currentSelectionScore,
             }));
           } else {
             console.log(JSON.stringify({
@@ -640,6 +726,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
               grobidScore,
               deterministicScore,
               fallbackScore,
+              currentSelectionScore,
             }));
           }
         }
@@ -658,149 +745,54 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       }
     }
 
-    if (!needsLlmFallback(mergedSelection, selectedFieldConfidence) || !/^(1|true|yes|on)$/i.test(process.env.ENABLE_LLM_EXTRACTOR ?? '1')) {
-      return {
-        parsed: mergedSelection,
-        referenceType: selectedReferenceType,
-        method: 'deterministic' as const,
-        fallbackUsed: false,
-        extractorPath,
-        selectedBranch,
-        selectionReason: selectedReason,
-        rejectedCandidates,
-        fieldConfidence: selectedFieldConfidence,
-        warnings: [...deterministic.warnings, ...(fallback?.warnings ?? []), ...splitWarnings],
-        debug: {
-          deterministic_raw: deterministic.parsed,
-          year_anchored_fallback_raw: fallback?.parsed ?? null,
-          grobid_raw: grobidCandidate?.parsed ?? null,
-          selected_branch: selectedBranch,
-          selection_reason: selectedReason,
-          extractor_path: extractorPath,
-          deterministic_score: deterministicScore,
-          fallback_score: fallbackScore,
-          grobid_score: grobidScore,
-          deterministic_author_parser_mode: deterministicAuthorParse.parserMode,
-          deterministic_author_warning_flags: deterministicAuthorParse.warningFlags,
-          fallback_author_parser_mode: fallbackAuthorParse.parserMode,
-          fallback_author_warning_flags: fallbackAuthorParse.warningFlags,
-          split_contamination_flags: splitContaminationFlags,
-          split_contamination_penalty: splitPenalty,
-          cleaned_chunk_length: splitArtifact?.chunkLength ?? input.length,
-          rejectedCandidates,
-        },
-      };
-    }
+    const selectionReasonSuffix = llmApplied
+      ? '_with_llm_fill'
+      : llmCapReached
+        ? '_llm_cap_reached'
+        : llmAttempted && llmWarnings.some((warning) => warning.startsWith('llm_fallback_') || warning === 'llm_cap_reached')
+          ? '_llm_invalid_or_failed'
+          : '';
 
-    try {
-      const llm = await extractWithLlm(selectedBase.normalized);
-      if (!llm) {
-        return {
-          parsed: mergedSelection,
-          referenceType: selectedReferenceType,
-          method: 'deterministic' as const,
-          fallbackUsed: false,
-          selectedBranch,
-          selectionReason: selectedReason,
-          rejectedCandidates,
-          fieldConfidence: selectedFieldConfidence,
-          warnings: [...deterministic.warnings, ...(fallback?.warnings ?? []), ...splitWarnings, 'llm_fallback_unavailable'],
-          debug: {
-            deterministic_raw: deterministic.parsed,
-            year_anchored_fallback_raw: fallback?.parsed ?? null,
-            selected_branch: selectedBranch,
-            selection_reason: selectedReason,
-            deterministic_score: deterministicScore,
-            fallback_score: fallbackScore,
-            split_contamination_flags: splitContaminationFlags,
-            split_contamination_penalty: splitPenalty,
-            cleaned_chunk_length: splitArtifact?.chunkLength ?? input.length,
-            rejectedCandidates,
-          },
-        };
-      }
-
-      const merged = mergeLlmWithDeterministic({ parsed: mergedSelection, referenceType: selectedReferenceType }, llm);
-      const sanitizedHybrid = sanitizeParsedReference(merged.parsed, merged.referenceType);
-      const hybridFieldConfidence = {
-        ...merged.fieldConfidence,
-        ...applySplitPenaltyToFieldConfidence(buildFieldConfidence(sanitizedHybrid.parsed, sanitizedHybrid.referenceType), splitPenalty),
-      };
-      return {
-        parsed: sanitizedHybrid.parsed,
-        referenceType: sanitizedHybrid.referenceType,
-        method: 'hybrid' as const,
-        fallbackUsed: true,
-        extractorPath: extractorPath === 'grobid' ? 'hybrid' : 'llm',
-        selectedBranch: 'hybrid' as const,
-        selectionReason: `${selectedReason}_with_llm_fill`,
+    return {
+      parsed: mergedSelection,
+      referenceType: selectedReferenceType,
+      method: llmApplied ? 'hybrid' as const : 'deterministic' as const,
+      fallbackUsed: llmApplied || llmAttempted || llmCapReached,
+      extractorPath,
+      selectedBranch: llmApplied ? 'hybrid' as const : selectedBranch,
+      selectionReason: `${selectedReason}${selectionReasonSuffix}`,
+      rejectedCandidates,
+      llmCapReached,
+      fieldConfidence: selectedFieldConfidence,
+      warnings: [
+        ...deterministic.warnings,
+        ...(fallback?.warnings ?? []),
+        ...splitWarnings,
+        ...llmWarnings,
+      ],
+      debug: {
+        deterministic_raw: deterministic.parsed,
+        year_anchored_fallback_raw: fallback?.parsed ?? null,
+        grobid_raw: grobidCandidate?.parsed ?? null,
+        selected_branch: llmApplied ? 'hybrid' : selectedBranch,
+        selection_reason: `${selectedReason}${selectionReasonSuffix}`,
+        extractor_path: extractorPath,
+        deterministic_score: deterministicScore,
+        fallback_score: fallbackScore,
+        grobid_score: grobidScore,
+        deterministic_author_parser_mode: deterministicAuthorParse.parserMode,
+        deterministic_author_warning_flags: deterministicAuthorParse.warningFlags,
+        fallback_author_parser_mode: fallbackAuthorParse.parserMode,
+        fallback_author_warning_flags: fallbackAuthorParse.warningFlags,
+        split_contamination_flags: splitContaminationFlags,
+        split_contamination_penalty: splitPenalty,
+        cleaned_chunk_length: splitArtifact?.chunkLength ?? input.length,
+        llm_attempted: llmAttempted,
+        llm_applied: llmApplied,
+        llm_cap_reached: llmCapReached,
         rejectedCandidates,
-        fieldConfidence: hybridFieldConfidence,
-        warnings: [...deterministic.warnings, ...(fallback?.warnings ?? []), ...splitWarnings, 'llm_fallback_applied'],
-        debug: {
-          deterministic_raw: deterministic.parsed,
-          year_anchored_fallback_raw: fallback?.parsed ?? null,
-          grobid_raw: grobidCandidate?.parsed ?? null,
-          selected_branch: 'hybrid',
-          selection_reason: `${selectedReason}_with_llm_fill`,
-          extractor_path: extractorPath === 'grobid' ? 'hybrid' : 'llm',
-          deterministic_score: deterministicScore,
-          fallback_score: fallbackScore,
-          grobid_score: grobidScore,
-          deterministic_author_parser_mode: deterministicAuthorParse.parserMode,
-          deterministic_author_warning_flags: deterministicAuthorParse.warningFlags,
-          fallback_author_parser_mode: fallbackAuthorParse.parserMode,
-          fallback_author_warning_flags: fallbackAuthorParse.warningFlags,
-          split_contamination_flags: splitContaminationFlags,
-          split_contamination_penalty: splitPenalty,
-          cleaned_chunk_length: splitArtifact?.chunkLength ?? input.length,
-          rejectedCandidates,
-        },
-      };
-    } catch (error) {
-      return {
-        parsed: mergedSelection,
-        referenceType: selectedReferenceType,
-        method: 'deterministic' as const,
-        fallbackUsed: true,
-        extractorPath,
-        selectedBranch,
-        selectionReason: `${selectedReason}_llm_invalid_or_failed`,
-        rejectedCandidates: [
-          ...rejectedCandidates,
-          'llm_invalid_or_failed',
-        ],
-        fieldConfidence: selectedFieldConfidence,
-        warnings: [
-          ...deterministic.warnings,
-          ...(fallback?.warnings ?? []),
-          ...splitWarnings,
-          `llm_fallback_failed:${error instanceof Error ? error.message : String(error)}`,
-        ],
-        debug: {
-          deterministic_raw: deterministic.parsed,
-          year_anchored_fallback_raw: fallback?.parsed ?? null,
-          grobid_raw: grobidCandidate?.parsed ?? null,
-          selected_branch: selectedBranch,
-          selection_reason: `${selectedReason}_llm_invalid_or_failed`,
-          extractor_path: extractorPath,
-          deterministic_score: deterministicScore,
-          fallback_score: fallbackScore,
-          grobid_score: grobidScore,
-          deterministic_author_parser_mode: deterministicAuthorParse.parserMode,
-          deterministic_author_warning_flags: deterministicAuthorParse.warningFlags,
-          fallback_author_parser_mode: fallbackAuthorParse.parserMode,
-          fallback_author_warning_flags: fallbackAuthorParse.warningFlags,
-          split_contamination_flags: splitContaminationFlags,
-          split_contamination_penalty: splitPenalty,
-          cleaned_chunk_length: splitArtifact?.chunkLength ?? input.length,
-          rejectedCandidates: [
-            ...rejectedCandidates,
-            'llm_invalid_or_failed',
-          ],
-        },
-      };
-    }
+      },
+    };
   }
 }
 

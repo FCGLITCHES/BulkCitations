@@ -3,6 +3,7 @@ import type { V2ConversionRequest, V2StageId } from '@shared/schema';
 import { createDefaultAdapters } from './adapters.js';
 import { buildStageConfig, V2_STAGE_ORDER } from './config.js';
 import type { V2AdapterBundle, V2PipelineContext, V2Stage } from './contracts.js';
+import { createLlmBudget, getOpenAiExtractTimeoutMs, getOpenAiSplitTimeoutMs } from './llmConfig.js';
 import { createDedupStage } from './stages/dedup.js';
 import { createDetectStage } from './stages/detect.js';
 import { createEnrichStage } from './stages/enrich.js';
@@ -54,6 +55,13 @@ function resolveStageTimeoutMs(
   stageId: V2StageId,
   baseTimeoutMs: number,
 ): number {
+  const llmEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_LLM_EXTRACTOR ?? '1') && Boolean(process.env.OPENAI_API_KEY);
+
+  if (stageId === 'split') {
+    if (!llmEnabled) return baseTimeoutMs;
+    return Math.max(baseTimeoutMs, getOpenAiSplitTimeoutMs() + 1_500);
+  }
+
   if (stageId !== 'extract') return baseTimeoutMs;
 
   const citationCount = Math.max(
@@ -63,7 +71,7 @@ function resolveStageTimeoutMs(
     1,
   );
   const grobidEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_GROBID_EXTRACTOR ?? '');
-  const defaultConcurrency = grobidEnabled ? 2 : 6;
+  const defaultConcurrency = grobidEnabled ? 1 : 6;
   const configuredConcurrency = Number.parseInt(
     process.env.V2_EXTRACT_CONCURRENCY ?? String(defaultConcurrency),
     10,
@@ -75,8 +83,11 @@ function resolveStageTimeoutMs(
   const perBatchBudgetMs = grobidEnabled ? 3_500 : 1_200;
   const overheadMs = grobidEnabled ? 4_000 : 2_000;
   const calculatedTimeoutMs = (batches * perBatchBudgetMs) + overheadMs;
+  const llmCalculatedTimeoutMs = llmEnabled
+    ? (batches * getOpenAiExtractTimeoutMs()) + 2_000
+    : 0;
 
-  return Math.max(baseTimeoutMs, calculatedTimeoutMs);
+  return Math.max(baseTimeoutMs, calculatedTimeoutMs, llmCalculatedTimeoutMs);
 }
 
 export async function processV2Conversion(
@@ -110,6 +121,7 @@ export async function processV2Conversion(
     jobDebug: {},
     workingChunkByCitationId: {},
     splitArtifactsByCitationId: {},
+    llmBudget: createLlmBudget(options?.executionMode ?? 'sync'),
     stageConfig,
   };
 

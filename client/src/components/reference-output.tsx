@@ -594,6 +594,15 @@ function CitationRow({
           {showDebug && (
             <div className="mt-3 pt-3 border-t border-muted text-xs font-mono bg-muted/50 rounded p-2">
               <div><strong>authorityStatus:</strong> {refData.authorityStatus ?? "—"}</div>
+              {refData.debug && (
+                <>
+                  <div><strong>extractionPath:</strong> {refData.debug.extractionPath}</div>
+                  <div><strong>splitMethod:</strong> {refData.debug.splitMethod}</div>
+                  <div><strong>splitConfidence:</strong> {refData.debug.splitConfidence}</div>
+                  <div><strong>detectedStyle:</strong> {refData.debug.detectedStyle}</div>
+                  <div><strong>fallbacksUsed:</strong> {refData.debug.fallbacksUsed.length > 0 ? refData.debug.fallbacksUsed.join(", ") : "—"}</div>
+                </>
+              )}
               {refData.patternHits && refData.patternHits.length > 0 && (
                 <div className="mt-1"><strong>patternHits:</strong> {refData.patternHits.map((h) => `${h.id}(${h.fields.join(",")})`).join(", ")}</div>
               )}

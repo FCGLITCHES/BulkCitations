@@ -1,3 +1,10 @@
+import {
+  getProtectedContainerCorruptionReasons,
+  getProtectedTitleCorruptionReasons,
+  hasInventedPlaceholderVenue,
+  hasMalformedAuthorShape,
+  hasPlaceholderFieldValue,
+} from "@shared/referenceHealthHeuristics";
 import type { Cluster, ConvertedReference, HealthState, ReferenceType } from "./types";
 
 type HealthSignals = {
@@ -5,36 +12,15 @@ type HealthSignals = {
   reasons: string[];
 };
 
-function isJournalLike(type: ReferenceType, parsed: any) {
-  return type === "journal" || !!parsed?.journal;
-}
-
-function isConferenceLike(type: ReferenceType, parsed: any) {
-  return type === "conference" || !!parsed?.conferenceTitle;
-}
-
 function hasVenue(parsed: any) {
   return !!(parsed?.journal || parsed?.conferenceTitle || parsed?.bookTitle);
-}
-
-function hasMalformedAuthorShape(parsed: any) {
-  const authors = Array.isArray(parsed?.authors) ? parsed.authors : [];
-  return authors.some((author: string) => {
-    const value = String(author ?? "").trim();
-    if (!value) return true;
-    if (/[,&]\s*&/.test(value) || /\b&\b/.test(value)) return true;
-    if (/,\s*[A-Z](?:\s*,\s*[A-Z]){1,}/.test(value)) return true;
-    if (/^[A-Z][a-z]+,\s*[A-Z]\s*,\s*[A-Z]/.test(value)) return true;
-    if (/^\w+\s+\w+\s+\&/.test(value)) return true;
-    return false;
-  });
 }
 
 function hasPlaceholderFields(parsed: any) {
   const suspectValues = [parsed?.journal, parsed?.volume, parsed?.issue]
     .map((value) => String(value ?? "").trim().toLowerCase())
     .filter(Boolean);
-  return suspectValues.some((value) => value === "vol" || value === "journal" || value === "?" || value === "vol.");
+  return suspectValues.some((value) => hasPlaceholderFieldValue(value));
 }
 
 function getFallbackRequirementProfile(type: ReferenceType) {
@@ -93,8 +79,10 @@ function hasParsedField(parsed: any, field: string) {
 
 export function computeReferenceHealth(
   ref: ConvertedReference,
-  clusters?: Cluster[]
+  clusters?: Cluster[],
 ): HealthSignals {
+  void clusters;
+
   if (ref.healthState) {
     return {
       state: ref.healthState,
@@ -106,13 +94,13 @@ export function computeReferenceHealth(
   const warnings = ref.warnings ?? [];
   const warningCodes = warnings.map(parseWarningCode).filter((code): code is string => Boolean(code));
   const reasons: string[] = [];
-  const hardReasons: string[] = [];
+  const actionReasons: string[] = [];
   const softReasons: string[] = [];
   const profile = getFallbackRequirementProfile(ref.referenceType);
 
   const missingRequiredFields = profile.required.filter((field) => !hasParsedField(parsed, field));
   const missingReviewFields = profile.reviewIfMissing.filter((field) => !hasParsedField(parsed, field));
-  const hasErrorWarning = warnings.some((w) => w.startsWith("error:"));
+  const hasErrorWarning = warnings.some((warning) => warning.startsWith("error:"));
   const hasReviewWarning = warningCodes.some((code) => [
     "placeholder_volume",
     "placeholder_journal",
@@ -125,30 +113,51 @@ export function computeReferenceHealth(
   const veryLowConfidence = (ref.confidence?.score ?? 100) < 40;
   const mediumLowConfidence = (ref.confidence?.score ?? 100) < 70;
   const styleFailed = !!ref.styleDetectionFailed;
-  const missingPublisherForBook =
-    ref.referenceType === "book" && !parsed.publisher;
+  const missingPublisherForBook = ref.referenceType === "book" && !parsed.publisher;
   const noVenueForStructuredType =
     (ref.referenceType === "journal" || ref.referenceType === "conference") && !hasVenue(parsed);
-  const malformedAuthorShape = hasMalformedAuthorShape(parsed);
+  const malformedAuthorShape = hasMalformedAuthorShape(parsed.authors);
   const placeholderFields = hasPlaceholderFields(parsed);
 
-  if (missingRequiredFields.includes("authors")) hardReasons.push("Missing author");
-  if (missingRequiredFields.includes("year")) hardReasons.push("Missing year");
-  if (missingRequiredFields.includes("title")) hardReasons.push("Missing title");
-  if (missingRequiredFields.includes("publisher")) hardReasons.push("Missing publisher");
-  if (missingRequiredFields.includes("institution")) hardReasons.push("Missing institution");
-  if (missingRequiredFields.includes("url")) hardReasons.push("Missing URL");
-  if (malformedAuthorShape) hardReasons.push("Author parsing looks malformed");
-  if (missingRequiredFields.includes("venue") && mediumLowConfidence) {
-    hardReasons.push("Missing required venue");
+  if (malformedAuthorShape) {
+    actionReasons.push("Author parsing looks malformed");
   }
-  if (veryLowConfidence) hardReasons.push("Very low-confidence parse");
-  if (styleFailed) softReasons.push("Auto-detect uncertain; style fell back to best-guess");
-  if (hasErrorWarning) hardReasons.push("Critical formatting or parsing errors");
+  if (hasInventedPlaceholderVenue(parsed, ref.originalText)) {
+    actionReasons.push("Placeholder venue text appears to have been invented by the parser");
+  }
+  actionReasons.push(...getProtectedTitleCorruptionReasons(ref.originalText, parsed.title));
+  actionReasons.push(...getProtectedContainerCorruptionReasons(ref.originalText, parsed));
+  if (warningCodes.includes("connector_as_author")) {
+    actionReasons.push("A conjunction token was parsed as an author");
+  }
+  if (warningCodes.includes("author_structure_unstable")) {
+    actionReasons.push("Author structure still looks unstable");
+  }
+  if (warningCodes.includes("initials_as_surname")) {
+    actionReasons.push("An author surname field contains initials only");
+  }
+  if (warningCodes.includes("locator_missing_from_source")) {
+    actionReasons.push("A locator present in the source was not preserved");
+  }
 
-  if (!missingRequiredFields.includes("year") && mediumLowConfidence && !veryLowConfidence) {
-    softReasons.push("Moderate confidence — a quick review is suggested");
+  if (styleFailed) {
+    softReasons.push("Auto-detect uncertain; style fell back to best-guess");
   }
+  if (hasErrorWarning && actionReasons.length === 0) {
+    softReasons.push("Critical formatting or parsing errors");
+  }
+  if (veryLowConfidence) {
+    softReasons.push("Very low-confidence parse");
+  } else if (!missingRequiredFields.includes("year") && mediumLowConfidence) {
+    softReasons.push("Moderate confidence - a quick review is suggested");
+  }
+  if (missingRequiredFields.includes("authors")) softReasons.push("Missing author");
+  if (missingRequiredFields.includes("year")) softReasons.push("Missing year");
+  if (missingRequiredFields.includes("title")) softReasons.push("Missing title");
+  if (missingRequiredFields.includes("publisher")) softReasons.push("Missing publisher");
+  if (missingRequiredFields.includes("institution")) softReasons.push("Missing institution");
+  if (missingRequiredFields.includes("url")) softReasons.push("Missing URL");
+  if (missingRequiredFields.includes("venue")) softReasons.push("Missing required venue");
   if (hasReviewWarning) {
     softReasons.push("Style or formatting warnings present");
   }
@@ -173,9 +182,9 @@ export function computeReferenceHealth(
 
   let state: HealthState;
 
-  if (hardReasons.length > 0) {
+  if (actionReasons.length > 0) {
     state = "action_needed";
-    reasons.push(...new Set([...hardReasons, ...softReasons]));
+    reasons.push(...new Set([...actionReasons, ...softReasons]));
   } else if (softReasons.length > 0) {
     state = "review";
     reasons.push(...new Set(softReasons));
@@ -185,4 +194,3 @@ export function computeReferenceHealth(
 
   return { state, reasons };
 }
-

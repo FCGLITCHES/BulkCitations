@@ -7,6 +7,12 @@ import type {
   ReferenceType,
   V2ConversionResponse,
 } from '@shared/schema';
+import {
+  getProtectedContainerCorruptionReasons,
+  getProtectedTitleCorruptionReasons,
+  hasInventedPlaceholderVenue,
+  hasMalformedAuthorShape,
+} from '@shared/referenceHealthHeuristics';
 import { canonicalToParsedReference, canonicalReferenceTypeToParsed } from './utils.js';
 import { computeWorkKey } from '../../utils/workKey.js';
 import { hasAuthorInitialsOnly } from '../../utils/authorResolution.js';
@@ -40,45 +46,36 @@ function mapLegacyHealth(citation: CanonicalCitation): {
   const qualityFlags = new Set(citation.quality?.flags ?? []);
   const missingRequired = citation.quality?.missingRequired ?? [];
   const score = citation.quality?.overall ?? 0;
-  const grade = citation.quality?.grade ?? 'F';
-  const hasReviewLevelValidation = citation.validationIssues.some((issue) => (
-    issue.severity === 'warning'
-    && [
-      'placeholder_volume',
-      'placeholder_journal',
-      'venue_missing_for_conference',
-      'initials_as_surname',
-      'doi_invalid_shape',
-      'locator_missing_from_source',
-    ].includes(issue.code)
-  ));
+  const parsed = canonicalToParsedReference(citation);
+  const actionReasons = [
+    ...(validationCodes.has('connector_as_author') ? ['A conjunction token was parsed as an author'] : []),
+    ...(validationCodes.has('author_structure_unstable') ? ['Author structure still looks unstable'] : []),
+    ...(validationCodes.has('initials_as_surname') ? ['An author surname field contains initials only'] : []),
+    ...(validationCodes.has('locator_missing_from_source') ? ['A locator present in the source was not preserved'] : []),
+    ...(qualityFlags.has('malformed_authors') ? ['Author parsing looks malformed'] : []),
+    ...(qualityFlags.has('author_parse_failed') ? ['Author parsing looks malformed'] : []),
+    ...(hasMalformedAuthorShape(parsed.authors) ? ['Author parsing looks malformed'] : []),
+    ...(hasInventedPlaceholderVenue(parsed, citation.raw) ? ['Placeholder venue text appears to have been invented by the parser'] : []),
+    ...getProtectedTitleCorruptionReasons(citation.raw, parsed.title),
+    ...getProtectedContainerCorruptionReasons(citation.raw, parsed),
+  ];
 
   for (const flag of qualityFlags) {
     const message = friendlyQualityFlag(flag);
     if (message && !reasons.includes(message)) reasons.push(message);
   }
 
-  if (qualityFlags.has('retracted')) {
-    return { state: 'action_needed', reasons };
+  if (actionReasons.length > 0) {
+    return { state: 'action_needed', reasons: [...new Set([...actionReasons, ...reasons])] };
   }
 
   if (
     missingRequired.length > 0
-    || score < 0.2
-    || validationCodes.has('connector_as_author')
-    || qualityFlags.has('malformed_authors')
-    || qualityFlags.has('author_parse_failed')
-  ) {
-    return { state: 'action_needed', reasons };
-  }
-
-  if (
-    score < 0.5
-    || (grade === 'C' && score < 0.6)
-    || grade === 'F'
-    || hasReviewLevelValidation
+    || score < 0.75
     || qualityFlags.has('placeholder_fields')
     || qualityFlags.has('review')
+    || qualityFlags.has('retracted')
+    || citation.validationIssues.some((issue) => issue.severity !== 'info')
   ) {
     return { state: 'review', reasons };
   }
@@ -131,6 +128,19 @@ export function mapV2ResponseToLegacyRecords(
     const inputStyle = citation.detectedStyle.value ?? request.inputStyle;
     const health = mapLegacyHealth(citation);
     const confidenceScore = Math.round((citation.quality?.overall ?? 0) * 100);
+    const debug = response.debug?.enabled
+      ? {
+          extractionPath: citation.extraction?.extractorPath ?? 'deterministic',
+          splitMethod: citation.split?.method ?? 'structural',
+          fallbacksUsed: [
+            ...(citation.split?.fallbackUsed ? ['split:fallback'] : []),
+            ...(citation.extraction?.fallbackUsed ? ['extract:fallback'] : []),
+            ...(citation.extraction?.rejectedCandidates ?? []).filter((candidate) => candidate === 'llm_cap_reached'),
+          ],
+          splitConfidence: citation.split?.confidence ?? 1,
+          detectedStyle: citation.detectedStyle.value ?? 'unknown',
+        }
+      : undefined;
 
     return {
       sourceId: citation.id,
@@ -157,6 +167,7 @@ export function mapV2ResponseToLegacyRecords(
         healthState: health.state,
         healthReasons: health.reasons,
         authorInitialsOnly: hasAuthorInitialsOnly(parsedData),
+        debug,
       },
       storageData: {
         originalText: citation.raw,

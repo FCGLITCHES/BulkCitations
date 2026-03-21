@@ -48,10 +48,11 @@ describe('reference health regression checks', () => {
     expect(health.reasons).toContain('Author parsing looks malformed');
   });
 
-  it('marks placeholder venue fields as worth reviewing', () => {
+  it('marks placeholder venue fields as worth reviewing when the source is also incomplete', () => {
     const ref = makeReference({
+      originalText: 'Haynes, W. M. (2014). CRC Handbook of Chemistry and Physics. Journal, ?.',
       parsedData: {
-        authors: ['Unknown'],
+        authors: ['Haynes, W. M.'],
         title: 'CRC Handbook of Chemistry and Physics',
         year: '2014',
         journal: 'Journal',
@@ -111,5 +112,50 @@ describe('reference health regression checks', () => {
 
     const health = computeReferenceHealth(ref);
     expect(health.state).toBe('clean');
+  });
+
+  it('marks protected title-token corruption as action needed', () => {
+    const ref = makeReference({
+      originalText: 'Ronneberger, O., Fischer, P., and Brox, T. "U-Net: Convolutional Networks for Biomedical Image Segmentation."',
+      parsedData: {
+        authors: ['Ronneberger, O.', 'Fischer, P.', 'Brox, T.'],
+        title: 'U-Convolutional Networks for Biomedical Image Segmentation',
+        year: '2015',
+        journal: 'Lecture Notes in Computer Science',
+      },
+      confidence: {
+        score: 61,
+        breakdown: { rules: 61 },
+        isSuspicious: false,
+      },
+    });
+
+    const health = computeReferenceHealth(ref);
+    expect(health.state).toBe('action_needed');
+    expect(health.reasons).toContain('Protected title token U-Net was corrupted');
+  });
+
+  it('keeps unknown-source placeholders in review rather than action needed', () => {
+    const ref = makeReference({
+      originalText: 'Unknown. (1990). Statistical power analysis for the behavioral sciences. Computers Environment and Urban Systems, 14(1), 71.',
+      parsedData: {
+        authors: ['Unknown'],
+        title: 'Statistical power analysis for the behavioral sciences',
+        year: '1990',
+        journal: 'Computers Environment and Urban Systems',
+        volume: '14',
+        issue: '1',
+        pages: '71',
+      },
+      confidence: {
+        score: 58,
+        breakdown: { rules: 58 },
+        isSuspicious: false,
+      },
+      warnings: ['warning:missing_field'],
+    });
+
+    const health = computeReferenceHealth(ref);
+    expect(health.state).toBe('review');
   });
 });

@@ -25,4 +25,10 @@ describe('v2 author rescue utilities', () => {
       initials: 'D. A.',
     });
   });
+
+  it('keeps repaired group authors intact during canonicalization', () => {
+    const result = parseAuthorsForStyle(['SHOJI, Mamoru', 'Group, LHD Experiment'], 'apa');
+
+    expect(result.authors.some((author) => author.literal === 'LHD Experiment Group')).toBe(true);
+  });
 });

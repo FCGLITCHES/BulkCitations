@@ -16,6 +16,7 @@ import {
   normalizeDoiValue,
   normalizeWhitespace,
 } from '../utils.js';
+import { getOpenAiSplitTimeoutMs, recordLlmCapReached, tryConsumeLlmCall } from '../llmConfig.js';
 
 export const OVERSIZED_CHUNK_CHARS = 800;
 export const OVERSIZED_CHUNK_LINES = 12;
@@ -408,7 +409,7 @@ async function splitWithLlm(rawItem: string): Promise<string[] | null> {
         },
       ],
     }),
-    signal: AbortSignal.timeout(4500),
+    signal: AbortSignal.timeout(getOpenAiSplitTimeoutMs()),
   });
 
   if (!response.ok) {
@@ -423,7 +424,11 @@ async function splitWithLlm(rawItem: string): Promise<string[] | null> {
   return splitArraySchema.parse(JSON.parse(extractJsonContent(content)));
 }
 
-async function maybeResplitCandidate(candidate: SplitCandidate, fallbacksUsed: string[], context: { partialResult: boolean }): Promise<SplitCandidate[]> {
+async function maybeResplitCandidate(
+  candidate: SplitCandidate,
+  fallbacksUsed: string[],
+  context: { partialResult: boolean; partialReasons: string[]; llmBudget: { maxCalls: number; totalCalls: number; splitCalls: number; extractCalls: number; capReached: boolean } },
+): Promise<SplitCandidate[]> {
   const raw = auditRaw(candidate);
   if (normalizeWhitespace(raw).length <= SUSPECTED_MULTI_CITATION_CHARS) {
     return [candidate];
@@ -432,6 +437,13 @@ async function maybeResplitCandidate(candidate: SplitCandidate, fallbacksUsed: s
   const recovered = secondaryBoundaryRecovery(candidate);
   if (recovered && recovered.length > 1) {
     return recovered;
+  }
+
+  if (!tryConsumeLlmCall(context.llmBudget, 'split')) {
+    candidate.splitReasons = [...candidate.splitReasons, 'llm_cap_reached'];
+    context.partialResult = true;
+    recordLlmCapReached({ fallbacksUsed, partialReasons: context.partialReasons }, 'split');
+    return [candidate];
   }
 
   try {
@@ -479,6 +491,7 @@ export function createSplitStage(): V2Stage {
       const citations: CanonicalCitation[] = [];
       const fallbacksUsed = [...context.fallbacksUsed];
       let partialResult = context.partialResult;
+      const partialReasons = [...context.partialReasons];
       const workingChunkByCitationId = { ...context.workingChunkByCitationId };
       const splitArtifactsByCitationId = { ...context.splitArtifactsByCitationId };
 
@@ -500,7 +513,11 @@ export function createSplitStage(): V2Stage {
         }
 
         const expandedCandidates: SplitCandidate[] = [];
-        const resplitState = { partialResult };
+        const resplitState = {
+          partialResult,
+          partialReasons,
+          llmBudget: context.llmBudget,
+        };
         for (const candidate of candidates) {
           const resplit = await maybeResplitCandidate(candidate, fallbacksUsed, resplitState);
           expandedCandidates.push(...resplit);
@@ -564,6 +581,7 @@ export function createSplitStage(): V2Stage {
         citations,
         fallbacksUsed,
         partialResult,
+        partialReasons: [...new Set(partialReasons)],
         workingChunkByCitationId,
         splitArtifactsByCitationId,
         jobDebug: context.debugEnabled
@@ -573,6 +591,7 @@ export function createSplitStage(): V2Stage {
               rawItems: context.rawItems.length,
               citationCount: citations.length,
               contaminationCount: citations.filter((citation) => splitArtifactsByCitationId[citation.id]?.contaminationFlags.length > 0).length,
+              llmBudget: context.llmBudget,
             },
           }
           : context.jobDebug,
