@@ -1,6 +1,4 @@
-import { Readability } from '@mozilla/readability';
 import { fileTypeFromBuffer } from 'file-type';
-import { JSDOM } from 'jsdom';
 import * as pdfParseModule from 'pdf-parse-new';
 import type { InputProfile } from '@shared/schema';
 import type { V2Stage } from '../contracts.js';
@@ -230,6 +228,10 @@ export function createIngestStage(): V2Stage {
           break;
         }
         case 'url': {
+          const [{ JSDOM }, { Readability }] = await Promise.all([
+            import('jsdom'),
+            import('@mozilla/readability'),
+          ]);
           const safeUrl = validateUrlSafety(content);
           const response = await fetch(safeUrl, { method: 'GET', signal: AbortSignal.timeout(10_000) });
           const html = await response.text();
