@@ -1,3 +1,5 @@
+import type { PoolConfig } from 'pg';
+
 let hasWarnedAboutInvalidDatabaseUrl = false;
 
 function isPostgresConnectionString(value: string): boolean {
@@ -22,4 +24,14 @@ export function getUsableDatabaseUrl(): string | null {
   }
 
   return null;
+}
+
+export function createPostgresPoolConfig(connectionString: string): PoolConfig {
+  const parsed = new URL(connectionString);
+  const sslMode = parsed.searchParams.get('sslmode');
+
+  return {
+    connectionString,
+    ssl: sslMode === 'disable' ? undefined : { rejectUnauthorized: false },
+  };
 }

@@ -1,10 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { Navbar } from "@/components/navbar";
 import { 
   ArrowLeft, 
   CheckCircle2, 
-  XCircle, 
   Copy, 
   Brush, 
   Wrench,
@@ -22,7 +21,8 @@ import {
   MessageSquare,
   Clock3,
   ArrowRightLeft,
-  CopyCheck
+  CopyCheck,
+  Trash2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -106,6 +106,7 @@ function initialCorrectedFields(report?: CitationReport | null) {
 
 export default function AdminReportDetail() {
   const [, params] = useRoute("/admin/reports/:id");
+  const [, setLocation] = useLocation();
   const { id } = params || {};
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -204,14 +205,20 @@ export default function AdminReportDetail() {
     }
   });
 
-  const duplicateMutation = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: async () => {
-      return adminFetch(`/api/reports/${id}/duplicate`, { method: "POST" });
+      return adminFetch<{ success: true; deletedCount: number }>("/api/reports", {
+        method: "DELETE",
+        body: JSON.stringify({ ids: [id] }),
+      });
     },
     onSuccess: () => {
-      toast({ title: "Marked as duplicate" });
-      queryClient.invalidateQueries({ queryKey: [`/api/reports/${id}`] });
+      toast({ title: "Report deleted" });
       queryClient.invalidateQueries({ queryKey: ["/api/reports/grouped"] });
+      setLocation("/admin/reports");
+    },
+    onError: (err: Error) => {
+      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
     }
   });
 
@@ -895,22 +902,27 @@ export default function AdminReportDetail() {
                 <div className="grid grid-cols-2 gap-2">
                   <Button 
                     variant="outline" 
-                    className="text-red-500 hover:bg-red-50 text-xs"
+                    className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30 text-xs"
                     onClick={() => {
                       const reason = prompt("Why mark this as correct? (e.g. output is already valid)");
                       if (reason !== null) rejectMutation.mutate(reason || "Output is already correct");
                     }}
                   >
-                    <XCircle className="h-3 w-3 mr-1.5" />
+                    <CheckCircle2 className="h-3 w-3 mr-1.5" />
                     Mark as Correct
                   </Button>
                   <Button 
                     variant="outline" 
-                    className="text-muted-foreground hover:bg-muted text-xs"
-                    onClick={() => duplicateMutation.mutate()}
+                    className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30 text-xs"
+                    onClick={() => {
+                      const confirmed = window.confirm("Delete this report from the failure queue? This cannot be undone.");
+                      if (!confirmed) return;
+                      deleteMutation.mutate();
+                    }}
+                    disabled={deleteMutation.isPending}
                   >
-                    <Copy className="h-3 w-3 mr-1.5" />
-                    Duplicate
+                    <Trash2 className="h-3 w-3 mr-1.5" />
+                    {deleteMutation.isPending ? "Deleting..." : "Delete Report"}
                   </Button>
                 </div>
               </div>

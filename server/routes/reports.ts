@@ -15,6 +15,7 @@ import {
   appendReviewEvent,
   checkRateLimit,
   computeFingerprint,
+  deleteReports,
   getGroupedReports,
   getReportById,
   hashIP,
@@ -226,6 +227,24 @@ router.get('/grouped', async (req, res) => {
   } catch (error) {
     console.error('GET /api/reports/grouped error:', error instanceof Error ? error.message : String(error));
     return res.status(500).json({ message: 'Failed to load grouped reports' });
+  }
+});
+
+router.delete('/', async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body?.ids)
+      ? req.body.ids.filter((value: unknown): value is string => typeof value === 'string' && value.trim().length > 0)
+      : [];
+
+    if (ids.length === 0) {
+      return res.status(400).json({ message: 'ids[] is required' });
+    }
+
+    const deletedCount = await deleteReports(Array.from(new Set(ids)));
+    return res.json({ success: true, deletedCount });
+  } catch (error) {
+    console.error('DELETE /api/reports error:', error instanceof Error ? error.message : String(error));
+    return res.status(500).json({ message: 'Failed to delete reports' });
   }
 });
 

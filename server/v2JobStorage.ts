@@ -1,10 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { neon } from '@neondatabase/serverless';
 import type { V2ConversionRequest, V2ConversionResponse } from '@shared/schema';
 import { eq, sql } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
-import { getUsableDatabaseUrl } from './store/databaseUrl.js';
+import { createPostgresPoolConfig, getUsableDatabaseUrl } from './store/databaseUrl.js';
 
 export type V2JobStatus = 'queued' | 'processing' | 'completed' | 'failed';
 
@@ -105,7 +104,7 @@ class PostgresV2JobStorage implements IV2JobStorage {
   private ready: Promise<void> | null = null;
 
   constructor(connectionString: string) {
-    this.db = drizzle(neon(connectionString));
+    this.db = drizzle({ connection: createPostgresPoolConfig(connectionString) });
   }
 
   private async ensureReady(): Promise<void> {
@@ -226,8 +225,65 @@ class PostgresV2JobStorage implements IV2JobStorage {
   }
 }
 
+class ResilientV2JobStorage implements IV2JobStorage {
+  private primary: IV2JobStorage;
+  private fallback: IV2JobStorage;
+  private usingFallback = false;
+
+  constructor(primary: IV2JobStorage, fallback: IV2JobStorage) {
+    this.primary = primary;
+    this.fallback = fallback;
+  }
+
+  private shouldFallback(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return /Error connecting to database|fetch failed|ECONNRESET|ENOTFOUND|ETIMEDOUT|connection/i.test(message);
+  }
+
+  private async runWithFallback<T>(operation: (store: IV2JobStorage) => Promise<T>): Promise<T> {
+    if (this.usingFallback) {
+      return operation(this.fallback);
+    }
+
+    try {
+      return await operation(this.primary);
+    } catch (error) {
+      if (!this.shouldFallback(error)) {
+        throw error;
+      }
+      this.usingFallback = true;
+      console.warn('[v2JobStorage] Database unavailable, falling back to memory job storage:', error instanceof Error ? error.message : String(error));
+      return operation(this.fallback);
+    }
+  }
+
+  async saveJob(request: V2ConversionRequest, response: V2ConversionResponse): Promise<V2StoredJob> {
+    return this.runWithFallback((store) => store.saveJob(request, response));
+  }
+
+  async createQueuedJob(request: V2ConversionRequest): Promise<V2StoredJob> {
+    return this.runWithFallback((store) => store.createQueuedJob(request));
+  }
+
+  async markProcessing(id: string): Promise<void> {
+    await this.runWithFallback((store) => store.markProcessing(id));
+  }
+
+  async completeJob(id: string, response: V2ConversionResponse): Promise<V2StoredJob | undefined> {
+    return this.runWithFallback((store) => store.completeJob(id, response));
+  }
+
+  async failJob(id: string, error: string): Promise<void> {
+    await this.runWithFallback((store) => store.failJob(id, error));
+  }
+
+  async getJob(id: string): Promise<V2StoredJob | undefined> {
+    return this.runWithFallback((store) => store.getJob(id));
+  }
+}
+
 const databaseUrl = getUsableDatabaseUrl();
 
 export const v2JobStorage: IV2JobStorage = databaseUrl
-  ? new PostgresV2JobStorage(databaseUrl)
+  ? new ResilientV2JobStorage(new PostgresV2JobStorage(databaseUrl), new MemoryV2JobStorage())
   : new MemoryV2JobStorage();

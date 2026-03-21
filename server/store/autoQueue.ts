@@ -36,6 +36,73 @@ interface AutoQueueTrigger {
   suggestedFixType: FixType;
 }
 
+function hasConferenceKeywords(value?: string | null): boolean {
+  return Boolean(value && /\bconference\b|\bproceedings?\b|\bworkshop\b|\bsymposium\b|\bmeeting\b/i.test(value));
+}
+
+function getFieldValue(ref: ConvertedReference, field: string): string {
+  const value = (ref.parsedData as Record<string, unknown> | undefined)?.[field];
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function getStrongTypeFields(ref: ConvertedReference, type: string): string[] {
+  const journal = getFieldValue(ref, "journal");
+  const conferenceTitle = getFieldValue(ref, "conferenceTitle");
+  const bookTitle = getFieldValue(ref, "bookTitle");
+  const publisher = getFieldValue(ref, "publisher");
+  const institution = getFieldValue(ref, "institution");
+  const volume = getFieldValue(ref, "volume");
+  const issue = getFieldValue(ref, "issue");
+  const pages = getFieldValue(ref, "pages");
+  const doi = getFieldValue(ref, "doi");
+  const url = getFieldValue(ref, "url");
+
+  switch (type) {
+    case "journal":
+      return [
+        ...(journal && !hasConferenceKeywords(journal) ? ["journal"] : []),
+        ...(volume ? ["volume"] : []),
+        ...(issue ? ["issue"] : []),
+        ...(pages ? ["pages"] : []),
+        ...(doi ? ["doi"] : []),
+      ];
+    case "conference":
+      return [
+        ...(conferenceTitle ? ["conferenceTitle"] : []),
+        ...(bookTitle && hasConferenceKeywords(bookTitle) ? ["bookTitle"] : []),
+        ...(journal && hasConferenceKeywords(journal) ? ["journal"] : []),
+        ...(pages ? ["pages"] : []),
+      ];
+    case "book":
+      return [
+        ...(bookTitle && !hasConferenceKeywords(bookTitle) ? ["bookTitle"] : []),
+        ...(publisher ? ["publisher"] : []),
+      ];
+    case "bookChapter":
+      return [
+        ...(bookTitle ? ["bookTitle"] : []),
+        ...(publisher ? ["publisher"] : []),
+        ...(pages ? ["pages"] : []),
+      ];
+    case "report":
+      return [
+        ...(publisher ? ["publisher"] : []),
+        ...(institution ? ["institution"] : []),
+        ...(url ? ["url"] : []),
+      ];
+    case "website":
+      return [
+        ...(url ? ["url"] : []),
+      ];
+    default:
+      return [];
+  }
+}
+
+function formatFieldList(fields: string[]): string {
+  return fields.join(", ");
+}
+
 // ── Trigger detection ──
 
 function detectTriggers(ref: ConvertedReference, clusters?: Cluster[]): AutoQueueTrigger[] {
@@ -44,7 +111,7 @@ function detectTriggers(ref: ConvertedReference, clusters?: Cluster[]): AutoQueu
   // 1. Low confidence
   if (ref.confidence && ref.confidence.score < 60) {
     triggers.push({
-      reason: `confidence=${ref.confidence.score} (< 60 threshold)`,
+      reason: `confidence=${ref.confidence.score} (< 60 threshold); check authors, title, year, journal, conferenceTitle, volume, issue, and pages`,
       category: "other",
       suggestedFixType: "parser-logic",
     });
@@ -53,7 +120,7 @@ function detectTriggers(ref: ConvertedReference, clusters?: Cluster[]): AutoQueu
   // 2. Style detection failed
   if (ref.styleDetectionFailed) {
     triggers.push({
-      reason: "style detection failed — fallback to APA",
+      reason: "style detection failed — fallback to APA; check authors, title, year, journal, conferenceTitle, and punctuation cues in the input",
       category: "style-detection",
       suggestedFixType: "scoring-tweak",
     });
@@ -66,7 +133,7 @@ function detectTriggers(ref: ConvertedReference, clusters?: Cluster[]): AutoQueu
       .map((d) => d.id);
     if (errorRules.length > 0) {
       triggers.push({
-        reason: `error-level assertions failed: ${errorRules.join(", ")}`,
+        reason: `error-level assertions failed: ${errorRules.join(", ")}; check the flagged fields in the rendered output`,
         category: inferCategoryFromAssertions(errorRules),
         suggestedFixType: inferFixTypeFromAssertions(errorRules),
       });
@@ -79,11 +146,25 @@ function detectTriggers(ref: ConvertedReference, clusters?: Cluster[]): AutoQueu
     if (cluster && cluster.members.length > 1) {
       const types = new Set(cluster.members.map((m) => m.referenceType));
       if (types.size > 1) {
-        triggers.push({
-          reason: `cluster ${ref.clusterId} has mixed types: ${[...types].join(", ")}`,
-          category: "reference-type",
-          suggestedFixType: "parser-logic",
-        });
+        const currentTypeFields = getStrongTypeFields(ref, ref.referenceType);
+        if (currentTypeFields.length === 0) {
+          const reviewFields = Array.from(new Set([
+            ...getStrongTypeFields(ref, "journal"),
+            ...getStrongTypeFields(ref, "conference"),
+            "journal",
+            "conferenceTitle",
+            "bookTitle",
+            "volume",
+            "issue",
+            "pages",
+          ]));
+
+          triggers.push({
+            reason: `cluster ${ref.clusterId} mixes ${[...types].join(", ")} and this ${ref.referenceType} parse has no clear anchor field; check ${formatFieldList(reviewFields)}`,
+            category: "reference-type",
+            suggestedFixType: "parser-logic",
+          });
+        }
       }
     }
   }
@@ -97,7 +178,7 @@ function detectTriggers(ref: ConvertedReference, clusters?: Cluster[]): AutoQueu
       authors.some((a) => /^et\s+al\.?$/i.test(a.trim()))
     ) {
       triggers.push({
-        reason: '"et al." found as primary author entry',
+        reason: '"et al." found as primary author entry; check authors',
         category: "author",
         suggestedFixType: "parser-logic",
       });
@@ -108,7 +189,7 @@ function detectTriggers(ref: ConvertedReference, clusters?: Cluster[]): AutoQueu
   if (ref.parsedData?.journal && /\bconference\b|\bproceedings?\b|\bworkshop\b/i.test(ref.parsedData.journal)) {
     if (ref.referenceType === "journal") {
       triggers.push({
-        reason: `journal field contains conference keywords but typed as journal: "${ref.parsedData.journal.slice(0, 60)}"`,
+        reason: `journal field contains conference keywords but typed as journal; check journal and conferenceTitle ("${ref.parsedData.journal.slice(0, 60)}")`,
         category: "reference-type",
         suggestedFixType: "parser-logic",
       });
@@ -120,7 +201,7 @@ function detectTriggers(ref: ConvertedReference, clusters?: Cluster[]): AutoQueu
     const longAuthors = ref.parsedData.authors.filter((a) => a.length > 80);
     if (longAuthors.length > 0) {
       triggers.push({
-        reason: `suspiciously long author string (${longAuthors[0].length} chars) — possible field leakage`,
+        reason: `suspiciously long author string (${longAuthors[0].length} chars) — possible field leakage; check authors, title, and journal`,
         category: "author",
         suggestedFixType: "parser-logic",
       });

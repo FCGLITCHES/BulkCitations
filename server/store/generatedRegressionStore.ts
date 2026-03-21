@@ -1,7 +1,6 @@
 import fs from 'node:fs';
-import { neon } from '@neondatabase/serverless';
 import { eq, sql } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { boolean, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import type { PatternExportArtifact } from '@shared/schema';
 import {
@@ -12,7 +11,7 @@ import {
   stableFileMigrationKey,
   writeJsonlFile,
 } from './persistence.js';
-import { getUsableDatabaseUrl } from './databaseUrl.js';
+import { createPostgresPoolConfig, getUsableDatabaseUrl } from './databaseUrl.js';
 
 export interface RegressionFixture {
   id: string;
@@ -98,7 +97,7 @@ class PostgresGeneratedRegressionStorage implements GeneratedRegressionStorage {
   private ready: Promise<void> | null = null;
 
   constructor(connectionString: string) {
-    this.db = drizzle(neon(connectionString));
+    this.db = drizzle({ connection: createPostgresPoolConfig(connectionString) });
   }
 
   private async ensureReady(): Promise<void> {
@@ -196,11 +195,57 @@ class PostgresGeneratedRegressionStorage implements GeneratedRegressionStorage {
   }
 }
 
+class ResilientGeneratedRegressionStorage implements GeneratedRegressionStorage {
+  private primary: GeneratedRegressionStorage;
+  private fallback: GeneratedRegressionStorage;
+  private usingFallback = false;
+
+  constructor(primary: GeneratedRegressionStorage, fallback: GeneratedRegressionStorage) {
+    this.primary = primary;
+    this.fallback = fallback;
+  }
+
+  private shouldFallback(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return /Error connecting to database|fetch failed|ECONNRESET|ENOTFOUND|ETIMEDOUT|connection/i.test(message);
+  }
+
+  private async runWithFallback<T>(operation: (store: GeneratedRegressionStorage) => Promise<T>): Promise<T> {
+    if (this.usingFallback) {
+      return operation(this.fallback);
+    }
+
+    try {
+      return await operation(this.primary);
+    } catch (error) {
+      if (!this.shouldFallback(error)) {
+        throw error;
+      }
+      this.usingFallback = true;
+      console.warn('[generatedRegressionStore] Database unavailable, falling back to local regression storage:', error instanceof Error ? error.message : String(error));
+      return operation(this.fallback);
+    }
+  }
+
+  async save(record: GeneratedRegressionFixtureRecord): Promise<GeneratedRegressionFixtureRecord> {
+    return this.runWithFallback((store) => store.save(record));
+  }
+
+  async list(): Promise<GeneratedRegressionFixtureRecord[]> {
+    return this.runWithFallback((store) => store.list());
+  }
+}
+
 const databaseUrl = getUsableDatabaseUrl();
 
+const fileGeneratedRegressionStorage = new FileGeneratedRegressionStorage();
+
 const generatedRegressionStorage: GeneratedRegressionStorage = databaseUrl
-  ? new PostgresGeneratedRegressionStorage(databaseUrl)
-  : new FileGeneratedRegressionStorage();
+  ? new ResilientGeneratedRegressionStorage(
+      new PostgresGeneratedRegressionStorage(databaseUrl),
+      fileGeneratedRegressionStorage,
+    )
+  : fileGeneratedRegressionStorage;
 
 export async function saveGeneratedRegressionFixture(record: GeneratedRegressionFixtureRecord): Promise<GeneratedRegressionFixtureRecord> {
   return generatedRegressionStorage.save(record);

@@ -1,9 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto, { randomUUID } from 'node:crypto';
-import { neon } from '@neondatabase/serverless';
 import { eq, inArray, sql } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { boolean, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import type {
   ApprovedCanonicalFields,
@@ -23,7 +22,7 @@ import {
   stableFileMigrationKey,
   writeJsonlFile,
 } from './persistence.js';
-import { getUsableDatabaseUrl } from './databaseUrl.js';
+import { createPostgresPoolConfig, getUsableDatabaseUrl } from './databaseUrl.js';
 
 export type TruthEntry = ApprovedTruthEntry;
 
@@ -231,7 +230,7 @@ class PostgresTruthStore implements TruthStorage {
   private ready: Promise<void> | null = null;
 
   constructor(connectionString: string) {
-    this.db = drizzle(neon(connectionString));
+    this.db = drizzle({ connection: createPostgresPoolConfig(connectionString) });
   }
 
   private async ensureReady(): Promise<void> {
@@ -370,11 +369,59 @@ class PostgresTruthStore implements TruthStorage {
   }
 }
 
+class ResilientTruthStore implements TruthStorage {
+  private primary: TruthStorage;
+  private fallback: TruthStorage;
+  private usingFallback = false;
+
+  constructor(primary: TruthStorage, fallback: TruthStorage) {
+    this.primary = primary;
+    this.fallback = fallback;
+  }
+
+  private shouldFallback(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return /Error connecting to database|fetch failed|ECONNRESET|ENOTFOUND|ETIMEDOUT|connection/i.test(message);
+  }
+
+  private async runWithFallback<T>(operation: (store: TruthStorage) => Promise<T>): Promise<T> {
+    if (this.usingFallback) {
+      return operation(this.fallback);
+    }
+
+    try {
+      return await operation(this.primary);
+    } catch (error) {
+      if (!this.shouldFallback(error)) {
+        throw error;
+      }
+      this.usingFallback = true;
+      console.warn('[truthStore] Database unavailable, falling back to local truth storage:', error instanceof Error ? error.message : String(error));
+      return operation(this.fallback);
+    }
+  }
+
+  async saveTruth(entry: Omit<TruthEntry, 'validatedAt' | 'truthId' | 'truthFamilyId' | 'aliases'> & {
+    truthId?: string;
+    truthFamilyId?: string;
+    aliases?: TruthAlias[];
+    validatedAt?: string;
+  }): Promise<TruthEntry> {
+    return this.runWithFallback((store) => store.saveTruth(entry));
+  }
+
+  async listTruths(): Promise<TruthEntry[]> {
+    return this.runWithFallback((store) => store.listTruths());
+  }
+}
+
 const databaseUrl = getUsableDatabaseUrl();
 
+const fileTruthStore = new FileTruthStore();
+
 const truthStorage: TruthStorage = databaseUrl
-  ? new PostgresTruthStore(databaseUrl)
-  : new FileTruthStore();
+  ? new ResilientTruthStore(new PostgresTruthStore(databaseUrl), fileTruthStore)
+  : fileTruthStore;
 
 export async function loadTruths(): Promise<TruthEntry[]> {
   return truthStorage.listTruths();

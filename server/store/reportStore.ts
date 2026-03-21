@@ -1,9 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { neon } from '@neondatabase/serverless';
-import { eq, sql } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { eq, inArray, sql } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 import type {
   CitationReport,
@@ -21,7 +20,7 @@ import {
   stableFileMigrationKey,
   writeJsonlFile,
 } from './persistence.js';
-import { getUsableDatabaseUrl } from './databaseUrl.js';
+import { createPostgresPoolConfig, getUsableDatabaseUrl } from './databaseUrl.js';
 
 export type { CitationReport, ReportStatus, FailureCategory, FailureSource };
 
@@ -71,6 +70,7 @@ interface IReportStore {
   loadReports(): Promise<CitationReport[]>;
   getReportById(id: string): Promise<CitationReport | null>;
   updateReport(id: string, updates: Partial<CitationReport>): Promise<CitationReport | null>;
+  deleteReports(ids: string[]): Promise<number>;
 }
 
 const reportRows = pgTable('citation_reports', {
@@ -215,6 +215,18 @@ class FileReportStore implements IReportStore {
     writeJsonlFile(REPORTS_FILE, rows);
     return merged;
   }
+
+  async deleteReports(ids: string[]): Promise<number> {
+    if (ids.length === 0) return 0;
+    const idSet = new Set(ids);
+    const rows = await this.loadReports();
+    const remaining = rows.filter((report) => !idSet.has(report.id));
+    const deletedCount = rows.length - remaining.length;
+    if (deletedCount > 0) {
+      writeJsonlFile(REPORTS_FILE, remaining);
+    }
+    return deletedCount;
+  }
 }
 
 class PostgresReportStore implements IReportStore {
@@ -222,7 +234,7 @@ class PostgresReportStore implements IReportStore {
   private ready: Promise<void> | null = null;
 
   constructor(connectionString: string) {
-    this.db = drizzle(neon(connectionString));
+    this.db = drizzle({ connection: createPostgresPoolConfig(connectionString) });
   }
 
   private async ensureReady(): Promise<void> {
@@ -374,13 +386,79 @@ class PostgresReportStore implements IReportStore {
     }).where(eq(reportRows.id, id));
     return next;
   }
+
+  async deleteReports(ids: string[]): Promise<number> {
+    await this.ensureReady();
+    if (ids.length === 0) return 0;
+    const existing = await this.db.select({ id: reportRows.id })
+      .from(reportRows)
+      .where(inArray(reportRows.id, ids));
+    if (existing.length === 0) return 0;
+    await this.db.delete(reportRows).where(inArray(reportRows.id, ids));
+    return existing.length;
+  }
+}
+
+class ResilientReportStore implements IReportStore {
+  private primary: IReportStore;
+  private fallback: IReportStore;
+  private usingFallback = false;
+
+  constructor(primary: IReportStore, fallback: IReportStore) {
+    this.primary = primary;
+    this.fallback = fallback;
+  }
+
+  private shouldFallback(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return /Error connecting to database|fetch failed|ECONNRESET|ENOTFOUND|ETIMEDOUT|connection/i.test(message);
+  }
+
+  private async runWithFallback<T>(operation: (store: IReportStore) => Promise<T>): Promise<T> {
+    if (this.usingFallback) {
+      return operation(this.fallback);
+    }
+
+    try {
+      return await operation(this.primary);
+    } catch (error) {
+      if (!this.shouldFallback(error)) {
+        throw error;
+      }
+      this.usingFallback = true;
+      console.warn('[reportStore] Database unavailable, falling back to local report storage:', error instanceof Error ? error.message : String(error));
+      return operation(this.fallback);
+    }
+  }
+
+  async saveReport(report: CitationReport): Promise<CitationReport> {
+    return this.runWithFallback((store) => store.saveReport(report));
+  }
+
+  async loadReports(): Promise<CitationReport[]> {
+    return this.runWithFallback((store) => store.loadReports());
+  }
+
+  async getReportById(id: string): Promise<CitationReport | null> {
+    return this.runWithFallback((store) => store.getReportById(id));
+  }
+
+  async updateReport(id: string, updates: Partial<CitationReport>): Promise<CitationReport | null> {
+    return this.runWithFallback((store) => store.updateReport(id, updates));
+  }
+
+  async deleteReports(ids: string[]): Promise<number> {
+    return this.runWithFallback((store) => store.deleteReports(ids));
+  }
 }
 
 const databaseUrl = getUsableDatabaseUrl();
 
+const fileReportStore = new FileReportStore();
+
 const reportStore: IReportStore = databaseUrl
-  ? new PostgresReportStore(databaseUrl)
-  : new FileReportStore();
+  ? new ResilientReportStore(new PostgresReportStore(databaseUrl), fileReportStore)
+  : fileReportStore;
 
 export function computeFingerprint(text: string): string {
   const normalized = text
@@ -409,6 +487,10 @@ export async function getReportById(id: string): Promise<CitationReport | null> 
 
 export async function updateReport(id: string, updates: Partial<CitationReport>): Promise<CitationReport | null> {
   return reportStore.updateReport(id, updates);
+}
+
+export async function deleteReports(ids: string[]): Promise<number> {
+  return reportStore.deleteReports(ids);
 }
 
 export async function appendReviewEvent(id: string, event: ReviewEvent): Promise<CitationReport | null> {
