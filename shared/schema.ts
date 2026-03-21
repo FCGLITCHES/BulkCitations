@@ -507,7 +507,7 @@ export interface DuplicateMetadata {
 export interface EnrichmentMetadata {
   status: 'skipped' | 'fetched' | 'no_match' | 'error';
   provider?: string;
-  sourceUsed?: 'cache' | 'crossref_doi' | 'crossref_title_author' | 'semantic_scholar' | 'pubmed' | 'timeout_fallback' | 'unverifiable' | 'skipped';
+  sourceUsed?: 'cache' | 'crossref_doi' | 'crossref_title_author' | 'semantic_scholar' | 'pubmed' | 'openalex' | 'timeout_fallback' | 'unverifiable' | 'skipped';
   cacheHit?: boolean;
   doiFound?: boolean;
   abstractFound?: boolean;
@@ -522,6 +522,63 @@ export interface EnrichmentMetadata {
   raw?: Record<string, unknown>;
 }
 
+export type ResolutionStatus =
+  | 'verified'
+  | 'verified_with_year_tolerance'
+  | 'no_exact_match'
+  | 'ambiguous_match'
+  | 'insufficient_evidence'
+  | 'provider_no_coverage'
+  | 'provider_error'
+  | 'skipped_duplicate';
+
+export type ResolutionMatchStrategy =
+  | 'crossref_doi'
+  | 'crossref_exact_title'
+  | 'pubmed_exact_title'
+  | 'openalex_exact_title'
+  | 'none';
+
+export interface ResolutionAcceptedCandidate {
+  provider: string;
+  title?: string;
+  authors?: string[];
+  year?: number;
+  venue?: string;
+  volume?: string;
+  issue?: string;
+  pages?: string;
+  publisher?: string;
+  doi?: string;
+  url?: string;
+  sourceType?: string;
+}
+
+export interface ResolutionQueryEvidence {
+  titlePresent: boolean;
+  titleTokenCount: number;
+  firstAuthorSurname?: string;
+  groupAuthorLiteral?: string;
+  year?: number | null;
+  venue?: string | null;
+  sourceType?: CanonicalReferenceType;
+}
+
+export interface ResolutionMetadata {
+  status: ResolutionStatus;
+  resolvedAt?: string;
+  provider?: string;
+  matchStrategy?: ResolutionMatchStrategy;
+  candidateCount: number;
+  acceptedCandidate?: ResolutionAcceptedCandidate;
+  rejectedReasons: string[];
+  conflictFields: string[];
+  yearToleranceApplied: boolean;
+  queryEvidence: ResolutionQueryEvidence;
+}
+
+export type CitationReviewBucket = 'ready' | 'worth_reviewing' | 'action_needed';
+
 export interface CitationQualityScore {
   overall: number;
   grade: 'A' | 'B' | 'C' | 'F';
@@ -529,6 +586,8 @@ export interface CitationQualityScore {
   flags: string[];
   missingRequired: string[];
   missingOptional: string[];
+  bucket: CitationReviewBucket;
+  bucketReasons: string[];
 }
 
 export interface SplitMetadata {
@@ -542,7 +601,7 @@ export interface ExtractionMetadata {
   method: 'deterministic' | 'llm' | 'hybrid';
   fallbackUsed: boolean;
   extractorPath?: 'deterministic' | 'grobid' | 'llm' | 'hybrid';
-  selectedBranch?: 'deterministic_raw' | 'year_anchored_fallback_raw' | 'hybrid';
+  selectedBranch?: 'deterministic_raw' | 'year_anchored_fallback_raw' | 'institutional_heuristic_raw' | 'hybrid';
   selectionReason?: string;
   authorParserMode?: string;
   rejectedCandidates?: string[];
@@ -695,6 +754,7 @@ export interface CanonicalCitation {
   split?: SplitMetadata;
   extraction?: ExtractionMetadata;
   validation?: ValidationMetadata;
+  resolution?: ResolutionMetadata;
   normalization?: NormalizationMetadata;
   truth?: TruthProvenance & {
     resolvedCanonical?: ApprovedCanonicalFields;

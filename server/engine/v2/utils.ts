@@ -174,6 +174,8 @@ export function isLikelyAllCaps(value: string): boolean {
 }
 
 const TITLE_STOP_WORDS = new Set(['a', 'an', 'and', 'as', 'at', 'by', 'for', 'in', 'of', 'on', 'or', 'the', 'to', 'vs']);
+const INITIALS_TOKEN_PATTERN = /^[\p{Lu}](?:[.-]?[\p{Lu}]){0,5}\.?$/u;
+const DOTTED_INITIALS_PATTERN = /^[\p{Lu}](?:\.[\p{Lu}])+\.?$/u;
 
 export function toSmartTitleCase(value: string): string {
   return fixUnicodeText(value)
@@ -199,18 +201,26 @@ function initialsFromWords(words: string[]): string | null {
         return withoutDots
           .split('-')
           .filter(Boolean)
-          .map((part) => part[0]?.toUpperCase() ?? '')
+          .map((part) => Array.from(part)[0]?.toUpperCase() ?? '')
           .filter(Boolean);
       }
-      if (/^[A-Z](?:\.[A-Z])+\.?$/.test(compact) || /^[A-Z]{2,6}$/.test(withoutDots)) {
+      if (DOTTED_INITIALS_PATTERN.test(compact) || /^[\p{Lu}]{2,6}$/u.test(withoutDots)) {
         return withoutDots.split('').map((part) => part.toUpperCase());
       }
-      if (/^[A-Z]\.?$/i.test(word)) return [word.replace(/\./g, '').toUpperCase()];
-      return word[0]?.toUpperCase() ?? '';
+      if (/^[\p{Lu}]\.?$/u.test(word)) return [word.replace(/\./g, '').toUpperCase()];
+      return Array.from(word)[0]?.toUpperCase() ?? '';
     })
     .filter(Boolean);
 
   return initials.length > 0 ? initials.map((letter) => `${letter}.`).join(' ') : null;
+}
+
+function normalizeCompactedGivenNames(value: string): string {
+  return normalizeWhitespace(
+    fixUnicodeText(value)
+      .replace(/([\p{Ll}])([\p{Lu}]\.)/gu, '$1 $2')
+      .replace(/([\p{Ll}])([\p{Lu}])(?=$|\s)/gu, '$1 $2'),
+  );
 }
 
 export function parseAuthorToCanonical(author: string): CanonicalAuthor {
@@ -245,7 +255,7 @@ export function parseAuthorToCanonical(author: string): CanonicalAuthor {
 
   if (normalized.includes(',')) {
     const [last, rest] = normalized.split(',', 2);
-    const first = normalizeWhitespace(rest ?? '') || null;
+    const first = normalizeCompactedGivenNames(rest ?? '') || null;
     return {
       first,
       last: normalizePersonLastName(last),
@@ -258,7 +268,7 @@ export function parseAuthorToCanonical(author: string): CanonicalAuthor {
     return {
       first: null,
       last: parts[0],
-      initials: /^[A-Z.]+$/.test(parts[0]) ? parts[0] : null,
+      initials: /^[\p{Lu}.]+$/u.test(parts[0]) ? parts[0] : null,
     };
   }
 
@@ -272,7 +282,7 @@ export function parseAuthorToCanonical(author: string): CanonicalAuthor {
   }
   const surnameParts = parts.slice(firstParts.length, suffix ? -1 : undefined);
   const normalizedLast = normalizePersonLastName(`${surnameParts.join(' ')}${suffix ? ` ${suffix}` : ''}`.trim());
-  const first = firstParts.join(' ');
+  const first = normalizeCompactedGivenNames(firstParts.join(' '));
   return {
     first,
     last: normalizedLast,
@@ -300,7 +310,7 @@ export function coerceCanonicalAuthor(author: string | CanonicalAuthor): Canonic
 
 function dottedInitials(value: string): string | null {
   const compact = normalizeWhitespace(value).replace(/\s+/g, '').replace(/\./g, '');
-  if (!compact || !/^[A-Z]{1,6}$/i.test(compact)) return null;
+  if (!compact || !/^[\p{Lu}]{1,6}$/u.test(compact)) return null;
   return compact.toUpperCase().split('').map((char) => `${char}.`).join(' ');
 }
 
@@ -309,10 +319,10 @@ export function looksLikeAlternatingTokenArray(tokens: string[]): boolean {
   if (normalizedTokens.length < 4 || normalizedTokens.length % 2 !== 0) return false;
   const oddAreInitials = normalizedTokens
     .filter((_, index) => index % 2 === 1)
-    .every((token) => /^[A-Z](?:\.?[A-Z]){0,5}\.?$/.test(token.replace(/\s+/g, '')));
+    .every((token) => INITIALS_TOKEN_PATTERN.test(token.replace(/\s+/g, '')));
   const evenAreNames = normalizedTokens
     .filter((_, index) => index % 2 === 0)
-    .every((token) => token.length > 2 && /[A-Za-z]/.test(token) && !/^[A-Z](?:\.?[A-Z]){0,5}\.?$/.test(token.replace(/\s+/g, '')));
+    .every((token) => token.length > 2 && /[\p{L}]/u.test(token) && !INITIALS_TOKEN_PATTERN.test(token.replace(/\s+/g, '')));
   return oddAreInitials && evenAreNames;
 }
 
@@ -369,6 +379,14 @@ function splitAuthorBlob(author: string): string[] {
   if (commaTokens.length >= 4 && commaTokens.length % 2 === 0 && looksLikeAlternatingTokenArray(commaTokens)) {
     return buildPairedAuthorsFromAlternatingTokens(commaTokens);
   }
+  if (
+    commaTokens.length >= 2
+    && commaTokens.every((token) => !token.includes(','))
+    && commaTokens.every((token) => token.split(/\s+/).filter(Boolean).length >= 2)
+    && commaTokens.every((token) => !isGroupAuthor(token))
+  ) {
+    return commaTokens;
+  }
   if (commaTokens.length >= 3) {
     const recombined: string[] = [];
     let changed = false;
@@ -411,15 +429,15 @@ function expandAuthorBlobs(authors: Array<string | CanonicalAuthor>): Array<stri
 function looksLikeGivenNamesToken(token: string): boolean {
   const normalized = normalizeWhitespace(token);
   if (!normalized) return false;
-  if (/^[A-Z](?:\.[A-Z])*\.?$/i.test(normalized.replace(/\s+/g, ''))) return true;
-  return /[a-z]/.test(normalized) && normalized.split(/\s+/).length <= 4;
+  if (INITIALS_TOKEN_PATTERN.test(normalized.replace(/\s+/g, ''))) return true;
+  return /[\p{Ll}]/u.test(normalized) && normalized.split(/\s+/).length <= 4;
 }
 
 function looksLikeSurnameToken(token: string): boolean {
   const normalized = normalizeWhitespace(token);
   if (!normalized) return false;
   if (normalized.includes(',')) return false;
-  if (/^[A-Z](?:\.[A-Z])*\.?$/i.test(normalized.replace(/\s+/g, ''))) return false;
+  if (INITIALS_TOKEN_PATTERN.test(normalized.replace(/\s+/g, ''))) return false;
   return /^[\p{L}'’-]+(?:\s+[\p{L}'’-]+){0,3}$/u.test(normalized);
 }
 
@@ -443,7 +461,7 @@ export function parseSurnameGivenAlternatingArray(tokens: string[]): CanonicalAu
 
   for (let index = 0; index < normalizedTokens.length; index += 2) {
     const surname = normalizePersonLastName(normalizedTokens[index] ?? '');
-    const given = normalizeWhitespace(normalizedTokens[index + 1] ?? '') || null;
+    const given = normalizeCompactedGivenNames(normalizedTokens[index + 1] ?? '') || null;
     if (!surname) continue;
     authors.push({
       first: given,
@@ -457,7 +475,7 @@ export function parseSurnameGivenAlternatingArray(tokens: string[]): CanonicalAu
 
 export function parseCompactVancouverAuthor(author: string): CanonicalAuthor | null {
   const normalized = fixUnicodeText(author);
-  const match = normalized.match(/^(.+?)\s+([A-Z]{1,6}(?:-[A-Z]{1,6})?)$/);
+  const match = normalized.match(/^(.+?)\s+([\p{Lu}]{1,6}(?:-[\p{Lu}]{1,6})?)$/u);
   if (!match) return null;
   const last = normalizePersonLastName(match[1]);
   const initials = dottedInitials(match[2]);
@@ -471,7 +489,7 @@ export function parseCompactVancouverAuthor(author: string): CanonicalAuthor | n
 
 export function parseInitialsFirstAuthor(author: string): CanonicalAuthor | null {
   const normalized = fixUnicodeText(author);
-  const match = normalized.match(/^((?:[A-Z]\.(?:-[A-Z]\.)?\s*)+)\s+(.+)$/);
+  const match = normalized.match(/^((?:[\p{Lu}]\.(?:-[\p{Lu}]\.)?\s*)+)\s+(.+)$/u);
   if (!match) return null;
   return {
     first: null,
@@ -490,7 +508,7 @@ function parseMixedMlaAuthor(author: string): CanonicalAuthor | null {
 
 function isInitialsOnlyAuthor(author: CanonicalAuthor): boolean {
   const last = normalizeWhitespace(author.last);
-  return !author.first && !author.literal && /^[A-Z](?:\.\s*[A-Z])*\.?$/i.test(last);
+  return !author.first && !author.literal && /^[\p{Lu}](?:\.\s*[\p{Lu}])*\.?$/u.test(last);
 }
 
 function mergeInitialValues(base: string | null | undefined, extra: string | null | undefined): string | null {
@@ -499,6 +517,10 @@ function mergeInitialValues(base: string | null | undefined, extra: string | nul
     .filter(Boolean);
   if (values.length === 0) return null;
   return [...new Set(values)].join(' ');
+}
+
+function countInitialLetters(value: string | null | undefined): number {
+  return (normalizeWhitespace(value ?? '').match(/[\p{Lu}](?=\.|\b)/gu) ?? []).length;
 }
 
 function collapseOrphanInitialAuthors(authors: CanonicalAuthor[]): CanonicalAuthor[] {
@@ -529,7 +551,7 @@ function collapseSplitSurnameGivenAuthors(authors: CanonicalAuthor[]): Canonical
     if (collapsed.length > 0) {
       const previous = collapsed[collapsed.length - 1];
       const previousHasSurnameOnly = !previous.first && !previous.initials && !previous.literal && !isInitialsOnlyAuthor(previous);
-      const currentCarriesGivenName = Boolean(author.first) && /^[A-Z](?:\.\s*[A-Z])*\.?$/i.test(normalizeWhitespace(author.last));
+      const currentCarriesGivenName = Boolean(author.first) && /^[\p{Lu}](?:\.\s*[\p{Lu}])*\.?$/u.test(normalizeWhitespace(author.last));
 
       if (previousHasSurnameOnly && currentCarriesGivenName) {
         collapsed[collapsed.length - 1] = {
@@ -622,7 +644,7 @@ export function parseAuthorsForStyle(
     warningFlags.push('orphan_initial_authors_collapsed');
     rejectedCandidates.push('orphan_initial_tokens_rewritten');
   }
-  if (repairedAuthors.some((author) => /^[A-Z](?:\.\s*[A-Z])*\.?$/i.test(author.last))) {
+  if (repairedAuthors.some((author) => /^[\p{Lu}](?:\.\s*[\p{Lu}])*\.?$/u.test(author.last))) {
     warningFlags.push('initials_as_surname_suspected');
     rejectedCandidates.push('compact_author_inversion_suspected');
   }
@@ -646,7 +668,10 @@ export function parseAuthorsForStyle(
 export function canonicalAuthorToDisplay(author: CanonicalAuthor): string {
   if (author.literal) return author.literal;
   const normalizedFirst = normalizeWhitespace(author.first ?? '');
-  const firstLooksLikeInitials = Boolean(normalizedFirst) && /^[A-Z](?:\.?\s*[A-Z]){0,5}\.?$/i.test(normalizedFirst.replace(/\s+/g, ''));
+  const firstLooksLikeInitials = Boolean(normalizedFirst) && INITIALS_TOKEN_PATTERN.test(normalizedFirst.replace(/\s+/g, ''));
+  const firstInitialCount = countInitialLetters(author.first);
+  const storedInitialCount = countInitialLetters(author.initials);
+  if (author.initials && storedInitialCount > firstInitialCount) return `${author.last}, ${author.initials}`;
   if (author.first && !firstLooksLikeInitials) return `${author.last}, ${author.first}`;
   if (author.initials) return `${author.last}, ${author.initials}`;
   if (author.first) return `${author.last}, ${dottedInitials(author.first) ?? author.first}`;

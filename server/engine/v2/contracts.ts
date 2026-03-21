@@ -1,6 +1,7 @@
 import type {
   CanonicalAuthor,
   CanonicalCitation,
+  CanonicalReferenceType,
   CitationStyle,
   InputProfile,
   StageDiagnostic,
@@ -116,7 +117,7 @@ export interface ExtractorAdapter {
     method: 'deterministic' | 'llm' | 'hybrid';
     fallbackUsed: boolean;
     extractorPath?: 'deterministic' | 'grobid' | 'llm' | 'hybrid';
-    selectedBranch?: 'deterministic_raw' | 'year_anchored_fallback_raw' | 'hybrid';
+    selectedBranch?: 'deterministic_raw' | 'year_anchored_fallback_raw' | 'institutional_heuristic_raw' | 'hybrid';
     selectionReason?: string;
     authorParserMode?: string;
     rejectedCandidates?: string[];
@@ -139,6 +140,39 @@ export interface AuthorityLookupAdapter {
       url?: string;
     };
   }>;
+}
+
+export interface ResolutionCandidateRecord {
+  provider: 'crossref' | 'pubmed' | 'openalex';
+  title?: string;
+  authors?: string[];
+  year?: number;
+  venue?: string;
+  volume?: string;
+  issue?: string;
+  pages?: string;
+  publisher?: string;
+  doi?: string;
+  url?: string;
+  sourceType?: string;
+  raw?: Record<string, unknown>;
+}
+
+export interface ResolutionSearchQuery {
+  title: string;
+  firstAuthorSurname?: string;
+  groupAuthorLiteral?: string;
+  year?: number | null;
+  venue?: string | null;
+  sourceType?: CanonicalReferenceType;
+}
+
+export interface ResolutionProviderAdapter {
+  readonly id: string;
+  lookupByDoi(doi: string): Promise<ResolutionCandidateRecord[]>;
+  searchCrossrefByTitle(query: ResolutionSearchQuery, limit: number): Promise<ResolutionCandidateRecord[]>;
+  searchPubmedByTitle(query: ResolutionSearchQuery, limit: number): Promise<ResolutionCandidateRecord[]>;
+  searchOpenAlexByTitle(query: ResolutionSearchQuery, limit: number): Promise<ResolutionCandidateRecord[]>;
 }
 
 export interface EmbeddingAdapter {
@@ -165,6 +199,7 @@ export interface V2AdapterBundle {
   classifier: ClassifierAdapter;
   extractor: ExtractorAdapter;
   authorityLookup: AuthorityLookupAdapter;
+  resolutionProvider: ResolutionProviderAdapter;
   embedding: EmbeddingAdapter;
   cache: CacheAdapter;
   exportAdapter: ExportAdapter;

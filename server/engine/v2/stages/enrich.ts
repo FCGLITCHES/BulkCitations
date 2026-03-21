@@ -1,322 +1,625 @@
-import type { CanonicalCitation, EnrichmentMetadata, FieldValue } from '@shared/schema';
-import { fetchCrossrefMetadata } from '../../doiEnrichment.js';
-import type { AuthorityLookupAdapter, CacheAdapter, V2Stage } from '../contracts.js';
-import { addCitationStageLog, attachCitationDebug, createStageDiagnostic, logStructuredDebug, normalizeWhitespace, runWithTimeout } from '../utils.js';
+import pLimit from 'p-limit';
+import type {
+  CanonicalCitation,
+  EnrichmentMetadata,
+  FieldValue,
+  ResolutionAcceptedCandidate,
+  ResolutionMetadata,
+} from '@shared/schema';
+import { isPlaceholderFieldValue } from '@shared/referencePlaceholders';
+import { isGroupAuthor, normalizeGroupAuthor } from '../../shared/citationSemantics.js';
+import type {
+  CacheAdapter,
+  ResolutionCandidateRecord,
+  ResolutionProviderAdapter,
+  ResolutionSearchQuery,
+  V2Stage,
+} from '../contracts.js';
+import {
+  buildAcceptedCandidateSummary,
+  buildResolutionMetadata,
+  buildResolutionQueryEvidence,
+  chooseBestResolutionCandidate,
+} from '../resolution.js';
+import {
+  addCitationStageLog,
+  attachCitationDebug,
+  createStageDiagnostic,
+  logStructuredDebug,
+  normalizeDoiValue,
+  normalizeWhitespace,
+  nowIso,
+} from '../utils.js';
 
-const ENRICH_TIMEOUT_MS = 500;
+const PROVIDER_LIMIT = 5;
+const DEFAULT_ENRICH_CONCURRENCY = 3;
 
-function updateIfMissing(
+type ProviderKey = 'doi' | 'crossref' | 'pubmed' | 'openalex';
+
+type CachedResolutionPayload = {
+  status: ResolutionMetadata['status'];
+  provider?: string;
+  matchStrategy?: ResolutionMetadata['matchStrategy'];
+  candidateCount: number;
+  acceptedCandidate?: ResolutionAcceptedCandidate;
+  rejectedReasons: string[];
+  yearToleranceApplied: boolean;
+};
+
+function updateStringField(
   field: FieldValue<string | null>,
   incoming: string | undefined,
   stageId: string,
+  conflictFields: string[],
+  conflictName: string,
+  normalizer: (value: string) => string = (value) => normalizeWhitespace(value.toLowerCase()),
 ): FieldValue<string | null> {
-  if (field.value || !incoming) return field;
-  return {
-    value: incoming,
-    source: 'authority',
-    confidence: Math.max(field.confidence, 0.82),
-    stageId,
-  };
+  const nextValue = normalizeWhitespace(incoming ?? '') || undefined;
+  if (!nextValue) return field;
+
+  if (!field.value || isPlaceholderFieldValue(field.value)) {
+    return {
+      value: nextValue,
+      source: 'authority',
+      confidence: Math.max(field.confidence, 0.94),
+      stageId,
+    };
+  }
+
+  if (normalizer(field.value) !== normalizer(nextValue) && !conflictFields.includes(conflictName)) {
+    conflictFields.push(conflictName);
+  }
+  return field;
+}
+
+function updateNumericField(
+  field: FieldValue<number | null>,
+  incoming: number | undefined,
+  stageId: string,
+  conflictFields: string[],
+  conflictName: string,
+): FieldValue<number | null> {
+  if (incoming == null || !Number.isFinite(incoming)) return field;
+  if (field.value == null) {
+    return {
+      value: incoming,
+      source: 'authority',
+      confidence: Math.max(field.confidence, 0.94),
+      stageId,
+    };
+  }
+
+  if (field.value !== incoming && !conflictFields.includes(conflictName)) {
+    conflictFields.push(conflictName);
+  }
+  return field;
+}
+
+function buildVenueNormalizer(value: string): string {
+  return normalizeWhitespace(value.toLowerCase()).replace(/[^\p{L}\p{N}\s]+/gu, ' ');
 }
 
 function cacheKeyForCitation(citation: CanonicalCitation): string {
+  const evidence = buildResolutionQueryEvidence(citation);
   return [
-    normalizeWhitespace(citation.title.value?.toLowerCase() ?? ''),
-    normalizeWhitespace(citation.authors.value[0]?.last?.toLowerCase() ?? ''),
+    normalizeWhitespace((citation.title.value ?? '').toLowerCase()),
+    normalizeWhitespace((evidence.firstAuthorSurname ?? evidence.groupAuthorLiteral ?? '').toLowerCase()),
     citation.year.value ?? '',
+    citation.referenceType,
   ].join('|');
 }
 
 function isBiomedical(citation: CanonicalCitation): boolean {
-  const journal = normalizeWhitespace(citation.journal.value?.toLowerCase() ?? '');
-  return /(med|clinical|oncology|cardio|biomed|health|lancet|nejm|jama|bmj)/.test(journal);
+  const combined = normalizeWhitespace([
+    citation.journal.value ?? '',
+    citation.title.value ?? '',
+  ].join(' ').toLowerCase());
+  return /(med|clinical|oncology|cardio|biomed|health|lancet|nejm|jama|bmj|tuberculosis|radiology|medical)/.test(combined);
 }
 
-async function crossrefSearchByTitleAuthor(citation: CanonicalCitation) {
-  if (!citation.title.value) return null;
-  const query = encodeURIComponent([citation.title.value, citation.authors.value[0]?.last].filter(Boolean).join(' '));
-  const response = await fetch(`https://api.crossref.org/works?rows=1&query.bibliographic=${query}`, {
-    headers: {
-      Accept: 'application/json',
-      'User-Agent': 'CitingApp/1.0 (mailto:noreply@citing.app)',
-    },
-    signal: AbortSignal.timeout(ENRICH_TIMEOUT_MS),
-  });
-  if (!response.ok) throw new Error(`Crossref search failed with status ${response.status}`);
-  const payload = await response.json() as { message?: { items?: Array<Record<string, any>> } };
-  return payload.message?.items?.[0] ?? null;
+function isCorporateHeavy(citation: CanonicalCitation): boolean {
+  if (citation.authors.value.some((author) => Boolean(author.literal) || isGroupAuthor(author.last))) return true;
+  if (citation.publisher.value && isGroupAuthor(citation.publisher.value)) return true;
+  if (citation.institution.value && isGroupAuthor(citation.institution.value)) return true;
+  return false;
 }
 
-async function pubmedLookup(citation: CanonicalCitation) {
-  if (!citation.title.value) return null;
-  const query = encodeURIComponent(`"${citation.title.value}"[Title]`);
-  const searchResponse = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=${query}`, {
-    signal: AbortSignal.timeout(ENRICH_TIMEOUT_MS),
-  });
-  if (!searchResponse.ok) throw new Error(`PubMed search failed with status ${searchResponse.status}`);
-  const search = await searchResponse.json() as { esearchresult?: { idlist?: string[] } };
-  const pmid = search.esearchresult?.idlist?.[0];
-  if (!pmid) return null;
-
-  const summaryResponse = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=${pmid}`, {
-    signal: AbortSignal.timeout(ENRICH_TIMEOUT_MS),
-  });
-  if (!summaryResponse.ok) throw new Error(`PubMed summary failed with status ${summaryResponse.status}`);
-  const summary = await summaryResponse.json() as { result?: Record<string, any> };
-  return summary.result?.[pmid] ?? null;
+function providerOrderForCitation(citation: CanonicalCitation): ProviderKey[] {
+  if (citation.doi.value) return ['doi'];
+  if (isBiomedical(citation) && ['journal', 'preprint', 'unknown'].includes(citation.referenceType)) {
+    return ['crossref', 'pubmed', 'openalex'];
+  }
+  if (['report', 'book', 'website', 'chapter'].includes(citation.referenceType) || isCorporateHeavy(citation)) {
+    return ['openalex', 'crossref'];
+  }
+  return ['crossref', 'openalex'];
 }
 
-function applyEnrichment(citation: CanonicalCitation, metadata: EnrichmentMetadata, data?: {
-  title?: string;
-  journal?: string;
-  year?: number;
-  doi?: string;
-  url?: string;
-  abstract?: string;
-}) {
-  return {
+async function fetchProviderCandidates(
+  provider: ResolutionProviderAdapter,
+  query: ResolutionSearchQuery,
+  doi: string | null,
+  providerKey: ProviderKey,
+): Promise<ResolutionCandidateRecord[]> {
+  switch (providerKey) {
+    case 'doi':
+      return doi ? provider.lookupByDoi(doi) : [];
+    case 'crossref':
+      return query.title ? provider.searchCrossrefByTitle(query, PROVIDER_LIMIT) : [];
+    case 'pubmed':
+      return query.title ? provider.searchPubmedByTitle(query, PROVIDER_LIMIT) : [];
+    case 'openalex':
+      return query.title ? provider.searchOpenAlexByTitle(query, PROVIDER_LIMIT) : [];
+    default:
+      return [];
+  }
+}
+
+function toMatchStrategy(providerKey: ProviderKey): ResolutionMetadata['matchStrategy'] {
+  switch (providerKey) {
+    case 'doi':
+      return 'crossref_doi';
+    case 'crossref':
+      return 'crossref_exact_title';
+    case 'pubmed':
+      return 'pubmed_exact_title';
+    case 'openalex':
+      return 'openalex_exact_title';
+    default:
+      return 'none';
+  }
+}
+
+function applyVerifiedCandidate(
+  citation: CanonicalCitation,
+  candidate: ResolutionAcceptedCandidate,
+): { citation: CanonicalCitation; conflictFields: string[] } {
+  const conflictFields: string[] = [];
+
+  let nextCitation: CanonicalCitation = {
     ...citation,
-    title: updateIfMissing(citation.title, data?.title, 'enrich'),
-    journal: updateIfMissing(citation.journal, data?.journal, 'enrich'),
-    doi: updateIfMissing(citation.doi, data?.doi, 'enrich'),
-    url: updateIfMissing(citation.url, data?.url, 'enrich'),
-    year: citation.year.value == null && data?.year != null
-      ? { value: data.year, source: 'authority' as const, confidence: 0.8, stageId: 'enrich' }
-      : citation.year,
-    enrichment: {
-      ...metadata,
-      abstract: data?.abstract ?? metadata.abstract,
-    },
+    title: updateStringField(citation.title, candidate.title, 'enrich', conflictFields, 'title'),
+    year: updateNumericField(citation.year, candidate.year, 'enrich', conflictFields, 'year'),
+    doi: updateStringField(citation.doi, candidate.doi ? normalizeDoiValue(candidate.doi) : undefined, 'enrich', conflictFields, 'doi', normalizeDoiValue),
+    url: updateStringField(citation.url, candidate.url, 'enrich', conflictFields, 'url'),
+    volume: updateStringField(citation.volume, candidate.volume, 'enrich', conflictFields, 'volume'),
+    issue: updateStringField(citation.issue, candidate.issue, 'enrich', conflictFields, 'issue'),
+    pages: updateStringField(citation.pages, candidate.pages, 'enrich', conflictFields, 'pages'),
+    publisher: updateStringField(citation.publisher, candidate.publisher, 'enrich', conflictFields, 'publisher'),
+  };
+
+  const venue = candidate.venue;
+  if (citation.referenceType === 'conference') {
+    nextCitation = {
+      ...nextCitation,
+      conferenceTitle: updateStringField(citation.conferenceTitle, venue, 'enrich', conflictFields, 'conferenceTitle', buildVenueNormalizer),
+    };
+  } else if (['book', 'chapter'].includes(citation.referenceType)) {
+    nextCitation = {
+      ...nextCitation,
+      bookTitle: updateStringField(citation.bookTitle, venue, 'enrich', conflictFields, 'bookTitle', buildVenueNormalizer),
+    };
+  } else {
+    nextCitation = {
+      ...nextCitation,
+      journal: updateStringField(citation.journal, venue, 'enrich', conflictFields, 'journal', buildVenueNormalizer),
+    };
+  }
+
+  if (citation.referenceType === 'report' && !nextCitation.institution.value && candidate.publisher && isGroupAuthor(candidate.publisher)) {
+    nextCitation = {
+      ...nextCitation,
+      institution: {
+        value: normalizeGroupAuthor(candidate.publisher),
+        source: 'authority',
+        confidence: Math.max(nextCitation.institution.confidence, 0.9),
+        stageId: 'enrich',
+      },
+    };
+  }
+
+  return { citation: nextCitation, conflictFields };
+}
+
+function buildEnrichmentFromResolution(
+  status: EnrichmentMetadata['status'],
+  providerId: string,
+  providerKey: ProviderKey | 'cache' | 'unverifiable' | 'skipped',
+  candidate?: ResolutionAcceptedCandidate,
+  raw?: Record<string, unknown>,
+  cacheHit = false,
+): EnrichmentMetadata {
+  return {
+    status,
+    provider: candidate?.provider ?? providerId,
+    sourceUsed: providerKey === 'doi'
+      ? 'crossref_doi'
+      : providerKey === 'crossref'
+        ? 'crossref_title_author'
+        : providerKey === 'pubmed'
+          ? 'pubmed'
+          : providerKey === 'openalex'
+            ? 'openalex'
+            : providerKey === 'cache'
+              ? 'cache'
+              : providerKey === 'skipped'
+                ? 'skipped'
+                : 'unverifiable',
+    cacheHit,
+    doiFound: Boolean(candidate?.doi),
+    abstractFound: false,
+    retractedFlag: /retract/i.test(String(candidate?.title ?? '')),
+    matchedTitle: candidate?.title,
+    matchedAuthors: candidate?.authors,
+    matchedYear: candidate?.year,
+    url: candidate?.url,
+    raw,
   };
 }
 
-export function createEnrichStage(authorityLookup: AuthorityLookupAdapter, cache: CacheAdapter): V2Stage {
+export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter, cache: CacheAdapter): V2Stage {
   return {
     id: 'enrich',
     async run(context) {
       const startedAt = Date.now();
-      const results = await Promise.all(context.citations.map(async (citation, citationIndex) => {
+      if (!context.request.enrich) {
+        const citations = context.citations.map((citation) => addCitationStageLog(
+          attachCitationDebug({
+            ...citation,
+            enrichment: citation.enrichment ?? buildEnrichmentFromResolution('skipped', resolutionProvider.id, 'skipped'),
+          }, 'enrich', {
+            status: 'skipped',
+            providerOrder: [],
+            candidateCount: 0,
+            warningFlags: [],
+          }, context.debugEnabled),
+          createStageDiagnostic('enrich', 'skipped', 'Strict external resolution disabled for this request.', {
+            provider: resolutionProvider.id,
+          }),
+        ));
+
+        return {
+          ...context,
+          citations,
+          jobDebug: context.debugEnabled
+            ? {
+              ...context.jobDebug,
+              enrich: {
+                citationCount: citations.length,
+                provider: resolutionProvider.id,
+                skipped: true,
+              },
+            }
+            : context.jobDebug,
+          pipelineLog: [
+            ...context.pipelineLog,
+            createStageDiagnostic(
+              'enrich',
+              'skipped',
+              `Skipped strict external resolution for ${citations.length} citation(s).`,
+              { provider: resolutionProvider.id, citationCount: citations.length },
+              Date.now() - startedAt,
+            ),
+          ],
+        };
+      }
+
+      const concurrency = Number.parseInt(process.env.V2_ENRICH_CONCURRENCY ?? String(DEFAULT_ENRICH_CONCURRENCY), 10);
+      const limit = pLimit(Number.isFinite(concurrency) && concurrency > 0 ? concurrency : DEFAULT_ENRICH_CONCURRENCY);
+
+      const results = await Promise.all(context.citations.map((citation, citationIndex) => limit(async () => {
         const localFallbacks: string[] = [];
         let localPartialResult = false;
 
         if (citation.status === 'duplicate') {
-          const skippedCitation = attachCitationDebug({
+          const nextCitation = attachCitationDebug({
             ...citation,
-            enrichment: { status: 'skipped', provider: authorityLookup.id, sourceUsed: 'skipped' },
+            resolution: buildResolutionMetadata(citation, 'skipped_duplicate', {
+              resolvedAt: nowIso(),
+              provider: resolutionProvider.id,
+              matchStrategy: 'none',
+            }),
+            enrichment: buildEnrichmentFromResolution('skipped', resolutionProvider.id, 'skipped'),
           }, 'enrich', {
-            sourceUsed: 'skipped',
+            status: 'skipped_duplicate',
+            providerOrder: [],
+            candidateCount: 0,
             warningFlags: [],
           }, context.debugEnabled);
+
           return {
-            citation: addCitationStageLog(
-              skippedCitation,
-              createStageDiagnostic('enrich', 'skipped', 'Enrichment skipped for duplicate citation.'),
-            ),
+            citation: addCitationStageLog(nextCitation, createStageDiagnostic('enrich', 'skipped', 'Resolution skipped for duplicate citation.')),
+            fallbacksUsed: localFallbacks,
+            partialResult: localPartialResult,
+          };
+        }
+
+        const queryEvidence = buildResolutionQueryEvidence(citation);
+        if (!queryEvidence.titlePresent || (!queryEvidence.firstAuthorSurname && !queryEvidence.groupAuthorLiteral)) {
+          const nextCitation = attachCitationDebug({
+            ...citation,
+            resolution: {
+              ...buildResolutionMetadata(citation, 'insufficient_evidence', {
+                resolvedAt: nowIso(),
+                provider: resolutionProvider.id,
+                matchStrategy: 'none',
+              }),
+              rejectedReasons: ['parse_too_sparse'],
+            },
+            enrichment: buildEnrichmentFromResolution('no_match', resolutionProvider.id, 'unverifiable'),
+          }, 'enrich', {
+            status: 'insufficient_evidence',
+            providerOrder: [],
+            candidateCount: 0,
+            warningFlags: ['parse_too_sparse'],
+          }, context.debugEnabled);
+          logStructuredDebug(context, 'enrich', citationIndex, nextCitation, {
+            providerOrder: [],
+            warningFlags: ['parse_too_sparse'],
+            candidateCount: 0,
+          });
+          return {
+            citation: addCitationStageLog(nextCitation, createStageDiagnostic('enrich', 'warning', 'Skipped network resolution because parse evidence was insufficient.', {
+              provider: resolutionProvider.id,
+              reason: 'parse_too_sparse',
+            })),
             fallbacksUsed: localFallbacks,
             partialResult: localPartialResult,
           };
         }
 
         const cacheKey = cacheKeyForCitation(citation);
-        const cached = await cache.get<EnrichmentMetadata & { data?: Record<string, string | number | undefined> }>(cacheKey);
+        const resolutionQuery: ResolutionSearchQuery = {
+          title: citation.title.value ?? '',
+          firstAuthorSurname: queryEvidence.firstAuthorSurname,
+          groupAuthorLiteral: queryEvidence.groupAuthorLiteral,
+          year: queryEvidence.year ?? null,
+          venue: queryEvidence.venue ?? null,
+          sourceType: queryEvidence.sourceType,
+        };
+        const cached = await cache.get<CachedResolutionPayload>(cacheKey);
         if (cached) {
-          const cachedCitation = attachCitationDebug(applyEnrichment(citation, {
-            ...cached,
+          let cachedCitation = citation;
+          let conflictFields: string[] = [];
+          if (cached.acceptedCandidate) {
+            const merged = applyVerifiedCandidate(cachedCitation, cached.acceptedCandidate);
+            cachedCitation = merged.citation;
+            conflictFields = merged.conflictFields;
+          }
+
+          cachedCitation = attachCitationDebug({
+            ...cachedCitation,
+            resolution: {
+              ...buildResolutionMetadata(cachedCitation, cached.status, {
+                resolvedAt: nowIso(),
+                provider: cached.provider,
+                matchStrategy: cached.matchStrategy,
+                acceptedCandidate: cached.acceptedCandidate,
+              }),
+              candidateCount: cached.candidateCount,
+              rejectedReasons: cached.rejectedReasons,
+              conflictFields,
+              yearToleranceApplied: cached.yearToleranceApplied,
+            },
+            enrichment: buildEnrichmentFromResolution(
+              cached.acceptedCandidate ? 'fetched' : 'no_match',
+              resolutionProvider.id,
+              'cache',
+              cached.acceptedCandidate,
+              cached.acceptedCandidate ? { cached: true } : undefined,
+              true,
+            ),
+          }, 'enrich', {
+            status: cached.status,
+            providerOrder: ['cache'],
             cacheHit: true,
-            sourceUsed: 'cache',
-          }, cached.data as any), 'enrich', {
-            sourceUsed: 'cache',
-            cacheHit: true,
+            candidateCount: cached.candidateCount,
+            conflictFields,
+            warningFlags: conflictFields,
           }, context.debugEnabled);
           logStructuredDebug(context, 'enrich', citationIndex, cachedCitation, {
-            warningFlags: [],
-            sourceUsed: 'cache',
+            providerOrder: ['cache'],
+            cacheHit: true,
+            candidateCount: cached.candidateCount,
+            conflictFields,
+            warningFlags: conflictFields,
           });
           return {
-            citation: addCitationStageLog(
-              cachedCitation,
-              createStageDiagnostic('enrich', 'success', 'Reused cached enrichment result.', { cacheKey }),
-            ),
+            citation: addCitationStageLog(cachedCitation, createStageDiagnostic('enrich', 'success', 'Reused cached strict resolution result.', {
+              provider: cached.provider,
+              status: cached.status,
+              cacheKey,
+              conflictFields,
+            })),
             fallbacksUsed: localFallbacks,
             partialResult: localPartialResult,
           };
         }
 
-        let enrichedCitation = citation;
-        let stageStatus: 'success' | 'warning' = 'warning';
-        let stageMessage = 'Citation could not be enriched and was marked unverifiable.';
-
-        const finalize = async (nextCitation: CanonicalCitation, logMessage: string, status: 'success' | 'warning') => {
-          if (nextCitation.enrichment?.status === 'fetched') {
-            await cache.set(cacheKey, {
-              ...nextCitation.enrichment,
-              data: {
-                title: nextCitation.title.value ?? undefined,
-                journal: nextCitation.journal.value ?? undefined,
-                year: nextCitation.year.value ?? undefined,
-                doi: nextCitation.doi.value ?? undefined,
-                url: nextCitation.url.value ?? undefined,
-                abstract: nextCitation.enrichment.abstract,
-              },
-            });
-          }
-          const debuggedCitation = attachCitationDebug(nextCitation, 'enrich', {
-            sourceUsed: nextCitation.enrichment?.sourceUsed,
-            status: nextCitation.enrichment?.status,
-            timedOut: nextCitation.enrichment?.timedOut ?? false,
-            warningFlags: nextCitation.enrichment?.timedOut ? ['timeout_fallback'] : [],
-          }, context.debugEnabled);
-          logStructuredDebug(context, 'enrich', citationIndex, debuggedCitation, {
-            warningFlags: debuggedCitation.enrichment?.timedOut ? ['timeout_fallback'] : [],
-            sourceUsed: debuggedCitation.enrichment?.sourceUsed,
-          });
-          return addCitationStageLog(
-            debuggedCitation,
-            createStageDiagnostic('enrich', status, logMessage, {
-              sourceUsed: debuggedCitation.enrichment?.sourceUsed,
-              status: debuggedCitation.enrichment?.status,
-            }),
-          );
+        const providerOrder = providerOrderForCitation(citation);
+        const allCandidates: ResolutionCandidateRecord[] = [];
+        const rejectedReasons: string[] = [];
+        let providerError = false;
+        let successfulProviderCount = 0;
+        let providerErrorCount = 0;
+        let selected: ReturnType<typeof chooseBestResolutionCandidate> = {
+          ambiguous: false,
+          evaluated: [],
         };
 
-        try {
-          if (citation.doi.value) {
-            const crossref = await runWithTimeout('crossref-doi', fetchCrossrefMetadata(citation.doi.value), ENRICH_TIMEOUT_MS);
-            if (crossref) {
-              enrichedCitation = applyEnrichment(citation, {
-                status: 'fetched',
-                provider: 'crossref',
-                sourceUsed: 'crossref_doi',
-                cacheHit: false,
-                doiFound: Boolean(crossref.DOI),
-                abstractFound: false,
-                retractedFlag: /retract/i.test(String(crossref.title ?? '')),
-                matchedTitle: crossref.title,
-                matchedYear: crossref.issued?.['date-parts']?.[0]?.[0],
-                url: crossref.URL,
-                raw: crossref,
-              }, {
-                title: crossref.title,
-                journal: crossref['container-title'],
-                year: crossref.issued?.['date-parts']?.[0]?.[0],
-                doi: crossref.DOI,
-                url: crossref.URL,
-              });
-              stageStatus = 'success';
-              stageMessage = 'Enriched citation from Crossref DOI lookup.';
-              return {
-                citation: await finalize(enrichedCitation, stageMessage, stageStatus),
-                fallbacksUsed: localFallbacks,
-                partialResult: localPartialResult,
-              };
+        for (const providerKey of providerOrder) {
+          try {
+            const candidates = await fetchProviderCandidates(
+              resolutionProvider,
+              resolutionQuery,
+              citation.doi.value,
+              providerKey,
+            );
+            successfulProviderCount += 1;
+            allCandidates.push(...candidates);
+            selected = chooseBestResolutionCandidate(citation, allCandidates);
+            if (selected.accepted && !selected.ambiguous && selected.accepted.band === 2) {
+              break;
             }
+          } catch (error) {
+            providerError = true;
+            providerErrorCount += 1;
+            localPartialResult = true;
+            localFallbacks.push(`enrich:${providerKey}_provider_error`);
+            rejectedReasons.push(`${providerKey}_provider_error:${error instanceof Error ? error.message : String(error)}`);
           }
+        }
+        const evaluatedRejectedReasons = selected.evaluated
+          .filter((entry) => !entry.accepted)
+          .flatMap((entry) => entry.reasons.map((reason) => `${entry.candidate.provider}:${reason}`));
+        rejectedReasons.push(...evaluatedRejectedReasons);
 
-          const crossrefSearch = await runWithTimeout('crossref-title-author', crossrefSearchByTitleAuthor(citation), ENRICH_TIMEOUT_MS);
-          if (crossrefSearch) {
-            enrichedCitation = applyEnrichment(citation, {
-              status: 'fetched',
-              provider: 'crossref',
-              sourceUsed: 'crossref_title_author',
-              cacheHit: false,
-              doiFound: Boolean(crossrefSearch.DOI),
-              abstractFound: false,
-              retractedFlag: /retract/i.test(String(crossrefSearch.title?.[0] ?? '')),
-              matchedTitle: crossrefSearch.title?.[0],
-              matchedYear: crossrefSearch.issued?.['date-parts']?.[0]?.[0],
-              url: crossrefSearch.URL,
-              raw: crossrefSearch,
-            }, {
-              title: crossrefSearch.title?.[0],
-              journal: crossrefSearch['container-title']?.[0],
-              year: crossrefSearch.issued?.['date-parts']?.[0]?.[0],
-              doi: crossrefSearch.DOI,
-              url: crossrefSearch.URL,
-            });
-            stageStatus = 'success';
-            stageMessage = 'Enriched citation from Crossref title/author search.';
-            return {
-              citation: await finalize(enrichedCitation, stageMessage, stageStatus),
-              fallbacksUsed: localFallbacks,
-              partialResult: localPartialResult,
-            };
-          }
+        let nextCitation = citation;
+        let stageStatus: 'success' | 'warning' = 'warning';
+        let stageMessage = 'No exact external match was accepted for this citation.';
 
-          // Semantic Scholar is intentionally disabled in the active enrichment path.
-          // Reason: current rate limits serialize batch processing and make v2 conversion
-          // unacceptably slow. Re-enable later behind a flag when deep enrichment returns.
-
-          if (isBiomedical(citation)) {
-            const pubmedResult = await runWithTimeout('pubmed', pubmedLookup(citation), ENRICH_TIMEOUT_MS);
-            if (pubmedResult) {
-              enrichedCitation = applyEnrichment(citation, {
-                status: 'fetched',
-                provider: 'pubmed',
-                sourceUsed: 'pubmed',
-                cacheHit: false,
-                doiFound: false,
-                abstractFound: false,
-                retractedFlag: /retract/i.test(String(pubmedResult.title ?? '')),
-                matchedTitle: pubmedResult.title,
-                matchedYear: Number.parseInt(String(pubmedResult.pubdate ?? '').slice(0, 4), 10) || undefined,
-                raw: pubmedResult,
-              }, {
-                title: pubmedResult.title,
-                journal: pubmedResult.fulljournalname,
-                year: Number.parseInt(String(pubmedResult.pubdate ?? '').slice(0, 4), 10) || undefined,
-              });
-              stageStatus = 'success';
-              stageMessage = 'Enriched citation from PubMed.';
-              return {
-                citation: await finalize(enrichedCitation, stageMessage, stageStatus),
-                fallbacksUsed: localFallbacks,
-                partialResult: localPartialResult,
-              };
-            }
-          }
-
-          enrichedCitation = {
+        if (selected.ambiguous) {
+          nextCitation = {
             ...citation,
-            enrichment: {
-              status: 'no_match',
-              provider: authorityLookup.id,
-              sourceUsed: 'unverifiable',
-              cacheHit: false,
-              doiFound: Boolean(citation.doi.value),
-              abstractFound: false,
-              retractedFlag: false,
-              confidencePenalty: -0.15,
+            resolution: {
+              ...buildResolutionMetadata(citation, 'ambiguous_match', {
+                resolvedAt: nowIso(),
+                provider: resolutionProvider.id,
+                matchStrategy: 'none',
+              }),
+              candidateCount: allCandidates.length,
+              rejectedReasons: [
+                'ambiguous_match',
+                ...selected.evaluated
+                  .filter((entry) => entry.accepted)
+                  .slice(0, 2)
+                  .map((entry) => `${entry.candidate.provider}:${entry.candidate.title ?? 'unknown_title'}`),
+                ...rejectedReasons,
+              ],
             },
+            enrichment: buildEnrichmentFromResolution('no_match', resolutionProvider.id, 'unverifiable'),
           };
-        } catch (error) {
-          localPartialResult = true;
-          localFallbacks.push('enrich:timeout_fallback');
-          enrichedCitation = {
+          stageMessage = 'Multiple strict external matches tied; citation remains unresolved.';
+        } else if (selected.accepted) {
+          const acceptedCandidate = buildAcceptedCandidateSummary(selected.accepted.candidate);
+          const merged = applyVerifiedCandidate(citation, acceptedCandidate);
+          nextCitation = {
+            ...merged.citation,
+            resolution: {
+              ...buildResolutionMetadata(
+                merged.citation,
+                selected.accepted.yearToleranceApplied ? 'verified_with_year_tolerance' : 'verified',
+                {
+                  resolvedAt: nowIso(),
+                  provider: selected.accepted.candidate.provider,
+                  matchStrategy: toMatchStrategy(
+                    selected.accepted.candidate.provider === 'crossref' && citation.doi.value
+                      ? 'doi'
+                      : selected.accepted.candidate.provider,
+                  ),
+                  acceptedCandidate,
+                },
+              ),
+              candidateCount: allCandidates.length,
+              rejectedReasons,
+              conflictFields: merged.conflictFields,
+              yearToleranceApplied: selected.accepted.yearToleranceApplied,
+            },
+            enrichment: buildEnrichmentFromResolution(
+              'fetched',
+              resolutionProvider.id,
+              selected.accepted.candidate.provider === 'crossref' && citation.doi.value ? 'doi' : selected.accepted.candidate.provider,
+              acceptedCandidate,
+              selected.accepted.candidate.raw,
+            ),
+          };
+          stageStatus = merged.conflictFields.length === 0 ? 'success' : 'warning';
+          stageMessage = merged.conflictFields.length === 0
+            ? 'Verified citation via strict external resolution.'
+            : 'Verified citation externally, but conflicting extracted fields were preserved for review.';
+
+          await cache.set(cacheKey, {
+            status: nextCitation.resolution?.status ?? 'verified',
+            provider: nextCitation.resolution?.provider,
+            matchStrategy: nextCitation.resolution?.matchStrategy,
+            candidateCount: nextCitation.resolution?.candidateCount ?? allCandidates.length,
+            acceptedCandidate,
+            rejectedReasons,
+            yearToleranceApplied: nextCitation.resolution?.yearToleranceApplied ?? false,
+          } satisfies CachedResolutionPayload);
+        } else {
+          const status: ResolutionMetadata['status'] = providerError && successfulProviderCount === 0
+            ? 'provider_error'
+            : allCandidates.length === 0 && ['report', 'book', 'website', 'chapter'].includes(citation.referenceType)
+              ? 'provider_no_coverage'
+              : 'no_exact_match';
+
+          nextCitation = {
             ...citation,
-            enrichment: {
-              status: 'error',
-              provider: authorityLookup.id,
-              sourceUsed: 'timeout_fallback',
-              cacheHit: false,
-              doiFound: Boolean(citation.doi.value),
-              abstractFound: false,
-              retractedFlag: false,
-              timedOut: true,
-              confidencePenalty: -0.15,
-              raw: {
-                message: error instanceof Error ? error.message : String(error),
-              },
+            resolution: {
+              ...buildResolutionMetadata(citation, status, {
+                resolvedAt: nowIso(),
+                provider: resolutionProvider.id,
+                matchStrategy: 'none',
+              }),
+              candidateCount: allCandidates.length,
+              rejectedReasons,
             },
+            enrichment: buildEnrichmentFromResolution(
+              providerError ? 'error' : 'no_match',
+              resolutionProvider.id,
+              'unverifiable',
+              undefined,
+              providerError ? { rejectedReasons } : undefined,
+            ),
           };
-          stageMessage = 'Enrichment timed out; returning graceful partial result.';
+          stageMessage = providerError && successfulProviderCount === 0
+            ? 'External resolution completed with provider errors and no accepted exact match.'
+            : 'Strict external resolution did not accept any exact-title candidate.';
+          await cache.set(cacheKey, {
+            status,
+            provider: resolutionProvider.id,
+            matchStrategy: 'none',
+            candidateCount: allCandidates.length,
+            rejectedReasons,
+            yearToleranceApplied: false,
+          } satisfies CachedResolutionPayload);
         }
 
+        nextCitation = attachCitationDebug(nextCitation, 'enrich', {
+          status: nextCitation.resolution?.status,
+          providerOrder,
+          candidateCount: allCandidates.length,
+          successfulProviderCount,
+          providerErrorCount,
+          acceptedCandidate: nextCitation.resolution?.acceptedCandidate,
+          rejectedReasons: nextCitation.resolution?.rejectedReasons ?? [],
+          conflictFields: nextCitation.resolution?.conflictFields ?? [],
+          yearToleranceApplied: nextCitation.resolution?.yearToleranceApplied ?? false,
+          warningFlags: nextCitation.resolution?.conflictFields ?? [],
+        }, context.debugEnabled);
+        logStructuredDebug(context, 'enrich', citationIndex, nextCitation, {
+          providerOrder,
+          candidateCount: allCandidates.length,
+          successfulProviderCount,
+          providerErrorCount,
+          warningFlags: nextCitation.resolution?.conflictFields ?? [],
+          conflictFields: nextCitation.resolution?.conflictFields ?? [],
+          selectedBranch: undefined,
+          selectionReason: nextCitation.resolution?.status,
+        });
+
         return {
-          citation: await finalize(enrichedCitation, stageMessage, stageStatus),
+          citation: addCitationStageLog(nextCitation, createStageDiagnostic('enrich', stageStatus, stageMessage, {
+            provider: nextCitation.resolution?.provider,
+            status: nextCitation.resolution?.status,
+            candidateCount: nextCitation.resolution?.candidateCount,
+            conflictFields: nextCitation.resolution?.conflictFields ?? [],
+          })),
           fallbacksUsed: localFallbacks,
           partialResult: localPartialResult,
         };
-      }));
+      })));
 
       const citations = results.map((result) => result.citation);
       const fallbacksUsed = [
@@ -335,6 +638,8 @@ export function createEnrichStage(authorityLookup: AuthorityLookupAdapter, cache
             ...context.jobDebug,
             enrich: {
               citationCount: citations.length,
+              provider: resolutionProvider.id,
+              concurrency: Number.isFinite(concurrency) && concurrency > 0 ? concurrency : DEFAULT_ENRICH_CONCURRENCY,
             },
           }
           : context.jobDebug,
@@ -343,8 +648,8 @@ export function createEnrichStage(authorityLookup: AuthorityLookupAdapter, cache
           createStageDiagnostic(
             'enrich',
             'success',
-            `Completed enrichment waterfall for ${citations.length} citation(s).`,
-            { provider: authorityLookup.id, citationCount: citations.length },
+            `Completed strict external resolution for ${citations.length} citation(s).`,
+            { provider: resolutionProvider.id, citationCount: citations.length },
             Date.now() - startedAt,
           ),
         ],

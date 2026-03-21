@@ -1,10 +1,9 @@
 import type { ParsedReference } from './schema';
+import { isPlaceholderFieldValue } from './referencePlaceholders';
 
 function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
-
-export const PLACEHOLDER_FIELD_VALUES = new Set(['vol', 'vol.', 'journal', '?', 'unknown']);
 
 const PROTECTED_TITLE_RULES = [
   { label: 'U-Net', raw: /\bU[-\s]?Net\b/i, parsed: /\bU-Net\b/i },
@@ -22,7 +21,7 @@ const PROTECTED_CONTAINER_RULES = [
 ] as const;
 
 export function hasPlaceholderFieldValue(value: string | null | undefined): boolean {
-  return PLACEHOLDER_FIELD_VALUES.has(normalizeWhitespace(String(value ?? '').toLowerCase()));
+  return isPlaceholderFieldValue(value);
 }
 
 export function hasMalformedAuthorShape(authors: string[] | undefined): boolean {
@@ -76,13 +75,15 @@ export function getProtectedTitleCorruptionReasons(raw: string, parsedTitle?: st
 export function getProtectedContainerCorruptionReasons(
   raw: string,
   parsed: Pick<ParsedReference, 'journal' | 'conferenceTitle' | 'bookTitle'>,
+  parsedTitle?: string | null,
 ): string[] {
   const reasons: string[] = [];
   const venue = normalizeWhitespace(parsed.journal ?? parsed.conferenceTitle ?? parsed.bookTitle ?? '');
+  const title = normalizeWhitespace(parsedTitle ?? '');
   if (!venue) return reasons;
 
   for (const rule of PROTECTED_CONTAINER_RULES) {
-    if (rule.raw.test(raw) && !rule.expected.test(venue)) {
+    if (rule.raw.test(raw) && !rule.expected.test(venue) && !(title && rule.expected.test(title))) {
       reasons.push(`Protected venue token ${rule.label} was not preserved`);
     }
   }

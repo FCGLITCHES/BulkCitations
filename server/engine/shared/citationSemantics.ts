@@ -24,6 +24,30 @@ export const GROUP_AUTHOR_SUFFIXES = new Set([
   'project',
 ]);
 
+const GROUP_AUTHOR_KEYWORD_PATTERN = /\b(?:organization|agency|administration|department|ministry|office|commission|council|library|bank|foundation|programme|program|centre|center|college|university|hospital|publisher|press|authority|academ(?:y|ies)|team|group|committee|collaboration|network|initiative|institute|society|association|union|research)\b/i;
+const GROUP_AUTHOR_MARKER_PATTERN = /\b(?:nations|parliament|congress|senate|assembly|secretariat|directorate|forum|openai|openaire|matlab)\b/i;
+
+function looksLikeInstitutionalAcronymToken(token: string): boolean {
+  const normalized = normalizeWhitespace(token).replace(/[().,;:]+$/g, '');
+  if (!normalized) return false;
+  if (normalized.includes('.')) return false;
+  if (/^[A-Z]{2,10}$/.test(normalized)) return true;
+  if (!/^[A-Z0-9][A-Za-z0-9+-]*$/.test(normalized)) return false;
+  const upperCount = Array.from(normalized).filter((char) => /[A-Z]/.test(char)).length;
+  const lowerCount = Array.from(normalized).filter((char) => /[a-z]/.test(char)).length;
+  return lowerCount > 0 && upperCount >= 3;
+}
+
+function looksLikeInstitutionalAcronymPhrase(value: string): boolean {
+  const tokens = normalizeWhitespace(value).split(/\s+/).filter(Boolean);
+  if (tokens.length === 0 || tokens.length > 4) return false;
+  if (!tokens.some((token) => looksLikeInstitutionalAcronymToken(token))) return false;
+  if (!looksLikeInstitutionalAcronymToken(tokens[0] ?? '') && !GROUP_AUTHOR_MARKER_PATTERN.test(value) && !GROUP_AUTHOR_KEYWORD_PATTERN.test(value)) {
+    return false;
+  }
+  return tokens.every((token) => /^[\p{L}\p{N}.+'’()-]+$/u.test(token));
+}
+
 const GROUP_AUTHOR_EXACT_NORMALIZED = new Map<string, string>([
   ['the prisma group', 'The PRISMA Group'],
   ['prisma group', 'The PRISMA Group'],
@@ -102,6 +126,13 @@ export function isGroupAuthor(value: string): boolean {
 
   const comparable = normalizeGroupComparisonValue(normalized);
   if (GROUP_AUTHOR_EXACT_NORMALIZED.has(comparable)) return true;
+
+  if (looksLikeInstitutionalAcronymPhrase(normalized)) return true;
+  if (GROUP_AUTHOR_MARKER_PATTERN.test(normalized)) return true;
+  if (!normalized.includes(' ') && looksLikeInstitutionalAcronymToken(normalized)) return true;
+  if (GROUP_AUTHOR_KEYWORD_PATTERN.test(normalized) && normalized.split(/\s+/).length >= 2) {
+    return true;
+  }
 
   return [...GROUP_AUTHOR_SUFFIXES].some((suffix) => {
     if (comparable === suffix) return false;

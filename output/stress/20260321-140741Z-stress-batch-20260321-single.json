@@ -1,0 +1,766 @@
+{
+  "generatedAt": "2026-03-21T14:07:41.996Z",
+  "input": {
+    "source": "D:\\Coding\\Citing\\scripts\\data\\stress-batch-20260321-single.txt",
+    "fixtureStem": "stress-batch-20260321-single",
+    "bytes": 368
+  },
+  "job": {
+    "jobId": "0ce50dd7-3f4f-41ed-b452-0a1b8c2e4f19",
+    "processedAt": "2026-03-21T14:07:41.994Z",
+    "processingPath": {
+      "stagesRun": [
+        "ingest",
+        "split",
+        "detect",
+        "extract",
+        "enrich",
+        "normalize",
+        "validate",
+        "truth",
+        "dedup",
+        "score",
+        "render",
+        "respond"
+      ],
+      "fallbacksUsed": [
+        "enrich:doi_provider_error"
+      ],
+      "durationMs": 758,
+      "partialResult": true,
+      "executionMode": "sync",
+      "extractorPathsUsed": [
+        "deterministic"
+      ],
+      "partialReasons": []
+    },
+    "pipelineLog": [
+      {
+        "stageId": "ingest",
+        "status": "success",
+        "message": "Ingested 1 source item(s) from text.",
+        "details": {
+          "sourceType": "text",
+          "itemCount": 1,
+          "inputProfile": {
+            "structure": "unknown",
+            "confidence": 0.4,
+            "inputType": "unknown",
+            "estimatedCount": 2,
+            "hasDois": true,
+            "hasUrls": false,
+            "styleHints": [],
+            "signals": [
+              "doi_density"
+            ]
+          }
+        },
+        "durationMs": 0,
+        "timestamp": "2026-03-21T14:07:41.238Z"
+      },
+      {
+        "stageId": "split",
+        "status": "success",
+        "message": "Split 1 item(s) into 2 citation candidate(s).",
+        "details": {
+          "rawItems": 1,
+          "citationCount": 2
+        },
+        "durationMs": 2,
+        "timestamp": "2026-03-21T14:07:41.241Z"
+      },
+      {
+        "stageId": "detect",
+        "status": "success",
+        "message": "Completed style detection for 2 citation(s).",
+        "details": {
+          "adapter": "default-heuristic-classifier",
+          "citationCount": 2
+        },
+        "durationMs": 3,
+        "timestamp": "2026-03-21T14:07:41.244Z"
+      },
+      {
+        "stageId": "extract",
+        "status": "success",
+        "message": "Extracted canonical fields for 2 citation(s) using default-parser-extractor.",
+        "details": {
+          "adapter": "default-parser-extractor",
+          "citationCount": 2
+        },
+        "durationMs": 16,
+        "timestamp": "2026-03-21T14:07:41.261Z"
+      },
+      {
+        "stageId": "enrich",
+        "status": "success",
+        "message": "Completed strict external resolution for 2 citation(s).",
+        "details": {
+          "provider": "strict-network-resolution",
+          "citationCount": 2
+        },
+        "durationMs": 570,
+        "timestamp": "2026-03-21T14:07:41.832Z"
+      },
+      {
+        "stageId": "normalize",
+        "status": "success",
+        "message": "Normalized 2 citation(s).",
+        "details": {
+          "citationCount": 2
+        },
+        "durationMs": 1,
+        "timestamp": "2026-03-21T14:07:41.833Z"
+      },
+      {
+        "stageId": "validate",
+        "status": "success",
+        "message": "Validated 2 citation(s).",
+        "details": {
+          "citationCount": 2
+        },
+        "durationMs": 3,
+        "timestamp": "2026-03-21T14:07:41.836Z"
+      },
+      {
+        "stageId": "truth",
+        "status": "success",
+        "message": "No approved truth matched this batch.",
+        "details": {
+          "citationCount": 2,
+          "appliedCount": 0
+        },
+        "durationMs": 11,
+        "timestamp": "2026-03-21T14:07:41.847Z"
+      },
+      {
+        "stageId": "dedup",
+        "status": "skipped",
+        "message": "Deduplication disabled for this request.",
+        "timestamp": "2026-03-21T14:07:41.847Z"
+      },
+      {
+        "stageId": "group",
+        "status": "skipped",
+        "message": "Stage 'group' is disabled in the active v2 registry.",
+        "timestamp": "2026-03-21T14:07:41.848Z"
+      },
+      {
+        "stageId": "score",
+        "status": "success",
+        "message": "Calculated quality scores for 2 citation(s).",
+        "details": {
+          "citationCount": 2
+        },
+        "durationMs": 1,
+        "timestamp": "2026-03-21T14:07:41.849Z"
+      },
+      {
+        "stageId": "render",
+        "status": "success",
+        "message": "Rendered 2 citation(s) in apa.",
+        "details": {
+          "citationCount": 2,
+          "outputStyle": "apa"
+        },
+        "durationMs": 145,
+        "timestamp": "2026-03-21T14:07:41.994Z"
+      },
+      {
+        "stageId": "respond",
+        "status": "success",
+        "message": "Built the v2 response envelope.",
+        "details": {
+          "citationCount": 2,
+          "duplicateCount": 0
+        },
+        "durationMs": 1,
+        "timestamp": "2026-03-21T14:07:41.995Z"
+      }
+    ]
+  },
+  "summary": {
+    "citationCount": 2,
+    "bucketCounts": {
+      "ready": 0,
+      "worth_reviewing": 2,
+      "action_needed": 0
+    },
+    "readyRate": 0,
+    "averageConfidence": 0.85
+  },
+  "providerStats": {
+    "resolutionStatusCounts": {
+      "no_exact_match": 1,
+      "provider_error": 1
+    },
+    "providerCounts": {
+      "strict-network-resolution": 2
+    },
+    "matchStrategyCounts": {
+      "none": 2
+    }
+  },
+  "adjudication": null,
+  "citations": [
+    {
+      "index": 1,
+      "citationId": "d90f367f-fefb-44b1-82d4-ac6cb71a69b2",
+      "fingerprint": "bfbd811ca43430d0964196007de4b40c",
+      "raw": "Smith J, Doe A. Deep learning for medical image analysis: a comprehensive review. Journal of Medical Imaging. 2019;6(3):031405. doi:10.1117/1.JMI.6.3.031405.",
+      "status": "active",
+      "referenceType": "journal",
+      "parsedFields": {
+        "authors": [
+          "Smith J",
+          "Doe A"
+        ],
+        "title": "Deep learning for medical image analysis: a comprehensive review",
+        "year": "2019",
+        "journal": "Journal of Medical Imaging",
+        "conferenceTitle": null,
+        "bookTitle": null,
+        "volume": "6",
+        "issue": "3",
+        "pages": "031405. doi:10.1117/1.JMI.6.3.031405"
+      },
+      "mergedFields": {
+        "authors": [
+          "Smith, J.",
+          "Doe, A."
+        ],
+        "title": "Deep learning for medical image analysis: a comprehensive review",
+        "year": "2019",
+        "journal": "Journal of Medical Imaging",
+        "volume": "6",
+        "issue": "3",
+        "pages": "031405. doi:10.1117/1.JMI.6.3.031405",
+        "doi": "10.1117/1.JMI.6.3.031405"
+      },
+      "resolution": {
+        "status": "no_exact_match",
+        "candidateCount": 1,
+        "rejectedReasons": [
+          "crossref:title_similarity_below_threshold",
+          "crossref:long_tokens_not_preserved"
+        ],
+        "conflictFields": [],
+        "yearToleranceApplied": false,
+        "queryEvidence": {
+          "titlePresent": true,
+          "titleTokenCount": 9,
+          "firstAuthorSurname": "Smith",
+          "year": 2019,
+          "venue": "Journal of Medical Imaging",
+          "sourceType": "journal"
+        },
+        "resolvedAt": "2026-03-21T14:07:41.782Z",
+        "provider": "strict-network-resolution",
+        "matchStrategy": "none"
+      },
+      "enrichment": {
+        "status": "no_match",
+        "provider": "strict-network-resolution",
+        "sourceUsed": "unverifiable",
+        "cacheHit": false,
+        "doiFound": false,
+        "abstractFound": false,
+        "retractedFlag": false
+      },
+      "missingFields": {
+        "required": [],
+        "expected": [],
+        "optional": [
+          "publisher",
+          "url"
+        ]
+      },
+      "validationCodes": [
+        "no_exact_external_match"
+      ],
+      "validationIssues": [
+        {
+          "field": "raw",
+          "severity": "info",
+          "code": "no_exact_external_match",
+          "message": "No exact external title match was accepted for this citation."
+        }
+      ],
+      "quality": {
+        "overall": 0.86,
+        "grade": "B",
+        "fieldScores": {
+          "authors": 0.704,
+          "title": 0.88,
+          "year": 0.92,
+          "journal": 0.82,
+          "conferenceTitle": 0.82,
+          "bookTitle": 0.82,
+          "volume": 0.82,
+          "issue": 0.8,
+          "pages": 0.82,
+          "doi": 0.96,
+          "publisher": 0.1,
+          "institution": 0.1,
+          "url": 0.05,
+          "edition": 0.1,
+          "editor": 0.704
+        },
+        "flags": [
+          "review"
+        ],
+        "missingRequired": [],
+        "missingOptional": [
+          "publisher",
+          "url"
+        ],
+        "bucket": "worth_reviewing",
+        "bucketReasons": [
+          "No exact external title match was accepted.",
+          "Local quality is below the ready threshold."
+        ]
+      },
+      "fieldConfidence": {
+        "authors": 0.704,
+        "title": 0.88,
+        "year": 0.92,
+        "venue": 0.82
+      },
+      "bucket": "worth_reviewing",
+      "bucketReasons": [
+        "No exact external title match was accepted.",
+        "Local quality is below the ready threshold."
+      ],
+      "diagnosis": {
+        "likelyLayer": "enrich",
+        "summary": "Resolution ended with no_exact_match. Candidate ranking or provider coverage likely needs tuning."
+      },
+      "adjudication": null,
+      "debug": {
+        "split": {
+          "cleanedChunk": "Smith J, Doe A. Deep learning for medical image analysis: a comprehensive review. Journal of Medical Imaging. 2019;6(3):031405. doi:10.1117/1.JMI.6.3.031405.",
+          "splitConfidence": 0.88,
+          "splitReasons": [],
+          "splitMethod": "structural",
+          "fallbackUsed": false,
+          "contaminationFlags": [],
+          "strippedRegions": [],
+          "repairActions": [],
+          "chunkLength": 157,
+          "lineCount": 1
+        },
+        "detect": {
+          "detectorId": "default-heuristic-classifier",
+          "style": "vancouver",
+          "confidence": 0.9
+        },
+        "extract": {
+          "selectedBranch": "deterministic_raw",
+          "selectionReason": "year_anchored_unavailable",
+          "extractorPath": "deterministic",
+          "authorParserMode": "vancouver_compact",
+          "workingChunkLength": 157,
+          "splitContaminationFlags": [],
+          "splitContaminationPenalty": 0,
+          "warningFlags": [],
+          "rejectedCandidates": [],
+          "deterministic_raw": {
+            "year": "2019",
+            "volume": "6",
+            "issue": "3",
+            "pages": "031405. doi:10.1117/1.JMI.6.3.031405",
+            "authors": [
+              "Smith J",
+              "Doe A"
+            ],
+            "title": "Deep learning for medical image analysis: a comprehensive review",
+            "journal": "Journal of Medical Imaging",
+            "article-number": "031405",
+            "doi": "10.1117/1.JMI.6.3.031405"
+          },
+          "year_anchored_fallback_raw": null,
+          "grobid_raw": null,
+          "selected_branch": "deterministic_raw",
+          "selection_reason": "year_anchored_unavailable",
+          "extractor_path": "deterministic",
+          "deterministic_score": 13.7,
+          "fallback_score": -999,
+          "grobid_score": -999,
+          "deterministic_author_parser_mode": "vancouver_compact",
+          "deterministic_author_warning_flags": [],
+          "fallback_author_parser_mode": "none",
+          "fallback_author_warning_flags": [],
+          "split_contamination_flags": [],
+          "split_contamination_penalty": 0,
+          "cleaned_chunk_length": 157,
+          "llm_attempted": false,
+          "llm_applied": false,
+          "llm_cap_reached": false,
+          "selectedParsed": {
+            "authors": [
+              "Smith J",
+              "Doe A"
+            ],
+            "title": "Deep learning for medical image analysis: a comprehensive review",
+            "year": "2019",
+            "journal": "Journal of Medical Imaging",
+            "conferenceTitle": null,
+            "bookTitle": null,
+            "volume": "6",
+            "issue": "3",
+            "pages": "031405. doi:10.1117/1.JMI.6.3.031405"
+          },
+          "canonicalAuthors": [
+            {
+              "first": null,
+              "last": "Smith",
+              "initials": "J."
+            },
+            {
+              "first": null,
+              "last": "Doe",
+              "initials": "A."
+            }
+          ]
+        },
+        "enrich": {
+          "status": "no_exact_match",
+          "providerOrder": [
+            "doi"
+          ],
+          "candidateCount": 1,
+          "rejectedReasons": [
+            "crossref:title_similarity_below_threshold",
+            "crossref:long_tokens_not_preserved"
+          ],
+          "conflictFields": [],
+          "yearToleranceApplied": false,
+          "warningFlags": []
+        },
+        "normalize": {
+          "changed": false,
+          "doiNormalized": false,
+          "unicodeRepairedFields": [],
+          "titleCaseApplied": false,
+          "reportInstitutionPromoted": false,
+          "bookTitlePromoted": false
+        },
+        "validate": {
+          "issues": [
+            {
+              "field": "raw",
+              "severity": "info",
+              "code": "no_exact_external_match",
+              "message": "No exact external title match was accepted for this citation."
+            }
+          ],
+          "verificationAttempted": true,
+          "authoritySource": "strict-network-resolution",
+          "mismatchFields": [],
+          "resolutionStatus": "no_exact_match",
+          "splitContaminationFlags": [],
+          "warningFlags": []
+        },
+        "render": {
+          "rawConvertedText": "Smith, J., & Doe, A. (2019). Deep learning for medical image analysis: a comprehensive review. Journal of Medical Imaging, 6(3), 031405. doi:10.1117/1.JMI.6.3.031405.",
+          "formatted": "Smith, J., & Doe, A. (2019). Deep learning for medical image analysis: a comprehensive review. Journal of Medical Imaging, 6(3), 031405. doi:10.1117/1.JMI.6.3.031405.",
+          "cleaned": "Smith, J, & Doe, A. (2019). Deep learning for medical image analysis: a comprehensive review. Journal of Medical Imaging, 6(3), 031405. doi:10.1117/1.JMI.6.3.031405.",
+          "sanitized": "Smith, J, & Doe, A. (2019). Deep learning for medical image analysis: a comprehensive review. Journal of Medical Imaging, 6(3), 031405. doi:10.1117/1.JMI.6.3.031405.",
+          "warningFlags": []
+        }
+      }
+    },
+    {
+      "index": 2,
+      "citationId": "cfccec5f-7dc8-474a-93a3-81dbf8552025",
+      "fingerprint": "44ef58b266995c116c803f052e2b98b5",
+      "raw": "Zhang L, Müller T, Rossi F, et al. Hybrid CNN-transformer architectures for low-resource biomedical segmentation. IEEE Transactions on Medical Imaging. 2021;40(12):3412-3424. doi:10.1109/TMI.2021.3098765.",
+      "status": "active",
+      "referenceType": "journal",
+      "parsedFields": {
+        "authors": [
+          "Zhang L, Müller T, Rossi F",
+          "et al."
+        ],
+        "title": "Hybrid CNN-transformer architectures for low-resource biomedical segmentation",
+        "year": "2021",
+        "journal": "IEEE Transactions on Medical Imaging",
+        "conferenceTitle": null,
+        "bookTitle": null,
+        "volume": "40",
+        "issue": "12",
+        "pages": "3412-3424. doi:10.1109/TMI.2021.3098765"
+      },
+      "mergedFields": {
+        "authors": [
+          "Zhang L, Müller T",
+          "Rossi, F.",
+          "et al."
+        ],
+        "title": "Hybrid CNN-transformer architectures for low-resource biomedical segmentation",
+        "year": "2021",
+        "journal": "IEEE Transactions on Medical Imaging",
+        "volume": "40",
+        "issue": "12",
+        "pages": "3412-3424. doi:10.1109/TMI.2021.3098765",
+        "doi": "10.1109/TMI.2021.3098765"
+      },
+      "resolution": {
+        "status": "provider_error",
+        "candidateCount": 0,
+        "rejectedReasons": [
+          "doi_provider_error:Crossref API returned 404 for DOI: 10.1109/TMI.2021.3098765"
+        ],
+        "conflictFields": [],
+        "yearToleranceApplied": false,
+        "queryEvidence": {
+          "titlePresent": true,
+          "titleTokenCount": 9,
+          "firstAuthorSurname": "Zhang L",
+          "year": 2021,
+          "venue": "IEEE Transactions on Medical Imaging",
+          "sourceType": "journal"
+        },
+        "resolvedAt": "2026-03-21T14:07:41.831Z",
+        "provider": "strict-network-resolution",
+        "matchStrategy": "none"
+      },
+      "enrichment": {
+        "status": "error",
+        "provider": "strict-network-resolution",
+        "sourceUsed": "unverifiable",
+        "cacheHit": false,
+        "doiFound": false,
+        "abstractFound": false,
+        "retractedFlag": false,
+        "raw": {
+          "rejectedReasons": [
+            "doi_provider_error:Crossref API returned 404 for DOI: 10.1109/TMI.2021.3098765"
+          ]
+        }
+      },
+      "missingFields": {
+        "required": [],
+        "expected": [],
+        "optional": [
+          "publisher",
+          "url"
+        ]
+      },
+      "validationCodes": [
+        "provider_resolution_error"
+      ],
+      "validationIssues": [
+        {
+          "field": "raw",
+          "severity": "info",
+          "code": "provider_resolution_error",
+          "message": "External resolution encountered a provider error.",
+          "extracted": [
+            "doi_provider_error:Crossref API returned 404 for DOI: 10.1109/TMI.2021.3098765"
+          ]
+        }
+      ],
+      "quality": {
+        "overall": 0.84,
+        "grade": "B",
+        "fieldScores": {
+          "authors": 0.6,
+          "title": 0.88,
+          "year": 0.92,
+          "journal": 0.82,
+          "conferenceTitle": 0.82,
+          "bookTitle": 0.82,
+          "volume": 0.82,
+          "issue": 0.8,
+          "pages": 0.82,
+          "doi": 0.96,
+          "publisher": 0.1,
+          "institution": 0.1,
+          "url": 0.05,
+          "edition": 0.1,
+          "editor": 0.6
+        },
+        "flags": [
+          "author_parse_failed",
+          "provider_error"
+        ],
+        "missingRequired": [],
+        "missingOptional": [
+          "publisher",
+          "url"
+        ],
+        "bucket": "worth_reviewing",
+        "bucketReasons": [
+          "External resolution encountered a provider error.",
+          "Local quality is below the ready threshold."
+        ]
+      },
+      "fieldConfidence": {
+        "authors": 0.6,
+        "title": 0.88,
+        "year": 0.92,
+        "venue": 0.82
+      },
+      "bucket": "worth_reviewing",
+      "bucketReasons": [
+        "External resolution encountered a provider error.",
+        "Local quality is below the ready threshold."
+      ],
+      "diagnosis": {
+        "likelyLayer": "enrich",
+        "summary": "Resolution ended with provider_error. Candidate ranking or provider coverage likely needs tuning."
+      },
+      "adjudication": null,
+      "debug": {
+        "split": {
+          "cleanedChunk": "Zhang L, Müller T, Rossi F, et al. Hybrid CNN-transformer architectures for low-resource biomedical segmentation. IEEE Transactions on Medical Imaging. 2021;40(12):3412-3424. doi:10.1109/TMI.2021.3098765.",
+          "splitConfidence": 0.88,
+          "splitReasons": [],
+          "splitMethod": "structural",
+          "fallbackUsed": false,
+          "contaminationFlags": [],
+          "strippedRegions": [],
+          "repairActions": [],
+          "chunkLength": 204,
+          "lineCount": 1
+        },
+        "detect": {
+          "detectorId": "default-heuristic-classifier",
+          "style": "vancouver",
+          "confidence": 0.9
+        },
+        "extract": {
+          "selectedBranch": "deterministic_raw",
+          "selectionReason": "deterministic_scored_higher",
+          "extractorPath": "deterministic",
+          "authorParserMode": "vancouver_compact",
+          "workingChunkLength": 204,
+          "splitContaminationFlags": [],
+          "splitContaminationPenalty": 0,
+          "warningFlags": [],
+          "rejectedCandidates": [],
+          "deterministic_raw": {
+            "year": "2021",
+            "volume": "40",
+            "issue": "12",
+            "pages": "3412-3424. doi:10.1109/TMI.2021.3098765",
+            "authors": [
+              "Zhang L, Müller T, Rossi F",
+              "et al."
+            ],
+            "title": "Hybrid CNN-transformer architectures for low-resource biomedical segmentation",
+            "journal": "IEEE Transactions on Medical Imaging",
+            "doi": "10.1109/TMI.2021.3098765"
+          },
+          "year_anchored_fallback_raw": {
+            "year": "2021",
+            "authors": [
+              "Zhang L, Müller T, Rossi F, et al. Hybrid CNN-transformer architectures for low-resource biomedical segmentation. IEEE Transactions on Medical Imaging. 2021;40(12):3412-3424. doi:10.1109/TMI"
+            ],
+            "title": "3098765.",
+            "parseWarnings": [
+              "year-anchored-fallback"
+            ]
+          },
+          "grobid_raw": null,
+          "selected_branch": "deterministic_raw",
+          "selection_reason": "deterministic_scored_higher",
+          "extractor_path": "deterministic",
+          "deterministic_score": 9.799999999999999,
+          "fallback_score": -0.20000000000000018,
+          "grobid_score": -999,
+          "deterministic_author_parser_mode": "vancouver_compact",
+          "deterministic_author_warning_flags": [],
+          "fallback_author_parser_mode": "vancouver_compact",
+          "fallback_author_warning_flags": [],
+          "split_contamination_flags": [],
+          "split_contamination_penalty": 0,
+          "cleaned_chunk_length": 204,
+          "llm_attempted": false,
+          "llm_applied": false,
+          "llm_cap_reached": false,
+          "selectedParsed": {
+            "authors": [
+              "Zhang L, Müller T, Rossi F",
+              "et al."
+            ],
+            "title": "Hybrid CNN-transformer architectures for low-resource biomedical segmentation",
+            "year": "2021",
+            "journal": "IEEE Transactions on Medical Imaging",
+            "conferenceTitle": null,
+            "bookTitle": null,
+            "volume": "40",
+            "issue": "12",
+            "pages": "3412-3424. doi:10.1109/TMI.2021.3098765"
+          },
+          "canonicalAuthors": [
+            {
+              "first": "Müller T",
+              "last": "Zhang L",
+              "initials": "M. T."
+            },
+            {
+              "first": null,
+              "last": "Rossi",
+              "initials": "F."
+            },
+            {
+              "first": null,
+              "last": "et al.",
+              "initials": null,
+              "literal": "et al."
+            }
+          ]
+        },
+        "enrich": {
+          "status": "provider_error",
+          "providerOrder": [
+            "doi"
+          ],
+          "candidateCount": 0,
+          "rejectedReasons": [
+            "doi_provider_error:Crossref API returned 404 for DOI: 10.1109/TMI.2021.3098765"
+          ],
+          "conflictFields": [],
+          "yearToleranceApplied": false,
+          "warningFlags": []
+        },
+        "normalize": {
+          "changed": false,
+          "doiNormalized": false,
+          "unicodeRepairedFields": [],
+          "titleCaseApplied": false,
+          "reportInstitutionPromoted": false,
+          "bookTitlePromoted": false
+        },
+        "validate": {
+          "issues": [
+            {
+              "field": "raw",
+              "severity": "info",
+              "code": "provider_resolution_error",
+              "message": "External resolution encountered a provider error.",
+              "extracted": [
+                "doi_provider_error:Crossref API returned 404 for DOI: 10.1109/TMI.2021.3098765"
+              ]
+            }
+          ],
+          "verificationAttempted": true,
+          "authoritySource": "strict-network-resolution",
+          "mismatchFields": [],
+          "resolutionStatus": "provider_error",
+          "splitContaminationFlags": [],
+          "warningFlags": []
+        },
+        "render": {
+          "rawConvertedText": "Zhang L, M. T., Rossi, F., & et al. (2021). Hybrid CNN-transformer architectures for low-resource biomedical segmentation. IEEE Transactions on Medical Imaging, 40(12), 3412-3424. doi:10.1109/TMI.2021.3098765.",
+          "formatted": "Zhang L, M. T., Rossi, F., et al. (2021). Hybrid CNN-transformer architectures for low-resource biomedical segmentation. IEEE Transactions on Medical Imaging, 40(12), 3412-3424. doi:10.1109/TMI.2021.3098765.",
+          "cleaned": "Zhang L, M. T, Rossi, F, et al. (2021). Hybrid CNN-transformer architectures for low-resource biomedical segmentation. IEEE Transactions on Medical Imaging, 40(12), 3412-3424. doi:10.1109/TMI.2021.3098765.",
+          "sanitized": "Zhang L, M. T, Rossi, F, et al. (2021). Hybrid CNN-transformer architectures for low-resource biomedical segmentation. IEEE Transactions on Medical Imaging, 40(12), 3412-3424. doi:10.1109/TMI.2021.3098765.",
+          "warningFlags": []
+        }
+      }
+    }
+  ]
+}

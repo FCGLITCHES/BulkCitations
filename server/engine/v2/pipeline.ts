@@ -27,7 +27,7 @@ function createStageMap(adapters: V2AdapterBundle): Record<V2StageId, V2Stage> {
     validate: createValidateStage(),
     truth: createTruthStage(),
     dedup: createDedupStage(),
-    enrich: createEnrichStage(adapters.authorityLookup, adapters.cache),
+    enrich: createEnrichStage(adapters.resolutionProvider, adapters.cache),
     group: createGroupStage(),
     detect: createDetectStage(adapters.classifier),
     score: createScoreStage(),
@@ -62,6 +62,36 @@ function resolveStageTimeoutMs(
   if (stageId === 'split') {
     if (!llmEnabled) return baseTimeoutMs;
     return Math.max(baseTimeoutMs, getOpenAiSplitTimeoutMs() + 1_500);
+  }
+
+  if (stageId === 'enrich') {
+    const citationCount = Math.max(
+      context.citations.length,
+      context.rawItems.length,
+      context.inputProfile?.estimatedCount ?? 0,
+      1,
+    );
+    const explicitTimeoutMs = Number.parseInt(process.env.V2_ENRICH_TIMEOUT_MS ?? '', 10);
+    if (Number.isFinite(explicitTimeoutMs) && explicitTimeoutMs > 0) {
+      return Math.max(baseTimeoutMs, explicitTimeoutMs);
+    }
+    const configuredConcurrency = Number.parseInt(
+      process.env.V2_ENRICH_CONCURRENCY ?? '3',
+      10,
+    );
+    const concurrency = Number.isFinite(configuredConcurrency) && configuredConcurrency > 0
+      ? configuredConcurrency
+      : 3;
+    const batches = Math.ceil(citationCount / Math.max(concurrency, 1));
+    const perCitationBudgetMs = 1_800;
+    const perBatchBudgetMs = 7_500;
+    const overheadMs = 60_000;
+
+    return Math.max(
+      baseTimeoutMs,
+      (citationCount * perCitationBudgetMs) + overheadMs,
+      (batches * perBatchBudgetMs) + overheadMs,
+    );
   }
 
   if (stageId !== 'extract') return baseTimeoutMs;

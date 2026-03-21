@@ -1,14 +1,16 @@
-// @ts-nocheck
 import type { CanonicalCitation, ValidationIssue, ValidationMetadata } from '@shared/schema';
-import { fetchCrossrefMetadata } from '../../doiEnrichment.js';
+import {
+  getProtectedContainerCorruptionReasons,
+  getProtectedTitleCorruptionReasons,
+} from '@shared/referenceHealthHeuristics';
 import type { V2Stage } from '../contracts.js';
 import {
   addCitationStageLog,
   attachCitationDebug,
   createStageDiagnostic,
   logStructuredDebug,
+  normalizeDoiValue,
   normalizeWhitespace,
-  runWithTimeout,
 } from '../utils.js';
 import {
   getMissingRequiredFields,
@@ -19,77 +21,42 @@ import {
   rawSuggestsDroppedLocator,
 } from '../qualityRules.js';
 import { OVERSIZED_CHUNK_CHARS, OVERSIZED_CHUNK_LINES } from './split.js';
-import { isGroupAuthor } from '../../shared/citationSemantics.js';
+import { isGroupAuthor, normalizeGroupAuthor } from '../../shared/citationSemantics.js';
 
 const DOI_PATTERN = /^10\.\d{4,}\/\S+$/i;
 const PAGE_PATTERN = /^[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?$/;
 const CURRENT_YEAR = new Date().getFullYear();
+const DOI_CLUSTER_PATTERN = /(?:https?:\/\/(?:dx\.)?doi\.org\/)?10\.\d{4,}\/\S+/gi;
+const YEAR_CLUSTER_PATTERN = /(?:\(|\[)(?:19|20)\d{2}[a-z]?(?:\)|\])/gi;
+const EMBEDDED_REFERENCE_START_PATTERN = /[A-Z][\p{L}'’.-]+,\s+[A-Z][^()]{0,40}\(\d{4}[a-z]?\)/gu;
+
 function normalized(value: string | null | undefined): string {
   return normalizeWhitespace((value ?? '').toLowerCase());
 }
 
-function compareCrossrefField(citation: CanonicalCitation, field: string, crossrefValue: unknown): ValidationIssue | null {
-  if (crossrefValue == null) return null;
+function hasEmbeddedReferenceStart(value: string | null | undefined): boolean {
+  const raw = value ?? '';
+  if (!raw) return false;
 
-  switch (field) {
-    case 'title':
-      if (citation.title.value && normalized(citation.title.value) !== normalized(String(crossrefValue))) {
-        return {
-          field,
-          severity: 'warning',
-          code: 'authority_mismatch',
-          message: 'Extracted title does not match Crossref metadata.',
-          extracted: citation.title.value,
-          expected: crossrefValue,
-        };
-      }
-      return null;
-    case 'journal':
-      if (citation.journal.value && normalized(citation.journal.value) !== normalized(String(crossrefValue))) {
-        return {
-          field,
-          severity: 'warning',
-          code: 'authority_mismatch',
-          message: 'Extracted journal does not match Crossref metadata.',
-          extracted: citation.journal.value,
-          expected: crossrefValue,
-        };
-      }
-      return null;
-    case 'year': {
-      const extracted = citation.year.value != null ? String(citation.year.value) : null;
-      const expected = String(crossrefValue);
-      if (extracted && extracted !== expected) {
-        return {
-          field,
-          severity: 'warning',
-          code: 'authority_mismatch',
-          message: 'Extracted year does not match Crossref metadata.',
-          extracted,
-          expected,
-        };
-      }
-      return null;
+  for (const match of raw.matchAll(EMBEDDED_REFERENCE_START_PATTERN)) {
+    if ((match.index ?? 0) > 0) {
+      return true;
     }
-    case 'volume':
-    case 'issue':
-    case 'pages': {
-      const extracted = citation[field as 'volume' | 'issue' | 'pages'].value;
-      if (extracted && normalized(extracted) !== normalized(String(crossrefValue))) {
-        return {
-          field,
-          severity: 'info',
-          code: 'authority_mismatch',
-          message: `Extracted ${field} does not match Crossref metadata.`,
-          extracted,
-          expected: crossrefValue,
-        };
-      }
-      return null;
-    }
-    default:
-      return null;
   }
+
+  return false;
+}
+
+function countDistinctDoiClusters(value: string): number {
+  return new Set(
+    [...value.matchAll(DOI_CLUSTER_PATTERN)]
+      .map((match) => normalizeDoiValue(match[0] ?? ''))
+      .filter(Boolean),
+  ).size;
+}
+
+function countYearClusters(value: string): number {
+  return [...value.matchAll(YEAR_CLUSTER_PATTERN)].length;
 }
 
 function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[] {
@@ -201,7 +168,12 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
     });
   }
 
-  if (citation.authors.value.some((author) => Boolean(author.literal) && isGroupAuthor(author.literal ?? author.last))) {
+  if (citation.authors.value.some((author) => {
+    const literal = normalizeWhitespace(author.literal ?? '');
+    return Boolean(literal)
+      && isGroupAuthor(literal)
+      && normalizeGroupAuthor(literal) !== literal;
+  })) {
     issues.push({
       field: 'authors',
       severity: 'info',
@@ -265,7 +237,7 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
 
   if (
     rawSuggestsDroppedLocator(citation.raw)
-    && ['journal', 'conference', 'bookChapter'].includes(citation.referenceType)
+    && ['journal', 'conference', 'chapter'].includes(citation.referenceType)
     && !isLocatorLike(citation.pages.value)
   ) {
     issues.push({
@@ -274,6 +246,86 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
       code: 'locator_missing_from_source',
       message: 'The raw citation appears to contain pages or an article locator that was not preserved.',
       extracted: citation.pages.value,
+    });
+  }
+
+  return issues;
+}
+
+function buildProtectedTokenIssues(citation: CanonicalCitation): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+
+  for (const reason of getProtectedTitleCorruptionReasons(citation.raw, citation.title.value)) {
+    issues.push({
+      field: 'title',
+      severity: 'error',
+      code: 'protected_title_token_corrupted',
+      message: reason,
+      extracted: citation.title.value,
+    });
+  }
+
+  for (const reason of getProtectedContainerCorruptionReasons(citation.raw, {
+    journal: citation.journal.value ?? undefined,
+    conferenceTitle: citation.conferenceTitle.value ?? undefined,
+    bookTitle: citation.bookTitle.value ?? undefined,
+  }, citation.title.value)) {
+    issues.push({
+      field: citation.referenceType === 'conference' ? 'conferenceTitle' : citation.referenceType === 'chapter' ? 'bookTitle' : 'journal',
+      severity: 'error',
+      code: 'protected_venue_token_corrupted',
+      message: reason,
+      extracted: citation.conferenceTitle.value ?? citation.bookTitle.value ?? citation.journal.value,
+    });
+  }
+
+  return issues;
+}
+
+function buildReferenceSignatureIssues(citation: CanonicalCitation): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const title = citation.title.value ?? '';
+  const venue = citation.conferenceTitle.value ?? citation.bookTitle.value ?? citation.journal.value ?? citation.publisher.value ?? '';
+  const doiClusters = countDistinctDoiClusters(citation.raw);
+  const yearClusters = countYearClusters(citation.raw);
+
+  if (hasEmbeddedReferenceStart(title)) {
+    issues.push({
+      field: 'title',
+      severity: 'error',
+      code: 'embedded_reference_start_in_title',
+      message: 'Title appears to contain the start of a second reference.',
+      extracted: title,
+    });
+  }
+
+  if (hasEmbeddedReferenceStart(venue)) {
+    issues.push({
+      field: citation.referenceType === 'conference' ? 'conferenceTitle' : citation.referenceType === 'chapter' ? 'bookTitle' : 'journal',
+      severity: 'error',
+      code: 'embedded_reference_start_in_venue',
+      message: 'Venue field appears to contain the start of a second reference.',
+      extracted: venue,
+    });
+  }
+
+  if (doiClusters >= 2) {
+    issues.push({
+      field: 'raw',
+      severity: 'error',
+      code: 'multiple_doi_clusters',
+      message: 'Raw citation contains multiple DOI clusters and likely includes more than one reference.',
+      extracted: doiClusters,
+    });
+  }
+
+  if (yearClusters >= 2) {
+    issues.push({
+      field: 'raw',
+      severity: 'error',
+      code: 'multiple_year_anchor_clusters',
+      message: 'Raw citation contains multiple year-anchor clusters and likely includes more than one reference.',
+      extracted: yearClusters,
     });
   }
 
@@ -379,6 +431,119 @@ function buildSplitContaminationIssues(citation: CanonicalCitation, splitArtifac
   return issues;
 }
 
+function buildResolutionIssues(citation: CanonicalCitation): ValidationIssue[] {
+  const resolution = citation.resolution;
+  if (!resolution) return [];
+
+  const issues: ValidationIssue[] = [];
+
+  switch (resolution.status) {
+    case 'insufficient_evidence':
+      issues.push({
+        field: 'raw',
+        severity: 'error',
+        code: 'parse_too_sparse',
+        message: 'Citation did not provide enough title and author evidence for strict external resolution.',
+        extracted: resolution.queryEvidence,
+      });
+      break;
+    case 'ambiguous_match':
+      issues.push({
+        field: 'raw',
+        severity: 'warning',
+        code: 'ambiguous_external_match',
+        message: 'Multiple strict external candidates tied and no single match was accepted.',
+        extracted: resolution.rejectedReasons,
+      });
+      break;
+    case 'no_exact_match':
+      issues.push({
+        field: 'raw',
+        severity: 'info',
+        code: 'no_exact_external_match',
+        message: 'No exact external title match was accepted for this citation.',
+      });
+      break;
+    case 'provider_no_coverage':
+      issues.push({
+        field: 'raw',
+        severity: 'info',
+        code: 'provider_no_coverage',
+        message: 'Configured external providers did not appear to cover this citation type reliably.',
+      });
+      break;
+    case 'provider_error': {
+      const rateLimited = resolution.rejectedReasons.some((reason) => /\b429\b|\brate limit/i.test(reason));
+      issues.push({
+        field: 'raw',
+        severity: 'info',
+        code: rateLimited ? 'authority_rate_limited' : 'provider_resolution_error',
+        message: rateLimited
+          ? 'External resolution was rate limited by a provider.'
+          : 'External resolution encountered a provider error.',
+        extracted: resolution.rejectedReasons,
+      });
+      break;
+    }
+    case 'verified_with_year_tolerance':
+      issues.push({
+        field: 'year',
+        severity: 'info',
+        code: 'resolution_year_tolerance_applied',
+        message: 'External resolution accepted a preprint-like year shift within +/-1 year.',
+        extracted: {
+          extracted: citation.year.value,
+          resolved: resolution.acceptedCandidate?.year,
+        },
+      });
+      break;
+    default:
+      break;
+  }
+
+  if (resolution.conflictFields.length > 0) {
+    issues.push({
+      field: 'raw',
+      severity: 'error',
+      code: 'resolved_field_conflict',
+      message: 'Verified external fields conflicted with extracted values and were preserved for review.',
+      extracted: resolution.conflictFields,
+    });
+  }
+
+  return issues;
+}
+
+function buildValidationMetadata(citation: CanonicalCitation): ValidationMetadata {
+  const resolution = citation.resolution;
+  return {
+    verificationAttempted: Boolean(resolution && !['insufficient_evidence', 'skipped_duplicate'].includes(resolution.status)),
+    authoritySource: resolution?.provider,
+    mismatchFields: resolution?.conflictFields ?? [],
+  };
+}
+
+function dedupeIssues(issues: ValidationIssue[]): ValidationIssue[] {
+  const seen = new Set<string>();
+  const deduped: ValidationIssue[] = [];
+
+  for (const issue of issues) {
+    const key = [
+      issue.field ?? '',
+      issue.severity,
+      issue.code,
+      issue.message,
+      JSON.stringify(issue.extracted ?? null),
+      JSON.stringify(issue.expected ?? null),
+    ].join('|');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(issue);
+  }
+
+  return deduped;
+}
+
 async function buildValidationResult(
   citation: CanonicalCitation,
   splitArtifact?: {
@@ -389,78 +554,17 @@ async function buildValidationResult(
     lineCount: number;
   },
 ): Promise<{ issues: ValidationIssue[]; metadata: ValidationMetadata }> {
-  const issues = [
+  const issues = dedupeIssues([
     ...buildSplitContaminationIssues(citation, splitArtifact),
+    ...buildReferenceSignatureIssues(citation),
+    ...buildProtectedTokenIssues(citation),
     ...buildPlausibilityIssues(citation),
-  ];
-  const mismatchFields = new Set<string>();
-  let verificationAttempted = false;
-  let authoritySource: string | undefined;
-
-  if (citation.doi.value && DOI_PATTERN.test(citation.doi.value)) {
-    verificationAttempted = true;
-    authoritySource = 'crossref';
-
-    try {
-      const crossref = await runWithTimeout('crossref-verify', fetchCrossrefMetadata(citation.doi.value), 1200);
-      if (!crossref) {
-        issues.push({
-          field: 'doi',
-          severity: 'info',
-          code: 'authority_no_match',
-          message: 'Crossref verification did not find a matching DOI record.',
-          extracted: citation.doi.value,
-        });
-      } else {
-        const comparisons = [
-          compareCrossrefField(citation, 'title', crossref.title),
-          compareCrossrefField(citation, 'journal', crossref['container-title']),
-          compareCrossrefField(citation, 'year', crossref.issued?.['date-parts']?.[0]?.[0]),
-          compareCrossrefField(citation, 'volume', crossref.volume),
-          compareCrossrefField(citation, 'issue', crossref.issue),
-          compareCrossrefField(citation, 'pages', crossref.page),
-        ].filter((issue): issue is ValidationIssue => Boolean(issue));
-
-        for (const issue of comparisons) mismatchFields.add(issue.field ?? 'unknown');
-        issues.push(...comparisons);
-      }
-    } catch (error) {
-      const status = typeof error === 'object' && error && 'status' in error ? Number((error as { status?: unknown }).status) : undefined;
-      if (status === 404) {
-        issues.push({
-          field: 'doi',
-          severity: 'info',
-          code: 'authority_not_found',
-          message: 'Crossref did not return a record for this DOI.',
-          extracted: citation.doi.value,
-        });
-      } else if (status === 429) {
-        issues.push({
-          field: 'doi',
-          severity: 'info',
-          code: 'authority_rate_limited',
-          message: 'Crossref rate limited this verification request.',
-          extracted: citation.doi.value,
-        });
-      } else {
-      issues.push({
-        field: 'doi',
-        severity: 'info',
-        code: 'authority_lookup_error',
-        message: error instanceof Error ? error.message : 'Crossref verification failed.',
-        extracted: citation.doi.value,
-      });
-      }
-    }
-  }
+    ...buildResolutionIssues(citation),
+  ]);
 
   return {
     issues,
-    metadata: {
-      verificationAttempted,
-      authoritySource,
-      mismatchFields: [...mismatchFields],
-    },
+    metadata: buildValidationMetadata(citation),
   };
 }
 
@@ -475,7 +579,7 @@ export function createValidateStage(): V2Stage {
         const splitArtifact = context.splitArtifactsByCitationId[citation.id];
         const { issues, metadata } = await buildValidationResult(citation, splitArtifact);
         const hasError = issues.some((issue) => issue.severity === 'error');
-        let nextCitation = {
+        let nextCitation: CanonicalCitation = {
           ...citation,
           validationIssues: issues,
           validation: metadata,
@@ -483,14 +587,16 @@ export function createValidateStage(): V2Stage {
         nextCitation = attachCitationDebug(nextCitation, 'validate', {
           issues,
           verificationAttempted: metadata.verificationAttempted,
+          authoritySource: metadata.authoritySource,
           mismatchFields: metadata.mismatchFields,
+          resolutionStatus: citation.resolution?.status,
           splitContaminationFlags: splitArtifact?.contaminationFlags ?? [],
           warningFlags: issues.filter((issue) => issue.severity !== 'info').map((issue) => issue.code),
         }, context.debugEnabled);
         logStructuredDebug(context, 'validate', citations.length, nextCitation, {
           splitContaminationFlags: splitArtifact?.contaminationFlags ?? [],
           warningFlags: issues.filter((issue) => issue.severity !== 'info').map((issue) => issue.code),
-          selectionReason: undefined,
+          selectionReason: citation.resolution?.status,
           selectedBranch: undefined,
           authorParserMode: citation.extraction?.authorParserMode,
         });
@@ -504,6 +610,7 @@ export function createValidateStage(): V2Stage {
             {
               issueCount: issues.length,
               verificationAttempted: metadata.verificationAttempted,
+              authoritySource: metadata.authoritySource,
               mismatchFields: metadata.mismatchFields,
             },
           ),

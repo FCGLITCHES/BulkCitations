@@ -1,11 +1,11 @@
 import type { CanonicalAuthor, CanonicalCitation, ParsedReference } from '@shared/schema';
+import { isPlaceholderFieldValue } from '@shared/referencePlaceholders';
 import {
   classifyLocatorToken,
   normalizeKnownContainerName,
 } from '../shared/citationSemantics.js';
 import { normalizeWhitespace } from './utils.js';
 
-const PLACEHOLDER_VALUES = new Set(['vol', 'vol.', 'journal', '?']);
 const RAW_LOCATOR_PATTERN = /\bpp?\.?\s*[A-Z]?\d|\bArt(?:icle)?\.?\s*(?:no\.?\s*)?[A-Z]?\d|\b\d+\(\d+\)\s*:\s*[A-Z]?\d|\bS\d+(?:[-–]S?\d+)?\b|(?:^|[\s(,;:])[A-Za-z]\d{2,}(?=$|[\s),.;:])|(?:^|[\s(,;:])\d{6,}(?=$|[\s),.;:])/i;
 const STRONG_LOCATOR_PATTERN = /\b(?:pp?\.?\s*[A-Z]?\d+(?:\s*[-–]\s*[A-Z]?\d+)?|pages?\s+[A-Z]?\d+(?:\s*[-–]\s*[A-Z]?\d+)?|Art(?:icle)?\.?\s*(?:no\.?\s*)?[A-Z]?\d+|(?:^|[\s(,;:])[A-Za-z]\d{2,}(?=$|[\s),.;:])|(?:^|[\s(,;:])\d{6,}(?=$|[\s),.;:])|\bS\d+(?:[-–]S?\d+)?)\b/i;
 
@@ -29,6 +29,7 @@ export function getRequirementProfile(referenceType: string): RequirementProfile
         expected: ['locator'],
         optional: ['doi', 'url', 'publisher'],
       };
+    case 'chapter':
     case 'bookChapter':
       return {
         required: ['authors', 'title', 'year', 'bookTitle'],
@@ -64,7 +65,7 @@ export function getRequirementProfile(referenceType: string): RequirementProfile
 }
 
 export function isPlaceholderValue(value: string | null | undefined): boolean {
-  return PLACEHOLDER_VALUES.has(normalizeWhitespace(String(value ?? '').toLowerCase()));
+  return isPlaceholderFieldValue(value);
 }
 
 export function proceedingsSignal(value: string | null | undefined): boolean {
@@ -145,6 +146,14 @@ export function countStructuralValidationIssues(citation: CanonicalCitation): { 
     'author_structure_unstable',
     'missing_required_venue',
     'year_out_of_range',
+    'parse_too_sparse',
+    'protected_title_token_corrupted',
+    'protected_venue_token_corrupted',
+    'embedded_reference_start_in_title',
+    'embedded_reference_start_in_venue',
+    'multiple_doi_clusters',
+    'multiple_year_anchor_clusters',
+    'resolved_field_conflict',
   ]);
   const reviewCodes = new Set([
     'header_bleed_suspected',
@@ -163,6 +172,10 @@ export function countStructuralValidationIssues(citation: CanonicalCitation): { 
     'venue_missing_for_conference',
     'doi_invalid_shape',
     'locator_missing_from_source',
+    'ambiguous_external_match',
+    'no_exact_external_match',
+    'provider_no_coverage',
+    'resolution_year_tolerance_applied',
   ]);
 
   let severe = 0;
@@ -201,7 +214,7 @@ export function analyzeParsedAuthorStrings(authors: string[] | undefined): {
     if (!normalized) continue;
     if ((normalized.match(/,/g) ?? []).length >= 2 || /\b(?:and|&)\b/i.test(normalized)) mergedBlobCount += 1;
     if (/^[A-Z](?:\.?\s*[A-Z]){0,5}\.?$/i.test(normalized.replace(/\s+/g, ''))) initialsOnlyCount += 1;
-    if (/,?\s*[A-Z]\.?$/i.test(normalized)) singleCharacterTailCount += 1;
+    if (/(?:^|[\s,])\p{L}\.?$/u.test(normalized)) singleCharacterTailCount += 1;
 
     const initialsCount = (normalized.match(/[A-Z](?=\.|\b)/g) ?? []).length;
     if (initialsCount >= 2) richness += 1.2;

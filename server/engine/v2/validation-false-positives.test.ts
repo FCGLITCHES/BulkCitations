@@ -170,4 +170,82 @@ describe('v2 validation false-positive regression checks', () => {
     const scored = await validateAndScore(citation);
     expect(scored.validationIssues.map((issue) => issue.code)).not.toContain('placeholder_journal');
   });
+
+  it('does not treat protected title tokens as corrupted venue tokens when they belong in the title', async () => {
+    const citation = makeJournalCitation(
+      'Larsen P, von Stein J. Detecting BMJ-style article locators in hybrid reference corpora. Learned Publishing. 2021;34(4):521-533.',
+      {
+        authors: createFieldValue([
+          { first: 'P.', last: 'Larsen', initials: 'P.' },
+          { first: 'J.', last: 'von Stein', initials: 'J.' },
+        ], 'extracted', 0.96, 'extract'),
+        title: createFieldValue('Detecting BMJ-style article locators in hybrid reference corpora', 'extracted', 0.95, 'extract'),
+        journal: createFieldValue('Learned Publishing', 'extracted', 0.94, 'extract'),
+        year: createFieldValue(2021, 'extracted', 0.98, 'extract'),
+        volume: createFieldValue('34', 'extracted', 0.9, 'extract'),
+        issue: createFieldValue('4', 'extracted', 0.88, 'extract'),
+        pages: createFieldValue('521-533', 'extracted', 0.92, 'extract'),
+      },
+    );
+
+    const result = await validateAndScore(citation);
+    expect(result.validationIssues.map((issue) => issue.code)).not.toContain('protected_venue_token_corrupted');
+  });
+
+  it('allows report citations with no exact provider match to reach ready when the local parse is high-confidence', async () => {
+    const citation = {
+      ...createEmptyCitation('World Health Organization. Global tuberculosis report 2023. Geneva: World Health Organization; 2023.'),
+      referenceType: 'report',
+      authors: createFieldValue([{ first: null, last: 'World Health Organization', initials: null, literal: 'World Health Organization' }], 'extracted', 0.94, 'extract'),
+      title: createFieldValue('Global tuberculosis report 2023', 'extracted', 0.93, 'extract'),
+      year: createFieldValue(2023, 'extracted', 0.96, 'extract'),
+      institution: createFieldValue('World Health Organization', 'extracted', 0.94, 'extract'),
+      publisher: createFieldValue('World Health Organization', 'extracted', 0.94, 'extract'),
+      resolution: {
+        status: 'no_exact_match',
+        resolvedAt: new Date().toISOString(),
+        provider: 'strict-network-resolution',
+        matchStrategy: 'none',
+        candidateCount: 0,
+        rejectedReasons: [],
+        conflictFields: [],
+        yearToleranceApplied: false,
+        queryEvidence: {
+          titlePresent: true,
+          titleTokenCount: 4,
+          groupAuthorLiteral: 'World Health Organization',
+          year: 2023,
+          venue: 'World Health Organization',
+          sourceType: 'report',
+        },
+      },
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    };
+
+    const result = await validateAndScore(citation);
+    expect(result.quality?.bucket).toBe('ready');
+    expect(result.quality?.bucketReasons).toContain('High-confidence local parse with no exact provider coverage.');
+  });
+
+  it('does not emit truncated_group_author for already-stable institutional authors', async () => {
+    const citation = {
+      ...createEmptyCitation('OpenAI. GPT-5.1 system card. 2026. Available from: https://openai.com/research/gpt-5-1.'),
+      referenceType: 'website',
+      authors: createFieldValue([{ first: null, last: 'OpenAI', initials: null, literal: 'OpenAI' }], 'extracted', 0.92, 'extract'),
+      title: createFieldValue('GPT-5.1 system card', 'extracted', 0.92, 'extract'),
+      year: createFieldValue(2026, 'extracted', 0.96, 'extract'),
+      institution: createFieldValue('OpenAI', 'extracted', 0.92, 'extract'),
+      url: createFieldValue('https://openai.com/research/gpt-5-1', 'extracted', 0.95, 'extract'),
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    };
+
+    const result = await validateAndScore(citation);
+    expect(result.validationIssues.map((issue) => issue.code)).not.toContain('truncated_group_author');
+  });
 });

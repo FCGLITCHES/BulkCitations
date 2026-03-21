@@ -170,6 +170,13 @@ describe('v2 pipeline', () => {
   it('does not call Semantic Scholar in the active enrichment path', async () => {
     const adapters = createDefaultAdapters();
     const authorityLookupCalls: string[] = [];
+    const resolutionProvider = {
+      ...adapters.resolutionProvider,
+      lookupByDoi: vi.fn(async () => []),
+      searchCrossrefByTitle: vi.fn(async () => []),
+      searchPubmedByTitle: vi.fn(async () => []),
+      searchOpenAlexByTitle: vi.fn(async () => []),
+    };
     const authorityLookup = {
       ...adapters.authorityLookup,
       async lookup(citation) {
@@ -190,6 +197,7 @@ describe('v2 pipeline', () => {
       adapters: {
         ...adapters,
         authorityLookup,
+        resolutionProvider,
       },
     });
 
@@ -318,7 +326,7 @@ describe('v2 pipeline', () => {
       content: 'McCoy, L. G., Banja, J. D., Ghassemi, M., & Celi, L. A. (2020). Ensuring machine learning for healthcare works for all. BMJ Health & Care Informatics, 27(3), e100237. https://doi.org/10.1136/bmjhci-2020-100237',
       inputStyle: 'auto',
       outputStyle: 'apa',
-      enrich: false,
+      enrich: true,
       dedup: false,
       group: false,
     });

@@ -39,6 +39,20 @@ function mapLegacyHealth(citation: CanonicalCitation): {
   state: 'clean' | 'review' | 'action_needed';
   reasons: string[];
 } {
+  if (citation.quality?.bucket) {
+    const bucketReasons = citation.quality.bucketReasons ?? [];
+    const inferredState = citation.quality.bucket === 'ready'
+      ? 'clean'
+      : citation.quality.bucket === 'worth_reviewing'
+        ? 'review'
+        : 'action_needed';
+
+    return {
+      state: inferredState,
+      reasons: bucketReasons,
+    };
+  }
+
   const reasons = citation.validationIssues
     .filter((issue) => issue.severity !== 'info')
     .map((issue) => issue.message);
@@ -84,6 +98,9 @@ function mapLegacyHealth(citation: CanonicalCitation): {
 }
 
 function mapAuthorityStatus(citation: CanonicalCitation): AuthorityStatus {
+  if (citation.resolution?.status === 'verified' || citation.resolution?.status === 'verified_with_year_tolerance') {
+    return 'fetched';
+  }
   const status = citation.enrichment?.status;
   if (!status) return 'none';
   if (status === 'skipped') return 'skipped';
@@ -93,6 +110,19 @@ function mapAuthorityStatus(citation: CanonicalCitation): AuthorityStatus {
 }
 
 function toLegacyAuthorityData(citation: CanonicalCitation): AuthorityData | undefined {
+  if (citation.resolution?.acceptedCandidate) {
+    return {
+      title: citation.resolution.acceptedCandidate.title ?? citation.title.value ?? '',
+      authors: citation.resolution.acceptedCandidate.authors ?? citation.authors.value.map((author) => author.literal || `${author.last}${author.first ? `, ${author.first}` : ''}`),
+      journal: citation.resolution.acceptedCandidate.venue ?? citation.journal.value ?? '',
+      year: citation.resolution.acceptedCandidate.year != null ? String(citation.resolution.acceptedCandidate.year) : undefined,
+      volume: citation.resolution.acceptedCandidate.volume,
+      issue: citation.resolution.acceptedCandidate.issue,
+      pages: citation.resolution.acceptedCandidate.pages,
+      url: citation.resolution.acceptedCandidate.url,
+    };
+  }
+
   if (citation.enrichment?.status !== 'fetched') return undefined;
   return {
     title: citation.enrichment.matchedTitle ?? citation.title.value ?? '',

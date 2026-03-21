@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { getAuthorityData } from '@shared/authorityLookup';
 import type { CanonicalAuthor, CitationStyle, ParsedReference, V2ConversionResponse } from '@shared/schema';
 import { CitationParser } from '../citationParser.js';
+import { fetchCrossrefMetadata } from '../doiEnrichment.js';
+import { isGroupAuthor, normalizeGroupAuthor } from '../shared/citationSemantics.js';
 import {
   canonicalReferenceTypeToParsed,
   canonicalToParsedReference,
@@ -32,14 +34,33 @@ import type {
   EmbeddingAdapter,
   ExportAdapter,
   ExtractorAdapter,
+  ResolutionCandidateRecord,
+  ResolutionProviderAdapter,
+  ResolutionSearchQuery,
   V2SplitArtifact,
   V2AdapterBundle,
 } from './contracts.js';
 
 const DOI_PATTERN = /\b10\.\d{4,}\/\S+\b/i;
+const YEAR_PATTERN = /\b(?:19|20)\d{2}\b/g;
+const URL_PATTERN = /https?:\/\/\S+/i;
+const URL_PATTERN_GLOBAL = /https?:\/\/\S+/gi;
 const REQUIRED_EXTRACTION_FIELDS: Array<keyof ParsedReference> = ['title', 'year'];
 const DEFAULT_GROBID_TIMEOUT_MS = 3000;
 const DEFAULT_GROBID_COOLDOWN_MS = 30000;
+const PLACE_PUBLISHER_YEAR_PATTERN = /([^.;]+?):\s*([^.;]+?)\s*;\s*((?:19|20)\d{2})$/i;
+const PLACE_YEAR_PATTERN = /([A-Za-z][^.;\d]*?)\s*;\s*((?:19|20)\d{2})$/i;
+const METADATA_YEAR_PATTERN = /(.+?)\s*;\s*((?:19|20)\d{2})$/i;
+const UPDATED_YEAR_PATTERN = /^(?:updated|revised)\s+[A-Za-z]+\s+((?:19|20)\d{2})$/i;
+const YEAR_ONLY_SEGMENT_PATTERN = /^((?:19|20)\d{2})$/;
+const ARXIV_SEGMENT_PATTERN = /\barxiv(?:\s+preprint)?\b/i;
+const ARXIV_ID_PATTERN = /(arXiv:\d{4}\.\d{4,5}(?:v\d+)?)/i;
+const EDITION_SEGMENT_PATTERN = /^(?:\d+(?:st|nd|rd|th)\s+ed(?:ition)?\.?|version\b.+)$/i;
+const IDENTIFIER_SEGMENT_PATTERN = /^(?:[A-Z][A-Za-z0-9&/-]+(?:\s+[A-Z][A-Za-z0-9&/-]+){0,4}\s+)?(?:guideline|statement|manual|handbook|working paper|fact sheet|programme guide|program guide|methods manual)\s+\[[A-Z]{1,12}[A-Z0-9-]*\d+[A-Z0-9-]*\]$/i;
+const INSTITUTIONAL_KEYWORD_PATTERN = /\b(?:organization|agency|administration|department|ministry|office|commission|council|library|bank|foundation|programme|program|centre|center|college|university|hospital|publisher|press|authority|academ(?:y|ies)|team|group|committee|collaboration|network|initiative|institute|society|association|union|research)\b/i;
+const PERSONAL_AUTHOR_LEAD_PATTERN = /(?:^|,\s*)[A-Z][A-Za-z'’.-]+(?:\s+[A-Z][A-Za-z'’.-]+){0,2}\s+[A-Z](?:[.-]?[A-Z]){0,5}\.?/;
+const BRACKETED_IDENTIFIER_PATTERN = /\[[A-Z]{1,12}[A-Z0-9-]*\d+[A-Z0-9-]*\]/;
+const INSTITUTIONAL_TAIL_PATTERN = /(?:available from:|:\s*[^.;]+;\s*(?:19|20)\d{2}$|;\s*(?:19|20)\d{2}$|(?:^|[.]\s+)version\b|\[[A-Z]{1,12}[A-Z0-9-]*\d+[A-Z0-9-]*\])/i;
 
 let grobidCooldownUntil = 0;
 
@@ -125,6 +146,243 @@ function buildYearAnchoredCandidate(input: string) {
     normalized,
     parsed,
     referenceType: parsedReferenceTypeToCanonical(parser.determineReferenceType(parsed)),
+    warnings: parsed.parseWarnings ?? [],
+  };
+}
+
+type ExtractorSelectionBranch = 'deterministic_raw' | 'year_anchored_fallback_raw' | 'institutional_heuristic_raw';
+
+type ParsedSelectionCandidate = {
+  branch: ExtractorSelectionBranch;
+  normalized: string;
+  parsed: ParsedReference;
+  referenceType: string;
+  warnings: string[];
+};
+
+function cleanTrailingUrl(url: string | undefined): string | undefined {
+  const normalized = normalizeWhitespace(url ?? '');
+  return normalized ? normalized.replace(/[).,;]+$/g, '') : undefined;
+}
+
+function extractLastYear(value: string): string | undefined {
+  const matches = [...value.matchAll(YEAR_PATTERN)];
+  return matches.length > 0 ? matches[matches.length - 1]?.[0] : undefined;
+}
+
+function stripTrailingPeriod(value: string): string {
+  return normalizeWhitespace(value.replace(/[.]+$/g, ''));
+}
+
+function splitSentenceSegments(value: string): string[] {
+  const protectedUrls: string[] = [];
+  const protectedValue = value.replace(URL_PATTERN_GLOBAL, (match) => {
+    const index = protectedUrls.push(match) - 1;
+    return `__URL_${index}__`;
+  });
+
+  return protectedValue
+    .split(/\.\s+/)
+    .map((segment) => segment.replace(/__URL_(\d+)__/g, (_, index) => protectedUrls[Number(index)] ?? ''))
+    .map((segment) => stripTrailingPeriod(segment))
+    .filter(Boolean);
+}
+
+function looksLikeInstitutionalAcronymToken(token: string): boolean {
+  const normalized = normalizeWhitespace(token).replace(/[().,;:]+$/g, '');
+  if (!normalized) return false;
+  if (normalized.includes('.')) return false;
+  if (/^[A-Z]{2,10}$/.test(normalized)) return true;
+  if (!/^[A-Z0-9][A-Za-z0-9+-]*$/.test(normalized)) return false;
+  const upperCount = Array.from(normalized).filter((char) => /[A-Z]/.test(char)).length;
+  const lowerCount = Array.from(normalized).filter((char) => /[a-z]/.test(char)).length;
+  return lowerCount > 0 && upperCount >= 3;
+}
+
+function looksLikeInstitutionalLead(segment: string): boolean {
+  const normalized = normalizeWhitespace(segment);
+  if (!normalized) return false;
+  if (looksLikeAlternatingTokenArray(normalized.split(/\s+/))) return false;
+  if (PERSONAL_AUTHOR_LEAD_PATTERN.test(normalized) && /,\s*[A-Z](?:[.-]?[A-Z]){0,5}\.?/.test(normalized)) return false;
+  if (isGroupAuthor(normalized)) return true;
+  if (INSTITUTIONAL_KEYWORD_PATTERN.test(normalized) && normalized.split(/\s+/).length >= 2) return true;
+  if (/^[A-Z0-9][A-Za-z0-9.+-]*$/.test(normalized)) return true;
+  if (normalized.split(/\s+/).length <= 4 && normalized.split(/\s+/).some((token) => looksLikeInstitutionalAcronymToken(token))) return true;
+  return normalized.split(/\s+/).length >= 3 && !/[A-Z]\.$/.test(normalized);
+}
+
+function looksLikeSourceTailFragment(value: string | undefined): boolean {
+  const normalized = normalizeWhitespace(value ?? '');
+  if (!normalized) return false;
+  return /^available from:/i.test(normalized)
+    || Boolean(URL_PATTERN.test(normalized))
+    || PLACE_PUBLISHER_YEAR_PATTERN.test(normalized)
+    || PLACE_YEAR_PATTERN.test(normalized)
+    || ARXIV_SEGMENT_PATTERN.test(normalized);
+}
+
+function looksLikeInstitutionalAuthorList(authors: string[] | undefined): boolean {
+  if (!authors || authors.length === 0) return false;
+  return authors.every((author) => looksLikeInstitutionalLead(author));
+}
+
+function normalizeInstitutionalAuthor(value: string): string {
+  const normalized = normalizeWhitespace(value);
+  return isGroupAuthor(normalized) ? normalizeGroupAuthor(normalized) : normalized;
+}
+
+function looksLikeInstitutionalMetadataSegment(value: string): boolean {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) return false;
+  return EDITION_SEGMENT_PATTERN.test(normalized)
+    || IDENTIFIER_SEGMENT_PATTERN.test(normalized)
+    || BRACKETED_IDENTIFIER_PATTERN.test(normalized);
+}
+
+function looksLikeAuthorEchoTitle(parsed: ParsedReference): boolean {
+  const title = normalizeWhitespace(parsed.title ?? '').toLowerCase();
+  const firstAuthor = normalizeWhitespace(parsed.authors?.[0] ?? '').toLowerCase();
+  if (!title || !firstAuthor) return false;
+  const normalizedAuthor = firstAuthor.replace(/,.+$/g, '');
+  return title === normalizedAuthor || title.startsWith(`${normalizedAuthor}.`);
+}
+
+function buildInstitutionalCandidate(input: string): ParsedSelectionCandidate | null {
+  const parser = getParser();
+  const normalized = parser.preNormalize(input);
+  const authorMatch = normalized.match(/^(.+?)\.\s+(.+)$/);
+  if (!authorMatch) return null;
+
+  const leadingSegment = stripTrailingPeriod(authorMatch[1] ?? '');
+  let remainder = normalizeWhitespace(authorMatch[2] ?? '');
+  if (!remainder) return null;
+  const likelyInstitutionalTail = INSTITUTIONAL_TAIL_PATTERN.test(remainder);
+  if (!looksLikeInstitutionalLead(leadingSegment)) {
+    if (!likelyInstitutionalTail || PERSONAL_AUTHOR_LEAD_PATTERN.test(leadingSegment)) {
+      return null;
+    }
+  }
+
+  const doiMatch = normalized.match(DOI_PATTERN);
+  const doi = doiMatch ? normalizeDoiValue(doiMatch[0]) : undefined;
+
+  let url = cleanTrailingUrl(remainder.match(/\bAvailable from:\s*(https?:\/\/\S+)/i)?.[1]);
+  if (url) {
+    remainder = normalizeWhitespace(remainder.replace(/\bAvailable from:\s*https?:\/\/\S+/i, ''));
+  } else {
+    url = cleanTrailingUrl(remainder.match(URL_PATTERN)?.[0]);
+    if (url) {
+      remainder = normalizeWhitespace(remainder.replace(URL_PATTERN, ''));
+    }
+  }
+
+  let publisher: string | undefined;
+  let placeOfPublication: string | undefined;
+  let year = extractLastYear(normalized);
+  let edition: string | undefined;
+  const placePublisherYearMatch = stripTrailingPeriod(remainder).match(PLACE_PUBLISHER_YEAR_PATTERN);
+  if (placePublisherYearMatch) {
+    placeOfPublication = normalizeWhitespace(placePublisherYearMatch[1] ?? '') || undefined;
+    publisher = normalizeWhitespace(placePublisherYearMatch[2] ?? '') || undefined;
+    year = year ?? placePublisherYearMatch[3];
+    remainder = normalizeWhitespace(stripTrailingPeriod(remainder).replace(PLACE_PUBLISHER_YEAR_PATTERN, ''));
+  } else {
+    const strippedRemainder = stripTrailingPeriod(remainder);
+    const metadataYearMatch = strippedRemainder.match(METADATA_YEAR_PATTERN);
+    if (metadataYearMatch && looksLikeInstitutionalMetadataSegment(metadataYearMatch[1] ?? '')) {
+      edition = normalizeWhitespace(metadataYearMatch[1] ?? '') || undefined;
+      year = year ?? metadataYearMatch[2];
+      remainder = normalizeWhitespace(strippedRemainder.replace(METADATA_YEAR_PATTERN, ''));
+    } else {
+      const placeYearMatch = strippedRemainder.match(PLACE_YEAR_PATTERN);
+      if (placeYearMatch) {
+        if (looksLikeInstitutionalMetadataSegment(placeYearMatch[1] ?? '')) {
+          placeOfPublication = undefined;
+        } else {
+          placeOfPublication = normalizeWhitespace(placeYearMatch[1] ?? '') || undefined;
+        }
+        year = year ?? placeYearMatch[2];
+        remainder = normalizeWhitespace(strippedRemainder.replace(PLACE_YEAR_PATTERN, ''));
+        if (!edition && looksLikeInstitutionalMetadataSegment(placeYearMatch[1] ?? '')) {
+          edition = normalizeWhitespace(placeYearMatch[1] ?? '') || undefined;
+        }
+      }
+    }
+  }
+
+  const segments = splitSentenceSegments(remainder);
+  if (segments.length === 0) return null;
+
+  let preprint = false;
+  const titleSegments: string[] = [];
+  for (const segment of segments) {
+    const metadataYear = segment.match(METADATA_YEAR_PATTERN);
+    if (metadataYear && looksLikeInstitutionalMetadataSegment(metadataYear[1] ?? '')) {
+      edition = edition ?? (normalizeWhitespace(metadataYear[1] ?? '') || undefined);
+      year = year ?? metadataYear[2];
+      continue;
+    }
+
+    if (YEAR_ONLY_SEGMENT_PATTERN.test(segment)) {
+      year = year ?? segment.match(YEAR_ONLY_SEGMENT_PATTERN)?.[1];
+      continue;
+    }
+
+    const updatedYear = segment.match(UPDATED_YEAR_PATTERN)?.[1];
+    if (updatedYear) {
+      year = year ?? updatedYear;
+      continue;
+    }
+
+    if (ARXIV_SEGMENT_PATTERN.test(segment)) {
+      preprint = true;
+      const arxivId = cleanTrailingUrl(segment.match(ARXIV_ID_PATTERN)?.[1]);
+      if (!url && arxivId) {
+        url = `https://arxiv.org/abs/${arxivId.replace(/^arXiv:/i, '')}`;
+      }
+      continue;
+    }
+
+    if (!edition && looksLikeInstitutionalMetadataSegment(segment)) {
+      edition = segment;
+      continue;
+    }
+
+    titleSegments.push(segment);
+  }
+
+  let title = normalizeWhitespace(titleSegments.join('. '));
+  if (!title) return null;
+
+  let referenceType: ParsedSelectionCandidate['referenceType'] = 'report';
+  if (preprint) {
+    referenceType = 'preprint';
+  } else if (edition && /\b(?:ed(?:ition)?|manual|handbook|style|guide)\b/i.test(`${title} ${edition}`)) {
+    referenceType = 'book';
+  } else if (url && !publisher) {
+    referenceType = 'website';
+  }
+
+  const normalizedAuthor = normalizeInstitutionalAuthor(leadingSegment);
+  const parsed: ParsedReference = {
+    authors: [normalizedAuthor],
+    title,
+    year,
+    doi,
+    publisher,
+    url,
+    institution: referenceType === 'report' || referenceType === 'preprint' ? normalizedAuthor : publisher ?? normalizedAuthor,
+    edition,
+    placeOfPublication,
+    journal: preprint ? 'arXiv preprint' : undefined,
+    parseWarnings: ['institutional-heuristic'],
+  };
+
+  return {
+    branch: 'institutional_heuristic_raw',
+    normalized,
+    parsed,
+    referenceType,
     warnings: parsed.parseWarnings ?? [],
   };
 }
@@ -284,8 +542,8 @@ function scoreCandidate(parsed: ParsedReference | null | undefined, referenceTyp
   const authorSignals = analyzeParsedAuthorStrings(parsed.authors);
   const locatorValue = parsed.pages ?? parsed['article-number'];
   let score = 0;
-  if (parsed.title && parsed.title.split(/\s+/).length >= 4 && !looksLikeDateFragment(parsed.title)) score += 4;
-  else if (parsed.title) score += 1.5;
+  if (parsed.title && parsed.title.split(/\s+/).length >= 4 && !looksLikeDateFragment(parsed.title) && !looksLikeSourceTailFragment(parsed.title)) score += 4;
+  else if (parsed.title && !looksLikeSourceTailFragment(parsed.title)) score += 1.5;
   if (parsed.year) score += 2.5;
   if (hasParsedVenue(parsed)) score += 3;
   if (parsed.publisher || parsed.institution) score += 1.5;
@@ -300,6 +558,9 @@ function scoreCandidate(parsed: ParsedReference | null | undefined, referenceTyp
   if (authorSignals.singleCharacterTailCount > 0) score -= authorSignals.singleCharacterTailCount * 1.2;
   score += authorSignals.richness * 1.5;
   if (parsed.authors?.some((author) => author.length > 120 || /\. .+\./.test(author))) score -= 3;
+  if (looksLikeInstitutionalAuthorList(parsed.authors)) score += 0.8;
+  if (parsed.title && looksLikeSourceTailFragment(parsed.title)) score -= 3.5;
+  if (looksLikeAuthorEchoTitle(parsed)) score -= 5;
   if (isPlaceholderVenue(parsed.journal) || isPlaceholderVenue(parsed.volume) || isPlaceholderVenue(parsed.issue)) score -= 3;
   if (proceedingsSignal(parsed.conferenceTitle ?? parsed.bookTitle ?? parsed.journal) && (parsed.conferenceTitle || parsed.bookTitle || parsed.journal)) score += 1;
   if (referenceType && referenceType !== 'unknown') score += 1;
@@ -307,14 +568,20 @@ function scoreCandidate(parsed: ParsedReference | null | undefined, referenceTyp
 }
 
 function selectionReason(
-  selectedBranch: 'deterministic_raw' | 'year_anchored_fallback_raw',
+  selectedBranch: ExtractorSelectionBranch,
   deterministic: ParsedReference,
   fallback: ParsedReference | null,
+  institutional: ParsedReference | null,
 ): string {
   if (selectedBranch === 'deterministic_raw') {
-    if (!fallback) return 'year_anchored_unavailable';
+    if (!fallback && !institutional) return 'no_competing_candidate';
     if (looksLikeAlternatingTokenArray(deterministic.authors ?? [])) return 'deterministic_retained_for_structured_fields_with_author_recovery';
     return 'deterministic_scored_higher';
+  }
+  if (selectedBranch === 'institutional_heuristic_raw') {
+    if (!deterministic.title && institutional?.title) return 'deterministic_missing_title_institutional_selected';
+    if (looksLikeSourceTailFragment(deterministic.title)) return 'deterministic_title_looked_like_source_tail';
+    return 'institutional_heuristic_scored_higher';
   }
   if (!deterministic.title && fallback?.title) return 'deterministic_missing_title';
   if ((!deterministic.authors || deterministic.authors.length === 0) && fallback?.authors?.length) return 'deterministic_missing_authors';
@@ -338,18 +605,36 @@ function fillMissingFromFallback(selected: ParsedReference, fallback: ParsedRefe
 function buildFieldConfidence(parsed: ParsedReference, referenceType: string) {
   const authorSignals = analyzeParsedAuthorStrings(parsed.authors);
   const locatorValue = parsed.pages ?? parsed['article-number'];
+  const institutionalAuthors = looksLikeInstitutionalAuthorList(parsed.authors);
+  const institutionalVenue = normalizeWhitespace(parsed.institution ?? parsed.publisher ?? '');
+  const institutionalPublisher = Boolean(institutionalVenue) && isGroupAuthor(institutionalVenue);
+  const titleEchoesAuthor = looksLikeAuthorEchoTitle(parsed);
+  const authorConfidence = parsed.authors?.length
+    ? Math.max(
+      0.25,
+      Math.min(
+        0.94,
+        0.84
+          + (authorSignals.richness * 0.04)
+          - (authorSignals.mergedBlobCount * 0.12)
+          - (authorSignals.singleCharacterTailCount * 0.08)
+          + (institutionalAuthors ? 0.06 : 0),
+      ),
+    )
+    : 0.2;
+  const publisherConfidence = parsed.publisher || parsed.institution
+    ? (institutionalPublisher ? 0.9 : 0.74)
+    : 0.1;
   return {
-    authors: parsed.authors?.length
-      ? Math.max(0.25, Math.min(0.92, 0.84 + (authorSignals.richness * 0.04) - (authorSignals.mergedBlobCount * 0.12) - (authorSignals.singleCharacterTailCount * 0.08)))
-      : 0.2,
-    title: parsed.title ? (looksLikeDateFragment(parsed.title) ? 0.2 : 0.88) : 0.2,
+    authors: institutionalAuthors ? Math.max(authorConfidence, 0.9) : authorConfidence,
+    title: parsed.title ? ((looksLikeDateFragment(parsed.title) || looksLikeSourceTailFragment(parsed.title) || titleEchoesAuthor) ? 0.18 : 0.9) : 0.2,
     year: parsed.year ? 0.92 : 0.1,
     journal: hasParsedVenue(parsed) ? 0.82 : (referenceType === 'journal' ? 0.18 : 0.12),
     volume: parsed.volume ? 0.82 : 0.1,
     issue: parsed.issue ? 0.8 : 0.1,
     pages: isLocatorLike(locatorValue) ? 0.82 : 0.1,
     doi: parsed.doi ? 0.96 : 0.05,
-    publisher: parsed.publisher || parsed.institution ? 0.74 : 0.1,
+    publisher: publisherConfidence,
     url: parsed.url ? 0.9 : 0.05,
   } as const;
 }
@@ -495,7 +780,10 @@ function mergeLlmWithDeterministic(
 function renderAuthor(author: CanonicalAuthor): string {
   if (author.literal) return author.literal;
   const normalizedFirst = normalizeWhitespace(author.first ?? '');
-  const firstLooksLikeInitials = Boolean(normalizedFirst) && /^[A-Z](?:\.?\s*[A-Z]){0,5}\.?$/i.test(normalizedFirst.replace(/\s+/g, ''));
+  const firstLooksLikeInitials = Boolean(normalizedFirst) && /^[\p{Lu}](?:[.-]?[\p{Lu}]){0,5}\.?$/u.test(normalizedFirst.replace(/\s+/g, ''));
+  const firstInitialCount = (normalizeWhitespace(author.first ?? '').match(/[\p{Lu}](?=\.|\b)/gu) ?? []).length;
+  const storedInitialCount = (normalizeWhitespace(author.initials ?? '').match(/[\p{Lu}](?=\.|\b)/gu) ?? []).length;
+  if (author.initials && storedInitialCount > firstInitialCount) return `${author.last}, ${author.initials}`;
   if (author.first && !firstLooksLikeInitials) return `${author.last}, ${author.first}`;
   if (author.initials) return `${author.last}, ${author.initials}`;
   if (author.first) return `${author.last}, ${author.first}`;
@@ -563,8 +851,20 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
           };
         })()
       : null;
+    const institutionalBase = buildInstitutionalCandidate(input);
+    const institutional = institutionalBase
+      ? (() => {
+          const sanitized = sanitizeParsedReference(institutionalBase.parsed, institutionalBase.referenceType);
+          return {
+            ...institutionalBase,
+            parsed: sanitized.parsed,
+            referenceType: sanitized.referenceType,
+          };
+        })()
+      : null;
     const deterministicAuthorParse = parseAuthorsForStyle(deterministic.parsed.authors ?? [], inputStyle);
     const fallbackAuthorParse = parseAuthorsForStyle(fallback?.parsed.authors ?? [], inputStyle);
+    const institutionalAuthorParse = parseAuthorsForStyle(institutional?.parsed.authors ?? [], inputStyle);
     const deterministicScore = scoreCandidate(deterministic.parsed, deterministic.referenceType)
       - (deterministicAuthorParse.warningFlags.length * 2)
       - (deterministicAuthorParse.rejectedCandidates.length * 1.5)
@@ -572,11 +872,49 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     const fallbackScore = scoreCandidate(fallback?.parsed, fallback?.referenceType)
       - (fallbackAuthorParse.warningFlags.length * 2)
       - (fallbackAuthorParse.rejectedCandidates.length * 1.5);
-    const selectedBranch = fallbackScore > deterministicScore ? 'year_anchored_fallback_raw' : 'deterministic_raw';
-    const selectedBase = selectedBranch === 'year_anchored_fallback_raw' && fallback ? fallback : deterministic;
-    let mergedSelection = fillMissingFromFallback(selectedBase.parsed, selectedBranch === 'deterministic_raw' ? fallback?.parsed ?? null : deterministic.parsed);
-    let selectedReferenceType = selectedBranch === 'year_anchored_fallback_raw' && fallback ? fallback.referenceType : deterministic.referenceType;
-    const selectedReason = selectionReason(selectedBranch, deterministic.parsed, fallback?.parsed ?? null);
+    const institutionalScore = scoreCandidate(institutional?.parsed, institutional?.referenceType)
+      - (institutionalAuthorParse.warningFlags.length * 2)
+      - (institutionalAuthorParse.rejectedCandidates.length * 1.5)
+      + (institutional ? 1.2 : 0);
+    const scoredCandidates = [
+      {
+        branch: 'deterministic_raw' as const,
+        candidate: deterministic,
+        score: deterministicScore,
+      },
+      ...(fallback ? [{
+        branch: 'year_anchored_fallback_raw' as const,
+        candidate: fallback,
+        score: fallbackScore,
+      }] : []),
+      ...(institutional ? [{
+        branch: 'institutional_heuristic_raw' as const,
+        candidate: institutional,
+        score: institutionalScore,
+      }] : []),
+    ].sort((left, right) => right.score - left.score);
+    const selectedCandidate = scoredCandidates[0] ?? {
+      branch: 'deterministic_raw' as const,
+      candidate: deterministic,
+      score: deterministicScore,
+    };
+    const selectedBranch = selectedCandidate.branch;
+    const selectedBase = selectedCandidate.candidate;
+    let mergedSelection = selectedBase.parsed;
+    for (const alternate of scoredCandidates.slice(1)) {
+      mergedSelection = fillMissingFromFallback(mergedSelection, alternate.candidate.parsed);
+    }
+    let selectedReferenceType = selectedBase.referenceType;
+    if (selectedReferenceType === 'unknown') {
+      const promotedReferenceType = scoredCandidates.find((entry) => entry.candidate.referenceType !== 'unknown')?.candidate.referenceType;
+      if (promotedReferenceType) selectedReferenceType = promotedReferenceType;
+    }
+    const selectedReason = selectionReason(selectedBranch, deterministic.parsed, fallback?.parsed ?? null, institutional?.parsed ?? null);
+    const selectedAuthorParse = selectedBranch === 'year_anchored_fallback_raw'
+      ? fallbackAuthorParse
+      : selectedBranch === 'institutional_heuristic_raw'
+        ? institutionalAuthorParse
+        : deterministicAuthorParse;
     let selectedFieldConfidence = buildFieldConfidence(mergedSelection, selectedReferenceType);
     const splitArtifact = options?.splitArtifact;
     const splitContaminationFlags = splitArtifact?.contaminationFlags ?? [];
@@ -590,6 +928,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     const rejectedCandidates: string[] = [];
     if (looksLikeAlternatingTokenArray(deterministic.parsed.authors ?? [])) rejectedCandidates.push('deterministic_alternating_author_tokens');
     if (fallback?.parsed.title && looksLikeDateFragment(fallback.parsed.title)) rejectedCandidates.push('year_anchored_title_looks_like_date_fragment');
+    if (institutional && selectedBranch !== 'institutional_heuristic_raw') rejectedCandidates.push('institutional_heuristic_not_selected');
 
     const inputStructure = options?.inputProfile?.structure ?? 'unknown';
     const batchSize = options?.batchSize ?? options?.inputProfile?.estimatedCount ?? 1;
@@ -605,14 +944,14 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     let llmCapReached = false;
     const llmWarnings: string[] = [];
 
-    const weakDeterministicSelection =
+    const weakSelection =
       needsLlmFallback(mergedSelection, selectedFieldConfidence)
-      || (deterministicScore - contaminationScorePenalty) < 8
-      || deterministicAuthorParse.warningFlags.length > 0
-      || deterministicAuthorParse.rejectedCandidates.length > 0
+      || (selectedCandidate.score - contaminationScorePenalty) < 8
+      || selectedAuthorParse.warningFlags.length > 0
+      || selectedAuthorParse.rejectedCandidates.length > 0
       || splitContaminationFlags.length > 0;
 
-    if (llmEnabled && weakDeterministicSelection) {
+    if (llmEnabled && weakSelection) {
       llmAttempted = true;
       if (!tryConsumeLlmCall(options?.llmBudget, 'extract')) {
         llmCapReached = true;
@@ -650,7 +989,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       || (currentSelectionScore - contaminationScorePenalty) < 8
       || splitContaminationFlags.length > 0
     )
-      ? 'weak_deterministic_parse'
+          ? 'weak_selected_parse'
       : detectionConfidence < 0.65
         ? 'low_detection_confidence'
         : profilePrefersGrobid && detectionConfidence < 0.9
@@ -687,7 +1026,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
         if (grobidCandidate) {
           grobidScore = scoreCandidate(grobidCandidate.parsed, grobidCandidate.referenceType) + 1;
           const grobidPreferredProfile = ['structured', 'semi_structured'].includes(inputStructure);
-          const currentBestScore = Math.max(currentSelectionScore, deterministicScore, fallbackScore);
+          const currentBestScore = Math.max(currentSelectionScore, deterministicScore, fallbackScore, institutionalScore);
           const grobidLooksUsable = Boolean(grobidCandidate.parsed.title) && Boolean(grobidCandidate.parsed.authors?.length);
           if (
             (grobidLooksUsable && grobidPreferredProfile)
@@ -712,6 +1051,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
               grobidScore,
               deterministicScore,
               fallbackScore,
+              institutionalScore,
               currentSelectionScore,
             }));
           } else {
@@ -726,6 +1066,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
               grobidScore,
               deterministicScore,
               fallbackScore,
+              institutionalScore,
               currentSelectionScore,
             }));
           }
@@ -767,23 +1108,28 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       warnings: [
         ...deterministic.warnings,
         ...(fallback?.warnings ?? []),
+        ...(institutional?.warnings ?? []),
         ...splitWarnings,
         ...llmWarnings,
       ],
       debug: {
         deterministic_raw: deterministic.parsed,
         year_anchored_fallback_raw: fallback?.parsed ?? null,
+        institutional_heuristic_raw: institutional?.parsed ?? null,
         grobid_raw: grobidCandidate?.parsed ?? null,
         selected_branch: llmApplied ? 'hybrid' : selectedBranch,
         selection_reason: `${selectedReason}${selectionReasonSuffix}`,
         extractor_path: extractorPath,
         deterministic_score: deterministicScore,
         fallback_score: fallbackScore,
+        institutional_score: institutionalScore,
         grobid_score: grobidScore,
         deterministic_author_parser_mode: deterministicAuthorParse.parserMode,
         deterministic_author_warning_flags: deterministicAuthorParse.warningFlags,
         fallback_author_parser_mode: fallbackAuthorParse.parserMode,
         fallback_author_warning_flags: fallbackAuthorParse.warningFlags,
+        institutional_author_parser_mode: institutionalAuthorParse.parserMode,
+        institutional_author_warning_flags: institutionalAuthorParse.warningFlags,
         split_contamination_flags: splitContaminationFlags,
         split_contamination_penalty: splitPenalty,
         cleaned_chunk_length: splitArtifact?.chunkLength ?? input.length,
@@ -819,6 +1165,403 @@ class DefaultAuthorityLookupAdapter implements AuthorityLookupAdapter {
         url: result.data.url,
       },
     };
+  }
+}
+
+function normalizeResolutionAuthors(authors: unknown): string[] {
+  if (!Array.isArray(authors)) return [];
+
+  return authors
+    .map((author) => {
+      if (!author) return '';
+      if (typeof author === 'string') return normalizeWhitespace(author);
+      if (typeof author === 'object') {
+        const literal = normalizeWhitespace(String((author as { literal?: unknown }).literal ?? ''));
+        if (literal) return literal;
+        const family = normalizeWhitespace(String((author as { family?: unknown }).family ?? ''));
+        const given = normalizeWhitespace(String((author as { given?: unknown }).given ?? ''));
+        if (family && given) return `${family}, ${given}`;
+        return family || given;
+      }
+      return '';
+    })
+    .filter(Boolean);
+}
+
+function parseYear(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  const match = String(value ?? '').match(/\b(19|20)\d{2}\b/);
+  return match ? Number.parseInt(match[0], 10) : undefined;
+}
+
+function mapCrossrefSearchItem(item: Record<string, any>): ResolutionCandidateRecord {
+  return {
+    provider: 'crossref',
+    title: item.title?.[0] ?? item.title,
+    authors: normalizeResolutionAuthors(item.author),
+    year: item.issued?.['date-parts']?.[0]?.[0],
+    venue: item['container-title']?.[0] ?? item['container-title'],
+    volume: item.volume,
+    issue: item.issue,
+    pages: item.page,
+    publisher: item.publisher,
+    doi: item.DOI,
+    url: item.URL,
+    sourceType: item.type,
+    raw: item,
+  };
+}
+
+function mapCrossrefDoiRecord(record: Record<string, any>): ResolutionCandidateRecord {
+  return {
+    provider: 'crossref',
+    title: record.title,
+    authors: normalizeResolutionAuthors(record.author),
+    year: record.issued?.['date-parts']?.[0]?.[0],
+    venue: record['container-title'],
+    volume: record.volume,
+    issue: record.issue,
+    pages: record.page ?? record.number,
+    publisher: record.publisher,
+    doi: record.DOI,
+    url: record.URL,
+    sourceType: record.type,
+    raw: record,
+  };
+}
+
+function mapPubmedSummaryRecord(record: Record<string, any>): ResolutionCandidateRecord {
+  const authors = Array.isArray(record.authors)
+    ? record.authors.map((author: Record<string, unknown>) => normalizeWhitespace(String(author.name ?? ''))).filter(Boolean)
+    : [];
+
+  return {
+    provider: 'pubmed',
+    title: record.title,
+    authors,
+    year: parseYear(record.pubdate),
+    venue: record.fulljournalname ?? record.source,
+    doi: Array.isArray(record.articleids)
+      ? record.articleids.find((entry: Record<string, unknown>) => String(entry.idtype ?? '').toLowerCase() === 'doi')?.value
+      : undefined,
+    url: record.elocationid,
+    sourceType: 'journal-article',
+    raw: record,
+  };
+}
+
+function mapOpenAlexRecord(record: Record<string, any>): ResolutionCandidateRecord {
+  const authors = Array.isArray(record.authorships)
+    ? record.authorships
+      .map((authorship: Record<string, any>) => normalizeWhitespace(String(authorship.raw_author_name ?? authorship.author?.display_name ?? '')))
+      .filter(Boolean)
+    : [];
+
+  return {
+    provider: 'openalex',
+    title: record.title,
+    authors,
+    year: parseYear(record.publication_year),
+    venue: record.primary_location?.source?.display_name,
+    volume: record.biblio?.volume,
+    issue: record.biblio?.issue,
+    pages: [record.biblio?.first_page, record.biblio?.last_page].filter(Boolean).join('-') || undefined,
+    doi: typeof record.doi === 'string' ? normalizeDoiValue(record.doi) : undefined,
+    url: record.primary_location?.landing_page_url,
+    sourceType: record.type,
+    raw: record,
+  };
+}
+
+const PROVIDER_MIN_INTERVAL_MS = {
+  crossref: 125,
+  pubmed: 400,
+  openalex: 250,
+} as const;
+
+const PROVIDER_TIMEOUT_MS = {
+  crossref: 2500,
+  pubmed: 2500,
+  openalex: 2500,
+} as const;
+
+const providerLocks = new Map<keyof typeof PROVIDER_MIN_INTERVAL_MS, Promise<void>>();
+const providerNextAllowedAt = new Map<keyof typeof PROVIDER_MIN_INTERVAL_MS, number>();
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parseRetryAfterMs(value: string | null): number | null {
+  if (!value) return null;
+  const numeric = Number.parseInt(value, 10);
+  if (Number.isFinite(numeric) && numeric >= 0) return numeric * 1000;
+  const timestamp = Date.parse(value);
+  if (!Number.isNaN(timestamp)) return Math.max(0, timestamp - Date.now());
+  return null;
+}
+
+async function waitForProviderSlot(provider: keyof typeof PROVIDER_MIN_INTERVAL_MS): Promise<void> {
+  const previous = providerLocks.get(provider) ?? Promise.resolve();
+  let release!: () => void;
+  const current = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  providerLocks.set(provider, current);
+
+  await previous;
+  try {
+    const now = Date.now();
+    const nextAllowedAt = providerNextAllowedAt.get(provider) ?? now;
+    const waitMs = Math.max(0, nextAllowedAt - now);
+    providerNextAllowedAt.set(provider, Math.max(now, nextAllowedAt) + PROVIDER_MIN_INTERVAL_MS[provider]);
+    if (waitMs > 0) {
+      await sleep(waitMs);
+    }
+  } finally {
+    release();
+    if (providerLocks.get(provider) === current) {
+      providerLocks.delete(provider);
+    }
+  }
+}
+
+function isRetriableProviderStatus(status: number): boolean {
+  return status === 429 || status === 502 || status === 503 || status === 504;
+}
+
+async function fetchWithProviderPolicy(
+  provider: keyof typeof PROVIDER_MIN_INTERVAL_MS,
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  const maxRetries = 2;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    await waitForProviderSlot(provider);
+    const response = await fetch(url, init);
+    if (response.ok || !isRetriableProviderStatus(response.status) || attempt === maxRetries) {
+      return response;
+    }
+
+    const retryAfterMs = parseRetryAfterMs(response.headers.get('retry-after'));
+    const backoffMs = retryAfterMs ?? (PROVIDER_MIN_INTERVAL_MS[provider] * (attempt + 2) * 2);
+    await sleep(backoffMs);
+  }
+
+  throw new Error(`Unreachable provider retry state for ${provider}`);
+}
+
+function buildCrossrefFilters(query: ResolutionSearchQuery, includeTypeFilter: boolean): string | null {
+  const filters: string[] = [];
+  if (query.year != null) {
+    filters.push(`from-pub-date:${query.year}-01-01`);
+    filters.push(`until-pub-date:${query.year}-12-31`);
+  }
+  if (includeTypeFilter) {
+    switch (query.sourceType) {
+      case 'journal':
+        filters.push('type:journal-article');
+        break;
+      case 'conference':
+        filters.push('type:proceedings-article');
+        break;
+      case 'report':
+        filters.push('type:report');
+        break;
+      case 'book':
+        filters.push('type:book');
+        break;
+      case 'chapter':
+        filters.push('type:book-chapter');
+        break;
+      case 'preprint':
+        filters.push('type:posted-content');
+        break;
+      default:
+        break;
+    }
+  }
+  return filters.length > 0 ? filters.join(',') : null;
+}
+
+function buildCrossrefSearchUrl(query: ResolutionSearchQuery, limit: number, includeTypeFilter: boolean): string {
+  const params = new URLSearchParams({
+    rows: String(limit),
+    select: 'DOI,title,author,issued,container-title,volume,issue,page,publisher,URL,type',
+    'query.bibliographic': query.title,
+  });
+
+  const authorQuery = query.firstAuthorSurname ?? query.groupAuthorLiteral;
+  if (authorQuery) params.set('query.author', authorQuery);
+  if (query.venue) params.set('query.container-title', query.venue);
+
+  const filters = buildCrossrefFilters(query, includeTypeFilter);
+  if (filters) params.set('filter', filters);
+
+  return `https://api.crossref.org/works?${params.toString()}`;
+}
+
+function buildPubmedSearchTerm(query: ResolutionSearchQuery): string {
+  const parts = [`"${query.title}"[Title]`];
+  if (query.firstAuthorSurname) parts.push(`"${query.firstAuthorSurname}"[1au]`);
+  if (query.year != null) parts.push(`${query.year}[pdat]`);
+  return parts.join(' AND ');
+}
+
+function buildOpenAlexSearchUrl(query: ResolutionSearchQuery, limit: number, includeYearFilter: boolean): string {
+  const params = new URLSearchParams({
+    'search': `"${query.title}"`,
+    'per-page': String(limit),
+    'select': 'id,title,publication_year,authorships,biblio,primary_location,type,doi',
+    'mailto': 'noreply@citing.app',
+  });
+  if (includeYearFilter && query.year != null) {
+    params.set('filter', `publication_year:${query.year}`);
+  }
+  return `https://api.openalex.org/works?${params.toString()}`;
+}
+
+class DefaultResolutionProviderAdapter implements ResolutionProviderAdapter {
+  readonly id = 'strict-network-resolution';
+
+  async lookupByDoi(doi: string): Promise<ResolutionCandidateRecord[]> {
+    const record = await fetchCrossrefMetadata(doi);
+    return record ? [mapCrossrefDoiRecord(record)] : [];
+  }
+
+  async searchCrossrefByTitle(query: ResolutionSearchQuery, limit: number): Promise<ResolutionCandidateRecord[]> {
+    const requestInit = {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'CitingApp/1.0 (mailto:noreply@citing.app)',
+      },
+      signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS.crossref),
+    } satisfies RequestInit;
+
+    const primaryResponse = await fetchWithProviderPolicy(
+      'crossref',
+      buildCrossrefSearchUrl(query, limit, true),
+      requestInit,
+    );
+    if (!primaryResponse.ok) {
+      const error = new Error(`Crossref title search failed with status ${primaryResponse.status}`) as Error & { status?: number };
+      error.status = primaryResponse.status;
+      throw error;
+    }
+
+    const primaryPayload = await primaryResponse.json() as { message?: { items?: Array<Record<string, any>> } };
+    const primaryItems = (primaryPayload.message?.items ?? []).slice(0, limit);
+    if (primaryItems.length > 0) {
+      return primaryItems.map(mapCrossrefSearchItem);
+    }
+
+    const relaxedResponse = await fetchWithProviderPolicy(
+      'crossref',
+      buildCrossrefSearchUrl(query, limit, false),
+      requestInit,
+    );
+    if (!relaxedResponse.ok) {
+      const error = new Error(`Crossref title search failed with status ${relaxedResponse.status}`) as Error & { status?: number };
+      error.status = relaxedResponse.status;
+      throw error;
+    }
+
+    const relaxedPayload = await relaxedResponse.json() as { message?: { items?: Array<Record<string, any>> } };
+    return (relaxedPayload.message?.items ?? []).slice(0, limit).map(mapCrossrefSearchItem);
+  }
+
+  async searchPubmedByTitle(query: ResolutionSearchQuery, limit: number): Promise<ResolutionCandidateRecord[]> {
+    const searchParams = new URLSearchParams({
+      db: 'pubmed',
+      retmode: 'json',
+      retmax: String(limit),
+      term: buildPubmedSearchTerm(query),
+      tool: 'CitingApp',
+      email: 'noreply@citing.app',
+    });
+    const searchResponse = await fetchWithProviderPolicy(
+      'pubmed',
+      `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?${searchParams.toString()}`,
+      {
+        signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS.pubmed),
+      },
+    );
+    if (!searchResponse.ok) {
+      const error = new Error(`PubMed search failed with status ${searchResponse.status}`) as Error & { status?: number };
+      error.status = searchResponse.status;
+      throw error;
+    }
+
+    const search = await searchResponse.json() as { esearchresult?: { idlist?: string[] } };
+    const ids = search.esearchresult?.idlist?.slice(0, limit) ?? [];
+    if (ids.length === 0) return [];
+
+    const summaryParams = new URLSearchParams({
+      db: 'pubmed',
+      retmode: 'json',
+      id: ids.join(','),
+      tool: 'CitingApp',
+      email: 'noreply@citing.app',
+    });
+    const summaryResponse = await fetchWithProviderPolicy(
+      'pubmed',
+      `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?${summaryParams.toString()}`,
+      {
+        signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS.pubmed),
+      },
+    );
+    if (!summaryResponse.ok) {
+      const error = new Error(`PubMed summary failed with status ${summaryResponse.status}`) as Error & { status?: number };
+      error.status = summaryResponse.status;
+      throw error;
+    }
+
+    const summary = await summaryResponse.json() as { result?: Record<string, any> };
+    return ids
+      .map((id) => summary.result?.[id])
+      .filter(Boolean)
+      .map(mapPubmedSummaryRecord);
+  }
+
+  async searchOpenAlexByTitle(query: ResolutionSearchQuery, limit: number): Promise<ResolutionCandidateRecord[]> {
+    const requestInit = {
+      headers: {
+        Accept: 'application/json',
+      },
+      signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS.openalex),
+    } satisfies RequestInit;
+
+    const primaryResponse = await fetchWithProviderPolicy(
+      'openalex',
+      buildOpenAlexSearchUrl(query, limit, true),
+      requestInit,
+    );
+    if (!primaryResponse.ok) {
+      const error = new Error(`OpenAlex search failed with status ${primaryResponse.status}`) as Error & { status?: number };
+      error.status = primaryResponse.status;
+      throw error;
+    }
+
+    const primaryPayload = await primaryResponse.json() as { results?: Array<Record<string, any>> };
+    const primaryItems = (primaryPayload.results ?? []).slice(0, limit);
+    if (primaryItems.length > 0) {
+      return primaryItems.map(mapOpenAlexRecord);
+    }
+
+    const relaxedResponse = await fetchWithProviderPolicy(
+      'openalex',
+      buildOpenAlexSearchUrl(query, limit, false),
+      requestInit,
+    );
+    if (!relaxedResponse.ok) {
+      const error = new Error(`OpenAlex search failed with status ${relaxedResponse.status}`) as Error & { status?: number };
+      error.status = relaxedResponse.status;
+      throw error;
+    }
+
+    const relaxedPayload = await relaxedResponse.json() as { results?: Array<Record<string, any>> };
+    return (relaxedPayload.results ?? []).slice(0, limit).map(mapOpenAlexRecord);
   }
 }
 
@@ -949,6 +1692,7 @@ export function createDefaultAdapters(): V2AdapterBundle {
     classifier: new DefaultClassifierAdapter(),
     extractor: new DefaultExtractorAdapter(),
     authorityLookup: new DefaultAuthorityLookupAdapter(),
+    resolutionProvider: new DefaultResolutionProviderAdapter(),
     embedding: new NoopEmbeddingAdapter(),
     cache: new MemoryCacheAdapter(),
     exportAdapter: new DefaultExportAdapter(),
