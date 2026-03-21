@@ -9,16 +9,10 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { ParsedReference, ReferenceType } from "@shared/schema";
 
 const CATEGORIES = [
@@ -56,12 +50,23 @@ export default function ReportButton({
   onReported,
 }: ReportButtonProps) {
   const [open, setOpen] = useState(false);
-  const [category, setCategory] = useState<string>("");
+  const [categories, setCategories] = useState<string[]>([]);
   const [userNote, setUserNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showOriginalInput, setShowOriginalInput] = useState(false);
+  const includesOther = categories.includes("other");
+
+  const toggleCategory = (value: string, checked: boolean | "indeterminate") => {
+    setCategories((current) => {
+      if (checked) {
+        return current.includes(value) ? current : [...current, value];
+      }
+      return current.filter((entry) => entry !== value);
+    });
+  };
 
   const handleSubmit = async () => {
-    if (!category) return;
+    if (categories.length === 0) return;
     setSubmitting(true);
     try {
       const res = await fetch("/api/reports", {
@@ -72,8 +77,9 @@ export default function ReportButton({
           detectedStyle: detectedInputStyle,
           outputStyle: targetStyle,
           convertedText: convertedOutput,
-          failureCategory: category,
-          userNote: category === "other" ? userNote.slice(0, 500) : undefined,
+          failureCategory: categories[0],
+          failureCategories: categories,
+          userNote: includesOther ? userNote.slice(0, 500) : undefined,
           parsedData,
           referenceType,
           confidence,
@@ -84,8 +90,9 @@ export default function ReportButton({
         throw new Error(data.message || "Failed to submit report");
       }
       setOpen(false);
-      setCategory("");
+      setCategories([]);
       setUserNote("");
+      setShowOriginalInput(false);
       onReported?.();
     } catch (err) {
       console.error(err);
@@ -129,27 +136,57 @@ export default function ReportButton({
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            {/* Preview of the input */}
-            <div className="bg-muted/50 rounded p-2 text-xs font-mono break-words max-h-20 overflow-y-auto">
-              {rawInput.slice(0, 200)}{rawInput.length > 200 ? "..." : ""}
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Converted Citation
+                </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setShowOriginalInput((current) => !current)}
+                >
+                  {showOriginalInput ? "Hide original input" : "Show original input"}
+                </Button>
+              </div>
+              <div className="bg-muted/50 rounded p-3 text-xs font-mono break-words max-h-32 overflow-y-auto">
+                {convertedOutput}
+              </div>
+            </div>
+
+            {showOriginalInput && (
+              <div className="grid gap-2">
+                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Original Input
+                </Label>
+                <div className="bg-muted/50 rounded p-3 text-xs font-mono break-words max-h-32 overflow-y-auto">
+                  {rawInput}
+                </div>
+              </div>
+            )}
+
+            <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+              Compare the converted citation with the original input before reporting.
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="report-category">What is wrong? (required)</Label>
-              <Select value={category} onValueChange={setCategory} required>
-                <SelectTrigger id="report-category">
-                  <SelectValue placeholder="Select..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      {c.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>What is wrong? (select all that apply)</Label>
+              <div className="grid gap-3 rounded-md border p-3">
+                {CATEGORIES.map((c) => (
+                  <label key={c.value} className="flex items-start gap-3 cursor-pointer">
+                    <Checkbox
+                      checked={categories.includes(c.value)}
+                      onCheckedChange={(checked) => toggleCategory(c.value, checked)}
+                      aria-label={c.label}
+                    />
+                    <span className="text-sm leading-5">{c.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
-            {category === "other" && (
+            {includesOther && (
               <div className="grid gap-2">
                 <Label htmlFor="report-note">Describe the issue</Label>
                 <Textarea
@@ -173,7 +210,7 @@ export default function ReportButton({
               variant="outline"
               className="border-blue-600 text-blue-700 hover:bg-blue-100 hover:text-blue-900 dark:border-blue-400 dark:text-blue-300 dark:hover:bg-blue-950/50 dark:hover:text-blue-100"
               onClick={handleSubmit}
-              disabled={!category || submitting}
+              disabled={categories.length === 0 || submitting}
             >
               {submitting ? "Submitting..." : "Submit report"}
             </Button>

@@ -5,6 +5,7 @@ const PLACEHOLDER_VALUES = new Set(['vol', 'vol.', 'journal', '?']);
 const LOCATOR_PATTERN = /^(?:article\s+)?[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?$/i;
 const ARTICLE_LOCATOR_PATTERN = /^(?:e|article\s+e?|art(?:icle)?\.?\s*)[A-Za-z]?\d+$/i;
 const RAW_LOCATOR_PATTERN = /\bpp?\.?\s*[A-Z]?\d|\bArt(?:icle)?\.?\s*(?:no\.?\s*)?[A-Z]?\d|\b\d+\(\d+\)\s*:\s*[A-Z]?\d|\bS\d+(?:[-–]S?\d+)?\b/i;
+const STRONG_LOCATOR_PATTERN = /\b(?:pp?\.?\s*[A-Z]?\d+(?:\s*[-–]\s*[A-Z]?\d+)?|pages?\s+[A-Z]?\d+(?:\s*[-–]\s*[A-Z]?\d+)?|Art(?:icle)?\.?\s*(?:no\.?\s*)?[A-Z]?\d+|(?:^|[\s(,;:])e\d{4,}(?=$|[\s),.;:])|\bS\d+(?:[-–]S?\d+)?)\b/i;
 
 export type RequirementProfile = {
   required: string[];
@@ -73,10 +74,30 @@ export function rawSuggestsLocator(raw: string): boolean {
   return RAW_LOCATOR_PATTERN.test(raw);
 }
 
+export function rawSuggestsDroppedLocator(raw: string): boolean {
+  return STRONG_LOCATOR_PATTERN.test(raw);
+}
+
 export function isLocatorLike(value: string | null | undefined): boolean {
   const normalized = normalizeWhitespace(value ?? '');
   if (!normalized) return false;
   return LOCATOR_PATTERN.test(normalized) || ARTICLE_LOCATOR_PATTERN.test(normalized);
+}
+
+export function looksWeakConferenceVenue(value: string | null | undefined): boolean {
+  const normalized = normalizeWhitespace(value ?? '');
+  if (!normalized) return false;
+  if (proceedingsSignal(normalized)) return false;
+  if (isPlaceholderValue(normalized)) return true;
+  if (/^[A-Z]{2,8}(?:\s+\d{4})?$/.test(normalized)) return false;
+  if (/\b(?:neurips|nips|icml|iclr|cvpr|eccv|iccv|aaai|ijcai|acl|emnlp|naacl|coling|sigir|kdd|uist|chi|cscw|ismb|recomb|www)\b/i.test(normalized)) {
+    return false;
+  }
+
+  const words = normalized.split(/\s+/).filter(Boolean);
+  if (words.length >= 4) return false;
+
+  return !/[A-Z]{2,}/.test(normalized) && words.length <= 2;
 }
 
 export function normalizeLocatorValue(value: string | null | undefined): string | null {
@@ -142,11 +163,8 @@ export function countStructuralValidationIssues(citation: CanonicalCitation): { 
     'placeholder_volume',
     'placeholder_journal',
     'venue_missing_for_conference',
-    'weak_proceedings_venue',
-    'pages_invalid_shape',
     'doi_invalid_shape',
     'locator_missing_from_source',
-    'title_short_or_missing',
   ]);
 
   let severe = 0;

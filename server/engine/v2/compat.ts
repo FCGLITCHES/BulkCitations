@@ -41,17 +41,17 @@ function mapLegacyHealth(citation: CanonicalCitation): {
   const missingRequired = citation.quality?.missingRequired ?? [];
   const score = citation.quality?.overall ?? 0;
   const grade = citation.quality?.grade ?? 'F';
-  const hasReviewLevelValidation = [
-    'placeholder_volume',
-    'placeholder_journal',
-    'venue_missing_for_conference',
-    'weak_proceedings_venue',
-    'initials_as_surname',
-    'title_short_or_missing',
-    'doi_invalid_shape',
-    'pages_invalid_shape',
-    'locator_missing_from_source',
-  ].some((code) => validationCodes.has(code));
+  const hasReviewLevelValidation = citation.validationIssues.some((issue) => (
+    issue.severity === 'warning'
+    && [
+      'placeholder_volume',
+      'placeholder_journal',
+      'venue_missing_for_conference',
+      'initials_as_surname',
+      'doi_invalid_shape',
+      'locator_missing_from_source',
+    ].includes(issue.code)
+  ));
 
   for (const flag of qualityFlags) {
     const message = friendlyQualityFlag(flag);

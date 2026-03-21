@@ -264,6 +264,7 @@ export interface CitationReport {
   convertedText: string;
   confidence?: number;
   failureCategory: FailureCategory;
+  failureCategories?: FailureCategory[];
   userNote?: string;
   status: ReportStatus;
   fixType?: FixType;

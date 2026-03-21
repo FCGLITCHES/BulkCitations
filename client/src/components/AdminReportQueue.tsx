@@ -6,7 +6,10 @@ import {
   Users, 
   Bot,
   Filter,
-  Edit
+  Edit,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,8 +40,13 @@ interface GroupedReport {
   category: string;
 }
 
+type SortKey = "freq" | "category" | "source" | "targetStyle";
+type SortDirection = "asc" | "desc";
+
 export default function AdminReportQueue() {
   const [statusFilter, setStatusFilter] = useState<ReportStatus>("pending");
+  const [sortKey, setSortKey] = useState<SortKey>("freq");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   const { data: groups, isLoading } = useQuery<GroupedReport[]>({
     queryKey: ["/api/reports/grouped", statusFilter],
@@ -52,6 +60,61 @@ export default function AdminReportQueue() {
     acc.groups += 1;
     return acc;
   }, { total: 0, groups: 0 }) || { total: 0, groups: 0 };
+
+  const sortedGroups = [...(groups ?? [])].sort((left, right) => {
+    const leftLatest = left.reports[0];
+    const rightLatest = right.reports[0];
+
+    if (!leftLatest || !rightLatest) {
+      return 0;
+    }
+
+    let comparison = 0;
+
+    if (sortKey === "freq") {
+      comparison = left.totalCount - right.totalCount;
+    } else if (sortKey === "category") {
+      comparison = left.category.localeCompare(right.category);
+    } else if (sortKey === "source") {
+      comparison = leftLatest.source.localeCompare(rightLatest.source);
+    } else if (sortKey === "targetStyle") {
+      comparison = leftLatest.outputStyle.localeCompare(rightLatest.outputStyle);
+    }
+
+    if (comparison === 0) {
+      comparison = right.totalCount - left.totalCount;
+    }
+
+    return sortDirection === "asc" ? comparison : -comparison;
+  });
+
+  function toggleSort(nextKey: SortKey) {
+    if (sortKey === nextKey) {
+      setSortDirection((current) => current === "asc" ? "desc" : "asc");
+      return;
+    }
+
+    setSortKey(nextKey);
+    setSortDirection(nextKey === "freq" ? "desc" : "asc");
+  }
+
+  function SortHeader({ label, value }: { label: string; value: SortKey }) {
+    const isActive = sortKey === value;
+    const Icon = !isActive ? ArrowUpDown : sortDirection === "asc" ? ArrowUp : ArrowDown;
+
+    return (
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-8 px-2 -ml-2 font-semibold text-muted-foreground hover:text-foreground"
+        onClick={() => toggleSort(value)}
+      >
+        <span>{label}</span>
+        <Icon className="h-3.5 w-3.5" />
+      </Button>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -124,11 +187,19 @@ export default function AdminReportQueue() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[80px]">Freq</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Source</TableHead>
+                <TableHead className="w-[80px]">
+                  <SortHeader label="Freq" value="freq" />
+                </TableHead>
+                <TableHead>
+                  <SortHeader label="Category" value="category" />
+                </TableHead>
+                <TableHead>
+                  <SortHeader label="Source" value="source" />
+                </TableHead>
                 <TableHead>Original Citation</TableHead>
-                <TableHead>Target Style</TableHead>
+                <TableHead>
+                  <SortHeader label="Target Style" value="targetStyle" />
+                </TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -146,7 +217,7 @@ export default function AdminReportQueue() {
                   </TableCell>
                 </TableRow>
                 ) : (
-                  groups?.map((group) => {
+                  sortedGroups.map((group) => {
                     const latest = group.reports[0];
                     return (
                       <TableRow key={group.fingerprint} className="group hover:bg-muted/50">

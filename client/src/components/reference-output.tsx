@@ -57,8 +57,28 @@ const INPUT_STYLE_LABELS: Record<string, string> = {
   vancouver: "Vancouver",
 };
 
+function normalizeMultilineValue(value: string) {
+  return value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
 function inputSuggestsLocator(originalText: string) {
   return /\bpp?\.?\s*[A-Z]?\d|\bArt(?:icle)?\.?\s*(?:no\.?\s*)?[A-Z]?\d|\b\d+\(\d+\)\s*:\s*[A-Z]?\d|\bS\d+(?:[-–]S?\d+)?\b/i.test(originalText);
+}
+
+function outputPreservesLocator(refData: ConvertedReference) {
+  const parsedPages = String(refData.parsedData?.pages ?? "").trim();
+  const parsedArticleNumber = String((refData.parsedData as any)?.["article-number"] ?? "").trim();
+  const convertedText = String(refData.convertedText ?? "");
+
+  if (parsedPages || parsedArticleNumber) return true;
+  if (/\bpp?\.?\s*[A-Z]?\d|\bArt(?:icle)?\.?\s*(?:no\.?\s*)?[A-Z]?\d|\bS\d+(?:[-–]S?\d+)?\b/i.test(convertedText)) {
+    return true;
+  }
+
+  return /\b(?:e|E)\d{4,}\b/.test(convertedText);
 }
 
 // ---------------------------------------------------------------------------
@@ -230,6 +250,7 @@ function CitationRow({
   health,
   extraActions,
   diffAgainstText,
+  showOriginalInput,
 }: {
   refData: ConvertedReference;
   handleCopyReference: (id: string, text: string) => void;
@@ -247,6 +268,7 @@ function CitationRow({
   health?: { state: HealthState; reasons: string[] };
   extraActions?: React.ReactNode;
   diffAgainstText?: string;
+  showOriginalInput?: boolean;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState("");
@@ -254,13 +276,12 @@ function CitationRow({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const rowWarnings: string[] = [];
-  const hasPages = !!refData.parsedData?.pages;
-  const hasArticleNumber = !!(refData.parsedData as any)?.['article-number'];
-  const pagesLookLikeELocator = /^[eE]?\d{4,}$/.test((refData.parsedData?.pages ?? '').trim());
-  const hasEffectivePages = hasPages || hasArticleNumber || pagesLookLikeELocator;
-  const shouldRequireLocator = inputSuggestsLocator(refData.originalText);
-  if (shouldRequireLocator && !hasEffectivePages && ['journal', 'conference', 'bookChapter'].includes(refData.referenceType)) {
-    rowWarnings.push("Incomplete: pages missing");
+  const shouldWarnDroppedLocator =
+    ['journal', 'conference', 'bookChapter'].includes(refData.referenceType)
+    && inputSuggestsLocator(refData.originalText)
+    && !outputPreservesLocator(refData);
+  if (shouldWarnDroppedLocator) {
+    rowWarnings.push("Input locator was not preserved in the output");
   }
   if (!refData.parsedData?.publisher && refData.referenceType === 'book') {
     rowWarnings.push("Incomplete: publisher missing");
@@ -385,6 +406,11 @@ function CitationRow({
       {confidenceBadge}
     </>
   );
+  const originalInputLines = useMemo(
+    () => normalizeMultilineValue(refData.originalText),
+    [refData.originalText],
+  );
+  const shouldShowOriginalInput = showOriginalInput && originalInputLines.length > 0;
 
   return (
     <Card
@@ -432,6 +458,25 @@ function CitationRow({
                 <p className="mt-2 text-xs text-amber-300">
                   Highlighted text shows what differs from the selected version.
                 </p>
+              )}
+              {shouldShowOriginalInput && (
+                <div className="mt-3 rounded-lg border border-dashed border-border/70 bg-background/70 p-3">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Original Input
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      Compare against the converted citation above
+                    </span>
+                  </div>
+                  <div className="space-y-1 font-mono text-xs text-muted-foreground">
+                    {originalInputLines.map((line, index) => (
+                      <div key={`${refData.id}-original-${index}`} className="break-words">
+                        {line}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
               {!isExpanded && isLongCitation && (
                 <button
@@ -499,7 +544,7 @@ function CitationRow({
                 rawInput={refData.originalText}
                 detectedInputStyle={refData.inputStyle}
                 targetStyle={refData.outputStyle}
-                convertedOutput={refData.convertedText}
+                convertedOutput={citationText}
                 reported={reportedIds?.has(refData.id)}
                 onReported={onReported ? () => onReported(refData.id) : undefined}
               />
@@ -540,7 +585,7 @@ function CitationRow({
               rawInput={refData.originalText}
               detectedInputStyle={refData.inputStyle}
               targetStyle={refData.outputStyle}
-              convertedOutput={refData.convertedText}
+              convertedOutput={citationText}
               reported={reportedIds?.has(refData.id)}
               onReported={onReported ? () => onReported(refData.id) : undefined}
             />
@@ -580,6 +625,7 @@ export default function ReferenceOutput({
   const [reportedIds, setReportedIds] = useState<Set<string>>(new Set());
   const [showDebug, setShowDebug] = useState(false);
   const [showInputFormat, setShowInputFormat] = useState(true);
+  const [showOriginalInput, setShowOriginalInput] = useState(false);
   const [allCopied, setAllCopied] = useState(false);
   const [showNumbered, setShowNumbered] = useState(false);
   const [keepItalics, setKeepItalics] = useState(false);
@@ -1061,6 +1107,14 @@ export default function ReferenceOutput({
           <Badge variant="outline" className="text-xs">
             Engine {engineVersion.toUpperCase()}
           </Badge>
+          <Button
+            variant={showOriginalInput ? "default" : "outline"}
+            size="sm"
+            className="text-xs sm:text-sm"
+            onClick={() => setShowOriginalInput((prev) => !prev)}
+          >
+            {showOriginalInput ? "Hide original input" : "Show original input for all"}
+          </Button>
         </div>
       </div>
 
@@ -1100,6 +1154,7 @@ export default function ReferenceOutput({
                 userEditedText={userEdits[mainRef.id]}
                 onSaveEdit={handleSaveEdit}
                 health={healthById[mainRef.id]}
+                showOriginalInput={showOriginalInput}
               />
 
               {duplicates.length > 0 && (
@@ -1131,6 +1186,7 @@ export default function ReferenceOutput({
                               userEditedText={userEdits[dup.id]}
                               onSaveEdit={handleSaveEdit}
                               health={healthById[dup.id]}
+                              showOriginalInput={showOriginalInput}
                               diffAgainstText={userEdits[mainRef.id] ?? mainRef.convertedText}
                               extraActions={
                                 <Button
@@ -1174,6 +1230,7 @@ export default function ReferenceOutput({
               userEditedText={userEdits[ref.id]}
               onSaveEdit={handleSaveEdit}
               health={healthById[ref.id]}
+              showOriginalInput={showOriginalInput}
             />
           ))}
       </div>

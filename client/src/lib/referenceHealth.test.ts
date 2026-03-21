@@ -85,4 +85,31 @@ describe('reference health regression checks', () => {
     expect(health.state).toBe('review');
     expect(health.reasons).toEqual(['Authority verification found mismatched fields']);
   });
+
+  it('does not hard-fail website references just because year and authors are absent', () => {
+    const ref = makeReference({
+      referenceType: 'website',
+      parsedData: {
+        title: 'OpenAI API overview',
+        url: 'https://platform.openai.com/docs/overview',
+      },
+    });
+
+    const health = computeReferenceHealth(ref);
+    expect(health.state).toBe('clean');
+  });
+
+  it('does not escalate generic warning strings into review when structure is otherwise sound', () => {
+    const ref = makeReference({
+      warnings: ['warning:title_short_or_missing'],
+      confidence: {
+        score: 95,
+        breakdown: { rules: 95 },
+        isSuspicious: false,
+      },
+    });
+
+    const health = computeReferenceHealth(ref);
+    expect(health.state).toBe('clean');
+  });
 });

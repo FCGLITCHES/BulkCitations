@@ -15,8 +15,8 @@ import {
   hasCanonicalMalformedAuthors,
   isLocatorLike,
   isPlaceholderValue,
-  proceedingsSignal,
-  rawSuggestsLocator,
+  looksWeakConferenceVenue,
+  rawSuggestsDroppedLocator,
 } from '../qualityRules.js';
 import { OVERSIZED_CHUNK_CHARS, OVERSIZED_CHUNK_LINES } from './split.js';
 
@@ -93,14 +93,24 @@ function compareCrossrefField(citation: CanonicalCitation, field: string, crossr
 
 function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
+  const journalActsAsVenue = citation.referenceType === 'journal'
+    || (!citation.conferenceTitle.value && !citation.bookTitle.value);
 
   const titleWordCount = citation.title.value ? citation.title.value.split(/\s+/).filter(Boolean).length : 0;
-  if (!citation.title.value || titleWordCount < 4) {
+  if (!citation.title.value) {
     issues.push({
       field: 'title',
       severity: 'warning',
       code: 'title_short_or_missing',
-      message: 'Title is missing or shorter than the expected minimum length.',
+      message: 'Title is missing.',
+      extracted: citation.title.value,
+    });
+  } else if (titleWordCount < 2 && !/[A-Z0-9][.:]/.test(citation.title.value)) {
+    issues.push({
+      field: 'title',
+      severity: 'info',
+      code: 'title_short_or_missing',
+      message: 'Title is unusually short and may need review.',
       extracted: citation.title.value,
     });
   }
@@ -126,10 +136,10 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
     });
   }
 
-  if (citation.pages.value && !PAGE_PATTERN.test(citation.pages.value) && !/^Article\s+\S+/i.test(citation.pages.value)) {
+  if (citation.pages.value && !isLocatorLike(citation.pages.value) && !PAGE_PATTERN.test(citation.pages.value)) {
     issues.push({
       field: 'pages',
-      severity: 'warning',
+      severity: 'info',
       code: 'pages_invalid_shape',
       message: 'Pages do not look like a page range or article locator.',
       extracted: citation.pages.value,
@@ -199,7 +209,7 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
     });
   }
 
-  if (citation.volume.value && isPlaceholderValue(citation.volume.value)) {
+  if (citation.volume.value && ['journal', 'conference'].includes(citation.referenceType) && isPlaceholderValue(citation.volume.value)) {
     issues.push({
       field: 'volume',
       severity: 'warning',
@@ -209,7 +219,7 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
     });
   }
 
-  if (citation.journal.value && isPlaceholderValue(citation.journal.value)) {
+  if (citation.journal.value && journalActsAsVenue && isPlaceholderValue(citation.journal.value)) {
     issues.push({
       field: 'journal',
       severity: 'warning',
@@ -221,7 +231,7 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
 
   if (citation.referenceType === 'conference') {
     const venue = normalized(citation.conferenceTitle.value ?? citation.bookTitle.value ?? citation.journal.value ?? '');
-    if (venue && !proceedingsSignal(venue)) {
+    if (venue && looksWeakConferenceVenue(venue)) {
       issues.push({
         field: 'conferenceTitle',
         severity: 'info',
@@ -253,7 +263,7 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
   }
 
   if (
-    rawSuggestsLocator(citation.raw)
+    rawSuggestsDroppedLocator(citation.raw)
     && ['journal', 'conference', 'bookChapter'].includes(citation.referenceType)
     && !isLocatorLike(citation.pages.value)
   ) {

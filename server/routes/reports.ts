@@ -85,6 +85,7 @@ router.post("/", (req, res) => {
       outputStyle?: string;
       convertedText?: string;
       failureCategory?: string;
+      failureCategories?: string[];
       userNote?: string;
       parsedData?: any;
       referenceType?: string;
@@ -104,6 +105,9 @@ router.post("/", (req, res) => {
     const outputStyle = (body.outputStyle || body.targetStyle || "").trim();
     const convertedText = (body.convertedText || body.convertedOutput || "").trim();
     const rawCategory = body.failureCategory || body.userCategory || "";
+    const rawCategories = Array.isArray(body.failureCategories)
+      ? body.failureCategories.filter((value): value is string => typeof value === "string")
+      : [];
     const userNote = body.userNote;
 
     // Validate required fields
@@ -115,14 +119,30 @@ router.post("/", (req, res) => {
     }
 
     // Map category
-    let failureCategory: FailureCategory;
-    if (VALID_CATEGORIES.includes(rawCategory as FailureCategory)) {
-      failureCategory = rawCategory as FailureCategory;
-    } else if (LEGACY_CATEGORY_MAP[rawCategory]) {
-      failureCategory = LEGACY_CATEGORY_MAP[rawCategory];
-    } else {
-      failureCategory = "other";
-    }
+    const normalizeCategory = (value: string): FailureCategory | null => {
+      if (VALID_CATEGORIES.includes(value as FailureCategory)) {
+        return value as FailureCategory;
+      }
+      if (LEGACY_CATEGORY_MAP[value]) {
+        return LEGACY_CATEGORY_MAP[value];
+      }
+      return null;
+    };
+
+    const normalizedFailureCategories = Array.from(new Set(
+      rawCategories
+        .map((value) => normalizeCategory(value))
+        .filter((value): value is FailureCategory => Boolean(value)),
+    ));
+
+    let failureCategory = normalizeCategory(rawCategory)
+      ?? normalizedFailureCategories[0]
+      ?? "other";
+
+    const failureCategories = Array.from(new Set([
+      failureCategory,
+      ...normalizedFailureCategories,
+    ]));
 
     // Validate user note length
     if (userNote != null && (typeof userNote !== "string" || userNote.length > 500)) {
@@ -155,6 +175,7 @@ router.post("/", (req, res) => {
       convertedText,
       confidence: body.confidence,
       failureCategory,
+      failureCategories,
       userNote: userNote?.trim() || undefined,
       status: "pending",
       createdAt: new Date().toISOString(),

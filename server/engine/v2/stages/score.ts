@@ -52,6 +52,9 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   }
 
   const validationCodes = new Set(citation.validationIssues.map((issue) => issue.code));
+  const hasVenueMissingForConference = citation.validationIssues.some((issue) => issue.code === 'venue_missing_for_conference' && issue.severity !== 'info');
+  const hasWeakProceedingsVenue = citation.validationIssues.some((issue) => issue.code === 'weak_proceedings_venue' && issue.severity !== 'info');
+  const hasDroppedLocatorWarning = citation.validationIssues.some((issue) => issue.code === 'locator_missing_from_source' && issue.severity !== 'info');
   const structuralIssues = countStructuralValidationIssues(citation);
   const splitContaminationSuspectedCodes = [
     'header_bleed_suspected',
@@ -76,8 +79,8 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
 
   if (validationCodes.has('connector_as_author') || validationCodes.has('author_structure_unstable')) overall = Math.min(overall, 0.32);
   if (validationCodes.has('placeholder_volume') || validationCodes.has('placeholder_journal')) overall = Math.max(0, overall - 0.12);
-  if (validationCodes.has('venue_missing_for_conference') || validationCodes.has('weak_proceedings_venue')) overall = Math.max(0, overall - 0.08);
-  if (validationCodes.has('locator_missing_from_source')) overall = Math.max(0, overall - 0.06);
+  if (hasVenueMissingForConference || hasWeakProceedingsVenue) overall = Math.max(0, overall - 0.08);
+  if (hasDroppedLocatorWarning) overall = Math.max(0, overall - 0.06);
   if (validationCodes.has('authority_mismatch')) overall = Math.max(0, overall - 0.02);
   if (validationCodes.has('initials_as_surname')) overall = Math.max(0, overall - 0.08);
 
