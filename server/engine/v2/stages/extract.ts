@@ -29,10 +29,13 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
 
       const citations = await Promise.all(context.citations.map((citation, citationIndex) => limit(async () => {
         const effectiveStyle = citation.detectedStyle.value ?? context.request.inputStyle;
-        const result = await extractor.extract(citation.raw, effectiveStyle ?? context.request.inputStyle, {
+        const workingChunk = context.workingChunkByCitationId[citation.id] ?? citation.raw;
+        const splitArtifact = context.splitArtifactsByCitationId[citation.id];
+        const result = await extractor.extract(workingChunk, effectiveStyle ?? context.request.inputStyle, {
           inputProfile: context.inputProfile,
           detectionConfidence: citation.detectedStyle.confidence,
           batchSize: context.inputProfile?.estimatedCount ?? context.citations.length,
+          splitArtifact,
         });
         const authorParseResult = parseAuthorsForStyle(result.parsed.authors ?? [], effectiveStyle);
         const yearValue = result.parsed.year ? Number.parseInt(result.parsed.year, 10) : null;
@@ -76,6 +79,9 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           selectionReason: result.selectionReason,
           extractorPath: result.extractorPath,
           authorParserMode: result.authorParserMode ?? authorParseResult.parserMode,
+          workingChunkLength: workingChunk.length,
+          splitContaminationFlags: splitArtifact?.contaminationFlags ?? [],
+          splitContaminationPenalty: result.debug?.split_contamination_penalty ?? 0,
           warningFlags: authorParseResult.warningFlags,
           rejectedCandidates: [
             ...(result.rejectedCandidates ?? []),
@@ -100,6 +106,8 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           selectionReason: result.selectionReason,
           extractorPath: result.extractorPath,
           authorParserMode: result.authorParserMode ?? authorParseResult.parserMode,
+          splitContaminationFlags: splitArtifact?.contaminationFlags ?? [],
+          splitContaminationPenalty: result.debug?.split_contamination_penalty ?? 0,
           warningFlags: authorParseResult.warningFlags,
           rejectedCandidates: [
             ...(result.rejectedCandidates ?? []),

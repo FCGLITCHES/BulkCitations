@@ -128,6 +128,16 @@ export function countStructuralValidationIssues(citation: CanonicalCitation): { 
     'year_out_of_range',
   ]);
   const reviewCodes = new Set([
+    'header_bleed_suspected',
+    'header_bleed_confirmed',
+    'doi_orphan_suspected',
+    'doi_orphan_confirmed',
+    'multiline_truncation_suspected',
+    'multiline_truncation_confirmed',
+    'page_artifact_suspected',
+    'page_artifact_confirmed',
+    'oversized_chunk_suspected',
+    'oversized_chunk_confirmed',
     'initials_as_surname',
     'placeholder_volume',
     'placeholder_journal',

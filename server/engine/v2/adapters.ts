@@ -31,6 +31,7 @@ import type {
   EmbeddingAdapter,
   ExportAdapter,
   ExtractorAdapter,
+  V2SplitArtifact,
   V2AdapterBundle,
 } from './contracts.js';
 
@@ -318,6 +319,39 @@ function needsLlmFallback(parsed: ParsedReference, fieldConfidence: Record<strin
   return missingRequired || lowConfidenceCritical;
 }
 
+function splitContaminationPenalty(splitArtifact?: V2SplitArtifact): number {
+  if (!splitArtifact) return 0;
+
+  let penalty = 0;
+  if (splitArtifact.contaminationFlags.includes('header_bleed_suspected')) penalty += 0.08;
+  if (splitArtifact.contaminationFlags.includes('page_artifact_present')) penalty += 0.07;
+  if (splitArtifact.contaminationFlags.includes('multiline_truncation_suspected')) penalty += 0.1;
+  if (splitArtifact.contaminationFlags.includes('oversized_chunk')) penalty += 0.12;
+  if (splitArtifact.contaminationFlags.includes('doi_orphan')) penalty += 0.16;
+  return Math.min(0.28, penalty);
+}
+
+function applySplitPenaltyToFieldConfidence(
+  fieldConfidence: ReturnType<typeof buildFieldConfidence>,
+  penalty: number,
+) {
+  if (penalty <= 0) return fieldConfidence;
+
+  return {
+    ...fieldConfidence,
+    authors: Math.max(0.05, fieldConfidence.authors - penalty),
+    title: Math.max(0.05, fieldConfidence.title - penalty),
+    year: Math.max(0.05, fieldConfidence.year - (penalty * 0.8)),
+    journal: Math.max(0.05, fieldConfidence.journal - (penalty * 0.75)),
+    volume: Math.max(0.05, fieldConfidence.volume - (penalty * 0.5)),
+    issue: Math.max(0.05, fieldConfidence.issue - (penalty * 0.5)),
+    pages: Math.max(0.05, fieldConfidence.pages - (penalty * 0.65)),
+    doi: Math.max(0.05, fieldConfidence.doi - (penalty * 0.35)),
+    publisher: Math.max(0.05, fieldConfidence.publisher - (penalty * 0.45)),
+    url: Math.max(0.05, fieldConfidence.url - (penalty * 0.3)),
+  };
+}
+
 async function extractWithLlm(input: string): Promise<z.infer<typeof llmExtractionSchema> | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
@@ -464,6 +498,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     inputProfile?: { structure: string; estimatedCount?: number };
     detectionConfidence?: number;
     batchSize?: number;
+    splitArtifact?: V2SplitArtifact;
   }) {
     const deterministicBase = buildDeterministicCandidate(input, inputStyle);
     const deterministicSanitized = sanitizeParsedReference(deterministicBase.parsed, deterministicBase.referenceType);
@@ -498,6 +533,14 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     let selectedReferenceType = selectedBranch === 'year_anchored_fallback_raw' && fallback ? fallback.referenceType : deterministic.referenceType;
     const selectedReason = selectionReason(selectedBranch, deterministic.parsed, fallback?.parsed ?? null);
     let selectedFieldConfidence = buildFieldConfidence(mergedSelection, selectedReferenceType);
+    const splitArtifact = options?.splitArtifact;
+    const splitContaminationFlags = splitArtifact?.contaminationFlags ?? [];
+    const splitPenalty = splitContaminationPenalty(splitArtifact);
+    const splitWarnings = splitContaminationFlags.map((flag) => `split_contamination:${flag}`);
+    const contaminationScorePenalty = splitPenalty * 10;
+    if (splitPenalty > 0) {
+      selectedFieldConfidence = applySplitPenaltyToFieldConfidence(selectedFieldConfidence, splitPenalty);
+    }
     let extractorPath: 'deterministic' | 'grobid' | 'llm' | 'hybrid' = 'deterministic';
     const rejectedCandidates: string[] = [];
     if (looksLikeAlternatingTokenArray(deterministic.parsed.authors ?? [])) rejectedCandidates.push('deterministic_alternating_author_tokens');
@@ -509,12 +552,17 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     const detectionConfidence = options?.detectionConfidence ?? 0;
     const weakDeterministicSelection =
       needsLlmFallback(mergedSelection, selectedFieldConfidence)
-      || deterministicScore < 8
+      || (deterministicScore - contaminationScorePenalty) < 8
       || deterministicAuthorParse.warningFlags.length > 0
-      || deterministicAuthorParse.rejectedCandidates.length > 0;
-    const profilePrefersGrobid = inputStructure === 'semi_structured' || inputStructure === 'unstructured';
+      || deterministicAuthorParse.rejectedCandidates.length > 0
+      || splitContaminationFlags.length > 0;
+    const profilePrefersGrobid = inputStructure === 'semi_structured'
+      || inputStructure === 'unstructured'
+      || splitContaminationFlags.some((flag) => ['header_bleed_suspected', 'page_artifact_present', 'multiline_truncation_suspected', 'oversized_chunk'].includes(flag));
     const grobidRouteReason = weakDeterministicSelection
       ? 'weak_deterministic_parse'
+      : splitContaminationFlags.length > 0
+        ? 'split_contamination'
       : detectionConfidence < 0.65
         ? 'low_detection_confidence'
         : profilePrefersGrobid && detectionConfidence < 0.9
@@ -562,10 +610,10 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             mergedSelection = fillMissingFromFallback(grobidCandidate.parsed, mergedSelection);
             selectedReferenceType = grobidCandidate.referenceType;
             selectedFieldConfidence = {
-              ...buildFieldConfidence(mergedSelection, selectedReferenceType),
-              authors: Math.max(buildFieldConfidence(mergedSelection, selectedReferenceType).authors, 0.9),
-              title: Math.max(buildFieldConfidence(mergedSelection, selectedReferenceType).title, 0.9),
-              year: Math.max(buildFieldConfidence(mergedSelection, selectedReferenceType).year, 0.9),
+              ...applySplitPenaltyToFieldConfidence(buildFieldConfidence(mergedSelection, selectedReferenceType), splitPenalty),
+              authors: Math.max(applySplitPenaltyToFieldConfidence(buildFieldConfidence(mergedSelection, selectedReferenceType), splitPenalty).authors, 0.9 - Math.min(0.18, splitPenalty)),
+              title: Math.max(applySplitPenaltyToFieldConfidence(buildFieldConfidence(mergedSelection, selectedReferenceType), splitPenalty).title, 0.9 - Math.min(0.18, splitPenalty)),
+              year: Math.max(applySplitPenaltyToFieldConfidence(buildFieldConfidence(mergedSelection, selectedReferenceType), splitPenalty).year, 0.9 - Math.min(0.18, splitPenalty)),
             };
             extractorPath = 'grobid';
             console.log(JSON.stringify({
@@ -621,7 +669,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
         selectionReason: selectedReason,
         rejectedCandidates,
         fieldConfidence: selectedFieldConfidence,
-        warnings: [...deterministic.warnings, ...(fallback?.warnings ?? [])],
+        warnings: [...deterministic.warnings, ...(fallback?.warnings ?? []), ...splitWarnings],
         debug: {
           deterministic_raw: deterministic.parsed,
           year_anchored_fallback_raw: fallback?.parsed ?? null,
@@ -636,6 +684,9 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
           deterministic_author_warning_flags: deterministicAuthorParse.warningFlags,
           fallback_author_parser_mode: fallbackAuthorParse.parserMode,
           fallback_author_warning_flags: fallbackAuthorParse.warningFlags,
+          split_contamination_flags: splitContaminationFlags,
+          split_contamination_penalty: splitPenalty,
+          cleaned_chunk_length: splitArtifact?.chunkLength ?? input.length,
           rejectedCandidates,
         },
       };
@@ -653,7 +704,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
           selectionReason: selectedReason,
           rejectedCandidates,
           fieldConfidence: selectedFieldConfidence,
-          warnings: [...deterministic.warnings, ...(fallback?.warnings ?? []), 'llm_fallback_unavailable'],
+          warnings: [...deterministic.warnings, ...(fallback?.warnings ?? []), ...splitWarnings, 'llm_fallback_unavailable'],
           debug: {
             deterministic_raw: deterministic.parsed,
             year_anchored_fallback_raw: fallback?.parsed ?? null,
@@ -661,6 +712,9 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             selection_reason: selectedReason,
             deterministic_score: deterministicScore,
             fallback_score: fallbackScore,
+            split_contamination_flags: splitContaminationFlags,
+            split_contamination_penalty: splitPenalty,
+            cleaned_chunk_length: splitArtifact?.chunkLength ?? input.length,
             rejectedCandidates,
           },
         };
@@ -670,7 +724,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       const sanitizedHybrid = sanitizeParsedReference(merged.parsed, merged.referenceType);
       const hybridFieldConfidence = {
         ...merged.fieldConfidence,
-        ...buildFieldConfidence(sanitizedHybrid.parsed, sanitizedHybrid.referenceType),
+        ...applySplitPenaltyToFieldConfidence(buildFieldConfidence(sanitizedHybrid.parsed, sanitizedHybrid.referenceType), splitPenalty),
       };
       return {
         parsed: sanitizedHybrid.parsed,
@@ -682,7 +736,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
         selectionReason: `${selectedReason}_with_llm_fill`,
         rejectedCandidates,
         fieldConfidence: hybridFieldConfidence,
-        warnings: [...deterministic.warnings, ...(fallback?.warnings ?? []), 'llm_fallback_applied'],
+        warnings: [...deterministic.warnings, ...(fallback?.warnings ?? []), ...splitWarnings, 'llm_fallback_applied'],
         debug: {
           deterministic_raw: deterministic.parsed,
           year_anchored_fallback_raw: fallback?.parsed ?? null,
@@ -697,6 +751,9 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
           deterministic_author_warning_flags: deterministicAuthorParse.warningFlags,
           fallback_author_parser_mode: fallbackAuthorParse.parserMode,
           fallback_author_warning_flags: fallbackAuthorParse.warningFlags,
+          split_contamination_flags: splitContaminationFlags,
+          split_contamination_penalty: splitPenalty,
+          cleaned_chunk_length: splitArtifact?.chunkLength ?? input.length,
           rejectedCandidates,
         },
       };
@@ -717,6 +774,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
         warnings: [
           ...deterministic.warnings,
           ...(fallback?.warnings ?? []),
+          ...splitWarnings,
           `llm_fallback_failed:${error instanceof Error ? error.message : String(error)}`,
         ],
         debug: {
@@ -733,6 +791,9 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
           deterministic_author_warning_flags: deterministicAuthorParse.warningFlags,
           fallback_author_parser_mode: fallbackAuthorParse.parserMode,
           fallback_author_warning_flags: fallbackAuthorParse.warningFlags,
+          split_contamination_flags: splitContaminationFlags,
+          split_contamination_penalty: splitPenalty,
+          cleaned_chunk_length: splitArtifact?.chunkLength ?? input.length,
           rejectedCandidates: [
             ...rejectedCandidates,
             'llm_invalid_or_failed',

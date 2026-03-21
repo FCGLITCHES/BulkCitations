@@ -18,6 +18,7 @@ import {
   proceedingsSignal,
   rawSuggestsLocator,
 } from '../qualityRules.js';
+import { OVERSIZED_CHUNK_CHARS, OVERSIZED_CHUNK_LINES } from './split.js';
 
 const DOI_PATTERN = /^10\.\d{4,}\/\S+$/i;
 const PAGE_PATTERN = /^[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?$/;
@@ -268,8 +269,119 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
   return issues;
 }
 
-async function buildValidationResult(citation: CanonicalCitation): Promise<{ issues: ValidationIssue[]; metadata: ValidationMetadata }> {
-  const issues = buildPlausibilityIssues(citation);
+function buildSplitContaminationIssues(citation: CanonicalCitation, splitArtifact?: {
+  cleanedChunk: string;
+  contaminationFlags: string[];
+  strippedRegions: Array<{ rule: string; rawText: string }>;
+  chunkLength: number;
+  lineCount: number;
+}): ValidationIssue[] {
+  if (!splitArtifact || splitArtifact.contaminationFlags.length === 0) return [];
+
+  const issues: ValidationIssue[] = [];
+
+  for (const flag of splitArtifact.contaminationFlags) {
+    switch (flag) {
+      case 'header_bleed_suspected': {
+        const confirmed = splitArtifact.strippedRegions.some((region) => ['header_bleed', 'running_title'].includes(region.rule));
+        issues.push({
+          field: 'raw',
+          severity: 'warning',
+          code: confirmed ? 'header_bleed_confirmed' : 'header_bleed_suspected',
+          message: confirmed
+            ? 'Split stage removed header-like text from this citation chunk before extraction.'
+            : 'Split stage suspects header-like text contaminated this citation chunk.',
+          extracted: splitArtifact.strippedRegions.map((region) => region.rawText),
+        });
+        break;
+      }
+      case 'page_artifact_present': {
+        const confirmed = splitArtifact.strippedRegions.some((region) => region.rule === 'page_number' || /\b\d+\s+of\s+\d+\b/i.test(region.rawText));
+        issues.push({
+          field: 'raw',
+          severity: 'warning',
+          code: confirmed ? 'page_artifact_confirmed' : 'page_artifact_suspected',
+          message: confirmed
+            ? 'Split stage removed page or running-artifact text from this citation chunk.'
+            : 'Split stage suspects page or running-artifact text contaminated this citation chunk.',
+          extracted: splitArtifact.strippedRegions.map((region) => region.rawText),
+        });
+        break;
+      }
+      case 'multiline_truncation_suspected': {
+        const confirmed =
+          /(?:[,;:]\s*|\b(?:and|&|et al\.?)\s*)$/i.test(splitArtifact.cleanedChunk)
+          || citation.authors.value.length === 0
+          || !citation.title.value;
+        issues.push({
+          field: 'authors',
+          severity: 'warning',
+          code: confirmed ? 'multiline_truncation_confirmed' : 'multiline_truncation_suspected',
+          message: confirmed
+            ? 'Citation text still looks truncated after split-stage multiline repair.'
+            : 'Split stage suspects multiline truncation in this citation chunk.',
+          extracted: splitArtifact.cleanedChunk,
+        });
+        break;
+      }
+      case 'doi_orphan': {
+        const confirmed =
+          /^(?:https?:\/\/(?:dx\.)?doi\.org\/)?10\.\d{4,}\/\S+$/i.test(splitArtifact.cleanedChunk)
+          || citation.authors.value.length === 0
+          || !citation.title.value;
+        issues.push({
+          field: 'doi',
+          severity: 'warning',
+          code: confirmed ? 'doi_orphan_confirmed' : 'doi_orphan_suspected',
+          message: confirmed
+            ? 'Citation chunk resolved to a DOI-orphan shape instead of a complete reference.'
+            : 'Split stage suspects this chunk is a DOI-only orphan.',
+          extracted: splitArtifact.cleanedChunk,
+        });
+        break;
+      }
+      case 'oversized_chunk': {
+        const confirmed = splitArtifact.chunkLength > OVERSIZED_CHUNK_CHARS || splitArtifact.lineCount > OVERSIZED_CHUNK_LINES;
+        issues.push({
+          field: 'raw',
+          severity: 'warning',
+          code: confirmed ? 'oversized_chunk_confirmed' : 'oversized_chunk_suspected',
+          message: confirmed
+            ? 'Citation chunk remains oversized after split-stage recovery and should be reviewed.'
+            : 'Split stage suspects this citation chunk is oversized for a single reference.',
+          extracted: {
+            chunkLength: splitArtifact.chunkLength,
+            lineCount: splitArtifact.lineCount,
+          },
+          expected: {
+            maxChunkLength: OVERSIZED_CHUNK_CHARS,
+            maxLineCount: OVERSIZED_CHUNK_LINES,
+          },
+        });
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  return issues;
+}
+
+async function buildValidationResult(
+  citation: CanonicalCitation,
+  splitArtifact?: {
+    cleanedChunk: string;
+    contaminationFlags: string[];
+    strippedRegions: Array<{ rule: string; rawText: string }>;
+    chunkLength: number;
+    lineCount: number;
+  },
+): Promise<{ issues: ValidationIssue[]; metadata: ValidationMetadata }> {
+  const issues = [
+    ...buildSplitContaminationIssues(citation, splitArtifact),
+    ...buildPlausibilityIssues(citation),
+  ];
   const mismatchFields = new Set<string>();
   let verificationAttempted = false;
   let authoritySource: string | undefined;
@@ -349,7 +461,8 @@ export function createValidateStage(): V2Stage {
       const citations: CanonicalCitation[] = [];
 
       for (const citation of context.citations) {
-        const { issues, metadata } = await buildValidationResult(citation);
+        const splitArtifact = context.splitArtifactsByCitationId[citation.id];
+        const { issues, metadata } = await buildValidationResult(citation, splitArtifact);
         const hasError = issues.some((issue) => issue.severity === 'error');
         let nextCitation = {
           ...citation,
@@ -360,9 +473,11 @@ export function createValidateStage(): V2Stage {
           issues,
           verificationAttempted: metadata.verificationAttempted,
           mismatchFields: metadata.mismatchFields,
+          splitContaminationFlags: splitArtifact?.contaminationFlags ?? [],
           warningFlags: issues.filter((issue) => issue.severity !== 'info').map((issue) => issue.code),
         }, context.debugEnabled);
         logStructuredDebug(context, 'validate', citations.length, nextCitation, {
+          splitContaminationFlags: splitArtifact?.contaminationFlags ?? [],
           warningFlags: issues.filter((issue) => issue.severity !== 'info').map((issue) => issue.code),
           selectionReason: undefined,
           selectedBranch: undefined,

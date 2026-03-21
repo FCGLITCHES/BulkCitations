@@ -11,6 +11,42 @@ import type {
 } from '@shared/schema';
 import type { V2StageRuntimeConfig } from './config.js';
 
+export type SplitContaminationFlag =
+  | 'header_bleed_suspected'
+  | 'doi_orphan'
+  | 'multiline_truncation_suspected'
+  | 'page_artifact_present'
+  | 'oversized_chunk';
+
+export interface StrippedRegion {
+  rule: string;
+  rawText: string;
+  startOffset: number;
+  endOffset: number;
+  startLine: number;
+  endLine: number;
+}
+
+export interface SplitRepairAction {
+  action: string;
+  rawText?: string;
+  sourceLineNumbers: number[];
+  detail?: string;
+}
+
+export interface V2SplitArtifact {
+  cleanedChunk: string;
+  confidence: number;
+  splitReasons: string[];
+  splitMethod: 'structural' | 'llm' | 'hybrid';
+  fallbackUsed: boolean;
+  contaminationFlags: SplitContaminationFlag[];
+  strippedRegions: StrippedRegion[];
+  repairActions: SplitRepairAction[];
+  chunkLength: number;
+  lineCount: number;
+}
+
 export interface V2PipelineContext {
   request: V2ConversionRequest;
   jobId: string;
@@ -29,6 +65,8 @@ export interface V2PipelineContext {
   partialResult: boolean;
   partialReasons: string[];
   jobDebug: Record<string, Record<string, unknown>>;
+  workingChunkByCitationId: Record<string, string>;
+  splitArtifactsByCitationId: Record<string, V2SplitArtifact>;
   response?: V2ConversionResponse;
   stageConfig: Record<V2StageId, V2StageRuntimeConfig>;
 }
@@ -44,6 +82,7 @@ export interface ExtractorAdapter {
     inputProfile?: InputProfile;
     detectionConfidence?: number;
     batchSize?: number;
+    splitArtifact?: V2SplitArtifact;
   }): Promise<{
     parsed: {
       authors?: Array<string | CanonicalAuthor>;

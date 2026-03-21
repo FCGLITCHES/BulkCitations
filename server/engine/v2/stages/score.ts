@@ -53,6 +53,25 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
 
   const validationCodes = new Set(citation.validationIssues.map((issue) => issue.code));
   const structuralIssues = countStructuralValidationIssues(citation);
+  const splitContaminationSuspectedCodes = [
+    'header_bleed_suspected',
+    'doi_orphan_suspected',
+    'multiline_truncation_suspected',
+    'page_artifact_suspected',
+    'oversized_chunk_suspected',
+  ];
+  const splitContaminationConfirmedCodes = [
+    'header_bleed_confirmed',
+    'doi_orphan_confirmed',
+    'multiline_truncation_confirmed',
+    'page_artifact_confirmed',
+    'oversized_chunk_confirmed',
+  ];
+  const hasSplitContaminationSuspected = [
+    ...splitContaminationSuspectedCodes,
+    ...splitContaminationConfirmedCodes,
+  ].some((code) => validationCodes.has(code));
+  const hasSplitContaminationConfirmed = splitContaminationConfirmedCodes.some((code) => validationCodes.has(code));
   overall = Math.max(0, overall - (structuralIssues.severe * 0.18) - (structuralIssues.review * 0.04));
 
   if (validationCodes.has('connector_as_author') || validationCodes.has('author_structure_unstable')) overall = Math.min(overall, 0.32);
@@ -94,6 +113,8 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   if (structuralIssues.severe > 0 || structuralIssues.review > 0) flags.push('review');
   if (validationCodes.has('authority_rate_limited')) flags.push('authority_rate_limited');
   if (validationCodes.has('authority_not_found')) flags.push('authority_not_found');
+  if (hasSplitContaminationSuspected) flags.push('split_contamination_suspected');
+  if (hasSplitContaminationConfirmed) flags.push('split_contamination_confirmed');
   if (citation.enrichment?.retractedFlag) {
     flags.push('retracted');
     overall = Math.min(overall, 0.4);
@@ -107,6 +128,9 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   }
   if (missingExpected.length > 0 && missingRequired.length === 0) {
     overall = Math.max(0, overall - Math.min(0.08, missingExpected.length * 0.02));
+  }
+  if (hasSplitContaminationSuspected || hasSplitContaminationConfirmed) {
+    overall = Math.min(overall, 0.74);
   }
 
   overall = Number(overall.toFixed(2));

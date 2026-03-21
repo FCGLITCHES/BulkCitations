@@ -108,6 +108,8 @@ export async function processV2Conversion(
     partialResult: false,
     partialReasons: [],
     jobDebug: {},
+    workingChunkByCitationId: {},
+    splitArtifactsByCitationId: {},
     stageConfig,
   };
 

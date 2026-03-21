@@ -13,6 +13,7 @@ function isVercelRuntime() {
 export async function createApp(): Promise<{ app: express.Express; server: Awaited<ReturnType<typeof registerRoutes>> }> {
   const app = express();
   const isProduction = process.env.NODE_ENV === "production";
+  const isVercel = isVercelRuntime();
 
   app.disable("x-powered-by");
   app.use(express.json());
@@ -71,10 +72,10 @@ export async function createApp(): Promise<{ app: express.Express; server: Await
     res.status(status).json({ message });
   });
 
-  const isDev = !isProduction && !isVercelRuntime();
+  const isDev = !isProduction && !isVercel;
   if (isDev) {
     await setupVite(app, server);
-  } else {
+  } else if (!isVercel) {
     serveStatic(app);
   }
 
