@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeParsedAuthorStrings } from './qualityRules.js';
+import { normalizeLocatorValue } from './qualityRules.js';
 import {
   fixUnicodeText,
   looksLikeSurnameGivenAlternatingArray,
@@ -110,6 +111,18 @@ describe('v2 author rescue utilities', () => {
 
     expect(analysis.contaminatedBlobCount).toBe(1);
     expect(analysis.mergedBlobCount).toBeGreaterThanOrEqual(1);
+  });
+
+  it('strips DOI leakage from page locators before they reach downstream phases', () => {
+    expect(normalizeLocatorValue('1205-14. 10.1021/acs.jcim.8b00706')).toBe('1205-14');
+    expect(normalizeLocatorValue('pp. 659-668 doi:10.1080/14740338.2023.2228197')).toBe('659-668');
+  });
+
+  it('reorders obviously descending page ranges while preserving common shortened ranges', () => {
+    expect(normalizeLocatorValue('120-90')).toBe('90-120');
+    expect(normalizeLocatorValue('e148-e137')).toBe('e137-e148');
+    expect(normalizeLocatorValue('355-62')).toBe('355-62');
+    expect(normalizeLocatorValue('1947-99')).toBe('1947-99');
   });
 
   it('repairs common mojibake in author names and locators', () => {

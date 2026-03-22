@@ -1,6 +1,7 @@
 import type { CanonicalAuthor, CanonicalCitation, FieldValue, NormalizationMetadata } from '@shared/schema';
 import { isGroupAuthor, normalizeGroupAuthor, normalizeKnownContainerName } from '../../shared/citationSemantics.js';
 import type { V2Stage } from '../contracts.js';
+import { normalizeLocatorValue } from '../qualityRules.js';
 import {
   addCitationStageLog,
   attachCitationDebug,
@@ -107,7 +108,10 @@ export function createNormalizeStage(): V2Stage {
         const journalResult = normalizeNullableField(citation.journal, fixUnicodeText, 'normalize');
         const volumeResult = normalizeNullableField(citation.volume, normalizeWhitespace, 'normalize');
         const issueResult = normalizeNullableField(citation.issue, normalizeWhitespace, 'normalize');
-        const pagesResult = normalizeNullableField(citation.pages, (value) => fixUnicodeText(value).replace(/[–—]/g, '-'), 'normalize');
+        const pagesResult = normalizeNullableField(citation.pages, (value) => {
+          const repaired = fixUnicodeText(value).replace(/[–—]/g, '-');
+          return normalizeLocatorValue(repaired) ?? repaired;
+        }, 'normalize');
         const publisherResult = normalizeNullableField(citation.publisher, fixUnicodeText, 'normalize');
         const urlResult = normalizeNullableField(citation.url, (value) => normalizeWhitespace(value).replace(/\.$/, ''), 'normalize');
         const doiResult = normalizeNullableField(citation.doi, normalizeDoiValue, 'normalize');

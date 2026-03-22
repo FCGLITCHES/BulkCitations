@@ -81,6 +81,102 @@ function outputPreservesLocator(refData: ConvertedReference) {
   return /\b(?:e|E)\d{4,}\b/.test(convertedText);
 }
 
+type DebugStageKey = "detect" | "extract" | "enrich" | "validate" | "render" | "dedupe";
+
+const DEBUG_STAGE_META: Record<DebugStageKey, { label: string; description: string }> = {
+  detect: {
+    label: "detect",
+    description: "Source-style detection looks uncertain, so downstream parsing may be shaky.",
+  },
+  extract: {
+    label: "extract",
+    description: "Core field extraction looks incomplete or unstable, such as authors, title, year, or venue.",
+  },
+  enrich: {
+    label: "enrich",
+    description: "Authority or metadata enrichment could not confidently verify the citation.",
+  },
+  validate: {
+    label: "validate",
+    description: "Health checks flagged the citation for manual review or further investigation.",
+  },
+  render: {
+    label: "render",
+    description: "Output formatting or style assertions indicate the final citation still needs cleanup.",
+  },
+  dedupe: {
+    label: "dedupe",
+    description: "This citation is part of a duplicate cluster and may need merge or selection review.",
+  },
+};
+
+function deriveDebugStages(
+  ref: ConvertedReference,
+  health: { state: HealthState; reasons: string[] } | undefined,
+  isInDuplicateGroup: boolean,
+) {
+  const stages = new Set<DebugStageKey>();
+  const warningCodes = (ref.warnings ?? [])
+    .map((warning) => warning.match(/^(?:warning|error):\s*([a-z0-9_.-]+)/i)?.[1]?.toLowerCase())
+    .filter((code): code is string => Boolean(code));
+  const healthReasons = (health?.reasons ?? []).join(" ").toLowerCase();
+  const parsed = ref.parsedData ?? {};
+
+  if (ref.styleDetectionFailed) {
+    stages.add("detect");
+  }
+
+  const missingCoreFields =
+    !parsed?.title
+    || !parsed?.year
+    || !parsed?.authors?.length
+    || (!parsed?.journal && !parsed?.conferenceTitle && !parsed?.bookTitle && ["journal", "conference", "bookChapter"].includes(ref.referenceType));
+  const extractionWarnings = warningCodes.some((code) => [
+    "missing_field",
+    "venue_missing_for_conference",
+    "author_structure_unstable",
+    "connector_as_author",
+    "initials_as_surname",
+    "missing_locator",
+    "locator_missing_from_source",
+    "placeholder_journal",
+    "placeholder_volume",
+  ].includes(code));
+  const extractionReasons =
+    /required field missing|author names were parsed in an unstable format|placeholder venue|journal or venue is missing|publisher missing/.test(healthReasons);
+  if (missingCoreFields || extractionWarnings || extractionReasons) {
+    stages.add("extract");
+  }
+
+  if (["no_match", "error", "timeout"].includes(ref.authorityStatus ?? "")) {
+    stages.add("enrich");
+  }
+
+  const assertionFailed = (ref.assertionSummary?.failed ?? 0) > 0;
+  const renderWarnings = warningCodes.some((code) => [
+    "render_output_empty_or_invalid",
+    "missing_locator",
+    "locator_missing_from_source",
+  ].includes(code));
+  if (assertionFailed || renderWarnings) {
+    stages.add("render");
+  }
+
+  if (health && health.state !== "clean") {
+    stages.add("validate");
+  }
+
+  if (isInDuplicateGroup) {
+    stages.add("dedupe");
+  }
+
+  if (stages.size === 0 && health?.state === "action_needed") {
+    stages.add("validate");
+  }
+
+  return [...stages];
+}
+
 // ---------------------------------------------------------------------------
 // Helper: Render citation text with inline underline highlights for failed assertions
 // ---------------------------------------------------------------------------
@@ -648,6 +744,7 @@ export default function ReferenceOutput({
   const [keepItalics, setKeepItalics] = useState(false);
   const [hasShownDoiToast, setHasShownDoiToast] = useState(false);
   const [healthFilter, setHealthFilter] = useState<HealthState | "all">("all");
+  const [showStageDebug, setShowStageDebug] = useState(false);
   const [isScrollPastThreshold, setIsScrollPastThreshold] = useState(false);
   const [selectedDuplicates, setSelectedDuplicates] = useState<Record<string, string>>({});
 
@@ -998,6 +1095,29 @@ export default function ReferenceOutput({
     return { total, clean, review, actionNeeded, duplicates };
   }, [convertedReferences, detectedGroups, healthById]);
 
+  const stageDebugSummary = useMemo(() => {
+    const counts = new Map<DebugStageKey, number>();
+
+    for (const ref of visibleReferences) {
+      const health = healthById[ref.id];
+      if (!health || health.state === "clean") continue;
+
+      const stages = deriveDebugStages(ref, health, groupedReferenceIds.has(ref.id));
+      for (const stage of stages) {
+        counts.set(stage, (counts.get(stage) ?? 0) + 1);
+      }
+    }
+
+    return [...counts.entries()]
+      .map(([key, count]) => ({
+        key,
+        count,
+        label: DEBUG_STAGE_META[key].label,
+        description: DEBUG_STAGE_META[key].description,
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [groupedReferenceIds, healthById, visibleReferences]);
+
   useEffect(() => {
     if (!healthStats.total) return;
     // Lightweight instrumentation hook for future tuning of thresholds.
@@ -1132,8 +1252,58 @@ export default function ReferenceOutput({
           >
             {showOriginalInput ? "Hide original input" : "Show original input for all"}
           </Button>
+          <Button
+            variant={showStageDebug ? "default" : "outline"}
+            size="sm"
+            className="text-xs sm:text-sm"
+            onClick={() => setShowStageDebug((prev) => !prev)}
+          >
+            {showStageDebug ? "Hide review hotspots" : "Show review hotspots"}
+          </Button>
         </div>
       </div>
+
+      {showStageDebug && (
+        <div className="rounded-xl border border-border/60 bg-card/80 p-3 sm:p-4 shadow-sm">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h4 className="text-sm font-semibold text-foreground">Review Hotspots</h4>
+              <p className="text-xs text-muted-foreground">
+                Debug view for citations currently flagged as review or action needed.
+              </p>
+            </div>
+            <Badge variant="outline" className="w-fit text-xs">
+              {visibleReferences.filter((ref) => healthById[ref.id]?.state !== "clean").length} flagged in view
+            </Badge>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {stageDebugSummary.length > 0 ? (
+              <TooltipProvider>
+                {stageDebugSummary.map((stage) => (
+                  <Tooltip key={stage.key}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex items-center rounded-full border border-border/70 bg-muted/60 px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-primary/40 hover:bg-primary/10"
+                      >
+                        {stage.label} - {stage.count}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-xs">
+                      <p>{stage.description}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </TooltipProvider>
+            ) : (
+              <div className="text-xs text-muted-foreground">
+                No current review hotspots in this output set.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Output Display */}
       <div className="bg-muted/50 rounded-lg p-3 sm:p-4 min-h-[200px] overflow-x-auto">

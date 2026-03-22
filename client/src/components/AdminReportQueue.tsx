@@ -102,6 +102,7 @@ export default function AdminReportQueue() {
   const [sortKey, setSortKey] = useState<SortKey>("freq");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [selectedFingerprints, setSelectedFingerprints] = useState<Set<string>>(new Set());
+  const [showStageFocus, setShowStageFocus] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -148,6 +149,15 @@ export default function AdminReportQueue() {
   const selectedGroups = sortedGroups.filter((group) => selectedFingerprints.has(group.fingerprint));
   const selectedReportIds = selectedGroups.flatMap((group) => group.reports.map((report) => report.id));
   const allVisibleSelected = sortedGroups.length > 0 && sortedGroups.every((group) => selectedFingerprints.has(group.fingerprint));
+  const stageFocusEntries = Object.entries(
+    sortedGroups.reduce<Record<string, number>>((acc, group) => {
+      const latest = group.reports[0];
+      const stage = latest?.likelyStageBlame?.likelyStage ?? "unknown";
+      acc[stage] = (acc[stage] ?? 0) + group.totalCount;
+      return acc;
+    }, {}),
+  )
+    .sort((left, right) => right[1] - left[1]);
 
   const deleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
@@ -256,6 +266,21 @@ export default function AdminReportQueue() {
           <p className="text-muted-foreground mt-1">
             Review and resolve citation parsing failures. Grouped by similarity.
           </p>
+          <div className="mt-4">
+            <Button
+              type="button"
+              variant={showStageFocus ? "default" : "outline"}
+              size="sm"
+              className="gap-2"
+              onClick={() => setShowStageFocus((current) => !current)}
+            >
+              <AlertCircle className="h-4 w-4" />
+              {showStageFocus ? "Hide Stage Hotspots" : "Show Stage Hotspots"}
+            </Button>
+            <p className="mt-2 text-xs text-muted-foreground">
+              See where failures are clustering by stage, such as `extract - 4` or `enrich - 2`.
+            </p>
+          </div>
         </div>
         
         <div className="flex items-center gap-2">
@@ -292,6 +317,27 @@ export default function AdminReportQueue() {
           </Select>
         </div>
       </div>
+
+      {showStageFocus && (
+        <Card className="border-amber-200/60 bg-amber-50/40 dark:bg-amber-950/10 dark:border-amber-900/40">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Review Focus By Stage</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {stageFocusEntries.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No stage blame data available for the current filter.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {stageFocusEntries.map(([stage, count]) => (
+                  <Badge key={stage} variant="secondary" className="px-3 py-1 text-xs uppercase tracking-wide">
+                    {stage} - {count}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-100 dark:border-blue-900">

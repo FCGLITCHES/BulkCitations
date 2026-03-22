@@ -181,12 +181,60 @@ export function repairGroupAuthorFragments(parts: string[]): string[] {
 
 export type LocatorKind = 'pages' | 'article-number' | 'title_fragment';
 
+const LOCATOR_IDENTIFIER_NOISE_PATTERN = /(?:https?:\/\/(?:dx\.)?doi\.org\/\S+|https?:\/\/\S+|\bdoi:\s*10\.\d{4,9}\/\S+|\b10\.\d{4,9}\/\S+)/gi;
+
+function stripLocatorIdentifierNoise(token: string): string {
+  return normalizeWhitespace(token.replace(LOCATOR_IDENTIFIER_NOISE_PATTERN, ' '));
+}
+
+function normalizePageRangeOrder(token: string): string {
+  const normalized = token.replace(/–/g, '-');
+  const rangeMatch = normalized.match(/^([A-Za-z]?)(\d+)-([A-Za-z]?)(\d+)$/);
+  if (!rangeMatch) return normalized;
+
+  const [, rawStartPrefix = '', startDigits, rawEndPrefix = '', endDigits] = rangeMatch;
+  const startPrefix = rawStartPrefix;
+  const endPrefix = rawEndPrefix || startPrefix;
+  const compatiblePrefixes = !rawStartPrefix || !rawEndPrefix || rawStartPrefix.toLowerCase() === rawEndPrefix.toLowerCase();
+  if (!compatiblePrefixes) return normalized;
+
+  const startValue = Number.parseInt(startDigits, 10);
+  const rawEndValue = Number.parseInt(endDigits, 10);
+
+  if (!Number.isFinite(startValue) || !Number.isFinite(rawEndValue)) return normalized;
+
+  // Preserve likely article-number-style locators such as "102131-10".
+  if (/^[A-Za-z]?\d{5,}-\d{1,3}$/i.test(normalized)) return normalized;
+
+  // Preserve common shortened page ranges like "355-62" or "1947-99".
+  if (endDigits.length < startDigits.length) {
+    const expandedEnd = Number.parseInt(
+      `${startDigits.slice(0, startDigits.length - endDigits.length)}${endDigits}`,
+      10,
+    );
+    const shorthandDelta = expandedEnd - startValue;
+    if (Number.isFinite(expandedEnd) && shorthandDelta >= 0 && shorthandDelta <= 60) {
+      return normalized;
+    }
+  }
+
+  if (rawEndValue < startValue) {
+    const left = `${endPrefix}${endDigits}`;
+    const right = `${startPrefix}${startDigits}`;
+    return `${left}-${right}`;
+  }
+
+  return normalized;
+}
+
 export function classifyLocatorToken(token: string): { kind: LocatorKind; value: string | null } {
-  const normalized = normalizeWhitespace(token)
-    .replace(/^pp?\.?\s*/i, '')
-    .replace(/^pages?\s+/i, '')
-    .replace(/[;,.:]+$/g, '')
-    .trim();
+  const normalized = normalizePageRangeOrder(
+    stripLocatorIdentifierNoise(normalizeWhitespace(token))
+      .replace(/^pp?\.?\s*/i, '')
+      .replace(/^pages?\s+/i, '')
+      .replace(/[;,.:]+$/g, '')
+      .trim(),
+  );
 
   if (!normalized) {
     return { kind: 'title_fragment', value: null };
