@@ -20,6 +20,7 @@ type Args = {
   filter?: CitationReviewBucket;
   outputDir: string;
   useStdin: boolean;
+  dedup: boolean;
 };
 
 const DEFAULT_FIXTURE = path.resolve(process.cwd(), 'scripts/data/stress-batch-20260321.txt');
@@ -30,6 +31,7 @@ function parseArgs(argv: string[]): Args {
   const args: Args = {
     outputDir: DEFAULT_OUTPUT_DIR,
     useStdin: false,
+    dedup: false,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -53,6 +55,9 @@ function parseArgs(argv: string[]): Args {
         break;
       case '--stdin':
         args.useStdin = true;
+        break;
+      case '--dedup':
+        args.dedup = true;
         break;
       default:
         break;
@@ -301,7 +306,7 @@ async function main() {
     inputStyle: 'auto',
     outputStyle: 'apa',
     enrich: true,
-    dedup: false,
+    dedup: args.dedup,
     group: false,
     debug: true,
   }).finally(() => {
@@ -325,6 +330,7 @@ async function main() {
       source: input.source,
       fixtureStem: input.fixtureStem,
       bytes: Buffer.byteLength(input.content, 'utf8'),
+      dedup: args.dedup,
     },
     job: {
       jobId: response.job_id,

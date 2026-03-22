@@ -1,8 +1,9 @@
 import type { CanonicalCitation, CitationQualityScore } from '@shared/schema';
+import { isPlaceholderFieldValue } from '@shared/referencePlaceholders';
 import { isGroupAuthor } from '../../shared/citationSemantics.js';
 import { matchTitlesStrict } from '../resolution.js';
 import type { V2Stage } from '../contracts.js';
-import { addCitationStageLog, average, createStageDiagnostic } from '../utils.js';
+import { addCitationStageLog, average, createStageDiagnostic, normalizeWhitespace } from '../utils.js';
 import {
   countStructuralValidationIssues,
   getRequirementProfile,
@@ -31,6 +32,18 @@ const SUSPECTED_SPLIT_CODES = new Set([
 ]);
 
 const DUPLICATE_AUTO_READY_THRESHOLD = 0.85;
+const CLEAN_UNRESOLVED_DUPLICATE_READY_THRESHOLD = 0.82;
+const CLEAN_UNRESOLVED_ACTIVE_READY_THRESHOLD = 0.83;
+const GENERIC_VENUE_PATTERN = /^(?:journal|conference|proceedings|book|report|website|site|web(?:page)?)(?:\s+(?:vol(?:ume)?|issue|no|number|pp?|pages?|article|\d+))*$/i;
+const CLEAN_UNRESOLVED_VALIDATION_CODES = new Set([
+  'no_exact_external_match',
+  'ambiguous_external_match',
+  'provider_no_coverage',
+  'provider_resolution_error',
+  'authority_rate_limited',
+  'authority_fields_applied',
+  'resolution_year_tolerance_applied',
+]);
 
 function grade(overall: number): 'A' | 'B' | 'C' | 'F' {
   if (overall >= 0.9) return 'A';
@@ -94,6 +107,48 @@ function buildFieldScores(citation: CanonicalCitation): Record<string, number> {
   };
 }
 
+function titleLooksSubstantive(citation: CanonicalCitation): boolean {
+  const title = normalizeWhitespace(citation.title.value ?? '');
+  if (!title) return false;
+  const tokens = title.split(/\s+/).filter(Boolean);
+  if (tokens.length < 4) return false;
+  if (/\?/.test(title)) return false;
+  if (/^[\p{L}'’.-]+\s*,\s*[\p{L}'’.-]+$/u.test(title)) return false;
+  if (/\b(?:journal|conference|vol(?:ume)?|issue|pp?|pages?)\b/i.test(title) && /(?:19|20)\d{2}|\?/.test(title)) {
+    return false;
+  }
+  return true;
+}
+
+function venueLooksSubstantive(citation: CanonicalCitation): boolean {
+  const venue = normalizeWhitespace(
+    citation.conferenceTitle.value
+    ?? citation.bookTitle.value
+    ?? citation.journal.value
+    ?? citation.publisher.value
+    ?? citation.institution.value
+    ?? '',
+  );
+  if (!venue) return false;
+  if (/\?/.test(venue)) return false;
+
+  const normalized = normalizeWhitespace(
+    venue
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]+/gu, ' '),
+  );
+
+  if (!normalized) return false;
+  if (isPlaceholderFieldValue(normalized)) return false;
+  if (GENERIC_VENUE_PATTERN.test(normalized)) return false;
+  if (/(?:^|[\s,])(?:vol(?:ume)?|issue|pp?|pages?)\.?$/i.test(venue)) return false;
+  return normalized.split(/\s+/).filter(Boolean).some((token) => token.length >= 4);
+}
+
+function onlyCleanUnresolvedIssues(citation: CanonicalCitation): boolean {
+  return citation.validationIssues.every((issue) => CLEAN_UNRESOLVED_VALIDATION_CODES.has(issue.code));
+}
+
 function keyFieldConfidenceReady(citation: CanonicalCitation, fieldScores: Record<string, number>): boolean {
   const profile = getRequirementProfile(citation.referenceType);
   return profile.required.every((field) => {
@@ -133,6 +188,32 @@ function allowsLocalReadyOnResolutionMiss(citation: CanonicalCitation): boolean 
 function localReadyWithoutResolution(citation: CanonicalCitation, overall: number, fieldScores: Record<string, number>): boolean {
   if (citation.resolution) return false;
   return overall >= 0.9 && keyFieldConfidenceReady(citation, fieldScores);
+}
+
+function localReadyWithCleanUnresolvedResolution(
+  citation: CanonicalCitation,
+  overall: number,
+  fieldScores: Record<string, number>,
+  missingRequired: string[],
+  missingExpected: string[],
+  noErrorLevelIssues: boolean,
+): boolean {
+  if (!citation.resolution || !['no_exact_match', 'ambiguous_match', 'provider_no_coverage', 'provider_error'].includes(citation.resolution.status)) {
+    return false;
+  }
+  if (!noErrorLevelIssues || missingRequired.length > 0 || missingExpected.length > 0) return false;
+  if (!onlyCleanUnresolvedIssues(citation)) return false;
+  if (!titleLooksSubstantive(citation) || !venueLooksSubstantive(citation)) return false;
+
+  const authorRequired = getRequirementProfile(citation.referenceType).required.includes('authors');
+  if (authorRequired && fieldScores.authors < 0.84) return false;
+  if (fieldScores.title < 0.88 || fieldScores.year < 0.88) return false;
+
+  const threshold = citation.status === 'duplicate'
+    ? CLEAN_UNRESOLVED_DUPLICATE_READY_THRESHOLD
+    : CLEAN_UNRESOLVED_ACTIVE_READY_THRESHOLD;
+
+  return overall >= threshold;
 }
 
 function duplicateAutoReady(citation: CanonicalCitation, overall: number): boolean {
@@ -285,6 +366,14 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   const noErrorLevelIssues = errorIssues.length === 0;
   const readyByResolution = doiVerified(citation) || exactExternalTitleMatch(citation) || localReadyWithoutCoverage(citation, overall, fieldScores);
   const readyByLocalOnly = localReadyWithoutResolution(citation, overall, fieldScores);
+  const readyByCleanUnresolvedResolution = localReadyWithCleanUnresolvedResolution(
+    citation,
+    overall,
+    fieldScores,
+    missingRequired,
+    missingExpected,
+    noErrorLevelIssues,
+  );
   const readyByDuplicateConfidence = duplicateAutoReady(citation, overall);
   const actionNeeded = citation.status !== 'duplicate' && (
     hasInsufficientEvidence
@@ -301,7 +390,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
     ].includes(issue.code))
   );
 
-  const reviewNeeded = (citation.status === 'duplicate' && !readyByDuplicateConfidence)
+  const reviewNeeded = (citation.status === 'duplicate' && !readyByDuplicateConfidence && !readyByCleanUnresolvedResolution)
     || hasAmbiguousMatch
     || hasResolutionMiss
     || hasProviderError
@@ -323,7 +412,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
       ...(hasConfirmedSplit ? ['Confirmed split contamination suggests the citation contains more than one reference or a truncated fragment.'] : []),
       ...(hasHardConflicts ? [`Verified external data conflicted with extracted fields: ${citation.resolution?.conflictFields.join(', ')}.`] : []),
     ];
-  } else if (noErrorLevelIssues && (readyByResolution || readyByLocalOnly || readyByDuplicateConfidence)) {
+  } else if (noErrorLevelIssues && (readyByResolution || readyByLocalOnly || readyByCleanUnresolvedResolution || readyByDuplicateConfidence)) {
     bucket = 'ready';
     bucketReasons = [
       ...(doiVerified(citation) ? ['Verified by DOI against Crossref.'] : []),
@@ -332,7 +421,10 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
         ? ['High-confidence local parse with no exact provider coverage.']
         : []),
       ...(!readyByResolution && readyByLocalOnly ? ['High-confidence local parse with no unresolved validation errors.'] : []),
-      ...(!readyByResolution && !readyByLocalOnly && readyByDuplicateConfidence
+      ...(!readyByResolution && !readyByLocalOnly && readyByCleanUnresolvedResolution
+        ? ['High-confidence local parse remained ready despite unresolved authority verification.']
+        : []),
+      ...(!readyByResolution && !readyByLocalOnly && !readyByCleanUnresolvedResolution && readyByDuplicateConfidence
         ? ['High-confidence parse stayed ready even though the citation belongs to a duplicate family.']
         : []),
     ];

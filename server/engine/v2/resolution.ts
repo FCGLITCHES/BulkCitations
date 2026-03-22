@@ -6,9 +6,16 @@ import type {
   ResolutionMetadata,
   ResolutionQueryEvidence,
 } from '@shared/schema';
-import { isGroupAuthor, normalizeGroupAuthor, normalizeProtectedTokenValue } from '../shared/citationSemantics.js';
+import { getProtectedContainerCorruptionReasons } from '@shared/referenceHealthHeuristics';
+import { isPlaceholderFieldValue } from '@shared/referencePlaceholders';
+import {
+  classifyLocatorToken,
+  isGroupAuthor,
+  normalizeGroupAuthor,
+  normalizeProtectedTokenValue,
+} from '../shared/citationSemantics.js';
 import type { ResolutionCandidateRecord } from './contracts.js';
-import { normalizeWhitespace } from './utils.js';
+import { normalizeDoiValue, normalizeWhitespace } from './utils.js';
 
 const PROTECTED_TOKEN_RULES = [
   { canonical: 'U-Net', pattern: /\bU[\s-]?Net\b/gi },
@@ -17,6 +24,8 @@ const PROTECTED_TOKEN_RULES = [
   { canonical: 'BMJ', pattern: /\bBMJ\b/gi },
   { canonical: 'GPT-5.1', pattern: /\bGPT[\s-]?5\.1\b/gi },
 ] as const;
+
+const GENERIC_VENUE_PATTERN = /^(?:journal|conference|proceedings|book|report|website|site|web(?:page)?)(?:\s+(?:vol(?:ume)?|issue|no|number|pp?|pages?|article|\d+|\?))*$/i;
 
 type TitleMatchResult = {
   accepted: boolean;
@@ -89,6 +98,93 @@ export function normalizeSurnameForResolution(value: string | null | undefined):
 
 function normalizeGroupNameForResolution(value: string | null | undefined): string {
   return normalizeSurnameForResolution(normalizeGroupAuthor(value ?? ''));
+}
+
+function normalizeCandidateAuthorSurname(author: string | null | undefined): string {
+  const normalized = normalizeWhitespace(author ?? '');
+  if (!normalized) return '';
+  if (normalized.includes(',')) {
+    return normalizeSurnameForResolution(normalized.split(',')[0] ?? '');
+  }
+
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  if (tokens.length <= 1) {
+    return normalizeSurnameForResolution(normalized);
+  }
+
+  const particles = new Set(['da', 'de', 'del', 'der', 'di', 'du', 'la', 'le', 'van', 'von', 'bin', 'ibn']);
+  let start = tokens.length - 1;
+  while (start > 0 && particles.has(tokens[start - 1]?.toLowerCase() ?? '')) {
+    start -= 1;
+  }
+
+  return normalizeSurnameForResolution(tokens.slice(start).join(' '));
+}
+
+function normalizeResolutionVenue(value: string | null | undefined): string {
+  return normalizeWhitespace(
+    normalizeProtectedTokenValue(value ?? '')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]+/gu, ' '),
+  );
+}
+
+function venueLooksSubstantive(value: string | null | undefined): boolean {
+  const raw = normalizeWhitespace(value ?? '');
+  const normalized = normalizeResolutionVenue(value);
+  if (!raw || !normalized) return false;
+  if (isPlaceholderFieldValue(normalized)) return false;
+  if (/\?/.test(raw)) return false;
+  if (GENERIC_VENUE_PATTERN.test(normalized)) return false;
+  return normalized.split(/\s+/).filter(Boolean).some((token) => token.length >= 4);
+}
+
+function citationVenueValue(citation: CanonicalCitation): string {
+  return citation.journal.value ?? citation.conferenceTitle.value ?? citation.bookTitle.value ?? citation.publisher.value ?? '';
+}
+
+function localVenueSuggestsCrossTypeUpgrade(citation: CanonicalCitation): boolean {
+  const venue = citationVenueValue(citation);
+  const normalized = normalizeResolutionVenue(venue);
+  if (!venueLooksSubstantive(venue)) return true;
+  return /\b(proceedings|conference|symposium|workshop|lecture\s+notes|drops|ebooks?)\b/i.test(normalized);
+}
+
+function normalizeLocatorForResolution(value: string | null | undefined): string {
+  const classified = classifyLocatorToken(normalizeWhitespace(value ?? ''));
+  return classified.value?.replace(/–/g, '-') ?? '';
+}
+
+function parseLocatorRange(value: string): { start: string; end?: string } | null {
+  const normalized = normalizeLocatorForResolution(value);
+  if (!normalized) return null;
+  const rangeMatch = normalized.match(/^([A-Za-z]?\d+)-([A-Za-z]?\d+)$/);
+  if (rangeMatch) {
+    return {
+      start: rangeMatch[1] ?? '',
+      end: rangeMatch[2] ?? '',
+    };
+  }
+  if (/^[A-Za-z]?\d+$/.test(normalized)) {
+    return { start: normalized };
+  }
+  return null;
+}
+
+function locatorCompatibility(localLocator: string | null | undefined, candidateLocator: string | null | undefined): number {
+  const left = normalizeLocatorForResolution(localLocator);
+  const right = normalizeLocatorForResolution(candidateLocator);
+  if (!left || !right) return 0;
+  if (left === right) return 1;
+
+  const leftRange = parseLocatorRange(left);
+  const rightRange = parseLocatorRange(right);
+  if (!leftRange || !rightRange) return 0;
+
+  if (leftRange.start === rightRange.start && leftRange.end === rightRange.end) return 1;
+  if (leftRange.start === rightRange.start) return 0.8;
+  if (leftRange.end && rightRange.end && leftRange.end === rightRange.end) return 0.65;
+  return 0;
 }
 
 function tokenSet(tokens: string[]): Set<string> {
@@ -206,18 +302,25 @@ function countAdditionalAuthorMatches(citationAuthors: CanonicalAuthor[], candid
     .filter(Boolean);
   const actual = candidateAuthors
     .slice(1, 6)
-    .map((author) => normalizeSurnameForResolution(author.split(',')[0] ?? author))
+    .map((author) => normalizeCandidateAuthorSurname(author))
     .filter(Boolean);
 
   const actualSet = new Set(actual);
   return expected.filter((author) => actualSet.has(author)).length;
 }
 
-function sourceTypeCompatible(referenceType: CanonicalReferenceType, sourceType?: string): boolean {
+function sourceTypeCompatible(
+  referenceType: CanonicalReferenceType,
+  sourceType?: string,
+  allowPlaceholderFlex = false,
+): boolean {
   const normalized = normalizeWhitespace((sourceType ?? '').toLowerCase());
   if (!normalized) return true;
   switch (referenceType) {
     case 'journal':
+      if (allowPlaceholderFlex) {
+        return /(journal|article|conference|proceeding|paper|book|monograph|chapter|report)/.test(normalized);
+      }
       return /(journal|article)/.test(normalized);
     case 'chapter':
       return /(chapter|section|book)/.test(normalized);
@@ -267,6 +370,65 @@ function venueTokenOverlap(citation: CanonicalCitation, candidate: ResolutionCan
   return overlapRatio(left.tokens, right.tokens);
 }
 
+function candidateProtectedVenueMismatch(citation: CanonicalCitation, candidate: ResolutionCandidateRecord): boolean {
+  return getProtectedContainerCorruptionReasons(
+    citation.raw,
+    {
+      journal: candidate.venue ?? candidate.publisher ?? undefined,
+      conferenceTitle: undefined,
+      bookTitle: undefined,
+    },
+    candidate.title,
+  ).length > 0;
+}
+
+function candidateMetadataRichness(candidate: ResolutionCandidateRecord): number {
+  return [
+    candidate.doi,
+    candidate.url,
+    candidate.venue,
+    candidate.publisher,
+    candidate.volume,
+    candidate.issue,
+    candidate.pages,
+    candidate.year,
+  ].filter(Boolean).length + Math.min(candidate.authors?.length ?? 0, 5) * 0.1;
+}
+
+function normalizedCandidatePrimaryAuthor(candidate: ResolutionCandidateRecord): string {
+  return normalizeCandidateAuthorSurname(candidate.authors?.[0] ?? '');
+}
+
+function candidatesAreEquivalent(left: ResolutionCandidateRecord, right: ResolutionCandidateRecord): boolean {
+  const leftDoi = left.doi ? normalizeDoiValue(left.doi).toLowerCase() : '';
+  const rightDoi = right.doi ? normalizeDoiValue(right.doi).toLowerCase() : '';
+  if (leftDoi && rightDoi && leftDoi === rightDoi) return true;
+
+  if (normalizeResolutionTitle(left.title).normalized !== normalizeResolutionTitle(right.title).normalized) return false;
+  if (normalizedCandidatePrimaryAuthor(left) !== normalizedCandidatePrimaryAuthor(right)) return false;
+  if (left.year != null && right.year != null && left.year !== right.year) return false;
+
+  const venueOverlap = overlapRatio(
+    normalizeResolutionTitle(left.venue ?? left.publisher ?? '').tokens,
+    normalizeResolutionTitle(right.venue ?? right.publisher ?? '').tokens,
+  );
+
+  return venueOverlap >= 0.85 || (!left.venue && !right.venue);
+}
+
+function candidateProviderPriority(candidate: ResolutionCandidateRecord): number {
+  switch (candidate.provider) {
+    case 'crossref':
+      return 3;
+    case 'pubmed':
+      return 2;
+    case 'openalex':
+      return 1;
+    default:
+      return 0;
+  }
+}
+
 function groupAuthorAgreement(groupAuthorLiteral: string, candidateAuthors: string[]): boolean {
   if (candidateAuthors.length === 0) return false;
   const target = normalizeGroupNameForResolution(groupAuthorLiteral);
@@ -303,17 +465,18 @@ export function evaluateResolutionCandidate(
   const candidateAuthors = candidate.authors ?? [];
   let authorGatePassed = false;
   let extraAuthorMatches = 0;
+  const authorEvidenceIsSparse = citation.authors.confidence < 0.9 || citation.authors.value.length < 3;
 
   if (queryEvidence.groupAuthorLiteral) {
     authorGatePassed = groupAuthorAgreement(queryEvidence.groupAuthorLiteral, candidateAuthors);
     if (!authorGatePassed) reasons.push('group_author_mismatch');
   } else if (queryEvidence.firstAuthorSurname) {
     const expectedSurname = normalizeSurnameForResolution(queryEvidence.firstAuthorSurname);
-    const candidatePrimary = normalizeSurnameForResolution(candidateAuthors[0]?.split(',')[0] ?? candidateAuthors[0] ?? '');
+    const candidatePrimary = normalizeCandidateAuthorSurname(candidateAuthors[0] ?? '');
     authorGatePassed = Boolean(expectedSurname && candidatePrimary && expectedSurname === candidatePrimary);
     if (!authorGatePassed) reasons.push('first_author_mismatch');
     extraAuthorMatches = countAdditionalAuthorMatches(citation.authors.value, candidateAuthors);
-    if (authorGatePassed && citation.authors.value.length >= 3 && candidateAuthors.length >= 3 && extraAuthorMatches < 1) {
+    if (authorGatePassed && citation.authors.value.length >= 3 && candidateAuthors.length >= 3 && extraAuthorMatches < 1 && !authorEvidenceIsSparse) {
       authorGatePassed = false;
       reasons.push('coauthor_overlap_missing');
     }
@@ -350,7 +513,26 @@ export function evaluateResolutionCandidate(
   }
 
   const venueOverlap = venueTokenOverlap(citation, candidate);
-  const sourceTypeScore = sourceTypeCompatible(citation.referenceType, candidate.sourceType) ? 1 : 0;
+  if (candidateProtectedVenueMismatch(citation, candidate)) {
+    reasons.push('protected_venue_mismatch');
+    return {
+      candidate,
+      accepted: false,
+      band: 0,
+      score: 0,
+      reasons,
+      yearToleranceApplied: year.toleranceApplied,
+      extraAuthorMatches,
+      venueOverlap,
+      titleMatch,
+    };
+  }
+
+  const sourceTypeScore = sourceTypeCompatible(
+    citation.referenceType,
+    candidate.sourceType,
+    localVenueSuggestsCrossTypeUpgrade(citation),
+  ) ? 1 : 0;
   if (!sourceTypeScore && citation.referenceType !== 'unknown') {
     reasons.push('source_type_incompatible');
     return {
@@ -365,11 +547,13 @@ export function evaluateResolutionCandidate(
       titleMatch,
     };
   }
+  const locatorScore = locatorCompatibility(citation.pages.value, candidate.pages);
   const band: 1 | 2 = titleMatch.exact ? 2 : 1;
   const score = (titleMatch.exact ? 100 : 90)
     + (year.toleranceApplied ? 4 : 10)
     + Math.min(extraAuthorMatches, 3) * 5
     + Math.round(venueOverlap * 10)
+    + Math.round(locatorScore * 8)
     + (sourceTypeScore * 2);
 
   return {
@@ -406,6 +590,21 @@ export function chooseBestResolutionCandidate(
   }
 
   if (accepted.length >= 2 && accepted[0].band === accepted[1].band && accepted[0].score === accepted[1].score) {
+    if (candidatesAreEquivalent(accepted[0].candidate, accepted[1].candidate)) {
+      const richer = [...accepted]
+        .filter((candidate) => candidate.band === accepted[0].band && candidate.score === accepted[0].score)
+        .sort((left, right) =>
+          candidateMetadataRichness(right.candidate) - candidateMetadataRichness(left.candidate)
+          || candidateProviderPriority(right.candidate) - candidateProviderPriority(left.candidate)
+        )[0];
+      if (richer) {
+        return {
+          accepted: richer,
+          ambiguous: false,
+          evaluated,
+        };
+      }
+    }
     return {
       ambiguous: true,
       evaluated,

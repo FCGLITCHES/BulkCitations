@@ -383,4 +383,145 @@ describe('v2 validation false-positive regression checks', () => {
     expect(result.quality?.bucket).toBe('ready');
     expect(result.quality?.bucketReasons).toContain('High-confidence parse stayed ready even though the citation belongs to a duplicate family.');
   });
+
+  it('allows clean duplicate citations with unresolved authority matches to stay ready when only benign resolution warnings remain', async () => {
+    const citation = {
+      ...makeJournalCitation(
+        'Baron RM, Kenny DA. The moderator-mediator variable distinction in social psychological research: Conceptual, strategic, and statistical considerations. Journal of Personality and Social Psychology. 1986;51(6):1173-1182.',
+      ),
+      status: 'duplicate',
+      duplicate: {
+        status: 'duplicate',
+        method: 'structural',
+        duplicateOf: 'base-citation-id',
+        mergeReason: 'structural_duplicate_group',
+      },
+      authors: createFieldValue([
+        { first: 'R. M.', last: 'Baron', initials: 'R. M.' },
+        { first: 'D. A.', last: 'Kenny', initials: 'D. A.' },
+      ], 'extracted', 0.9, 'extract'),
+      title: createFieldValue('The moderator-mediator variable distinction in social psychological research: Conceptual, strategic, and statistical considerations', 'extracted', 0.92, 'extract'),
+      year: createFieldValue(1986, 'extracted', 0.92, 'extract'),
+      journal: createFieldValue('Journal of Personality and Social Psychology', 'extracted', 0.82, 'extract'),
+      volume: createFieldValue('51', 'extracted', 0.82, 'extract'),
+      issue: createFieldValue('6', 'extracted', 0.8, 'extract'),
+      pages: createFieldValue('1173-1182', 'extracted', 0.82, 'extract'),
+      resolution: {
+        status: 'ambiguous_match',
+        resolvedAt: new Date().toISOString(),
+        provider: 'strict-network-resolution',
+        matchStrategy: 'none',
+        candidateCount: 2,
+        rejectedReasons: ['ambiguous_match'],
+        appliedFields: [],
+        conflictFields: [],
+        yearToleranceApplied: false,
+        queryEvidence: {
+          titlePresent: true,
+          titleTokenCount: 13,
+          firstAuthorSurname: 'Baron',
+          year: 1986,
+          venue: 'Journal of Personality and Social Psychology',
+          sourceType: 'journal',
+        },
+      },
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    };
+
+    const result = await validateAndScore(citation);
+    expect(result.quality?.bucket).toBe('ready');
+    expect(result.quality?.bucketReasons).toContain('High-confidence local parse remained ready despite unresolved authority verification.');
+  });
+
+  it('allows clean conference citations with no exact provider match to stay ready when venue and title evidence remain strong', async () => {
+    const citation = {
+      ...createEmptyCitation('Sanger F, Nicklen S, Coulson AR. DNA sequencing with chain-terminating inhibitors. In Proceedings of the National Academy of Sciences 1977 (pp. 5463-5467). IEEE.'),
+      referenceType: 'conference',
+      authors: createFieldValue([
+        { first: 'F.', last: 'Sanger', initials: 'F.' },
+        { first: 'S.', last: 'Nicklen', initials: 'S.' },
+        { first: 'A. R.', last: 'Coulson', initials: 'A. R.' },
+      ], 'extracted', 0.97, 'extract'),
+      title: createFieldValue('DNA sequencing with chain-terminating inhibitors', 'extracted', 0.9, 'extract'),
+      year: createFieldValue(1977, 'extracted', 0.92, 'extract'),
+      conferenceTitle: createFieldValue('Proceedings of the National Academy of Sciences 1977', 'extracted', 0.82, 'extract'),
+      pages: createFieldValue('5463-5467', 'extracted', 0.82, 'extract'),
+      resolution: {
+        status: 'no_exact_match',
+        resolvedAt: new Date().toISOString(),
+        provider: 'strict-network-resolution',
+        matchStrategy: 'none',
+        candidateCount: 0,
+        rejectedReasons: [],
+        appliedFields: [],
+        conflictFields: [],
+        yearToleranceApplied: false,
+        queryEvidence: {
+          titlePresent: true,
+          titleTokenCount: 4,
+          firstAuthorSurname: 'Sanger',
+          year: 1977,
+          venue: 'Proceedings of the National Academy of Sciences 1977',
+          sourceType: 'conference',
+        },
+      },
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    };
+
+    const result = await validateAndScore(citation);
+    expect(result.quality?.bucket).toBe('ready');
+    expect(result.quality?.bucketReasons).toContain('High-confidence local parse remained ready despite unresolved authority verification.');
+  });
+
+  it('allows clean conference citations with provider errors to stay ready when local evidence remains strong', async () => {
+    const citation = {
+      ...createEmptyCitation('Deng J, Dong W, Socher R, Li LJ, Li K, Fei-Fei L. ImageNet: A large-scale hierarchical image database. In 2009 IEEE Conference on Computer Vision and Pattern Recognition 2009 (pp. 248-255). IEEE.'),
+      referenceType: 'conference',
+      authors: createFieldValue([
+        { first: 'J.', last: 'Deng', initials: 'J.' },
+        { first: 'W.', last: 'Dong', initials: 'W.' },
+        { first: 'R.', last: 'Socher', initials: 'R.' },
+        { first: 'L. J.', last: 'Li', initials: 'L. J.' },
+        { first: 'K.', last: 'Li', initials: 'K.' },
+        { first: 'L.', last: 'Fei-Fei', initials: 'L.' },
+      ], 'extracted', 0.97, 'extract'),
+      title: createFieldValue('ImageNet: A large-scale hierarchical image database', 'extracted', 0.9, 'extract'),
+      year: createFieldValue(2009, 'extracted', 0.92, 'extract'),
+      conferenceTitle: createFieldValue('2009 IEEE Conference on Computer Vision and Pattern Recognition 2009', 'extracted', 0.82, 'extract'),
+      pages: createFieldValue('248-255', 'extracted', 0.82, 'extract'),
+      resolution: {
+        status: 'provider_error',
+        resolvedAt: new Date().toISOString(),
+        provider: 'strict-network-resolution',
+        matchStrategy: 'none',
+        candidateCount: 0,
+        rejectedReasons: ['resolution_execution_timeout'],
+        appliedFields: [],
+        conflictFields: [],
+        yearToleranceApplied: false,
+        queryEvidence: {
+          titlePresent: true,
+          titleTokenCount: 7,
+          firstAuthorSurname: 'Deng',
+          year: 2009,
+          venue: '2009 IEEE Conference on Computer Vision and Pattern Recognition 2009',
+          sourceType: 'conference',
+        },
+      },
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    };
+
+    const result = await validateAndScore(citation);
+    expect(result.quality?.bucket).toBe('ready');
+    expect(result.quality?.bucketReasons).toContain('High-confidence local parse remained ready despite unresolved authority verification.');
+  });
 });

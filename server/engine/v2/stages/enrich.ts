@@ -22,6 +22,7 @@ import {
   buildResolutionMetadata,
   buildResolutionQueryEvidence,
   chooseBestResolutionCandidate,
+  normalizeResolutionTitle,
   normalizeSurnameForResolution,
 } from '../resolution.js';
 import {
@@ -37,6 +38,7 @@ import {
 
 const PROVIDER_LIMIT = 5;
 const DEFAULT_ENRICH_CONCURRENCY = 3;
+const DEFAULT_ENRICH_CITATION_TIMEOUT_MS = 15_000;
 const AUTHORITY_FIELD_CONFIDENCE = 0.97;
 
 type ProviderKey = 'doi' | 'crossref' | 'pubmed' | 'openalex';
@@ -49,6 +51,15 @@ type CachedResolutionPayload = {
   acceptedCandidate?: ResolutionAcceptedCandidate;
   rejectedReasons: string[];
   yearToleranceApplied: boolean;
+};
+
+type ResolutionExecutionResult = {
+  payload: CachedResolutionPayload;
+  providerOrder: ProviderKey[];
+  successfulProviderCount: number;
+  providerErrorCount: number;
+  partialResult: boolean;
+  fallbacksUsed: string[];
 };
 
 type AuthorityMergeAudit = {
@@ -290,24 +301,76 @@ function authoritySourceTypeToCanonical(sourceType?: string): CanonicalReference
   return null;
 }
 
+function looksPlaceholderVenue(value: string | null | undefined): boolean {
+  return !value || isPlaceholderFieldValue(value) || /^journal(?:\b|[,.:?])/i.test(normalizeWhitespace(value));
+}
+
 function resolveAuthorityReferenceType(
-  currentType: CanonicalReferenceType,
+  citation: CanonicalCitation,
   candidate: ResolutionAcceptedCandidate,
 ): CanonicalReferenceType {
   const authorityType = authoritySourceTypeToCanonical(candidate.sourceType);
-  if (!authorityType) return currentType;
-  if (currentType === 'unknown') return authorityType;
-  if (currentType === 'preprint' && authorityType === 'journal') return 'journal';
-  return currentType;
+  if (!authorityType) return citation.referenceType;
+  if (citation.referenceType === 'unknown') return authorityType;
+  if (citation.referenceType === 'preprint' && authorityType === 'journal') return 'journal';
+
+  if (
+    citation.referenceType === 'journal'
+    && authorityType !== 'journal'
+    && (
+      looksPlaceholderVenue(citation.journal.value)
+      || (!citation.volume.value && !citation.issue.value && !citation.pages.value)
+    )
+  ) {
+    return authorityType;
+  }
+
+  return citation.referenceType;
+}
+
+function resolutionCacheBucket(referenceType: CanonicalReferenceType): string {
+  switch (referenceType) {
+    case 'unknown':
+    case 'journal':
+    case 'preprint':
+      return 'serial';
+    default:
+      return referenceType;
+  }
+}
+
+function resolutionVenueKey(citation: CanonicalCitation): string {
+  const rawVenue = normalizeWhitespace(
+    citation.journal.value
+    ?? citation.conferenceTitle.value
+    ?? citation.bookTitle.value
+    ?? citation.publisher.value
+    ?? '',
+  );
+  if (!rawVenue || isPlaceholderFieldValue(rawVenue) || /\?/.test(rawVenue)) return '';
+
+  const normalized = normalizeWhitespace(
+    normalizeKnownContainerName(rawVenue)
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]+/gu, ' '),
+  );
+
+  if (!normalized || /^(?:journal|conference|proceedings|book|report)(?:\s+(?:vol(?:ume)?|issue|no|number|pp?|pages?|\?))*$/i.test(normalized)) {
+    return '';
+  }
+
+  return normalized;
 }
 
 function cacheKeyForCitation(citation: CanonicalCitation): string {
   const evidence = buildResolutionQueryEvidence(citation);
+  const normalizedTitle = normalizeResolutionTitle(citation.title.value).normalized;
   return [
-    normalizeWhitespace((citation.title.value ?? '').toLowerCase()),
-    normalizeWhitespace((evidence.firstAuthorSurname ?? evidence.groupAuthorLiteral ?? '').toLowerCase()),
+    normalizedTitle,
+    normalizeSurnameForResolution(evidence.firstAuthorSurname ?? evidence.groupAuthorLiteral ?? ''),
     citation.year.value ?? '',
-    citation.referenceType,
+    resolutionCacheBucket(citation.referenceType),
+    resolutionVenueKey(citation),
   ].join('|');
 }
 
@@ -392,7 +455,7 @@ function applyVerifiedCandidate(
     appliedFields: [],
     conflictFields: [],
   };
-  const resolvedReferenceType = resolveAuthorityReferenceType(citation.referenceType, candidate);
+  const resolvedReferenceType = resolveAuthorityReferenceType(citation, candidate);
   if (resolvedReferenceType !== citation.referenceType) {
     recordField(audit.appliedFields, 'referenceType');
   }
@@ -456,6 +519,70 @@ function applyVerifiedCandidate(
   };
 }
 
+function providerKeyFromPayload(payload: CachedResolutionPayload): ProviderKey | 'cache' | 'unverifiable' {
+  if (!payload.acceptedCandidate) return 'unverifiable';
+  if (payload.matchStrategy === 'crossref_doi') return 'doi';
+  switch (payload.acceptedCandidate.provider) {
+    case 'crossref':
+    case 'pubmed':
+    case 'openalex':
+      return payload.acceptedCandidate.provider;
+    default:
+      return 'unverifiable';
+  }
+}
+
+function applyResolutionPayload(
+  citation: CanonicalCitation,
+  payload: CachedResolutionPayload,
+  resolutionProviderId: string,
+  sourceMode: 'cache' | 'shared' | 'direct',
+): { citation: CanonicalCitation; appliedFields: string[]; conflictFields: string[] } {
+  let nextCitation = citation;
+  let appliedFields: string[] = [];
+  let conflictFields: string[] = [];
+
+  if (payload.acceptedCandidate) {
+    const merged = applyVerifiedCandidate(citation, payload.acceptedCandidate);
+    nextCitation = merged.citation;
+    appliedFields = merged.appliedFields;
+    conflictFields = merged.conflictFields;
+  }
+
+  return {
+    citation: {
+      ...nextCitation,
+      resolution: {
+        ...buildResolutionMetadata(nextCitation, payload.status, {
+          resolvedAt: nowIso(),
+          provider: payload.provider ?? resolutionProviderId,
+          matchStrategy: payload.matchStrategy,
+          acceptedCandidate: payload.acceptedCandidate,
+        }),
+        candidateCount: payload.candidateCount,
+        rejectedReasons: payload.rejectedReasons,
+        appliedFields,
+        conflictFields,
+        yearToleranceApplied: payload.yearToleranceApplied,
+      },
+      enrichment: buildEnrichmentFromResolution(
+        payload.acceptedCandidate
+          ? 'fetched'
+          : payload.status === 'provider_error'
+            ? 'error'
+            : 'no_match',
+        resolutionProviderId,
+        sourceMode === 'cache' ? 'cache' : providerKeyFromPayload(payload),
+        payload.acceptedCandidate,
+        sourceMode === 'cache' ? { cached: true } : sourceMode === 'shared' ? { shared: true } : undefined,
+        sourceMode === 'cache',
+      ),
+    },
+    appliedFields,
+    conflictFields,
+  };
+}
+
 function buildEnrichmentFromResolution(
   status: EnrichmentMetadata['status'],
   providerId: string,
@@ -489,6 +616,28 @@ function buildEnrichmentFromResolution(
     matchedYear: candidate?.year,
     url: candidate?.url,
     raw,
+  };
+}
+
+function buildTimedOutResolutionResult(
+  citation: CanonicalCitation,
+  resolutionProviderId: string,
+): ResolutionExecutionResult {
+  const providerOrder = providerOrderForCitation(citation);
+  return {
+    payload: {
+      status: 'provider_error',
+      provider: resolutionProviderId,
+      matchStrategy: 'none',
+      candidateCount: 0,
+      rejectedReasons: ['resolution_execution_timeout'],
+      yearToleranceApplied: false,
+    },
+    providerOrder,
+    successfulProviderCount: 0,
+    providerErrorCount: providerOrder.length > 0 ? 1 : 0,
+    partialResult: true,
+    fallbacksUsed: ['enrich:resolution_timeout'],
   };
 }
 
@@ -540,7 +689,118 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
       }
 
       const concurrency = Number.parseInt(process.env.V2_ENRICH_CONCURRENCY ?? String(DEFAULT_ENRICH_CONCURRENCY), 10);
+      const configuredCitationTimeoutMs = Number.parseInt(process.env.V2_ENRICH_CITATION_TIMEOUT_MS ?? '', 10);
+      const citationTimeoutMs = Number.isFinite(configuredCitationTimeoutMs) && configuredCitationTimeoutMs > 0
+        ? configuredCitationTimeoutMs
+        : DEFAULT_ENRICH_CITATION_TIMEOUT_MS;
       const limit = pLimit(Number.isFinite(concurrency) && concurrency > 0 ? concurrency : DEFAULT_ENRICH_CONCURRENCY);
+      const inFlightResolutionByKey = new Map<string, Promise<ResolutionExecutionResult>>();
+
+      const executeResolutionForCitation = async (
+        citation: CanonicalCitation,
+        resolutionQuery: ResolutionSearchQuery,
+      ): Promise<ResolutionExecutionResult> => {
+        const localFallbacks: string[] = [];
+        let localPartialResult = false;
+        const providerOrder = providerOrderForCitation(citation);
+        const allCandidates: ResolutionCandidateRecord[] = [];
+        const rejectedReasons: string[] = [];
+        let providerError = false;
+        let successfulProviderCount = 0;
+        let providerErrorCount = 0;
+        let selected: ReturnType<typeof chooseBestResolutionCandidate> = {
+          ambiguous: false,
+          evaluated: [],
+        };
+
+        for (const providerKey of providerOrder) {
+          try {
+            const candidates = await fetchProviderCandidates(
+              resolutionProvider,
+              resolutionQuery,
+              citation.doi.value,
+              providerKey,
+            );
+            successfulProviderCount += 1;
+            allCandidates.push(...candidates);
+            selected = chooseBestResolutionCandidate(citation, allCandidates);
+            if (selected.accepted && !selected.ambiguous && selected.accepted.band === 2) {
+              break;
+            }
+          } catch (error) {
+            providerError = true;
+            providerErrorCount += 1;
+            localPartialResult = true;
+            localFallbacks.push(`enrich:${providerKey}_provider_error`);
+            rejectedReasons.push(`${providerKey}_provider_error:${error instanceof Error ? error.message : String(error)}`);
+          }
+        }
+
+        rejectedReasons.push(
+          ...selected.evaluated
+            .filter((entry) => !entry.accepted)
+            .flatMap((entry) => entry.reasons.map((reason) => `${entry.candidate.provider}:${reason}`)),
+        );
+
+        let payload: CachedResolutionPayload;
+        if (selected.ambiguous) {
+          payload = {
+            status: 'ambiguous_match',
+            provider: resolutionProvider.id,
+            matchStrategy: 'none',
+            candidateCount: allCandidates.length,
+            rejectedReasons: [
+              'ambiguous_match',
+              ...selected.evaluated
+                .filter((entry) => entry.accepted)
+                .slice(0, 2)
+                .map((entry) => `${entry.candidate.provider}:${entry.candidate.title ?? 'unknown_title'}`),
+              ...rejectedReasons,
+            ],
+            yearToleranceApplied: false,
+          };
+        } else if (selected.accepted) {
+          const acceptedCandidate = buildAcceptedCandidateSummary(selected.accepted.candidate);
+          payload = {
+            status: selected.accepted.yearToleranceApplied ? 'verified_with_year_tolerance' : 'verified',
+            provider: selected.accepted.candidate.provider,
+            matchStrategy: toMatchStrategy(
+              selected.accepted.candidate.provider === 'crossref' && citation.doi.value
+                ? 'doi'
+                : selected.accepted.candidate.provider,
+            ),
+            candidateCount: allCandidates.length,
+            acceptedCandidate,
+            rejectedReasons,
+            yearToleranceApplied: selected.accepted.yearToleranceApplied,
+          };
+        } else {
+          const status: ResolutionMetadata['status'] = providerError && successfulProviderCount === 0
+            ? 'provider_error'
+            : allCandidates.length === 0 && ['report', 'book', 'website', 'chapter'].includes(citation.referenceType)
+              ? 'provider_no_coverage'
+              : 'no_exact_match';
+          payload = {
+            status,
+            provider: resolutionProvider.id,
+            matchStrategy: 'none',
+            candidateCount: allCandidates.length,
+            rejectedReasons,
+            yearToleranceApplied: false,
+          };
+        }
+
+        await cache.set(cacheKeyForCitation(citation), payload satisfies CachedResolutionPayload);
+
+        return {
+          payload,
+          providerOrder,
+          successfulProviderCount,
+          providerErrorCount,
+          partialResult: localPartialResult,
+          fallbacksUsed: localFallbacks,
+        };
+      };
 
       const results = await Promise.all(context.citations.map((citation, citationIndex) => limit(async () => {
         const localFallbacks: string[] = [];
@@ -648,243 +908,120 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
         };
         const cached = await cache.get<CachedResolutionPayload>(cacheKey);
         if (cached) {
-          let cachedCitation = citation;
-          let appliedFields: string[] = [];
-          let conflictFields: string[] = [];
-          if (cached.acceptedCandidate) {
-            const merged = applyVerifiedCandidate(cachedCitation, cached.acceptedCandidate);
-            cachedCitation = merged.citation;
-            appliedFields = merged.appliedFields;
-            conflictFields = merged.conflictFields;
-          }
-
-          cachedCitation = attachCitationDebug({
-            ...cachedCitation,
-            resolution: {
-              ...buildResolutionMetadata(cachedCitation, cached.status, {
-                resolvedAt: nowIso(),
-                provider: cached.provider,
-                matchStrategy: cached.matchStrategy,
-                acceptedCandidate: cached.acceptedCandidate,
-              }),
-              candidateCount: cached.candidateCount,
-              rejectedReasons: cached.rejectedReasons,
-              appliedFields,
-              conflictFields,
-              yearToleranceApplied: cached.yearToleranceApplied,
-            },
-            enrichment: buildEnrichmentFromResolution(
-              cached.acceptedCandidate ? 'fetched' : 'no_match',
-              resolutionProvider.id,
-              'cache',
-              cached.acceptedCandidate,
-              cached.acceptedCandidate ? { cached: true } : undefined,
-              true,
-            ),
-          }, 'enrich', {
+          const hydrated = applyResolutionPayload(citation, cached, resolutionProvider.id, 'cache');
+          const cachedCitation = attachCitationDebug(hydrated.citation, 'enrich', {
             status: cached.status,
             providerOrder: ['cache'],
             cacheHit: true,
             candidateCount: cached.candidateCount,
-            appliedFields,
-            conflictFields,
-            warningFlags: conflictFields,
+            appliedFields: hydrated.appliedFields,
+            conflictFields: hydrated.conflictFields,
+            warningFlags: hydrated.conflictFields,
           }, context.debugEnabled);
           logStructuredDebug(context, 'enrich', citationIndex, cachedCitation, {
             providerOrder: ['cache'],
             cacheHit: true,
             candidateCount: cached.candidateCount,
-            appliedFields,
-            conflictFields,
-            warningFlags: conflictFields,
+            appliedFields: hydrated.appliedFields,
+            conflictFields: hydrated.conflictFields,
+            warningFlags: hydrated.conflictFields,
           });
           return {
             citation: addCitationStageLog(cachedCitation, createStageDiagnostic('enrich', 'success', 'Reused cached strict resolution result.', {
               provider: cached.provider,
               status: cached.status,
               cacheKey,
-              appliedFields,
-              conflictFields,
+              appliedFields: hydrated.appliedFields,
+              conflictFields: hydrated.conflictFields,
             })),
             fallbacksUsed: localFallbacks,
             partialResult: localPartialResult,
           };
         }
 
-        const providerOrder = providerOrderForCitation(citation);
-        const allCandidates: ResolutionCandidateRecord[] = [];
-        const rejectedReasons: string[] = [];
-        let providerError = false;
-        let successfulProviderCount = 0;
-        let providerErrorCount = 0;
-        let selected: ReturnType<typeof chooseBestResolutionCandidate> = {
-          ambiguous: false,
-          evaluated: [],
-        };
-
-        for (const providerKey of providerOrder) {
-          try {
-            const candidates = await fetchProviderCandidates(
-              resolutionProvider,
-              resolutionQuery,
-              citation.doi.value,
-              providerKey,
-            );
-            successfulProviderCount += 1;
-            allCandidates.push(...candidates);
-            selected = chooseBestResolutionCandidate(citation, allCandidates);
-            if (selected.accepted && !selected.ambiguous && selected.accepted.band === 2) {
-              break;
-            }
-          } catch (error) {
-            providerError = true;
-            providerErrorCount += 1;
-            localPartialResult = true;
-            localFallbacks.push(`enrich:${providerKey}_provider_error`);
-            rejectedReasons.push(`${providerKey}_provider_error:${error instanceof Error ? error.message : String(error)}`);
-          }
+        let execution = inFlightResolutionByKey.get(cacheKey);
+        const sharedExecution = Boolean(execution);
+        if (!execution) {
+          execution = executeResolutionForCitation(citation, resolutionQuery)
+            .finally(() => {
+              if (inFlightResolutionByKey.get(cacheKey) === execution) {
+                inFlightResolutionByKey.delete(cacheKey);
+              }
+            });
+          inFlightResolutionByKey.set(cacheKey, execution);
         }
-        const evaluatedRejectedReasons = selected.evaluated
-          .filter((entry) => !entry.accepted)
-          .flatMap((entry) => entry.reasons.map((reason) => `${entry.candidate.provider}:${reason}`));
-        rejectedReasons.push(...evaluatedRejectedReasons);
+        let executionTimeoutHandle: NodeJS.Timeout | null = null;
+        const resolved = await Promise.race([
+          execution,
+          new Promise<ResolutionExecutionResult>((resolve) => {
+            executionTimeoutHandle = setTimeout(() => {
+              if (inFlightResolutionByKey.get(cacheKey) === execution) {
+                inFlightResolutionByKey.delete(cacheKey);
+              }
+              const timedOutResult = buildTimedOutResolutionResult(citation, resolutionProvider.id);
+              void cache.set(cacheKey, timedOutResult.payload);
+              resolve(timedOutResult);
+            }, citationTimeoutMs);
+          }),
+        ]).finally(() => {
+          if (executionTimeoutHandle) {
+            clearTimeout(executionTimeoutHandle);
+          }
+        });
+        localFallbacks.push(...resolved.fallbacksUsed);
+        localPartialResult = localPartialResult || resolved.partialResult;
 
-        let nextCitation = citation;
+        const hydrated = applyResolutionPayload(
+          citation,
+          resolved.payload,
+          resolutionProvider.id,
+          sharedExecution ? 'shared' : 'direct',
+        );
+        let nextCitation = hydrated.citation;
         let stageStatus: 'success' | 'warning' = 'warning';
         let stageMessage = 'No exact external match was accepted for this citation.';
 
-        if (selected.ambiguous) {
-          nextCitation = {
-            ...citation,
-            resolution: {
-              ...buildResolutionMetadata(citation, 'ambiguous_match', {
-                resolvedAt: nowIso(),
-                provider: resolutionProvider.id,
-                matchStrategy: 'none',
-              }),
-              candidateCount: allCandidates.length,
-              rejectedReasons: [
-                'ambiguous_match',
-                ...selected.evaluated
-                  .filter((entry) => entry.accepted)
-                  .slice(0, 2)
-                  .map((entry) => `${entry.candidate.provider}:${entry.candidate.title ?? 'unknown_title'}`),
-                ...rejectedReasons,
-              ],
-            },
-            enrichment: buildEnrichmentFromResolution('no_match', resolutionProvider.id, 'unverifiable'),
-          };
+        if (resolved.payload.status === 'ambiguous_match') {
           stageMessage = 'Multiple strict external matches tied; citation remains unresolved.';
-        } else if (selected.accepted) {
-          const acceptedCandidate = buildAcceptedCandidateSummary(selected.accepted.candidate);
-          const merged = applyVerifiedCandidate(citation, acceptedCandidate);
-          nextCitation = {
-            ...merged.citation,
-            resolution: {
-              ...buildResolutionMetadata(
-                merged.citation,
-                selected.accepted.yearToleranceApplied ? 'verified_with_year_tolerance' : 'verified',
-                {
-                  resolvedAt: nowIso(),
-                  provider: selected.accepted.candidate.provider,
-                  matchStrategy: toMatchStrategy(
-                    selected.accepted.candidate.provider === 'crossref' && citation.doi.value
-                      ? 'doi'
-                      : selected.accepted.candidate.provider,
-                  ),
-                  acceptedCandidate,
-                },
-              ),
-              candidateCount: allCandidates.length,
-              rejectedReasons,
-              appliedFields: merged.appliedFields,
-              conflictFields: merged.conflictFields,
-              yearToleranceApplied: selected.accepted.yearToleranceApplied,
-            },
-            enrichment: buildEnrichmentFromResolution(
-              'fetched',
-              resolutionProvider.id,
-              selected.accepted.candidate.provider === 'crossref' && citation.doi.value ? 'doi' : selected.accepted.candidate.provider,
-              acceptedCandidate,
-              selected.accepted.candidate.raw,
-            ),
-          };
-          stageStatus = merged.conflictFields.length === 0 ? 'success' : 'warning';
-          stageMessage = merged.conflictFields.length === 0
-            ? 'Verified citation via strict external resolution.'
+        } else if (resolved.payload.acceptedCandidate) {
+          stageStatus = hydrated.conflictFields.length === 0 ? 'success' : 'warning';
+          stageMessage = hydrated.conflictFields.length === 0
+            ? (sharedExecution ? 'Reused an in-flight verified authority match.' : 'Verified citation via strict external resolution.')
             : 'Verified citation externally, but conflicting extracted fields were preserved for review.';
-
-          await cache.set(cacheKey, {
-            status: nextCitation.resolution?.status ?? 'verified',
-            provider: nextCitation.resolution?.provider,
-            matchStrategy: nextCitation.resolution?.matchStrategy,
-            candidateCount: nextCitation.resolution?.candidateCount ?? allCandidates.length,
-            acceptedCandidate,
-            rejectedReasons,
-            yearToleranceApplied: nextCitation.resolution?.yearToleranceApplied ?? false,
-          } satisfies CachedResolutionPayload);
+        } else if (resolved.payload.status === 'provider_error') {
+          stageMessage = 'External resolution completed with provider errors and no accepted exact match.';
         } else {
-          const status: ResolutionMetadata['status'] = providerError && successfulProviderCount === 0
-            ? 'provider_error'
-            : allCandidates.length === 0 && ['report', 'book', 'website', 'chapter'].includes(citation.referenceType)
-              ? 'provider_no_coverage'
-              : 'no_exact_match';
-
-          nextCitation = {
-            ...citation,
-            resolution: {
-              ...buildResolutionMetadata(citation, status, {
-                resolvedAt: nowIso(),
-                provider: resolutionProvider.id,
-                matchStrategy: 'none',
-              }),
-              candidateCount: allCandidates.length,
-              rejectedReasons,
-            },
-            enrichment: buildEnrichmentFromResolution(
-              providerError ? 'error' : 'no_match',
-              resolutionProvider.id,
-              'unverifiable',
-              undefined,
-              providerError ? { rejectedReasons } : undefined,
-            ),
-          };
-          stageMessage = providerError && successfulProviderCount === 0
-            ? 'External resolution completed with provider errors and no accepted exact match.'
+          stageMessage = sharedExecution
+            ? 'Reused an in-flight unresolved authority result.'
             : 'Strict external resolution did not accept any exact-title candidate.';
-          await cache.set(cacheKey, {
-            status,
-            provider: resolutionProvider.id,
-            matchStrategy: 'none',
-            candidateCount: allCandidates.length,
-            rejectedReasons,
-            yearToleranceApplied: false,
-          } satisfies CachedResolutionPayload);
         }
 
         nextCitation = attachCitationDebug(nextCitation, 'enrich', {
           status: nextCitation.resolution?.status,
-          providerOrder,
-          candidateCount: allCandidates.length,
-          successfulProviderCount,
-          providerErrorCount,
+          providerOrder: resolved.providerOrder,
+          cacheHit: false,
+          candidateCount: resolved.payload.candidateCount,
+          successfulProviderCount: resolved.successfulProviderCount,
+          providerErrorCount: resolved.providerErrorCount,
           acceptedCandidate: nextCitation.resolution?.acceptedCandidate,
           rejectedReasons: nextCitation.resolution?.rejectedReasons ?? [],
-          appliedFields: nextCitation.resolution?.appliedFields ?? [],
-          conflictFields: nextCitation.resolution?.conflictFields ?? [],
+          appliedFields: hydrated.appliedFields,
+          conflictFields: hydrated.conflictFields,
           yearToleranceApplied: nextCitation.resolution?.yearToleranceApplied ?? false,
-          warningFlags: nextCitation.resolution?.conflictFields ?? [],
+          warningFlags: hydrated.conflictFields,
+          sharedExecution,
         }, context.debugEnabled);
         logStructuredDebug(context, 'enrich', citationIndex, nextCitation, {
-          providerOrder,
-          candidateCount: allCandidates.length,
-          successfulProviderCount,
-          providerErrorCount,
-          appliedFields: nextCitation.resolution?.appliedFields ?? [],
-          warningFlags: nextCitation.resolution?.conflictFields ?? [],
-          conflictFields: nextCitation.resolution?.conflictFields ?? [],
+          providerOrder: resolved.providerOrder,
+          candidateCount: resolved.payload.candidateCount,
+          successfulProviderCount: resolved.successfulProviderCount,
+          providerErrorCount: resolved.providerErrorCount,
+          appliedFields: hydrated.appliedFields,
+          warningFlags: hydrated.conflictFields,
+          conflictFields: hydrated.conflictFields,
           selectedBranch: undefined,
           selectionReason: nextCitation.resolution?.status,
+          sharedExecution,
         });
 
         return {
@@ -892,8 +1029,9 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
             provider: nextCitation.resolution?.provider,
             status: nextCitation.resolution?.status,
             candidateCount: nextCitation.resolution?.candidateCount,
-            appliedFields: nextCitation.resolution?.appliedFields ?? [],
-            conflictFields: nextCitation.resolution?.conflictFields ?? [],
+            appliedFields: hydrated.appliedFields,
+            conflictFields: hydrated.conflictFields,
+            sharedExecution,
           })),
           fallbacksUsed: localFallbacks,
           partialResult: localPartialResult,

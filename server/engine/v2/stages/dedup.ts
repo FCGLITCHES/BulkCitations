@@ -3,6 +3,7 @@ import type { CanonicalAuthor, CanonicalCitation, EnrichmentMetadata, FieldValue
 import type { V2Stage } from '../contracts.js';
 import { buildResolutionMetadata } from '../resolution.js';
 import { addCitationStageLog, average, createStageDiagnostic, firstAuthorLastName, normalizedField, normalizeWhitespace } from '../utils.js';
+import { hasCanonicalMalformedAuthors } from '../qualityRules.js';
 import { validateCitationOffline } from './validate.js';
 
 function similarityTokens(value: string): string[] {
@@ -106,6 +107,20 @@ function isStructuralDuplicate(left: CanonicalCitation, right: CanonicalCitation
 
 function hasMoreStructuredAuthors(authors: CanonicalAuthor[]): number {
   return authors.reduce((score, author) => score + (author.literal ? 0 : 1), 0) + authors.length;
+}
+
+function authorStructurePenalty(authors: CanonicalAuthor[]): number {
+  let penalty = hasCanonicalMalformedAuthors(authors) ? 8 : 0;
+  for (const author of authors) {
+    const combined = normalizeWhitespace([author.literal ?? '', author.last, author.first ?? '', author.initials ?? ''].join(' '));
+    if (!combined) {
+      penalty += 2;
+      continue;
+    }
+    if ((combined.match(/,/g) ?? []).length >= 2) penalty += 2;
+    if (combined.split(/\s+/).filter(Boolean).length >= 8) penalty += 1.5;
+  }
+  return penalty;
 }
 
 function isVerifiedResolution(citation: CanonicalCitation): boolean {
@@ -215,8 +230,14 @@ function mergeAuthors(
   baseCitation: CanonicalCitation,
   duplicateCitation: CanonicalCitation,
 ): FieldValue<CanonicalAuthor[]> {
-  const baseScore = hasMoreStructuredAuthors(base.value) + fieldStrength(base, baseCitation, 'authors', (value) => value.length > 0);
-  const duplicateScore = hasMoreStructuredAuthors(duplicate.value) + fieldStrength(duplicate, duplicateCitation, 'authors', (value) => value.length > 0);
+  const baseScore =
+    hasMoreStructuredAuthors(base.value)
+    + fieldStrength(base, baseCitation, 'authors', (value) => value.length > 0)
+    - authorStructurePenalty(base.value);
+  const duplicateScore =
+    hasMoreStructuredAuthors(duplicate.value)
+    + fieldStrength(duplicate, duplicateCitation, 'authors', (value) => value.length > 0)
+    - authorStructurePenalty(duplicate.value);
   const winner = duplicateScore > baseScore ? duplicate : base;
   return {
     ...winner,
@@ -224,6 +245,20 @@ function mergeAuthors(
     stageId: 'dedup',
     mergedFrom: [baseCitation.id, duplicateCitation.id],
     conflictResolution: duplicateScore > baseScore ? 'preferred_more_structured_authors' : 'kept_base_authors',
+  };
+}
+
+function inheritMergedField<T>(
+  field: FieldValue<T>,
+  duplicateId: string,
+  mergedId: string,
+): FieldValue<T> {
+  return {
+    ...field,
+    source: 'merged',
+    stageId: 'dedup',
+    mergedFrom: [duplicateId, mergedId],
+    conflictResolution: 'inherited_from_merged_duplicate_family',
   };
 }
 
@@ -325,6 +360,67 @@ async function createMergedCitation(group: CanonicalCitation[], method: 'doi' | 
   );
 }
 
+async function hydrateDuplicateCitation(
+  citation: CanonicalCitation,
+  mergedCitation: CanonicalCitation,
+  method: 'doi' | 'structural',
+): Promise<CanonicalCitation> {
+  let hydrated: CanonicalCitation = {
+    ...citation,
+    referenceType: mergedCitation.referenceType,
+    authors: inheritMergedField(mergedCitation.authors, citation.id, mergedCitation.id),
+    title: inheritMergedField(mergedCitation.title, citation.id, mergedCitation.id),
+    year: inheritMergedField(mergedCitation.year, citation.id, mergedCitation.id),
+    journal: inheritMergedField(mergedCitation.journal, citation.id, mergedCitation.id),
+    volume: inheritMergedField(mergedCitation.volume, citation.id, mergedCitation.id),
+    issue: inheritMergedField(mergedCitation.issue, citation.id, mergedCitation.id),
+    pages: inheritMergedField(mergedCitation.pages, citation.id, mergedCitation.id),
+    doi: inheritMergedField(mergedCitation.doi, citation.id, mergedCitation.id),
+    publisher: inheritMergedField(mergedCitation.publisher, citation.id, mergedCitation.id),
+    url: inheritMergedField(mergedCitation.url, citation.id, mergedCitation.id),
+    conferenceTitle: inheritMergedField(mergedCitation.conferenceTitle, citation.id, mergedCitation.id),
+    bookTitle: inheritMergedField(mergedCitation.bookTitle, citation.id, mergedCitation.id),
+    institution: inheritMergedField(mergedCitation.institution, citation.id, mergedCitation.id),
+    edition: inheritMergedField(mergedCitation.edition, citation.id, mergedCitation.id),
+    editor: inheritMergedField(mergedCitation.editor, citation.id, mergedCitation.id),
+    resolution: mergedCitation.resolution
+      ? {
+          ...mergedCitation.resolution,
+          appliedFields: [...new Set(mergedCitation.resolution.appliedFields ?? [])],
+          conflictFields: [],
+        }
+      : citation.resolution,
+    enrichment: mergedCitation.enrichment
+      ? {
+          ...mergedCitation.enrichment,
+          raw: mergedCitation.enrichment.raw
+            ? {
+                ...mergedCitation.enrichment.raw,
+                inheritedFromDuplicateFamily: true,
+              }
+            : {
+                inheritedFromDuplicateFamily: true,
+              },
+        }
+      : citation.enrichment,
+  };
+
+  const { issues, metadata } = await validateCitationOffline(hydrated);
+  hydrated = {
+    ...hydrated,
+    validationIssues: issues,
+    validation: metadata,
+  };
+
+  return addCitationStageLog(
+    hydrated,
+    createStageDiagnostic('dedup', 'success', 'Inherited canonical fields from merged duplicate family.', {
+      mergedId: mergedCitation.id,
+      method,
+    }),
+  );
+}
+
 function groupDuplicates(citations: CanonicalCitation[]): Array<{ method: 'doi' | 'structural'; members: CanonicalCitation[] }> {
   const parent = new Map<string, string>();
   const methodByRoot = new Map<string, 'doi' | 'structural'>();
@@ -417,23 +513,27 @@ export function createDedupStage(): V2Stage {
 
         const mergedCitation = await createMergedCitation(group.members, group.method);
         const base = chooseBaseCitation(group.members);
-        citations.push(...group.members.map((citation) => addCitationStageLog(
-          {
-            ...citation,
-            status: 'duplicate',
-            duplicate: {
+        const hydratedDuplicates = await Promise.all(group.members.map(async (citation) => {
+          const hydrated = await hydrateDuplicateCitation(citation, mergedCitation, group.method);
+          return addCitationStageLog(
+            {
+              ...hydrated,
               status: 'duplicate',
-              duplicateOf: mergedCitation.id,
-              method: group.method,
-              mergedFrom: [citation.id, mergedCitation.id],
-              mergeReason: citation.id === base.id ? 'base_promoted_to_merged_record' : 'duplicate_group_member',
+              duplicate: {
+                status: 'duplicate',
+                duplicateOf: mergedCitation.id,
+                method: group.method,
+                mergedFrom: [citation.id, mergedCitation.id],
+                mergeReason: citation.id === base.id ? 'base_promoted_to_merged_record' : 'duplicate_group_member',
+              },
             },
-          },
-          createStageDiagnostic('dedup', 'warning', 'Citation marked as duplicate; merged record created.', {
-            mergedId: mergedCitation.id,
-            method: group.method,
-          }),
-        )));
+            createStageDiagnostic('dedup', 'warning', 'Citation marked as duplicate; merged record created.', {
+              mergedId: mergedCitation.id,
+              method: group.method,
+            }),
+          );
+        }));
+        citations.push(...hydratedDuplicates);
         citations.push(mergedCitation);
 
         for (const duplicate of group.members) {

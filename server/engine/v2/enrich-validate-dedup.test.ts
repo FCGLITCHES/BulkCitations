@@ -219,6 +219,10 @@ describe('enrich + validate + dedup architecture', () => {
     expect(merged?.resolution?.status).toBe('verified');
     expect(merged?.resolution?.appliedFields).toEqual(expect.arrayContaining(['authors', 'journal', 'doi']));
     expect(merged?.validationIssues.map((issue: any) => issue.code)).not.toContain('resolved_field_conflict');
+    expect(duplicates.every((citation: any) => citation.journal.value === 'IEEE Transactions on Medical Imaging')).toBe(true);
+    expect(duplicates.every((citation: any) => citation.doi.value === '10.1109/TMI.2021.3098765')).toBe(true);
+    expect(duplicates.every((citation: any) => citation.authors.value.length === 3)).toBe(true);
+    expect(duplicates.every((citation: any) => citation.validationIssues.every((issue: any) => issue.code !== 'resolved_field_conflict'))).toBe(true);
   });
 
   it('does not structurally deduplicate citations that carry different explicit DOIs', async () => {
@@ -269,5 +273,177 @@ describe('enrich + validate + dedup architecture', () => {
     expect(dedupedContext.duplicates).toHaveLength(0);
     expect(dedupedContext.citations.filter((citation: any) => citation.status === 'merged')).toHaveLength(0);
     expect(dedupedContext.citations.filter((citation: any) => citation.status === 'duplicate')).toHaveLength(0);
+  });
+
+  it('does not collapse same-title cross-journal variants after enrichment resolves them to different protected venues', async () => {
+    const bmj = {
+      ...createEmptyCitation('Moher D, Liberati A, Tetzlaff J, Altman DG, Group PRISMA. Preferred reporting items for systematic reviews and meta-analyses: the PRISMA statement. BMJ. 2009;339(jul21 1):b2535.'),
+      referenceType: 'journal',
+      authors: createFieldValue([
+        { first: 'D.', last: 'Moher', initials: 'D.' },
+        { first: 'A.', last: 'Liberati', initials: 'A.' },
+        { first: 'J.', last: 'Tetzlaff', initials: 'J.' },
+        { first: 'D. G.', last: 'Altman', initials: 'D. G.' },
+      ], 'extracted', 0.95, 'extract'),
+      title: createFieldValue('Preferred reporting items for systematic reviews and meta-analyses: the PRISMA statement', 'extracted', 0.95, 'extract'),
+      year: createFieldValue(2009, 'extracted', 0.96, 'extract'),
+      journal: createFieldValue('BMJ', 'extracted', 0.93, 'extract'),
+      volume: createFieldValue('339', 'extracted', 0.9, 'extract'),
+      issue: createFieldValue('jul21 1', 'extracted', 0.88, 'extract'),
+      pages: createFieldValue('b2535', 'extracted', 0.9, 'extract'),
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    } as any;
+
+    const plos = {
+      ...createEmptyCitation('Moher, David, Liberati, Alessandro, Tetzlaff, Jennifer, Altman, Douglas G., & Group, The PRISMA (2009). Preferred Reporting Items for Systematic Reviews and Meta-Analyses: The PRISMA Statement. PLoS Medicine, 6(7), e1000097.'),
+      referenceType: 'journal',
+      authors: createFieldValue([
+        { first: 'David', last: 'Moher', initials: 'D.' },
+        { first: 'Alessandro', last: 'Liberati', initials: 'A.' },
+        { first: 'Jennifer', last: 'Tetzlaff', initials: 'J.' },
+        { first: 'Douglas G.', last: 'Altman', initials: 'D. G.' },
+      ], 'extracted', 0.95, 'extract'),
+      title: createFieldValue('Preferred Reporting Items for Systematic Reviews and Meta-Analyses: The PRISMA Statement', 'extracted', 0.95, 'extract'),
+      year: createFieldValue(2009, 'extracted', 0.96, 'extract'),
+      journal: createFieldValue('PLoS Medicine', 'extracted', 0.93, 'extract'),
+      volume: createFieldValue('6', 'extracted', 0.9, 'extract'),
+      issue: createFieldValue('7', 'extracted', 0.88, 'extract'),
+      pages: createFieldValue('e1000097', 'extracted', 0.9, 'extract'),
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    } as any;
+
+    const provider = makeProvider({
+      searchCrossrefByTitle: vi.fn(async ({ venue }: any) => {
+        if (String(venue ?? '').includes('PLoS')) {
+          return [{
+            provider: 'crossref',
+            title: 'Preferred Reporting Items for Systematic Reviews and Meta-Analyses: The PRISMA Statement',
+            authors: ['Moher, David', 'Liberati, Alessandro', 'Tetzlaff, Jennifer', 'Altman, Douglas G.'],
+            year: 2009,
+            venue: 'PLoS Medicine',
+            volume: '6',
+            issue: '7',
+            pages: 'e1000097',
+            doi: '10.1371/journal.pmed.1000097',
+            url: 'https://doi.org/10.1371/journal.pmed.1000097',
+            sourceType: 'journal-article',
+          }, {
+            provider: 'crossref',
+            title: 'Preferred reporting items for systematic reviews and meta-analyses: the PRISMA statement',
+            authors: ['Moher, David', 'Liberati, Alessandro', 'Tetzlaff, Jennifer', 'Altman, Douglas G.'],
+            year: 2009,
+            venue: 'BMJ',
+            volume: '339',
+            issue: 'jul21 1',
+            pages: 'b2535-b2535',
+            doi: '10.1136/bmj.b2535',
+            url: 'https://doi.org/10.1136/bmj.b2535',
+            sourceType: 'journal-article',
+          }];
+        }
+        return [{
+          provider: 'crossref',
+          title: 'Preferred reporting items for systematic reviews and meta-analyses: the PRISMA statement',
+          authors: ['Moher, David', 'Liberati, Alessandro', 'Tetzlaff, Jennifer', 'Altman, Douglas G.'],
+          year: 2009,
+          venue: 'BMJ',
+          volume: '339',
+          issue: 'jul21 1',
+          pages: 'b2535-b2535',
+          doi: '10.1136/bmj.b2535',
+          url: 'https://doi.org/10.1136/bmj.b2535',
+          sourceType: 'journal-article',
+        }, {
+          provider: 'crossref',
+          title: 'Preferred Reporting Items for Systematic Reviews and Meta-Analyses: The PRISMA Statement',
+          authors: ['Moher, David', 'Liberati, Alessandro', 'Tetzlaff, Jennifer', 'Altman, Douglas G.'],
+          year: 2009,
+          venue: 'PLoS Medicine',
+          volume: '6',
+          issue: '7',
+          pages: 'e1000097',
+          doi: '10.1371/journal.pmed.1000097',
+          url: 'https://doi.org/10.1371/journal.pmed.1000097',
+          sourceType: 'journal-article',
+        }];
+      }),
+    });
+
+    const enriched = await createEnrichStage(provider, cache as any).run(makeContext([bmj, plos], {
+      request: { dedup: false },
+    }));
+    const deduped = await createDedupStage().run({
+      ...makeContext(enriched.citations, {
+        request: { dedup: true },
+      }),
+      citations: enriched.citations,
+    });
+
+    expect(enriched.citations[0]?.doi.value).toBe('10.1136/bmj.b2535');
+    expect(enriched.citations[1]?.doi.value).toBe('10.1371/journal.pmed.1000097');
+    expect(deduped.duplicates).toHaveLength(0);
+  });
+
+  it('prefers the cleaner author array when duplicate members disagree on author structure', async () => {
+    const weaker = {
+      ...createEmptyCitation('Jakubuv J, Chvalovsky K, Goertzel Z, Kaliszyk C, Olsak M, Piotrowski B, Schulz S, Suda M. MizAR 60 for Mizar 50. DROPS. 2023.'),
+      referenceType: 'journal',
+      authors: createFieldValue([
+        { first: 'Jan', last: 'Jakubuv', initials: 'J.' },
+        { first: 'Karel Chvalovsky', last: 'Zarathustra Goertzel', initials: 'K. C.' },
+        { first: 'Cezary Kaliszyk', last: 'Mirek Olsak', initials: 'C. K.' },
+        { first: 'Bartosz Piotrowski', last: 'Stephan Schulz', initials: 'B. P.' },
+        { first: 'Martin', last: 'Suda', initials: 'M.' },
+      ], 'extracted', 0.92, 'extract'),
+      title: createFieldValue('MizAR 60 for Mizar 50', 'extracted', 0.95, 'extract'),
+      year: createFieldValue(2023, 'extracted', 0.94, 'extract'),
+      journal: createFieldValue('DROPS', 'extracted', 0.85, 'extract'),
+      doi: createFieldValue('10.4230/LIPIcs.ITP.2023.1', 'extracted', 0.96, 'extract'),
+      validationIssues: [],
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    } as any;
+
+    const cleaner = {
+      ...createEmptyCitation('Jakubuv J, Chvalovsky K, Goertzel Z, Kaliszyk C, Olsak M, Piotrowski B, Schulz S, Suda M. MizAR 60 for Mizar 50. DROPS. 2023.'),
+      referenceType: 'journal',
+      authors: createFieldValue([
+        { first: 'Jan', last: 'Jakubuv', initials: 'J.' },
+        { first: 'Karel', last: 'Chvalovsky', initials: 'K.' },
+        { first: 'Zarathustra', last: 'Goertzel', initials: 'Z.' },
+        { first: 'Cezary', last: 'Kaliszyk', initials: 'C.' },
+        { first: 'Mirek', last: 'Olsak', initials: 'M.' },
+        { first: 'Bartosz', last: 'Piotrowski', initials: 'B.' },
+        { first: 'Stephan', last: 'Schulz', initials: 'S.' },
+        { first: 'Martin', last: 'Suda', initials: 'M.' },
+      ], 'extracted', 0.89, 'extract'),
+      title: createFieldValue('MizAR 60 for Mizar 50', 'extracted', 0.95, 'extract'),
+      year: createFieldValue(2023, 'extracted', 0.94, 'extract'),
+      journal: createFieldValue('DROPS', 'extracted', 0.85, 'extract'),
+      doi: createFieldValue('10.4230/LIPIcs.ITP.2023.1', 'extracted', 0.96, 'extract'),
+      validationIssues: [],
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    } as any;
+
+    const dedupedContext = await createDedupStage().run(makeContext([weaker, cleaner], {
+      request: { enrich: false, dedup: true },
+    }));
+    const merged = dedupedContext.citations.find((citation: any) => citation.status === 'merged');
+
+    expect(merged).toBeTruthy();
+    expect(merged?.authors.value).toHaveLength(8);
+    expect(merged?.authors.value[1]?.last).toBe('Chvalovsky');
+    expect(merged?.authors.value[2]?.last).toBe('Goertzel');
   });
 });

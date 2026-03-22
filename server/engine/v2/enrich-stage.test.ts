@@ -4,11 +4,12 @@ import { createEnrichStage } from './stages/enrich.js';
 import { createEmptyCitation, createFieldValue } from './utils.js';
 import type { ResolutionProviderAdapter } from './contracts.js';
 
-function makeContext(citation: any, enrich = true) {
+function makeContext(citationOrCitations: any | any[], enrich = true) {
+  const citations = Array.isArray(citationOrCitations) ? citationOrCitations : [citationOrCitations];
   return {
     request: {
       sourceType: 'text',
-      content: citation.raw,
+      content: citations.map((citation) => citation.raw).join('\n\n'),
       inputStyle: 'auto',
       outputStyle: 'apa',
       enrich,
@@ -21,8 +22,8 @@ function makeContext(citation: any, enrich = true) {
     startedAtMs: Date.now(),
     executionMode: 'sync',
     debugEnabled: false,
-    rawItems: [citation.raw],
-    citations: [citation],
+    rawItems: citations.map((citation) => citation.raw),
+    citations,
     duplicates: [],
     groups: {},
     pipelineLog: [],
@@ -153,8 +154,155 @@ describe('strict enrich stage', () => {
     expect(enriched?.enrichment?.status).toBe('fetched');
   });
 
+  it('accepts provider author strings in given-name surname order when the surname still matches exactly', async () => {
+    const citation = makeCitation({
+      raw: 'He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. Journal. 2016;?:770-778.',
+      referenceType: 'unknown',
+      authors: createFieldValue([
+        { first: 'K.', last: 'He', initials: 'K.' },
+        { first: 'X.', last: 'Zhang', initials: 'X.' },
+        { first: 'S.', last: 'Ren', initials: 'S.' },
+        { first: 'J.', last: 'Sun', initials: 'J.' },
+      ], 'extracted', 0.95, 'extract'),
+      title: createFieldValue('Deep Residual Learning for Image Recognition', 'extracted', 0.95, 'extract'),
+      year: createFieldValue(2016, 'extracted', 0.96, 'extract'),
+      journal: createFieldValue('Journal', 'extracted', 0.15, 'extract'),
+    });
+    const provider = makeProvider({
+      searchOpenAlexByTitle: vi.fn(async () => [{
+        provider: 'openalex',
+        title: 'Deep Residual Learning for Image Recognition',
+        authors: ['Kaiming He', 'Xiangyu Zhang', 'Shaoqing Ren', 'Jian Sun'],
+        year: 2016,
+        venue: '2016 IEEE Conference on Computer Vision and Pattern Recognition',
+        pages: '770-778',
+        doi: '10.1109/CVPR.2016.90',
+        url: 'https://doi.org/10.1109/CVPR.2016.90',
+        sourceType: 'proceedings-article',
+      }]),
+    });
+
+    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const enriched = result.citations[0];
+
+    expect(enriched?.resolution?.status).toBe('verified');
+    expect(enriched?.referenceType).toBe('conference');
+    expect(enriched?.doi.value).toBe('10.1109/CVPR.2016.90');
+  });
+
+  it('rejects protected-venue mismatches and keeps the matching venue candidate', async () => {
+    const citation = {
+      ...makeCitation({
+        raw: 'Moher, David, Liberati, Alessandro, Tetzlaff, Jennifer, Altman, Douglas G., & Group, The PRISMA (2009). Preferred Reporting Items for Systematic Reviews and Meta-Analyses: The PRISMA Statement. PLoS Medicine, 6(7), e1000097.',
+        title: createFieldValue('Preferred Reporting Items for Systematic Reviews and Meta-Analyses: The PRISMA Statement', 'extracted', 0.95, 'extract'),
+        authors: createFieldValue([
+          { first: 'David', last: 'Moher', initials: 'D.' },
+          { first: 'Alessandro', last: 'Liberati', initials: 'A.' },
+          { first: 'Jennifer', last: 'Tetzlaff', initials: 'J.' },
+          { first: 'Douglas G.', last: 'Altman', initials: 'D. G.' },
+        ], 'extracted', 0.95, 'extract'),
+        year: createFieldValue(2009, 'extracted', 0.96, 'extract'),
+        journal: createFieldValue('PLoS Medicine', 'extracted', 0.93, 'extract'),
+        volume: createFieldValue('6', 'extracted', 0.9, 'extract'),
+        issue: createFieldValue('7', 'extracted', 0.88, 'extract'),
+        pages: createFieldValue('e1000097', 'extracted', 0.9, 'extract'),
+      }),
+    };
+    const provider = makeProvider({
+      searchCrossrefByTitle: vi.fn(async () => [
+        {
+          provider: 'crossref',
+          title: 'Preferred reporting items for systematic reviews and meta-analyses: the PRISMA statement',
+          authors: ['Moher, David', 'Liberati, Alessandro', 'Tetzlaff, Jennifer', 'Altman, Douglas G.'],
+          year: 2009,
+          venue: 'BMJ',
+          volume: '339',
+          issue: 'jul21 1',
+          pages: 'b2535-b2535',
+          doi: '10.1136/bmj.b2535',
+          url: 'https://doi.org/10.1136/bmj.b2535',
+          sourceType: 'journal-article',
+        },
+        {
+          provider: 'crossref',
+          title: 'Preferred Reporting Items for Systematic Reviews and Meta-Analyses: The PRISMA Statement',
+          authors: ['Moher, David', 'Liberati, Alessandro', 'Tetzlaff, Jennifer', 'Altman, Douglas G.'],
+          year: 2009,
+          venue: 'PLoS Medicine',
+          volume: '6',
+          issue: '7',
+          pages: 'e1000097',
+          doi: '10.1371/journal.pmed.1000097',
+          url: 'https://doi.org/10.1371/journal.pmed.1000097',
+          sourceType: 'journal-article',
+        },
+      ]),
+    });
+
+    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const enriched = result.citations[0];
+
+    expect(enriched?.resolution?.status).toBe('verified');
+    expect(enriched?.journal.value).toBe('PLoS Medicine');
+    expect(enriched?.doi.value).toBe('10.1371/journal.pmed.1000097');
+  });
+
+  it('uses locator compatibility to break otherwise equivalent resolution ties', async () => {
+    const citation = {
+      ...makeCitation({
+        raw: 'Shannon CE. A Mathematical Theory of Communication. Bell System Technical Journal. 1948;27(3):379-423.',
+        title: createFieldValue('A Mathematical Theory of Communication', 'extracted', 0.95, 'extract'),
+        authors: createFieldValue([{ first: 'C. E.', last: 'Shannon', initials: 'C. E.' }], 'extracted', 0.95, 'extract'),
+        year: createFieldValue(1948, 'extracted', 0.96, 'extract'),
+        journal: createFieldValue('Bell System Technical Journal', 'extracted', 0.94, 'extract'),
+        volume: createFieldValue('27', 'extracted', 0.9, 'extract'),
+        issue: createFieldValue('3', 'extracted', 0.88, 'extract'),
+        pages: createFieldValue('379-423', 'extracted', 0.92, 'extract'),
+      }),
+    };
+    const provider = makeProvider({
+      searchCrossrefByTitle: vi.fn(async () => [
+        {
+          provider: 'crossref',
+          title: 'A Mathematical Theory of Communication',
+          authors: ['Shannon, C. E.'],
+          year: 1948,
+          venue: 'Bell System Technical Journal',
+          volume: '27',
+          issue: '3',
+          pages: '623-656',
+          doi: '10.1002/j.1538-7305.1948.tb00917.x',
+          sourceType: 'journal-article',
+        },
+        {
+          provider: 'crossref',
+          title: 'A Mathematical Theory of Communication',
+          authors: ['Shannon, C. E.'],
+          year: 1948,
+          venue: 'Bell System Technical Journal',
+          volume: '27',
+          issue: '3',
+          pages: '379-423',
+          doi: '10.1002/j.1538-7305.1948.tb01338.x',
+          sourceType: 'journal-article',
+        },
+      ]),
+    });
+
+    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const enriched = result.citations[0];
+
+    expect(enriched?.resolution?.status).toBe('verified');
+    expect(enriched?.resolution?.matchStrategy).toBe('crossref_exact_title');
+    expect(enriched?.pages.value).toBe('379-423');
+    expect(enriched?.doi.value).toBe('10.1002/j.1538-7305.1948.tb01338.x');
+  });
+
   it('marks tied accepted candidates as ambiguous and does not merge fields', async () => {
-    const citation = makeCitation();
+    const citation = makeCitation({
+      referenceType: 'unknown',
+      journal: createFieldValue(null, 'extracted', 0.1, 'extract'),
+    });
     const provider = makeProvider({
       searchCrossrefByTitle: vi.fn(async () => [
         {
@@ -171,7 +319,7 @@ describe('strict enrich stage', () => {
           title: citation.title.value ?? undefined,
           authors: ['Smith, J.', 'Doe, A.', 'Muller, T.'],
           year: 2021,
-          venue: 'IEEE Transactions on Medical Imaging',
+          venue: 'Medical Image Analysis',
           doi: '10.1109/TMI.2021.3098766',
           sourceType: 'journal-article',
         },
@@ -246,6 +394,124 @@ describe('strict enrich stage', () => {
     expect(enriched?.authors.value).toHaveLength(3);
     expect(enriched?.authors.value[0]?.last).toBe('Smith');
     expect(enriched?.authors.value[1]?.last).toBe('Doe');
+  });
+
+  it('reuses a single in-flight authority lookup across duplicate-style variants with the same resolution key', async () => {
+    const left = makeCitation({
+      raw: 'He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. Journal. 2016;?:770-778.',
+      referenceType: 'unknown',
+      authors: createFieldValue([
+        { first: 'K.', last: 'He', initials: 'K.' },
+        { first: 'X.', last: 'Zhang', initials: 'X.' },
+        { first: 'S.', last: 'Ren', initials: 'S.' },
+        { first: 'J.', last: 'Sun', initials: 'J.' },
+      ], 'extracted', 0.95, 'extract'),
+      title: createFieldValue('Deep Residual Learning for Image Recognition', 'extracted', 0.95, 'extract'),
+      year: createFieldValue(2016, 'extracted', 0.96, 'extract'),
+      journal: createFieldValue('Journal', 'extracted', 0.2, 'extract'),
+    });
+    const right = makeCitation({
+      raw: 'He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. \"Deep Residual Learning for Image Recognition.\" Journal, vol. ?, 2016, pp. 770-778.',
+      referenceType: 'journal',
+      authors: createFieldValue([
+        { first: 'Kaiming', last: 'He', initials: 'K.' },
+        { first: 'Xiangyu', last: 'Zhang', initials: 'X.' },
+        { first: 'Shaoqing', last: 'Ren', initials: 'S.' },
+        { first: 'Jian', last: 'Sun', initials: 'J.' },
+      ], 'extracted', 0.95, 'extract'),
+      title: createFieldValue('Deep Residual Learning for Image Recognition', 'extracted', 0.95, 'extract'),
+      year: createFieldValue(2016, 'extracted', 0.96, 'extract'),
+      journal: createFieldValue('Journal', 'extracted', 0.2, 'extract'),
+    });
+    const provider = makeProvider({
+      searchCrossrefByTitle: vi.fn(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        return [{
+          provider: 'crossref',
+          title: 'Deep Residual Learning for Image Recognition',
+          authors: ['He, Kaiming', 'Zhang, Xiangyu', 'Ren, Shaoqing', 'Sun, Jian'],
+          year: 2016,
+          venue: '2016 IEEE Conference on Computer Vision and Pattern Recognition',
+          pages: '770-778',
+          doi: '10.1109/CVPR.2016.90',
+          url: 'https://doi.org/10.1109/CVPR.2016.90',
+          sourceType: 'proceedings-article',
+        }];
+      }),
+    });
+
+    const result = await createEnrichStage(provider, cache as any).run(makeContext([left, right]));
+    const enriched = result.citations;
+
+    expect(provider.searchCrossrefByTitle).toHaveBeenCalledTimes(1);
+    expect(enriched[0]?.resolution?.status).toBe('verified');
+    expect(enriched[1]?.resolution?.status).toBe('verified');
+    expect(enriched[0]?.referenceType).toBe('conference');
+    expect(enriched[1]?.referenceType).toBe('conference');
+  });
+
+  it('degrades a stalled resolution attempt into a per-citation provider error instead of timing out the whole stage', async () => {
+    const previousTimeout = process.env.V2_ENRICH_CITATION_TIMEOUT_MS;
+    process.env.V2_ENRICH_CITATION_TIMEOUT_MS = '25';
+
+    try {
+      const citation = makeCitation();
+      const provider = makeProvider({
+        searchCrossrefByTitle: vi.fn(async () => new Promise<never>(() => {})),
+      });
+
+      const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+      const enriched = result.citations[0];
+
+      expect(provider.searchCrossrefByTitle).toHaveBeenCalledTimes(1);
+      expect(result.partialResult).toBe(true);
+      expect(result.fallbacksUsed).toContain('enrich:resolution_timeout');
+      expect(enriched?.resolution?.status).toBe('provider_error');
+      expect(enriched?.resolution?.rejectedReasons).toContain('resolution_execution_timeout');
+    } finally {
+      if (previousTimeout == null) {
+        delete process.env.V2_ENRICH_CITATION_TIMEOUT_MS;
+      } else {
+        process.env.V2_ENRICH_CITATION_TIMEOUT_MS = previousTimeout;
+      }
+    }
+  });
+
+  it('allows verified authority data to upgrade placeholder journal references into conference records', async () => {
+    const citation = makeCitation({
+      raw: 'He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. Journal. 2016;?:770-778.',
+      referenceType: 'journal',
+      authors: createFieldValue([
+        { first: 'K.', last: 'He', initials: 'K.' },
+        { first: 'X.', last: 'Zhang', initials: 'X.' },
+        { first: 'S.', last: 'Ren', initials: 'S.' },
+        { first: 'J.', last: 'Sun', initials: 'J.' },
+      ], 'extracted', 0.95, 'extract'),
+      title: createFieldValue('Deep Residual Learning for Image Recognition', 'extracted', 0.95, 'extract'),
+      year: createFieldValue(2016, 'extracted', 0.96, 'extract'),
+      journal: createFieldValue('Journal', 'extracted', 0.15, 'extract'),
+    });
+    const provider = makeProvider({
+      searchCrossrefByTitle: vi.fn(async () => [{
+        provider: 'crossref',
+        title: 'Deep Residual Learning for Image Recognition',
+        authors: ['He, Kaiming', 'Zhang, Xiangyu', 'Ren, Shaoqing', 'Sun, Jian'],
+        year: 2016,
+        venue: '2016 IEEE Conference on Computer Vision and Pattern Recognition',
+        pages: '770-778',
+        doi: '10.1109/CVPR.2016.90',
+        url: 'https://doi.org/10.1109/CVPR.2016.90',
+        sourceType: 'proceedings-article',
+      }]),
+    });
+
+    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const enriched = result.citations[0];
+
+    expect(enriched?.resolution?.status).toBe('verified');
+    expect(enriched?.referenceType).toBe('conference');
+    expect(enriched?.conferenceTitle.value).toBe('2016 IEEE Conference on Computer Vision and Pattern Recognition');
+    expect(enriched?.resolution?.appliedFields).toContain('referenceType');
   });
 
   it('does not mark journal abbreviations and shortened page ranges as conflicts when they are semantically equivalent', async () => {
