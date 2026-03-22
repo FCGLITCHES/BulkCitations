@@ -173,23 +173,58 @@ Stabilize the v2 citation engine so the stress harness:
 - When a journal citation only carries a provisional locator like `1-10`, has no extracted volume/issue, and the verified DOI record supplies the final volume/issue/pages, the authority pages are now promoted.
 - This avoids treating early-online placeholder locators as hard conflicts when the DOI record is clearly more authoritative.
 
+### 18. Verified authority matches now repair fields instead of only backfilling them
+
+- Once strict resolution verifies the correct record, the enrich stage now treats that record as corrective authority for core bibliographic fields.
+- Non-user extracted fields are now repaired when the verified authority record disagrees on:
+  - authors
+  - title
+  - journal / conference / book venue
+  - year
+  - DOI / URL
+  - volume / issue / pages
+- Semantically equivalent variants are still preserved without being treated as errors, for example:
+  - abbreviated vs expanded journal names
+  - shortened vs expanded page spans
+  - punctuation-only title differences
+
+### 19. Resolution metadata now records which fields were actually applied from authority
+
+- `resolution.appliedFields` was added so the engine can distinguish:
+  - fields corrected or filled from verified authority
+  - unresolved conflicts that still need manual review
+- `validate` now reports authority-applied field changes as informational:
+  - `authority_fields_applied`
+- These are no longer treated like hard merge conflicts.
+
+### 20. Dedup now preserves verified authority wins and revalidates merged citations
+
+- Dedup base-citation selection now prefers:
+  - verified resolution
+  - authority-backed fields
+  - stronger overall citation confidence
+- Field-level duplicate merging now prefers the strongest field, not just the first non-empty one.
+- Merged citations no longer concatenate all duplicate raw strings into one polluted `raw` blob.
+- After dedup merges a canonical citation, it now reruns offline validation on the merged citation so stale pre-merge validation does not leak into scoring.
+- This prevents duplicate-family collapse from undoing a verified enrich correction.
+
 ## Current Measured Status
 
 ### Test status
 
 - `npx vitest run server/engine/v2`
-  - `11` test files passed
-  - `62` tests passed
+  - `12` test files passed
+  - `90` tests passed
 - `npm run check`
   - passed
 
 ### Additional targeted regression status
 
-- `npx vitest run server/engine/v2/adapters.test.ts server/engine/v2/utils.test.ts server/engine/v2/validation-false-positives.test.ts server/engine/v2/enrich-stage.test.ts server/engine/v2/resolution.test.ts`
-  - `5` test files passed
-  - `47` tests passed
+- `npx vitest run server/engine/v2/enrich-stage.test.ts server/engine/v2/enrich-validate-dedup.test.ts server/engine/v2/validation-false-positives.test.ts server/engine/v2/pipeline.test.ts`
+  - `4` test files passed
+  - `37` tests passed
 - `npm run check`
-  - passed after the drug/AI stress-batch fixes
+  - passed after the enrich / validate / dedup architecture changes
 
 ### Drug / AI stress batch results
 
@@ -217,6 +252,51 @@ Main structural improvements that drove this:
 - source-type compatibility hard rejection
 - online-first locator promotion on DOI verification
 
+### Latest phase-focused stress verification
+
+Fixture:
+
+- `D:\Coding\Citing\scripts\data\stress-batch-20260322-drug-ai-extended.txt`
+
+Latest report:
+
+- `D:\Coding\Citing\output\stress\20260322-074127Z-stress-batch-20260322-drug-ai-extended.json`
+
+Counts in that report:
+
+- `ready = 52`
+- `worth_reviewing = 7`
+- `action_needed = 1`
+- verified citations = `51`
+- citations with `resolution.appliedFields` = `51`
+- citations with unresolved `resolution.conflictFields` = `0`
+
+What this means:
+
+- verified authority matches are now being applied into the canonical citation instead of only sitting in debug metadata
+- no citations in the saved stress report are currently stuck in review because enrich preserved an authority conflict
+- the remaining `worth_reviewing` items in this batch are still resolver / extractor misses, not validate / dedup regressions
+
+### 21. Dedup now refuses structural merges when explicit DOIs disagree
+
+- Two citations can no longer be structurally deduplicated if both contain explicit DOI values and those DOI values are different.
+- This closes a high-confidence false-positive path where:
+  - title
+  - year
+  - venue
+  - pages
+  looked similar enough to merge, even though the DOI evidence said they were different works.
+- In practice this makes dedup more conservative in exactly the right place:
+  - if DOI evidence agrees, merge is safe
+  - if DOI evidence conflicts, merge is blocked
+
+### 22. The site now has a raw-content v2 path instead of forcing client-side reference shaping
+
+- The web input path no longer has to successfully split pasted text into a `references[]` array before conversion can begin when `v2` is selected.
+- The site can now send the raw pasted blob through the legacy `/api/convert` bridge using `content`, and the bridge hands that raw text to the v2 pipeline.
+- This matters because many paste failures were not engine failures at all; they were front-end pre-shaping failures where the UI tried to decide what counted as a valid reference block before the v2 pipeline saw the input.
+- Internal canonical field guards were kept in place. The change was made at the transport boundary, not by weakening the engine’s typed citation model.
+
 ### Latest saved batch results
 
 Latest completed report:
@@ -241,6 +321,12 @@ Important caveat:
   - but the latest saved report is not yet the final authority for resolution-status distribution
 
 ## What Still Needs Fixing
+
+Deferred for later by request:
+
+- ranked detect-family confusion analysis
+- ranked source-type misclassification analysis
+- ranked extraction field-loss analysis
 
 ### 1. Finish a full enrich-complete batch run
 

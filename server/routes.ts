@@ -71,6 +71,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return calculateConfidence(ref.parsedData, getRulesScoreForStoredReference(ref));
   }
 
+  function coerceIncomingReferences(data: { references?: string[]; content?: string }) {
+    const explicitReferences = (data.references ?? [])
+      .map((reference) => reference.trim())
+      .filter(Boolean);
+    if (explicitReferences.length > 0) return explicitReferences;
+
+    const rawContent = String(data.content ?? '').trim();
+    if (!rawContent) return [];
+
+    const paragraphBlocks = rawContent
+      .split(/\n\s*\n/)
+      .map((block) => block.trim())
+      .filter(Boolean);
+    if (paragraphBlocks.length > 1) return paragraphBlocks;
+
+    const numberedBlocks: string[] = [];
+    let current = '';
+    for (const line of rawContent.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      const numberedStart = trimmed.match(/^\s*(?:\[\d+\]|\d+[.):\-])\s*(.+)$/);
+      if (numberedStart) {
+        if (current.trim()) numberedBlocks.push(current.trim());
+        current = numberedStart[1];
+        continue;
+      }
+      current = current ? `${current} ${trimmed}` : trimmed;
+    }
+    if (current.trim()) numberedBlocks.push(current.trim());
+    if (numberedBlocks.length > 1) return numberedBlocks;
+
+    return [rawContent];
+  }
+
   app.get("/api/admin/session", (req, res) => {
     res.setHeader("Cache-Control", "no-store");
     res.json(getAdminSessionStatus(req));
@@ -122,10 +156,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/convert", async (req, res) => {
     try {
       const validatedData = conversionRequestSchema.parse(req.body);
-      // Initial conversion should always attempt validation so the first result
-      // matches what users see after a manual recheck. Validation is informational
-      // only and does not affect the confidence score.
-      const shouldAttemptValidation = true;
+      const incomingReferences = coerceIncomingReferences(validatedData);
+      // v2 callers can opt into authority repair explicitly. The main site does
+      // this by default, while tests and internal callers can disable it for
+      // deterministic local-only conversion.
+      const shouldAttemptValidation = validatedData.enrichWithAuthority;
       const envUseV2Engine = !/^(0|false|no|off)$/i.test(process.env.USE_V2_ENGINE ?? 'true');
       const useV2Engine = validatedData.engineVersion === 'v2'
         ? true
@@ -134,7 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           : envUseV2Engine;
 
       if (!useV2Engine) {
-        const pipelineResult = await processReferences(validatedData.references, {
+        const pipelineResult = await processReferences(incomingReferences, {
           inputStyle: validatedData.inputStyle,
           outputStyle: validatedData.outputStyle,
           enrichWithAuthority: shouldAttemptValidation,
@@ -176,7 +211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(response);
       }
 
-      const sourceContent = validatedData.references.join("\n\n");
+      const sourceContent = String(validatedData.content ?? '').trim() || incomingReferences.join("\n\n");
       const { response: v2Response } = await processV2Conversion({
         sourceType: 'text',
         content: sourceContent,

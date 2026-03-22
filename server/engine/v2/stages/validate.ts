@@ -513,6 +513,16 @@ function buildResolutionIssues(citation: CanonicalCitation): ValidationIssue[] {
     });
   }
 
+  if ((resolution.appliedFields?.length ?? 0) > 0) {
+    issues.push({
+      field: 'raw',
+      severity: 'info',
+      code: 'authority_fields_applied',
+      message: 'Verified external metadata supplied corrected or missing fields.',
+      extracted: resolution.appliedFields,
+    });
+  }
+
   return issues;
 }
 
@@ -546,7 +556,7 @@ function dedupeIssues(issues: ValidationIssue[]): ValidationIssue[] {
   return deduped;
 }
 
-async function buildValidationResult(
+export async function validateCitationOffline(
   citation: CanonicalCitation,
   splitArtifact?: {
     cleanedChunk: string;
@@ -579,7 +589,7 @@ export function createValidateStage(): V2Stage {
 
       for (const citation of context.citations) {
         const splitArtifact = context.splitArtifactsByCitationId[citation.id];
-        const { issues, metadata } = await buildValidationResult(citation, splitArtifact);
+        const { issues, metadata } = await validateCitationOffline(citation, splitArtifact);
         const hasError = issues.some((issue) => issue.severity === 'error');
         let nextCitation: CanonicalCitation = {
           ...citation,

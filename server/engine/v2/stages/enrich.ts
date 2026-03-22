@@ -1,6 +1,8 @@
 import pLimit from 'p-limit';
 import type {
+  CanonicalAuthor,
   CanonicalCitation,
+  CanonicalReferenceType,
   EnrichmentMetadata,
   FieldValue,
   ResolutionAcceptedCandidate,
@@ -20,10 +22,12 @@ import {
   buildResolutionMetadata,
   buildResolutionQueryEvidence,
   chooseBestResolutionCandidate,
+  normalizeSurnameForResolution,
 } from '../resolution.js';
 import {
   addCitationStageLog,
   attachCitationDebug,
+  coerceCanonicalAuthor,
   createStageDiagnostic,
   logStructuredDebug,
   normalizeDoiValue,
@@ -33,6 +37,7 @@ import {
 
 const PROVIDER_LIMIT = 5;
 const DEFAULT_ENRICH_CONCURRENCY = 3;
+const AUTHORITY_FIELD_CONFIDENCE = 0.97;
 
 type ProviderKey = 'doi' | 'crossref' | 'pubmed' | 'openalex';
 
@@ -46,59 +51,85 @@ type CachedResolutionPayload = {
   yearToleranceApplied: boolean;
 };
 
+type AuthorityMergeAudit = {
+  appliedFields: string[];
+  conflictFields: string[];
+};
+
+function recordField(list: string[], fieldName: string): void {
+  if (!list.includes(fieldName)) {
+    list.push(fieldName);
+  }
+}
+
+function authorityFieldValue<T>(field: FieldValue<T>, value: T, stageId: string): FieldValue<T> {
+  return {
+    value,
+    source: 'authority',
+    confidence: Math.max(field.confidence, AUTHORITY_FIELD_CONFIDENCE),
+    stageId,
+  };
+}
+
 function updateStringField(
   field: FieldValue<string | null>,
   incoming: string | undefined,
   stageId: string,
-  conflictFields: string[],
-  conflictName: string,
+  audit: AuthorityMergeAudit,
+  fieldName: string,
   normalizer: (value: string) => string = (value) => normalizeWhitespace(value.toLowerCase()),
 ): FieldValue<string | null> {
   const nextValue = normalizeWhitespace(incoming ?? '') || undefined;
   if (!nextValue) return field;
 
   if (!field.value || isPlaceholderFieldValue(field.value)) {
-    return {
-      value: nextValue,
-      source: 'authority',
-      confidence: Math.max(field.confidence, 0.94),
-      stageId,
-    };
+    recordField(audit.appliedFields, fieldName);
+    return authorityFieldValue(field, nextValue, stageId);
   }
 
   const normalizedCurrent = normalizer(field.value);
   const normalizedIncoming = normalizer(nextValue);
-  const equivalent = conflictName === 'journal'
+  const equivalent = fieldName === 'journal'
     ? areVenueValuesEquivalent(field.value, nextValue)
     : normalizedCurrent === normalizedIncoming;
 
-  if (!equivalent && !conflictFields.includes(conflictName)) {
-    conflictFields.push(conflictName);
+  if (equivalent) {
+    return field;
   }
-  return field;
+
+  if (field.source === 'user') {
+    recordField(audit.conflictFields, fieldName);
+    return field;
+  }
+
+  recordField(audit.appliedFields, fieldName);
+  return authorityFieldValue(field, nextValue, stageId);
 }
 
 function updateNumericField(
   field: FieldValue<number | null>,
   incoming: number | undefined,
   stageId: string,
-  conflictFields: string[],
-  conflictName: string,
+  audit: AuthorityMergeAudit,
+  fieldName: string,
 ): FieldValue<number | null> {
   if (incoming == null || !Number.isFinite(incoming)) return field;
   if (field.value == null) {
-    return {
-      value: incoming,
-      source: 'authority',
-      confidence: Math.max(field.confidence, 0.94),
-      stageId,
-    };
+    recordField(audit.appliedFields, fieldName);
+    return authorityFieldValue(field, incoming, stageId);
   }
 
-  if (field.value !== incoming && !conflictFields.includes(conflictName)) {
-    conflictFields.push(conflictName);
+  if (field.value === incoming) {
+    return field;
   }
-  return field;
+
+  if (field.source === 'user') {
+    recordField(audit.conflictFields, fieldName);
+    return field;
+  }
+
+  recordField(audit.appliedFields, fieldName);
+  return authorityFieldValue(field, incoming, stageId);
 }
 
 function buildVenueNormalizer(value: string): string {
@@ -177,6 +208,97 @@ function normalizePageComparisonValue(value: string): string {
 function isLikelyOnlineFirstLocator(value: string | null | undefined): boolean {
   if (!value) return false;
   return /^1-\d{1,2}$/.test(normalizePageComparisonValue(value));
+}
+
+function authorInitialKey(author: CanonicalAuthor): string {
+  const seed = normalizeWhitespace(author.initials ?? author.first ?? '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z\s]/g, ' ')
+    .toUpperCase();
+  const initials = seed
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0] ?? '')
+    .join('');
+  return initials.slice(0, 6);
+}
+
+function authorSignature(author: CanonicalAuthor): string {
+  const literal = normalizeWhitespace(author.literal ?? '');
+  if (literal && isGroupAuthor(literal)) {
+    return `group:${normalizeGroupAuthor(literal).toLowerCase()}`;
+  }
+  if (isGroupAuthor(author.last)) {
+    return `group:${normalizeGroupAuthor(author.last).toLowerCase()}`;
+  }
+  return `${normalizeSurnameForResolution(author.last)}|${authorInitialKey(author)}`;
+}
+
+function normalizeAuthorityAuthors(authors?: string[]): CanonicalAuthor[] {
+  return (authors ?? [])
+    .map((author) => coerceCanonicalAuthor(author))
+    .filter((author) => Boolean(author.literal || author.last));
+}
+
+function authorsEquivalent(current: CanonicalAuthor[], authority: CanonicalAuthor[]): boolean {
+  if (current.length === 0 || authority.length === 0) return false;
+  if (current.length !== authority.length) return false;
+  const currentSignatures = current.map(authorSignature);
+  const authoritySignatures = authority.map(authorSignature);
+  return currentSignatures.every((signature, index) => signature === authoritySignatures[index]);
+}
+
+function updateAuthorsField(
+  field: FieldValue<CanonicalAuthor[]>,
+  incoming: string[] | undefined,
+  stageId: string,
+  audit: AuthorityMergeAudit,
+): FieldValue<CanonicalAuthor[]> {
+  const authorityAuthors = normalizeAuthorityAuthors(incoming);
+  if (authorityAuthors.length === 0) return field;
+
+  if (field.value.length === 0) {
+    recordField(audit.appliedFields, 'authors');
+    return authorityFieldValue(field, authorityAuthors, stageId);
+  }
+
+  if (authorsEquivalent(field.value, authorityAuthors)) {
+    return field;
+  }
+
+  if (field.source === 'user') {
+    recordField(audit.conflictFields, 'authors');
+    return field;
+  }
+
+  recordField(audit.appliedFields, 'authors');
+  return authorityFieldValue(field, authorityAuthors, stageId);
+}
+
+function authoritySourceTypeToCanonical(sourceType?: string): CanonicalReferenceType | null {
+  const normalized = normalizeWhitespace((sourceType ?? '').toLowerCase());
+  if (!normalized) return null;
+  if (/(book[-\s]chapter|book[-\s]section|chapter|book-part)/.test(normalized)) return 'chapter';
+  if (/(conference|proceeding|paper)/.test(normalized)) return 'conference';
+  if (/(report)/.test(normalized)) return 'report';
+  if (/(website|webpage|site)/.test(normalized)) return 'website';
+  if (/(preprint|posted-content)/.test(normalized)) return 'preprint';
+  if (/(dissertation|thesis)/.test(normalized)) return 'thesis';
+  if (/(book|monograph)/.test(normalized)) return 'book';
+  if (/(journal|article)/.test(normalized)) return 'journal';
+  return null;
+}
+
+function resolveAuthorityReferenceType(
+  currentType: CanonicalReferenceType,
+  candidate: ResolutionAcceptedCandidate,
+): CanonicalReferenceType {
+  const authorityType = authoritySourceTypeToCanonical(candidate.sourceType);
+  if (!authorityType) return currentType;
+  if (currentType === 'unknown') return authorityType;
+  if (currentType === 'preprint' && authorityType === 'journal') return 'journal';
+  return currentType;
 }
 
 function cacheKeyForCitation(citation: CanonicalCitation): string {
@@ -265,9 +387,17 @@ function toMatchStrategy(providerKey: ProviderKey): ResolutionMetadata['matchStr
 function applyVerifiedCandidate(
   citation: CanonicalCitation,
   candidate: ResolutionAcceptedCandidate,
-): { citation: CanonicalCitation; conflictFields: string[] } {
-  const conflictFields: string[] = [];
-  const promoteAuthorityPages = citation.referenceType === 'journal'
+): { citation: CanonicalCitation; appliedFields: string[]; conflictFields: string[] } {
+  const audit: AuthorityMergeAudit = {
+    appliedFields: [],
+    conflictFields: [],
+  };
+  const resolvedReferenceType = resolveAuthorityReferenceType(citation.referenceType, candidate);
+  if (resolvedReferenceType !== citation.referenceType) {
+    recordField(audit.appliedFields, 'referenceType');
+  }
+
+  const promoteAuthorityPages = resolvedReferenceType === 'journal'
     && !citation.volume.value
     && !citation.issue.value
     && Boolean(candidate.volume)
@@ -276,54 +406,54 @@ function applyVerifiedCandidate(
 
   let nextCitation: CanonicalCitation = {
     ...citation,
-    title: updateStringField(citation.title, candidate.title, 'enrich', conflictFields, 'title', normalizeTextComparisonValue),
-    year: updateNumericField(citation.year, candidate.year, 'enrich', conflictFields, 'year'),
-    doi: updateStringField(citation.doi, candidate.doi ? normalizeDoiValue(candidate.doi) : undefined, 'enrich', conflictFields, 'doi', normalizeDoiValue),
-    url: updateStringField(citation.url, candidate.url, 'enrich', conflictFields, 'url'),
-    volume: updateStringField(citation.volume, candidate.volume, 'enrich', conflictFields, 'volume'),
-    issue: updateStringField(citation.issue, candidate.issue, 'enrich', conflictFields, 'issue'),
+    referenceType: resolvedReferenceType,
+    authors: updateAuthorsField(citation.authors, candidate.authors, 'enrich', audit),
+    title: updateStringField(citation.title, candidate.title, 'enrich', audit, 'title', normalizeTextComparisonValue),
+    year: updateNumericField(citation.year, candidate.year, 'enrich', audit, 'year'),
+    doi: updateStringField(citation.doi, candidate.doi ? normalizeDoiValue(candidate.doi) : undefined, 'enrich', audit, 'doi', normalizeDoiValue),
+    url: updateStringField(citation.url, candidate.url, 'enrich', audit, 'url'),
+    volume: updateStringField(citation.volume, candidate.volume, 'enrich', audit, 'volume'),
+    issue: updateStringField(citation.issue, candidate.issue, 'enrich', audit, 'issue'),
     pages: promoteAuthorityPages
-      ? {
-          value: normalizeWhitespace(candidate.pages ?? ''),
-          source: 'authority',
-          confidence: Math.max(citation.pages.confidence, 0.94),
-          stageId: 'enrich',
-        }
-      : updateStringField(citation.pages, candidate.pages, 'enrich', conflictFields, 'pages', normalizePageComparisonValue),
-    publisher: updateStringField(citation.publisher, candidate.publisher, 'enrich', conflictFields, 'publisher'),
+      ? (() => {
+          recordField(audit.appliedFields, 'pages');
+          return authorityFieldValue(citation.pages, normalizeWhitespace(candidate.pages ?? ''), 'enrich');
+        })()
+      : updateStringField(citation.pages, candidate.pages, 'enrich', audit, 'pages', normalizePageComparisonValue),
+    publisher: updateStringField(citation.publisher, candidate.publisher, 'enrich', audit, 'publisher'),
   };
 
   const venue = candidate.venue;
-  if (citation.referenceType === 'conference') {
+  if (resolvedReferenceType === 'conference') {
     nextCitation = {
       ...nextCitation,
-      conferenceTitle: updateStringField(citation.conferenceTitle, venue, 'enrich', conflictFields, 'conferenceTitle', buildVenueNormalizer),
+      conferenceTitle: updateStringField(citation.conferenceTitle, venue, 'enrich', audit, 'conferenceTitle', buildVenueNormalizer),
     };
-  } else if (['book', 'chapter'].includes(citation.referenceType)) {
+  } else if (['book', 'chapter'].includes(resolvedReferenceType)) {
     nextCitation = {
       ...nextCitation,
-      bookTitle: updateStringField(citation.bookTitle, venue, 'enrich', conflictFields, 'bookTitle', buildVenueNormalizer),
+      bookTitle: updateStringField(citation.bookTitle, venue, 'enrich', audit, 'bookTitle', buildVenueNormalizer),
     };
   } else {
     nextCitation = {
       ...nextCitation,
-      journal: updateStringField(citation.journal, venue, 'enrich', conflictFields, 'journal', buildVenueNormalizer),
+      journal: updateStringField(citation.journal, venue, 'enrich', audit, 'journal', buildVenueNormalizer),
     };
   }
 
-  if (citation.referenceType === 'report' && !nextCitation.institution.value && candidate.publisher && isGroupAuthor(candidate.publisher)) {
+  if (resolvedReferenceType === 'report' && !nextCitation.institution.value && candidate.publisher && isGroupAuthor(candidate.publisher)) {
+    recordField(audit.appliedFields, 'institution');
     nextCitation = {
       ...nextCitation,
-      institution: {
-        value: normalizeGroupAuthor(candidate.publisher),
-        source: 'authority',
-        confidence: Math.max(nextCitation.institution.confidence, 0.9),
-        stageId: 'enrich',
-      },
+      institution: authorityFieldValue(nextCitation.institution, normalizeGroupAuthor(candidate.publisher), 'enrich'),
     };
   }
 
-  return { citation: nextCitation, conflictFields };
+  return {
+    citation: nextCitation,
+    appliedFields: audit.appliedFields,
+    conflictFields: audit.conflictFields,
+  };
 }
 
 function buildEnrichmentFromResolution(
@@ -519,10 +649,12 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
         const cached = await cache.get<CachedResolutionPayload>(cacheKey);
         if (cached) {
           let cachedCitation = citation;
+          let appliedFields: string[] = [];
           let conflictFields: string[] = [];
           if (cached.acceptedCandidate) {
             const merged = applyVerifiedCandidate(cachedCitation, cached.acceptedCandidate);
             cachedCitation = merged.citation;
+            appliedFields = merged.appliedFields;
             conflictFields = merged.conflictFields;
           }
 
@@ -537,6 +669,7 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
               }),
               candidateCount: cached.candidateCount,
               rejectedReasons: cached.rejectedReasons,
+              appliedFields,
               conflictFields,
               yearToleranceApplied: cached.yearToleranceApplied,
             },
@@ -553,6 +686,7 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
             providerOrder: ['cache'],
             cacheHit: true,
             candidateCount: cached.candidateCount,
+            appliedFields,
             conflictFields,
             warningFlags: conflictFields,
           }, context.debugEnabled);
@@ -560,6 +694,7 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
             providerOrder: ['cache'],
             cacheHit: true,
             candidateCount: cached.candidateCount,
+            appliedFields,
             conflictFields,
             warningFlags: conflictFields,
           });
@@ -568,6 +703,7 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
               provider: cached.provider,
               status: cached.status,
               cacheKey,
+              appliedFields,
               conflictFields,
             })),
             fallbacksUsed: localFallbacks,
@@ -661,6 +797,7 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
               ),
               candidateCount: allCandidates.length,
               rejectedReasons,
+              appliedFields: merged.appliedFields,
               conflictFields: merged.conflictFields,
               yearToleranceApplied: selected.accepted.yearToleranceApplied,
             },
@@ -733,6 +870,7 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
           providerErrorCount,
           acceptedCandidate: nextCitation.resolution?.acceptedCandidate,
           rejectedReasons: nextCitation.resolution?.rejectedReasons ?? [],
+          appliedFields: nextCitation.resolution?.appliedFields ?? [],
           conflictFields: nextCitation.resolution?.conflictFields ?? [],
           yearToleranceApplied: nextCitation.resolution?.yearToleranceApplied ?? false,
           warningFlags: nextCitation.resolution?.conflictFields ?? [],
@@ -742,6 +880,7 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
           candidateCount: allCandidates.length,
           successfulProviderCount,
           providerErrorCount,
+          appliedFields: nextCitation.resolution?.appliedFields ?? [],
           warningFlags: nextCitation.resolution?.conflictFields ?? [],
           conflictFields: nextCitation.resolution?.conflictFields ?? [],
           selectedBranch: undefined,
@@ -753,6 +892,7 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
             provider: nextCitation.resolution?.provider,
             status: nextCitation.resolution?.status,
             candidateCount: nextCitation.resolution?.candidateCount,
+            appliedFields: nextCitation.resolution?.appliedFields ?? [],
             conflictFields: nextCitation.resolution?.conflictFields ?? [],
           })),
           fallbacksUsed: localFallbacks,

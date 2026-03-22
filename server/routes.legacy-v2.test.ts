@@ -62,6 +62,31 @@ describe('legacy /api/convert routing', () => {
     expect(payload.convertedReferences[0].healthState).toBeTruthy();
   });
 
+  it('accepts raw v2 content on /api/convert without requiring client-side reference splitting', async () => {
+    const response = await fetch(`${baseUrl}/api/convert`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: '14. Li Y, Zhang L, Wang Y, et al.: Generative deep learning enables the discovery of a potent and selective RIPK1 inhibitor. Nat Commun. 2022, 13: 10.1038/s41467-022-34692-w',
+        inputStyle: 'auto',
+        outputStyle: 'apa',
+        enrichWithAuthority: false,
+        isPro: false,
+        engineVersion: 'v2',
+      }),
+    });
+
+    expect(response.ok).toBe(true);
+    const payload = await response.json() as {
+      convertedReferences: Array<{ parsedData: { title?: string; doi?: string } }>;
+      engineVersion?: 'v1' | 'v2';
+    };
+    expect(payload.engineVersion).toBe('v2');
+    expect(payload.convertedReferences).toHaveLength(1);
+    expect(payload.convertedReferences[0].parsedData.title).toBeTruthy();
+    expect(payload.convertedReferences[0].parsedData.doi).toBeTruthy();
+  });
+
   it('still supports the legacy v1 path when explicitly requested', async () => {
     const response = await fetch(`${baseUrl}/api/convert`, {
       method: 'POST',

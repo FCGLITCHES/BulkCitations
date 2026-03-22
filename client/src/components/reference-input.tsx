@@ -191,6 +191,19 @@ export default function ReferenceInput({
       return;
     }
 
+    if (engineVersion === "v2") {
+      onProcessingStart(Math.max(referenceCount, 1));
+      convertMutation.mutate({
+        content: source,
+        inputStyle,
+        outputStyle,
+        isPro,
+        enrichWithAuthority: true,
+        engineVersion,
+      });
+      return;
+    }
+
     // Parse references from input
     const text = source;
     const references = [];
@@ -339,7 +352,7 @@ export default function ReferenceInput({
       <div>
         <Label className="text-sm font-medium text-foreground mb-2 block">
           Paste Your References
-          <span className="text-muted-foreground font-normal ml-1 text-xs sm:text-sm">(separate by blank lines or use numbers: 1., 2., 3.)</span>
+          <span className="text-muted-foreground font-normal ml-1 text-xs sm:text-sm">(blank lines and numbering help, but raw reference blobs are accepted in v2)</span>
         </Label>
         <Textarea
           className="min-h-[180px] sm:min-h-[200px] resize-none font-mono text-sm w-full max-w-full"

@@ -173,7 +173,8 @@ export interface ConversionResponse {
 }
 
 export interface ConversionRequest {
-  references: string[];
+  references?: string[];
+  content?: string;
   inputStyle: string;
   outputStyle: string;
   isPro?: boolean;

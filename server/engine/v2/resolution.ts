@@ -219,12 +219,16 @@ function sourceTypeCompatible(referenceType: CanonicalReferenceType, sourceType?
   switch (referenceType) {
     case 'journal':
       return /(journal|article)/.test(normalized);
+    case 'chapter':
+      return /(chapter|section|book)/.test(normalized);
     case 'conference':
       return /(conference|proceeding|paper)/.test(normalized);
     case 'report':
       return /(report)/.test(normalized);
     case 'book':
       return /(book|monograph)/.test(normalized);
+    case 'thesis':
+      return /(dissertation|thesis)/.test(normalized);
     case 'website':
       return /(website|webpage|site)/.test(normalized);
     case 'preprint':
@@ -441,6 +445,7 @@ export function buildResolutionMetadata(
     status,
     candidateCount: 0,
     rejectedReasons: [],
+    appliedFields: [],
     conflictFields: [],
     yearToleranceApplied: false,
     queryEvidence: buildResolutionQueryEvidence(citation),

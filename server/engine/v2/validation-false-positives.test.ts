@@ -110,6 +110,7 @@ describe('v2 validation false-positive regression checks', () => {
         matchStrategy: 'crossref_doi',
         candidateCount: 1,
         rejectedReasons: [],
+        appliedFields: [],
         conflictFields: [],
         yearToleranceApplied: false,
         queryEvidence: {
@@ -257,6 +258,7 @@ describe('v2 validation false-positive regression checks', () => {
         matchStrategy: 'none',
         candidateCount: 0,
         rejectedReasons: [],
+        appliedFields: [],
         conflictFields: [],
         yearToleranceApplied: false,
         queryEvidence: {
@@ -294,6 +296,7 @@ describe('v2 validation false-positive regression checks', () => {
         matchStrategy: 'none',
         candidateCount: 0,
         rejectedReasons: ['local_only_author_optional_reference'],
+        appliedFields: [],
         conflictFields: [],
         yearToleranceApplied: false,
         queryEvidence: {

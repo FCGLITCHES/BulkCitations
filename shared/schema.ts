@@ -191,12 +191,24 @@ export interface DuplicateGroup {
 
 // Validation schemas
 export const conversionRequestSchema = z.object({
-  references: z.array(z.string().min(1)),
+  references: z.array(z.string().min(1)).optional(),
+  content: z.string().min(1).optional(),
   inputStyle: z.string(),
   outputStyle: z.string(),
   enrichWithAuthority: z.boolean().optional().default(false),
   isPro: z.boolean().optional().default(false),
   engineVersion: z.enum(['v1', 'v2']).optional(),
+}).superRefine((value, ctx) => {
+  const hasReferences = Array.isArray(value.references) && value.references.some((reference) => reference.trim().length > 0);
+  const hasContent = typeof value.content === 'string' && value.content.trim().length > 0;
+
+  if (hasReferences || hasContent) return;
+
+  ctx.addIssue({
+    code: z.ZodIssueCode.custom,
+    message: 'Either references or content must be provided.',
+    path: ['references'],
+  });
 });
 
 // In-memory storage types
@@ -572,6 +584,7 @@ export interface ResolutionMetadata {
   candidateCount: number;
   acceptedCandidate?: ResolutionAcceptedCandidate;
   rejectedReasons: string[];
+  appliedFields: string[];
   conflictFields: string[];
   yearToleranceApplied: boolean;
   queryEvidence: ResolutionQueryEvidence;

@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import type { CanonicalAuthor, CanonicalCitation, FieldValue, V2DuplicateEntry, V2FieldSource } from '@shared/schema';
+import type { CanonicalAuthor, CanonicalCitation, EnrichmentMetadata, FieldValue, ResolutionMetadata, V2DuplicateEntry, V2FieldSource } from '@shared/schema';
 import type { V2Stage } from '../contracts.js';
+import { buildResolutionMetadata } from '../resolution.js';
 import { addCitationStageLog, average, createStageDiagnostic, firstAuthorLastName, normalizedField, normalizeWhitespace } from '../utils.js';
+import { validateCitationOffline } from './validate.js';
 
 function similarityTokens(value: string): string[] {
   return normalizeWhitespace(value)
@@ -106,14 +108,75 @@ function hasMoreStructuredAuthors(authors: CanonicalAuthor[]): number {
   return authors.reduce((score, author) => score + (author.literal ? 0 : 1), 0) + authors.length;
 }
 
+function isVerifiedResolution(citation: CanonicalCitation): boolean {
+  return citation.resolution?.status === 'verified' || citation.resolution?.status === 'verified_with_year_tolerance';
+}
+
+function resolutionPriority(citation: CanonicalCitation): number {
+  switch (citation.resolution?.status) {
+    case 'verified':
+      return 8;
+    case 'verified_with_year_tolerance':
+      return 7;
+    case 'no_exact_match':
+      return 5;
+    case 'provider_no_coverage':
+      return 4;
+    case 'provider_error':
+      return 3;
+    case 'insufficient_evidence':
+      return 2;
+    default:
+      return 0;
+  }
+}
+
+function sourcePriority(source: V2FieldSource): number {
+  switch (source) {
+    case 'authority':
+      return 0.25;
+    case 'merged':
+      return 0.15;
+    case 'normalized':
+      return 0.1;
+    case 'user':
+      return 0.08;
+    default:
+      return 0;
+  }
+}
+
 function citationStrength(citation: CanonicalCitation): number {
-  return average([
+  let score = average([
     citation.authors.confidence,
     citation.title.confidence,
     citation.year.confidence,
     citation.journal.confidence,
     citation.doi.confidence,
   ]);
+  if (isVerifiedResolution(citation)) score += 0.18;
+  if (citation.resolution?.matchStrategy === 'crossref_doi') score += 0.04;
+  if ((citation.resolution?.appliedFields?.length ?? 0) > 0) {
+    score += Math.min(0.05, (citation.resolution?.appliedFields?.length ?? 0) * 0.01);
+  }
+  if ((citation.resolution?.conflictFields.length ?? 0) > 0) score -= 0.12;
+  if (citation.quality?.bucket === 'ready') score += 0.04;
+  return score;
+}
+
+function fieldStrength<T>(
+  field: FieldValue<T>,
+  citation: CanonicalCitation,
+  fieldName: string,
+  predicate?: (value: T) => boolean,
+): number {
+  const useful = predicate ? predicate(field.value) : Boolean(field.value);
+  if (!useful) return Number.NEGATIVE_INFINITY;
+  let score = field.confidence + sourcePriority(field.source) + (resolutionPriority(citation) * 0.02);
+  if (citation.resolution?.appliedFields?.includes(fieldName)) score += 0.08;
+  if (citation.resolution?.conflictFields?.includes(fieldName)) score -= 0.2;
+  if (citation.quality?.bucket === 'ready') score += 0.03;
+  return score;
 }
 
 function chooseBaseCitation(group: CanonicalCitation[]): CanonicalCitation {
@@ -123,62 +186,84 @@ function chooseBaseCitation(group: CanonicalCitation[]): CanonicalCitation {
 function mergeField<T>(
   base: FieldValue<T>,
   duplicate: FieldValue<T>,
-  baseCitationId: string,
-  duplicateCitationId: string,
+  baseCitation: CanonicalCitation,
+  duplicateCitation: CanonicalCitation,
   fieldName: string,
   predicate?: (value: T) => boolean,
 ): FieldValue<T> {
-  const baseIsUseful = predicate ? predicate(base.value) : Boolean(base.value);
-  const duplicateIsUseful = predicate ? predicate(duplicate.value) : Boolean(duplicate.value);
-
-  if (baseIsUseful) {
-    return {
-      ...base,
-      source: 'merged',
-      stageId: 'dedup',
-      mergedFrom: [baseCitationId, duplicateCitationId],
-      conflictResolution: `kept_base_${fieldName}`,
-    };
-  }
-
-  if (duplicateIsUseful) {
-    return {
-      ...duplicate,
-      source: 'merged',
-      stageId: 'dedup',
-      mergedFrom: [baseCitationId, duplicateCitationId],
-      conflictResolution: `filled_missing_${fieldName}`,
-    };
-  }
+  const baseScore = fieldStrength(base, baseCitation, fieldName, predicate);
+  const duplicateScore = fieldStrength(duplicate, duplicateCitation, fieldName, predicate);
+  const winner = duplicateScore > baseScore ? duplicate : base;
+  const conflictResolution = duplicateScore > baseScore
+    ? `preferred_duplicate_${fieldName}`
+    : Number.isFinite(baseScore)
+      ? `kept_base_${fieldName}`
+      : `no_better_${fieldName}`;
 
   return {
-    ...base,
-    source: 'merged' as V2FieldSource,
+    ...winner,
+    source: 'merged',
     stageId: 'dedup',
-    mergedFrom: [baseCitationId, duplicateCitationId],
-    conflictResolution: `no_better_${fieldName}`,
+    mergedFrom: [baseCitation.id, duplicateCitation.id],
+    conflictResolution,
   };
 }
 
 function mergeAuthors(
   base: FieldValue<CanonicalAuthor[]>,
   duplicate: FieldValue<CanonicalAuthor[]>,
-  baseCitationId: string,
-  duplicateCitationId: string,
+  baseCitation: CanonicalCitation,
+  duplicateCitation: CanonicalCitation,
 ): FieldValue<CanonicalAuthor[]> {
-  const baseScore = hasMoreStructuredAuthors(base.value);
-  const duplicateScore = hasMoreStructuredAuthors(duplicate.value);
+  const baseScore = hasMoreStructuredAuthors(base.value) + fieldStrength(base, baseCitation, 'authors', (value) => value.length > 0);
+  const duplicateScore = hasMoreStructuredAuthors(duplicate.value) + fieldStrength(duplicate, duplicateCitation, 'authors', (value) => value.length > 0);
   const winner = duplicateScore > baseScore ? duplicate : base;
   return {
     ...winner,
     source: 'merged',
     stageId: 'dedup',
-    mergedFrom: [baseCitationId, duplicateCitationId],
+    mergedFrom: [baseCitation.id, duplicateCitation.id],
     conflictResolution: duplicateScore > baseScore ? 'preferred_more_structured_authors' : 'kept_base_authors',
   };
 }
 
-function createMergedCitation(group: CanonicalCitation[], method: 'doi' | 'structural'): CanonicalCitation {
+function buildMergedResolution(group: CanonicalCitation[], merged: CanonicalCitation): ResolutionMetadata | undefined {
+  const resolutionWinner = [...group].sort((left, right) => resolutionPriority(right) - resolutionPriority(left) || citationStrength(right) - citationStrength(left))[0];
+  if (!resolutionWinner?.resolution) return undefined;
+
+  const appliedFields = [...new Set(group.flatMap((citation) => citation.resolution?.appliedFields ?? []))];
+  return {
+    ...buildResolutionMetadata(merged, resolutionWinner.resolution.status, {
+      resolvedAt: resolutionWinner.resolution.resolvedAt,
+      provider: resolutionWinner.resolution.provider,
+      matchStrategy: resolutionWinner.resolution.matchStrategy,
+      acceptedCandidate: resolutionWinner.resolution.acceptedCandidate,
+    }),
+    candidateCount: resolutionWinner.resolution.candidateCount,
+    rejectedReasons: resolutionWinner.resolution.rejectedReasons,
+    appliedFields,
+    conflictFields: [],
+    yearToleranceApplied: resolutionWinner.resolution.yearToleranceApplied,
+  };
+}
+
+function buildMergedEnrichment(group: CanonicalCitation[]): EnrichmentMetadata | null {
+  const enrichmentWinner = [...group].sort((left, right) => citationStrength(right) - citationStrength(left))[0];
+  if (!enrichmentWinner?.enrichment) return null;
+  return {
+    ...enrichmentWinner.enrichment,
+    raw: enrichmentWinner.enrichment.raw
+      ? {
+          ...enrichmentWinner.enrichment.raw,
+          duplicateFamilySize: group.length,
+        }
+      : {
+          duplicateFamilySize: group.length,
+        },
+  };
+}
+
+async function createMergedCitation(group: CanonicalCitation[], method: 'doi' | 'structural'): Promise<CanonicalCitation> {
   const base = chooseBaseCitation(group);
   const others = group.filter((citation) => citation.id !== base.id);
 
@@ -186,29 +271,42 @@ function createMergedCitation(group: CanonicalCitation[], method: 'doi' | 'struc
     ...base,
     id: randomUUID(),
     status: 'merged' as const,
-    raw: group.map((citation) => citation.raw).join('\n'),
+    raw: base.raw,
   };
 
   for (const duplicate of others) {
       merged = {
         ...merged,
-        authors: mergeAuthors(merged.authors, duplicate.authors, merged.id, duplicate.id),
-        title: mergeField(merged.title, duplicate.title, merged.id, duplicate.id, 'title', (value) => Boolean(value)),
-        year: mergeField(merged.year, duplicate.year, merged.id, duplicate.id, 'year', (value) => value != null),
-        journal: mergeField(merged.journal, duplicate.journal, merged.id, duplicate.id, 'journal', (value) => Boolean(value)),
-        volume: mergeField(merged.volume, duplicate.volume, merged.id, duplicate.id, 'volume', (value) => Boolean(value)),
-        issue: mergeField(merged.issue, duplicate.issue, merged.id, duplicate.id, 'issue', (value) => Boolean(value)),
-        pages: mergeField(merged.pages, duplicate.pages, merged.id, duplicate.id, 'pages', (value) => Boolean(value)),
-        doi: mergeField(merged.doi, duplicate.doi, merged.id, duplicate.id, 'doi', (value) => Boolean(value)),
-        publisher: mergeField(merged.publisher, duplicate.publisher, merged.id, duplicate.id, 'publisher', (value) => Boolean(value)),
-        url: mergeField(merged.url, duplicate.url, merged.id, duplicate.id, 'url', (value) => Boolean(value)),
-        conferenceTitle: mergeField(merged.conferenceTitle, duplicate.conferenceTitle, merged.id, duplicate.id, 'conferenceTitle', (value) => Boolean(value)),
-        bookTitle: mergeField(merged.bookTitle, duplicate.bookTitle, merged.id, duplicate.id, 'bookTitle', (value) => Boolean(value)),
-        institution: mergeField(merged.institution, duplicate.institution, merged.id, duplicate.id, 'institution', (value) => Boolean(value)),
-        edition: mergeField(merged.edition, duplicate.edition, merged.id, duplicate.id, 'edition', (value) => Boolean(value)),
-        editor: mergeField(merged.editor, duplicate.editor, merged.id, duplicate.id, 'editor', (value) => Boolean(value)),
+        authors: mergeAuthors(merged.authors, duplicate.authors, merged, duplicate),
+        title: mergeField(merged.title, duplicate.title, merged, duplicate, 'title', (value) => Boolean(value)),
+        year: mergeField(merged.year, duplicate.year, merged, duplicate, 'year', (value) => value != null),
+        journal: mergeField(merged.journal, duplicate.journal, merged, duplicate, 'journal', (value) => Boolean(value)),
+        volume: mergeField(merged.volume, duplicate.volume, merged, duplicate, 'volume', (value) => Boolean(value)),
+        issue: mergeField(merged.issue, duplicate.issue, merged, duplicate, 'issue', (value) => Boolean(value)),
+        pages: mergeField(merged.pages, duplicate.pages, merged, duplicate, 'pages', (value) => Boolean(value)),
+        doi: mergeField(merged.doi, duplicate.doi, merged, duplicate, 'doi', (value) => Boolean(value)),
+        publisher: mergeField(merged.publisher, duplicate.publisher, merged, duplicate, 'publisher', (value) => Boolean(value)),
+        url: mergeField(merged.url, duplicate.url, merged, duplicate, 'url', (value) => Boolean(value)),
+        conferenceTitle: mergeField(merged.conferenceTitle, duplicate.conferenceTitle, merged, duplicate, 'conferenceTitle', (value) => Boolean(value)),
+        bookTitle: mergeField(merged.bookTitle, duplicate.bookTitle, merged, duplicate, 'bookTitle', (value) => Boolean(value)),
+        institution: mergeField(merged.institution, duplicate.institution, merged, duplicate, 'institution', (value) => Boolean(value)),
+        edition: mergeField(merged.edition, duplicate.edition, merged, duplicate, 'edition', (value) => Boolean(value)),
+        editor: mergeField(merged.editor, duplicate.editor, merged, duplicate, 'editor', (value) => Boolean(value)),
       };
     }
+
+  merged = {
+    ...merged,
+    resolution: buildMergedResolution(group, merged),
+    enrichment: buildMergedEnrichment(group),
+  };
+
+  const { issues, metadata } = await validateCitationOffline(merged);
+  merged = {
+    ...merged,
+    validationIssues: issues,
+    validation: metadata,
+  };
 
   return addCitationStageLog(
     {
@@ -264,6 +362,10 @@ function groupDuplicates(citations: CanonicalCitation[]): Array<{ method: 'doi' 
       const leftDoi = left.doi.value ? normalizeWhitespace(left.doi.value.toLowerCase()) : '';
       const rightDoi = right.doi.value ? normalizeWhitespace(right.doi.value.toLowerCase()) : '';
       const doiMatch = Boolean(leftDoi && rightDoi && leftDoi === rightDoi);
+      const doiConflict = Boolean(leftDoi && rightDoi && leftDoi !== rightDoi);
+      if (doiConflict) {
+        continue;
+      }
       const structuralMatch = !doiMatch && isStructuralDuplicate(left, right);
       if (doiMatch || structuralMatch) {
         union(left.id, right.id, doiMatch ? 'doi' : 'structural');
@@ -313,7 +415,7 @@ export function createDedupStage(): V2Stage {
           continue;
         }
 
-        const mergedCitation = createMergedCitation(group.members, group.method);
+        const mergedCitation = await createMergedCitation(group.members, group.method);
         const base = chooseBaseCitation(group.members);
         citations.push(...group.members.map((citation) => addCitationStageLog(
           {

@@ -186,7 +186,7 @@ describe('strict enrich stage', () => {
     expect(enriched?.enrichment?.status).toBe('no_match');
   });
 
-  it('preserves conflicting extracted fields and records conflict fields', async () => {
+  it('corrects conflicting extracted core fields with verified authority data', async () => {
     const citation = makeCitation({
       journal: createFieldValue('Different Journal Name', 'extracted', 0.93, 'extract'),
     });
@@ -206,8 +206,46 @@ describe('strict enrich stage', () => {
     const enriched = result.citations[0];
 
     expect(enriched?.resolution?.status).toBe('verified');
-    expect(enriched?.resolution?.conflictFields).toContain('journal');
-    expect(enriched?.journal.value).toBe('Different Journal Name');
+    expect(enriched?.resolution?.conflictFields).toEqual([]);
+    expect(enriched?.resolution?.appliedFields).toContain('journal');
+    expect(enriched?.journal.value).toBe('IEEE Transactions on Medical Imaging');
+    expect(enriched?.journal.source).toBe('authority');
+  });
+
+  it('fills authority authors and upgrades unknown source types after a verified exact match', async () => {
+    const citation = makeCitation({
+      referenceType: 'unknown',
+      authors: createFieldValue([
+        { first: 'J.', last: 'Smith', initials: 'J.' },
+      ], 'extracted', 0.58, 'extract'),
+      journal: createFieldValue(null, 'extracted', 0.1, 'extract'),
+    });
+    const provider = makeProvider({
+      searchCrossrefByTitle: vi.fn(async () => [{
+        provider: 'crossref',
+        title: citation.title.value ?? undefined,
+        authors: ['Smith, Jane', 'Doe, Alex', 'Muller, Thomas'],
+        year: 2021,
+        venue: 'IEEE Transactions on Medical Imaging',
+        volume: '40',
+        issue: '12',
+        pages: '3412-3424',
+        doi: '10.1109/TMI.2021.3098765',
+        url: 'https://doi.org/10.1109/TMI.2021.3098765',
+        sourceType: 'journal-article',
+      }]),
+    });
+
+    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const enriched = result.citations[0];
+
+    expect(enriched?.resolution?.status).toBe('verified');
+    expect(enriched?.resolution?.appliedFields).toEqual(expect.arrayContaining(['authors', 'referenceType', 'journal', 'doi']));
+    expect(enriched?.referenceType).toBe('journal');
+    expect(enriched?.authors.source).toBe('authority');
+    expect(enriched?.authors.value).toHaveLength(3);
+    expect(enriched?.authors.value[0]?.last).toBe('Smith');
+    expect(enriched?.authors.value[1]?.last).toBe('Doe');
   });
 
   it('does not mark journal abbreviations and shortened page ranges as conflicts when they are semantically equivalent', async () => {
