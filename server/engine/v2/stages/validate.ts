@@ -5,6 +5,12 @@ import {
 } from '@shared/referenceHealthHeuristics';
 import type { V2Stage } from '../contracts.js';
 import {
+  getStageIsolationConcurrency,
+  getStageIsolationTimeoutMs,
+  getStageRuntimeTimeoutMs,
+  runStageTasksWithIsolation,
+} from '../stageIsolation.js';
+import {
   addCitationStageLog,
   attachCitationDebug,
   createStageDiagnostic,
@@ -29,6 +35,10 @@ const CURRENT_YEAR = new Date().getFullYear();
 const DOI_CLUSTER_PATTERN = /(?:https?:\/\/(?:dx\.)?doi\.org\/)?10\.\d{4,}\/\S+/gi;
 const YEAR_CLUSTER_PATTERN = /(?:\(|\[)(?:19|20)\d{2}[a-z]?(?:\)|\])/gi;
 const EMBEDDED_REFERENCE_START_PATTERN = /[A-Z][\p{L}'’.-]+,\s+[A-Z][^()]{0,40}\(\d{4}[a-z]?\)/gu;
+
+function isVerifiedResolution(citation: CanonicalCitation): boolean {
+  return citation.resolution?.status === 'verified' || citation.resolution?.status === 'verified_with_year_tolerance';
+}
 
 function normalized(value: string | null | undefined): string {
   return normalizeWhitespace((value ?? '').toLowerCase());
@@ -230,9 +240,11 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
     if (missingField === 'venue') {
       issues.push({
         field: 'journal',
-        severity: 'error',
+        severity: isVerifiedResolution(citation) ? 'info' : 'error',
         code: 'missing_required_venue',
-        message: 'A required source/venue field is missing for this reference type.',
+        message: isVerifiedResolution(citation)
+          ? 'Citation identity was verified, but no venue field was recovered from the current metadata.'
+          : 'A required source/venue field is missing for this reference type.',
       });
     }
   }
@@ -585,58 +597,106 @@ export function createValidateStage(): V2Stage {
     id: 'validate',
     async run(context) {
       const startedAt = Date.now();
-      const citations: CanonicalCitation[] = [];
+      const isolation = await runStageTasksWithIsolation({
+        stageId: 'validate',
+        items: context.citations,
+        concurrency: getStageIsolationConcurrency('validate'),
+        timeoutMs: getStageIsolationTimeoutMs('validate', getStageRuntimeTimeoutMs('validate', context.stageConfig)),
+        run: async (citation, index) => {
+          const splitArtifact = context.splitArtifactsByCitationId[citation.id];
+          const { issues, metadata } = await validateCitationOffline(citation, splitArtifact);
+          const hasError = issues.some((issue) => issue.severity === 'error');
+          let nextCitation: CanonicalCitation = {
+            ...citation,
+            validationIssues: issues,
+            validation: metadata,
+          };
+          nextCitation = attachCitationDebug(nextCitation, 'validate', {
+            issues,
+            verificationAttempted: metadata.verificationAttempted,
+            authoritySource: metadata.authoritySource,
+            mismatchFields: metadata.mismatchFields,
+            resolutionStatus: citation.resolution?.status,
+            splitContaminationFlags: splitArtifact?.contaminationFlags ?? [],
+            warningFlags: issues.filter((issue) => issue.severity !== 'info').map((issue) => issue.code),
+          }, context.debugEnabled);
+          logStructuredDebug(context, 'validate', index, nextCitation, {
+            splitContaminationFlags: splitArtifact?.contaminationFlags ?? [],
+            warningFlags: issues.filter((issue) => issue.severity !== 'info').map((issue) => issue.code),
+            selectionReason: citation.resolution?.status,
+            selectedBranch: undefined,
+            authorParserMode: citation.extraction?.authorParserMode,
+          });
 
-      for (const citation of context.citations) {
-        const splitArtifact = context.splitArtifactsByCitationId[citation.id];
-        const { issues, metadata } = await validateCitationOffline(citation, splitArtifact);
-        const hasError = issues.some((issue) => issue.severity === 'error');
-        let nextCitation: CanonicalCitation = {
-          ...citation,
-          validationIssues: issues,
-          validation: metadata,
-        };
-        nextCitation = attachCitationDebug(nextCitation, 'validate', {
-          issues,
-          verificationAttempted: metadata.verificationAttempted,
-          authoritySource: metadata.authoritySource,
-          mismatchFields: metadata.mismatchFields,
-          resolutionStatus: citation.resolution?.status,
-          splitContaminationFlags: splitArtifact?.contaminationFlags ?? [],
-          warningFlags: issues.filter((issue) => issue.severity !== 'info').map((issue) => issue.code),
-        }, context.debugEnabled);
-        logStructuredDebug(context, 'validate', citations.length, nextCitation, {
-          splitContaminationFlags: splitArtifact?.contaminationFlags ?? [],
-          warningFlags: issues.filter((issue) => issue.severity !== 'info').map((issue) => issue.code),
-          selectionReason: citation.resolution?.status,
-          selectedBranch: undefined,
-          authorParserMode: citation.extraction?.authorParserMode,
-        });
-
-        citations.push(addCitationStageLog(
-          nextCitation,
-          createStageDiagnostic(
-            'validate',
-            hasError ? 'warning' : 'success',
-            issues.length > 0 ? `Validation produced ${issues.length} issue(s).` : 'Validation passed without issues.',
-            {
-              issueCount: issues.length,
-              verificationAttempted: metadata.verificationAttempted,
-              authoritySource: metadata.authoritySource,
-              mismatchFields: metadata.mismatchFields,
-            },
-          ),
-        ));
-      }
+          return addCitationStageLog(
+            nextCitation,
+            createStageDiagnostic(
+              'validate',
+              hasError ? 'warning' : 'success',
+              issues.length > 0 ? `Validation produced ${issues.length} issue(s).` : 'Validation passed without issues.',
+              {
+                issueCount: issues.length,
+                verificationAttempted: metadata.verificationAttempted,
+                authoritySource: metadata.authoritySource,
+                mismatchFields: metadata.mismatchFields,
+              },
+            ),
+          );
+        },
+        recover: ({ item: citation, message, timedOut }) => {
+          const nextCitation: CanonicalCitation = {
+            ...citation,
+            validationIssues: [
+              ...citation.validationIssues,
+              {
+                field: 'raw',
+                severity: 'warning',
+                code: 'validation_stage_error',
+                message: timedOut
+                  ? 'Validation timed out for this citation, so the result was left unchanged.'
+                  : 'Validation could not complete for this citation, so the result was left unchanged.',
+                extracted: message,
+              },
+            ],
+          };
+          return addCitationStageLog(
+            attachCitationDebug(nextCitation, 'validate', {
+              isolationRecovered: true,
+              timedOut,
+              errorMessage: message,
+            }, context.debugEnabled),
+            createStageDiagnostic(
+              'validate',
+              'warning',
+              timedOut
+                ? 'Validation timed out for this citation; continuing with the current fields.'
+                : 'Validation failed for this citation; continuing with the current fields.',
+              { timedOut, message },
+            ),
+          );
+        },
+      });
+      const citations = isolation.outcomes.map((outcome) => outcome.result);
+      const recoveredFallbacks = isolation.outcomes
+        .filter((outcome) => outcome.recovered)
+        .map((outcome) => outcome.timedOut ? 'validate:item-timeout' : 'validate:item-error');
 
       return {
         ...context,
         citations,
+        fallbacksUsed: [...context.fallbacksUsed, ...recoveredFallbacks],
+        partialResult: context.partialResult || isolation.recoveredCount > 0,
+        partialReasons: [...new Set([
+          ...context.partialReasons,
+          ...recoveredFallbacks,
+        ])],
         jobDebug: context.debugEnabled
           ? {
             ...context.jobDebug,
             validate: {
               citationCount: citations.length,
+              recoveredCount: isolation.recoveredCount,
+              timeoutCount: isolation.timeoutCount,
             },
           }
           : context.jobDebug,

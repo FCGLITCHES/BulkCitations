@@ -35,6 +35,7 @@ import {
   normalizeWhitespace,
   nowIso,
 } from '../utils.js';
+import { providerSourceTypeToCanonical } from '../sourceTypes.js';
 
 const PROVIDER_LIMIT = 5;
 const DEFAULT_ENRICH_CONCURRENCY = 3;
@@ -287,20 +288,6 @@ function updateAuthorsField(
   return authorityFieldValue(field, authorityAuthors, stageId);
 }
 
-function authoritySourceTypeToCanonical(sourceType?: string): CanonicalReferenceType | null {
-  const normalized = normalizeWhitespace((sourceType ?? '').toLowerCase());
-  if (!normalized) return null;
-  if (/(book[-\s]chapter|book[-\s]section|chapter|book-part)/.test(normalized)) return 'chapter';
-  if (/(conference|proceeding|paper)/.test(normalized)) return 'conference';
-  if (/(report)/.test(normalized)) return 'report';
-  if (/(website|webpage|site)/.test(normalized)) return 'website';
-  if (/(preprint|posted-content)/.test(normalized)) return 'preprint';
-  if (/(dissertation|thesis)/.test(normalized)) return 'thesis';
-  if (/(book|monograph)/.test(normalized)) return 'book';
-  if (/(journal|article)/.test(normalized)) return 'journal';
-  return null;
-}
-
 function looksPlaceholderVenue(value: string | null | undefined): boolean {
   return !value || isPlaceholderFieldValue(value) || /^journal(?:\b|[,.:?])/i.test(normalizeWhitespace(value));
 }
@@ -309,7 +296,7 @@ function resolveAuthorityReferenceType(
   citation: CanonicalCitation,
   candidate: ResolutionAcceptedCandidate,
 ): CanonicalReferenceType {
-  const authorityType = authoritySourceTypeToCanonical(candidate.sourceType);
+  const authorityType = providerSourceTypeToCanonical(candidate.sourceType);
   if (!authorityType) return citation.referenceType;
   if (citation.referenceType === 'unknown') return authorityType;
   if (citation.referenceType === 'preprint' && authorityType === 'journal') return 'journal';
@@ -806,6 +793,7 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
         const localFallbacks: string[] = [];
         let localPartialResult = false;
 
+        try {
         if (citation.status === 'duplicate') {
           const nextCitation = attachCitationDebug({
             ...citation,
@@ -1036,6 +1024,52 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
           fallbacksUsed: localFallbacks,
           partialResult: localPartialResult,
         };
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          localFallbacks.push('enrich:item-error');
+          localPartialResult = true;
+          const nextCitation = attachCitationDebug({
+            ...citation,
+            resolution: {
+              ...buildResolutionMetadata(citation, 'provider_error', {
+                resolvedAt: nowIso(),
+                provider: resolutionProvider.id,
+                matchStrategy: 'none',
+              }),
+              rejectedReasons: [message],
+            },
+            enrichment: buildEnrichmentFromResolution('error', resolutionProvider.id, 'unverifiable'),
+          }, 'enrich', {
+            status: 'provider_error',
+            providerOrder: [],
+            cacheHit: false,
+            candidateCount: 0,
+            warningFlags: [message],
+            isolationRecovered: true,
+          }, context.debugEnabled);
+          logStructuredDebug(context, 'enrich', citationIndex, nextCitation, {
+            providerOrder: [],
+            candidateCount: 0,
+            warningFlags: [message],
+            conflictFields: [],
+            selectedBranch: undefined,
+            selectionReason: 'provider_error',
+            sharedExecution: false,
+          });
+          return {
+            citation: addCitationStageLog(
+              nextCitation,
+              createStageDiagnostic(
+                'enrich',
+                'warning',
+                'External resolution failed for this citation; continuing with the local canonical fields.',
+                { provider: resolutionProvider.id, message },
+              ),
+            ),
+            fallbacksUsed: localFallbacks,
+            partialResult: localPartialResult,
+          };
+        }
       })));
 
       const citations = results.map((result) => result.citation);

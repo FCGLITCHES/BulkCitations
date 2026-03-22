@@ -2,7 +2,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { processV2Conversion } from '../server/engine/v2/pipeline.js';
 import { canonicalToParsedReference } from '../server/engine/v2/utils.js';
-import type { CanonicalAuthor, CanonicalCitation, CanonicalReferenceType, CitationStyle, ParsedReference } from '../shared/schema.js';
+import type {
+  CanonicalAuthor,
+  CanonicalCitation,
+  CanonicalReferenceType,
+  CitationStyle,
+  ParsedReference,
+  V2StageTiming,
+} from '../shared/schema.js';
 
 process.env.ENABLE_GROBID_EXTRACTOR ??= '0';
 process.env.ENABLE_LLM_EXTRACTOR ??= '0';
@@ -47,6 +54,7 @@ type Args = {
   manifestPath: string;
   outputDir: string;
   filter?: 'all' | 'split' | 'detect' | 'extract' | 'mismatch';
+  debug: boolean;
 };
 
 const DEFAULT_INPUT = path.resolve(process.cwd(), 'scripts/data/stress-batch-20260322-sde-250.txt');
@@ -60,6 +68,7 @@ function parseArgs(argv: string[]): Args {
     manifestPath: DEFAULT_MANIFEST,
     outputDir: DEFAULT_OUTPUT_DIR,
     filter: 'all',
+    debug: true,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -81,6 +90,12 @@ function parseArgs(argv: string[]): Args {
         args.filter = (argv[index + 1] as Args['filter']) ?? 'all';
         index += 1;
         break;
+      case '--debug': {
+        const value = (argv[index + 1] ?? '').toLowerCase();
+        args.debug = !['0', 'false', 'no', 'off'].includes(value);
+        index += 1;
+        break;
+      }
       default:
         break;
     }
@@ -386,6 +401,17 @@ function filterItems(items: ReturnType<typeof reportItem>[], filter: Args['filte
   }
 }
 
+function summarizeStageTimings(stageTimings: V2StageTiming[] | undefined) {
+  const ordered = [...(stageTimings ?? [])].sort((left, right) => right.durationMs - left.durationMs);
+  return ordered.map((entry) => ({
+    stageId: entry.stageId,
+    status: entry.status,
+    durationMs: entry.durationMs,
+    workUnits: entry.workUnits ?? null,
+    timeoutMs: entry.timeoutMs ?? null,
+  }));
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   fs.mkdirSync(args.outputDir, { recursive: true });
@@ -405,7 +431,7 @@ async function main() {
       enrich: false,
       dedup: false,
       group: false,
-      debug: true,
+      debug: args.debug,
     }));
   } finally {
     console.log = originalLog;
@@ -439,6 +465,7 @@ async function main() {
       fallbacksUsed: response.processingPath.fallbacksUsed,
       durationMs: response.processingPath.durationMs,
       partialResult: response.processingPath.partialResult,
+      slowestStages: summarizeStageTimings(response.processingPath.stageTimings).slice(0, 5),
     },
     missingCaseIds,
     familyBreakdown: familySummary(items, manifest),

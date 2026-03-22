@@ -1,10 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createDefaultAdapters } from './adapters.js';
 import { parseAuthorsForStyle } from './utils.js';
 
 const extractor = createDefaultAdapters().extractor;
 
 describe('default extractor institutional heuristics', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('extracts corporate report references into title, year, and institution', async () => {
     const result = await extractor.extract(
       'World Health Organization. Global tuberculosis report 2023. Geneva: World Health Organization; 2023.',
@@ -217,5 +221,82 @@ describe('default extractor institutional heuristics', () => {
     expect(splitDoi.parsed.volume).toBe('36');
     expect(splitDoi.parsed.pages).toBe('355-62');
     expect(splitDoi.parsed.doi).toBe('10.1007/s10822-022-00442-9');
+  });
+
+  it('extracts quoted-title journal article locators before the deterministic parser can collapse them into the title', async () => {
+    const result = await extractor.extract(
+      'Page, Matthew J, Joanne E McKenzie, Patrick M Bossuyt. "The PRISMA 2020 statement: an updated guideline for reporting systematic reviews." BMJ 372 (2021): n71.',
+      'auto',
+      {},
+    );
+
+    expect(result.parsed.title).toBe('The PRISMA 2020 statement: an updated guideline for reporting systematic reviews');
+    expect(result.parsed.journal).toBe('BMJ');
+    expect(result.parsed.volume).toBe('372');
+    expect(result.parsed.year).toBe('2021');
+    expect(result.parsed['article-number']).toBe('n71');
+    expect(result.parsed.authors?.[0]).toBe('Page, Matthew J');
+    expect(result.warnings).toContain('quoted-title-journal-locator-heuristic');
+  });
+
+  it('extracts quoted-title journal references with explicit issue markers before the parser swallows the venue tail', async () => {
+    const result = await extractor.extract(
+      'Baron, Reuben M., and David A. Kenny. "The moderator-mediator variable distinction in social psychological research: Conceptual, strategic, and statistical considerations.." Journal of Personality and Social Psychology 51, no. 6 (1986): 1173-1182.',
+      'auto',
+      {},
+    );
+
+    expect(result.parsed.title).toBe('The moderator-mediator variable distinction in social psychological research: Conceptual, strategic, and statistical considerations');
+    expect(result.parsed.journal).toBe('Journal of Personality and Social Psychology');
+    expect(result.parsed.volume).toBe('51');
+    expect(result.parsed.issue).toBe('6');
+    expect(result.parsed.year).toBe('1986');
+    expect(result.parsed.pages).toBe('1173-1182');
+    expect(result.warnings).toContain('quoted-title-journal-locator-heuristic');
+  });
+});
+
+describe('default resolution provider', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('applies a dissertation filter for thesis source types in Crossref title search', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ message: { items: [] } }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock as any);
+
+    const resolutionProvider = createDefaultAdapters().resolutionProvider;
+    const result = await resolutionProvider.searchCrossrefByTitle({
+      title: 'Example doctoral dissertation',
+      firstAuthorSurname: 'Smith',
+      year: 2024,
+      sourceType: 'thesis',
+    }, 5);
+
+    expect(result).toEqual([]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('type%3Adissertation');
+  });
+
+  it('does not repeat the same Crossref query when no source-type filter is available', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ message: { items: [] } }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock as any);
+
+    const resolutionProvider = createDefaultAdapters().resolutionProvider;
+    const result = await resolutionProvider.searchCrossrefByTitle({
+      title: 'Untyped reference',
+      firstAuthorSurname: 'Smith',
+      year: 2024,
+      sourceType: 'unknown',
+    }, 5);
+
+    expect(result).toEqual([]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

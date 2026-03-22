@@ -30,6 +30,7 @@ function makeContext(citations: any[], overrides: Partial<any> = {}) {
     duplicates: [],
     groups: {},
     pipelineLog: [],
+    stageTimings: [],
     stagesRun: [],
     fallbacksUsed: [],
     partialResult: false,

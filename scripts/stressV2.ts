@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { processV2Conversion } from '../server/engine/v2/pipeline.js';
 import { canonicalToParsedReference } from '../server/engine/v2/utils.js';
 import { getMissingExpectedFields } from '../server/engine/v2/qualityRules.js';
-import type { CanonicalCitation, CitationReviewBucket, ParsedReference } from '../shared/schema.js';
+import type { CanonicalCitation, CitationReviewBucket, ParsedReference, V2StageTiming } from '../shared/schema.js';
 
 type ManifestEntry = {
   expectedBucket?: CitationReviewBucket;
@@ -261,6 +261,20 @@ function summarizeAdjudication(citations: ReturnType<typeof buildCitationReport>
   };
 }
 
+function summarizeStageTimings(stageTimings: V2StageTiming[] | undefined) {
+  const ordered = [...(stageTimings ?? [])].sort((left, right) => right.durationMs - left.durationMs);
+  return {
+    totalMeasuredMs: ordered.reduce((sum, entry) => sum + entry.durationMs, 0),
+    slowestToFastest: ordered.map((entry) => ({
+      stageId: entry.stageId,
+      status: entry.status,
+      durationMs: entry.durationMs,
+      workUnits: entry.workUnits ?? null,
+      timeoutMs: entry.timeoutMs ?? null,
+    })),
+  };
+}
+
 async function loadInput(args: Args): Promise<{ content: string; fixtureStem: string; source: string }> {
   if (args.useStdin || (!args.inputPath && !process.stdin.isTTY)) {
     const content = await readStdin();
@@ -345,6 +359,7 @@ async function main() {
       averageConfidence: response.stats.avg_confidence,
     },
     providerStats: summarizeProviders(citations),
+    timingSummary: summarizeStageTimings(response.processingPath.stageTimings),
     debugSummary: {
       suppressedStructuredLogCount,
     },
@@ -356,6 +371,10 @@ async function main() {
 
   console.log(`Wrote report: ${outputPath}`);
   console.log(`Counts: ready=${bucketCounts.ready}, worth_reviewing=${bucketCounts.worth_reviewing}, action_needed=${bucketCounts.action_needed}`);
+  const slowestStages = report.timingSummary.slowestToFastest.slice(0, 5)
+    .map((entry) => `${entry.stageId}:${entry.durationMs}ms`)
+    .join(', ');
+  console.log(`Slowest stages: ${slowestStages}`);
 
   if (args.filter) {
     const filtered = citationReports.filter((citation) => citation.bucket === args.filter);

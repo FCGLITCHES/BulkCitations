@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +30,6 @@ import { Cluster, ConvertedReference, DuplicateGroup, type AssertionHighlight, t
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { computeReferenceHealth } from "@/lib/referenceHealth";
-import jsPDF from 'jspdf';
 
 import { ScholarPreview } from "./ScholarPreview";
 import ReportButton from "./ReportButton";
@@ -55,6 +54,17 @@ const INPUT_STYLE_LABELS: Record<string, string> = {
   chicago: "Chicago",
   ieee: "IEEE",
   vancouver: "Vancouver",
+};
+
+const REFERENCE_TYPE_LABELS: Record<string, string> = {
+  journal: "Journal Article",
+  book: "Book",
+  bookChapter: "Book Chapter",
+  conference: "Conference Paper",
+  website: "Website",
+  report: "Report",
+  thesis: "Thesis",
+  other: "Other",
 };
 
 function normalizeMultilineValue(value: string) {
@@ -332,13 +342,13 @@ function AssertionBadge({ summary, style }: { summary: ConvertedReference['asser
 function CitationRow({
   refData,
   handleCopyReference,
-  copiedStates,
-  getReferenceTypeLabel,
+  isCopied,
+  referenceTypeLabel,
   isPro,
   onRecheck,
   showDebug,
   showInputFormat,
-  reportedIds,
+  isReported,
   onReported,
   isFailed,
   userEditedText,
@@ -350,13 +360,13 @@ function CitationRow({
 }: {
   refData: ConvertedReference;
   handleCopyReference: (id: string, text: string) => void;
-  copiedStates: Record<string, boolean>;
-  getReferenceTypeLabel: (type: string) => string;
+  isCopied: boolean;
+  referenceTypeLabel: string;
   isPro?: boolean;
   onRecheck?: (referenceId: string) => void;
   showDebug?: boolean;
   showInputFormat?: boolean;
-  reportedIds?: Set<string>;
+  isReported?: boolean;
   onReported?: (refId: string) => void;
   isFailed?: boolean;
   userEditedText?: string;
@@ -397,6 +407,8 @@ function CitationRow({
       referenceId={refData.id}
       onRecheck={onRecheck}
       healthState={health?.state}
+      healthReasons={health?.reasons}
+      reportEngineSnapshot={refData.reportEngineSnapshot}
     />
   ) : null;
 
@@ -404,7 +416,7 @@ function CitationRow({
     <>
       {refData.referenceType && (
         <Badge variant="outline" className="text-xs">
-          {getReferenceTypeLabel(refData.referenceType)}
+          {referenceTypeLabel}
         </Badge>
       )}
 
@@ -629,7 +641,7 @@ function CitationRow({
                 onClick={() => handleCopyReference(refData.id, userEditedText ?? refData.convertedText)}
                 className="text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
               >
-                {copiedStates[refData.id] ? (
+                {isCopied ? (
                   <Check className="h-3 w-3 text-primary" />
                 ) : (
                   <Copy className="h-3 w-3" />
@@ -645,7 +657,7 @@ function CitationRow({
                 referenceType={refData.referenceType}
                 confidence={refData.confidence?.score}
                 reportEngineSnapshot={refData.reportEngineSnapshot as any}
-                reported={reportedIds?.has(refData.id)}
+                reported={isReported}
                 onReported={onReported ? () => onReported(refData.id) : undefined}
               />
             </div>
@@ -674,7 +686,7 @@ function CitationRow({
               className="text-muted-foreground hover:bg-muted hover:text-foreground h-8 w-8"
               title="Copy citation"
             >
-              {copiedStates[refData.id] ? (
+              {isCopied ? (
                 <Check className="h-3 w-3 text-primary" />
               ) : (
                 <Copy className="h-3 w-3" />
@@ -690,7 +702,7 @@ function CitationRow({
               referenceType={refData.referenceType}
               confidence={refData.confidence?.score}
               reportEngineSnapshot={refData.reportEngineSnapshot as any}
-              reported={reportedIds?.has(refData.id)}
+              reported={isReported}
               onReported={onReported ? () => onReported(refData.id) : undefined}
             />
           </div>
@@ -717,6 +729,26 @@ function CitationRow({
     </Card>
   );
 }
+
+const MemoCitationRow = memo(CitationRow, (prev, next) => (
+  prev.refData === next.refData
+  && prev.isCopied === next.isCopied
+  && prev.referenceTypeLabel === next.referenceTypeLabel
+  && prev.isPro === next.isPro
+  && prev.onRecheck === next.onRecheck
+  && prev.showDebug === next.showDebug
+  && prev.showInputFormat === next.showInputFormat
+  && prev.isReported === next.isReported
+  && prev.onReported === next.onReported
+  && prev.isFailed === next.isFailed
+  && prev.userEditedText === next.userEditedText
+  && prev.onSaveEdit === next.onSaveEdit
+  && prev.health === next.health
+  && prev.extraActions === next.extraActions
+  && prev.diffAgainstText === next.diffAgainstText
+  && prev.showOriginalInput === next.showOriginalInput
+  && prev.handleCopyReference === next.handleCopyReference
+));
 
 // ---------------------------------------------------------------------------
 // Main Component
@@ -746,7 +778,7 @@ export default function ReferenceOutput({
   const [healthFilter, setHealthFilter] = useState<HealthState | "all">("all");
   const [showStageDebug, setShowStageDebug] = useState(false);
   const [isScrollPastThreshold, setIsScrollPastThreshold] = useState(false);
-  const [selectedDuplicates, setSelectedDuplicates] = useState<Record<string, string>>({});
+  const [selectedDuplicateOverrides, setSelectedDuplicateOverrides] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const onScroll = () => setIsScrollPastThreshold(window.scrollY > SCROLL_THRESHOLD);
@@ -794,37 +826,6 @@ export default function ReferenceOutput({
     [displayGroups],
   );
 
-  useEffect(() => {
-    setSelectedDuplicates((prev) => {
-      let changed = false;
-      const next: Record<string, string> = {};
-
-      for (const group of detectedGroups) {
-        const memberIds = new Set(group.members.map((member) => member.id));
-        const existingSelection = prev[group.groupId];
-        const nextSelection = existingSelection && memberIds.has(existingSelection)
-          ? existingSelection
-          : group.primaryId;
-
-        next[group.groupId] = nextSelection;
-        if (prev[group.groupId] !== nextSelection) changed = true;
-      }
-
-      if (!changed) {
-        const prevKeys = Object.keys(prev);
-        const nextKeys = Object.keys(next);
-        if (
-          prevKeys.length === nextKeys.length
-          && nextKeys.every((key) => prev[key] === next[key])
-        ) {
-          return prev;
-        }
-      }
-
-      return next;
-    });
-  }, [detectedGroups]);
-
   const visibleReferences = useMemo(
     () =>
       healthFilter === "all"
@@ -833,7 +834,12 @@ export default function ReferenceOutput({
     [healthFilter, convertedReferences, healthById]
   );
 
-  const handleSaveEdit = async (id: string, newText: string) => {
+  const visibleUngroupedReferences = useMemo(
+    () => visibleReferences.filter((ref) => !groupDuplicates || !groupedReferenceIds.has(ref.id)),
+    [groupDuplicates, groupedReferenceIds, visibleReferences],
+  );
+
+  const handleSaveEdit = useCallback(async (id: string, newText: string) => {
     setUserEdits(prev => ({ ...prev, [id]: newText }));
     
     // Auto-report the edit to the admin queue
@@ -863,7 +869,7 @@ export default function ReferenceOutput({
     }
 
     toast({ title: "Edits Saved", description: "Your changes have been saved and sent for review." });
-  };
+  }, [convertedReferences, toast]);
 
   useEffect(() => {
     if (hasShownDoiToast) return;
@@ -882,7 +888,7 @@ export default function ReferenceOutput({
   }, [convertedReferences, hasShownDoiToast, toast]);
 
   // Function to clean text for copying
-  const cleanTextForCopy = (text: string): string => {
+  const cleanTextForCopy = useCallback((text: string): string => {
     if (keepItalics) {
       // Keep asterisks for italics formatting
       return text;
@@ -890,9 +896,9 @@ export default function ReferenceOutput({
       // Remove asterisks that are used for italics formatting
       return text.replace(/\*/g, '');
     }
-  };
+  }, [keepItalics]);
 
-  const handleCopyReference = async (refId: string, text: string) => {
+  const handleCopyReference = useCallback(async (refId: string, text: string) => {
     try {
       const cleanedText = cleanTextForCopy(text);
       await navigator.clipboard.writeText(cleanedText);
@@ -909,7 +915,15 @@ export default function ReferenceOutput({
     } catch (error) {
       onError("Failed to copy reference to clipboard");
     }
-  };
+  }, [cleanTextForCopy, onError, toast]);
+
+  const handleReported = useCallback((id: string) => {
+    setReportedIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
 
   const handleCopyAll = async () => {
     try {
@@ -943,6 +957,7 @@ export default function ReferenceOutput({
 
   const handleDownloadPDF = async () => {
     try {
+      const { default: jsPDF } = await import("jspdf");
       const pdf = new jsPDF();
       const pageHeight = pdf.internal.pageSize.height;
       const margin = 20;
@@ -1061,20 +1076,6 @@ export default function ReferenceOutput({
     }
   };
 
-  const getReferenceTypeLabel = (type: string) => {
-    const types: Record<string, string> = {
-      journal: 'Journal Article',
-      book: 'Book',
-      bookChapter: 'Book Chapter',
-      conference: 'Conference Paper',
-      website: 'Website',
-      report: 'Report',
-      thesis: 'Thesis',
-      other: 'Other'
-    };
-    return types[type] || 'Unknown';
-  };
-
   const healthStats = useMemo(() => {
     const total = convertedReferences.length;
     let clean = 0;
@@ -1120,9 +1121,11 @@ export default function ReferenceOutput({
 
   useEffect(() => {
     if (!healthStats.total) return;
-    // Lightweight instrumentation hook for future tuning of thresholds.
-    // eslint-disable-next-line no-console
-    console.debug("referenceHealthDistribution", healthStats);
+    if (import.meta.env.DEV) {
+      // Lightweight instrumentation hook for future tuning of thresholds.
+      // eslint-disable-next-line no-console
+      console.debug("referenceHealthDistribution", healthStats);
+    }
   }, [healthStats]);
 
   if (convertedReferences.length === 0) {
@@ -1307,8 +1310,11 @@ export default function ReferenceOutput({
 
       {/* Output Display */}
       <div className="bg-muted/50 rounded-lg p-3 sm:p-4 min-h-[200px] overflow-x-auto">
-        {displayGroups.map((group, index) => {
-          const selectedId = selectedDuplicates[group.groupId] ?? group.primaryId;
+        {displayGroups.map((group) => {
+          const overrideSelection = selectedDuplicateOverrides[group.groupId];
+          const selectedId = overrideSelection && group.members.some((member) => member.id === overrideSelection)
+            ? overrideSelection
+            : group.primaryId;
           const filteredMembers =
             healthFilter === "all"
               ? group.members
@@ -1326,17 +1332,17 @@ export default function ReferenceOutput({
           return (
             <div key={group.groupId} className="mb-6 relative">
               <div className="absolute -left-3 top-0 bottom-0 w-1 bg-primary/20 rounded-l" />
-              <CitationRow
+              <MemoCitationRow
                 refData={mainRef}
                 handleCopyReference={handleCopyReference}
-                copiedStates={copiedStates}
-                getReferenceTypeLabel={getReferenceTypeLabel}
+                isCopied={Boolean(copiedStates[mainRef.id])}
+                referenceTypeLabel={REFERENCE_TYPE_LABELS[mainRef.referenceType] || "Unknown"}
                 isPro={isPro}
                 onRecheck={onRecheck}
                 showDebug={showDebug}
                 showInputFormat={showInputFormat}
-                reportedIds={reportedIds}
-                onReported={(id) => setReportedIds((prev) => new Set(prev).add(id))}
+                isReported={reportedIds.has(mainRef.id)}
+                onReported={handleReported}
                 isFailed={healthById[mainRef.id]?.state === "action_needed"}
                 userEditedText={userEdits[mainRef.id]}
                 onSaveEdit={handleSaveEdit}
@@ -1358,17 +1364,17 @@ export default function ReferenceOutput({
                         const isSelected = dup.id === selectedId;
                         return (
                           <div key={dup.id} className="relative">
-                            <CitationRow
+                            <MemoCitationRow
                               refData={dup}
                               handleCopyReference={handleCopyReference}
-                              copiedStates={copiedStates}
-                              getReferenceTypeLabel={getReferenceTypeLabel}
+                              isCopied={Boolean(copiedStates[dup.id])}
+                              referenceTypeLabel={REFERENCE_TYPE_LABELS[dup.referenceType] || "Unknown"}
                               isPro={isPro}
                               onRecheck={onRecheck}
                               showDebug={showDebug}
                               showInputFormat={showInputFormat}
-                              reportedIds={reportedIds}
-                              onReported={(id) => setReportedIds((prev) => new Set(prev).add(id))}
+                              isReported={reportedIds.has(dup.id)}
+                              onReported={handleReported}
                               isFailed={healthById[dup.id]?.state === "action_needed"}
                               userEditedText={userEdits[dup.id]}
                               onSaveEdit={handleSaveEdit}
@@ -1380,7 +1386,7 @@ export default function ReferenceOutput({
                                   type="button"
                                   variant={isSelected ? "default" : "ghost"}
                                   size="sm"
-                                  onClick={() => setSelectedDuplicates((prev) => ({ ...prev, [group.groupId]: dup.id }))}
+                                  onClick={() => setSelectedDuplicateOverrides((prev) => ({ ...prev, [group.groupId]: dup.id }))}
                                   className="text-xs"
                                 >
                                   {isSelected ? "Selected version" : "Select this version"}
@@ -1398,21 +1404,20 @@ export default function ReferenceOutput({
           );
         })}
 
-        {visibleReferences
-          .filter((ref) => !groupDuplicates || !groupedReferenceIds.has(ref.id))
+        {visibleUngroupedReferences
           .map((ref) => (
-            <CitationRow
+            <MemoCitationRow
               key={ref.id}
               refData={ref}
               handleCopyReference={handleCopyReference}
-              copiedStates={copiedStates}
-              getReferenceTypeLabel={getReferenceTypeLabel}
+              isCopied={Boolean(copiedStates[ref.id])}
+              referenceTypeLabel={REFERENCE_TYPE_LABELS[ref.referenceType] || "Unknown"}
               isPro={isPro}
               onRecheck={onRecheck}
               showDebug={showDebug}
               showInputFormat={showInputFormat}
-              reportedIds={reportedIds}
-              onReported={(id) => setReportedIds((prev) => new Set(prev).add(id))}
+              isReported={reportedIds.has(ref.id)}
+              onReported={handleReported}
               isFailed={healthById[ref.id]?.state === "action_needed"}
               userEditedText={userEdits[ref.id]}
               onSaveEdit={handleSaveEdit}

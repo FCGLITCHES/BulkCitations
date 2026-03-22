@@ -6,7 +6,7 @@ import { getAuthorityData } from '@shared/authorityLookup';
 import type { CanonicalAuthor, CitationStyle, ParsedReference, V2ConversionResponse } from '@shared/schema';
 import { CitationParser } from '../citationParser.js';
 import { fetchCrossrefMetadata } from '../doiEnrichment.js';
-import { isGroupAuthor, normalizeGroupAuthor } from '../shared/citationSemantics.js';
+import { classifyLocatorToken, isGroupAuthor, normalizeGroupAuthor } from '../shared/citationSemantics.js';
 import {
   canonicalReferenceTypeToParsed,
   canonicalToParsedReference,
@@ -18,6 +18,7 @@ import {
   parseAuthorsForStyle,
   parsedReferenceTypeToCanonical,
 } from './utils.js';
+import { crossrefTypeFilterForSourceType } from './sourceTypes.js';
 import {
   analyzeParsedAuthorStrings,
   getRequirementProfile,
@@ -63,6 +64,7 @@ const INSTITUTIONAL_KEYWORD_PATTERN = /\b(?:organization|agency|administration|d
 const PERSONAL_AUTHOR_LEAD_PATTERN = /(?:^|,\s*)[A-Z][A-Za-z'’.-]+(?:\s+[A-Z][A-Za-z'’.-]+){0,2}\s+[A-Z](?:[.-]?[A-Z]){0,5}\.?/;
 const BRACKETED_IDENTIFIER_PATTERN = /\[[A-Z]{1,12}[A-Z0-9-]*\d+[A-Z0-9-]*\]/;
 const INSTITUTIONAL_TAIL_PATTERN = /(?:available from:|:\s*[^.;]+;\s*(?:19|20)\d{2}$|;\s*(?:19|20)\d{2}$|(?:^|[.]\s+)version\b|\[[A-Z]{1,12}[A-Z0-9-]*\d+[A-Z0-9-]*\])/i;
+const QUOTED_JOURNAL_LOCATOR_PATTERN = /^(?<authors>.+?)\s+"(?<title>[^"]+?)"\.?\s+(?<journal>.+?)\s+(?:vol\.?\s*)?(?<volume>\d+)(?:\s*,\s*no\.?\s*(?<issue>[A-Za-z0-9-]+))?\s*\((?<year>(?:19|20)\d{2})\)\s*:\s*(?<locator>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?)\.?(?:\s+(?<tail>.+))?$/i;
 
 let grobidCooldownUntil = 0;
 
@@ -144,6 +146,10 @@ function preNormalizeExtractorInput(parser: CitationParser, input: string): stri
 function buildDeterministicCandidate(input: string, inputStyle: string) {
   const parser = getParser();
   const normalized = preNormalizeExtractorInput(parser, input);
+  const quotedTitleJournalLocator = buildQuotedTitleJournalLocatorCandidate(normalized);
+  if (quotedTitleJournalLocator) {
+    return quotedTitleJournalLocator;
+  }
   const detectedStyle = inputStyle !== 'auto'
     ? inputStyle
     : looksLikeAuthorColonVancouverReference(normalized)
@@ -280,6 +286,67 @@ function looksLikeAuthorEchoTitle(parsed: ParsedReference): boolean {
   if (!title || !firstAuthor) return false;
   const normalizedAuthor = firstAuthor.replace(/,.+$/g, '');
   return title === normalizedAuthor || title.startsWith(`${normalizedAuthor}.`);
+}
+
+function looksLikeLocatorOnlyTitle(value: string | undefined): boolean {
+  const normalized = normalizeWhitespace(value ?? '').replace(/^[:;,.()\[\]\s-]+/, '');
+  if (!normalized) return false;
+  const compact = normalized.replace(/^article\s+/i, '');
+  return compact.split(/\s+/).length <= 2
+    && (isLocatorLike(compact) || /^[A-Za-z]?\d{2,}$/i.test(compact));
+}
+
+function extractLeadAuthorFromQuotedLead(value: string): string[] | undefined {
+  const parts = value.split(',').map((part) => normalizeWhitespace(part)).filter(Boolean);
+  if (parts.length < 2) return undefined;
+  const surname = parts[0];
+  const given = parts[1].replace(/\bet\s+al\.?$/i, '').trim();
+  if (!surname || !given) return undefined;
+  if (surname.split(/\s+/).length > 5 || given.split(/\s+/).length > 6) return undefined;
+  return [`${surname}, ${given}`];
+}
+
+function buildQuotedTitleJournalLocatorCandidate(normalized: string): {
+  normalized: string;
+  parsed: ParsedReference;
+  referenceType: ReturnType<typeof parsedReferenceTypeToCanonical>;
+  warnings: string[];
+} | null {
+  const match = normalized.match(QUOTED_JOURNAL_LOCATOR_PATTERN);
+  if (!match?.groups) return null;
+
+  const title = stripTrailingPeriod(match.groups.title ?? '');
+  const journal = normalizeWhitespace(match.groups.journal ?? '');
+  const volume = normalizeWhitespace(match.groups.volume ?? '');
+  const issue = normalizeWhitespace(match.groups.issue ?? '');
+  const year = normalizeWhitespace(match.groups.year ?? '');
+  const locator = normalizeWhitespace(match.groups.locator ?? '').replace(/\s*[-–]\s*/g, '-');
+  if (!title || !journal || !volume || !year || !locator) return null;
+
+  const locatorKind = classifyLocatorToken(locator).kind;
+  const tail = normalizeWhitespace(match.groups.tail ?? '');
+  const doiMatch = tail.match(DOI_PATTERN);
+  const urlMatch = tail.match(URL_PATTERN);
+  const parsed: ParsedReference = {
+    authors: extractLeadAuthorFromQuotedLead(match.groups.authors ?? ''),
+    title,
+    journal,
+    volume,
+    issue: issue || undefined,
+    year,
+    pages: locatorKind === 'pages' ? locator : undefined,
+    'article-number': locatorKind === 'article-number' ? locator : undefined,
+    doi: doiMatch ? normalizeDoiValue(doiMatch[0]) : undefined,
+    url: urlMatch ? cleanTrailingUrl(urlMatch[0]) : undefined,
+    parseWarnings: ['quoted-title-journal-locator-heuristic'],
+  };
+
+  return {
+    normalized,
+    parsed,
+    referenceType: 'journal',
+    warnings: parsed.parseWarnings ?? [],
+  };
 }
 
 function buildTitleLedWebsiteCandidate(
@@ -616,9 +683,10 @@ function scoreCandidate(parsed: ParsedReference | null | undefined, referenceTyp
   const requirements = getRequirementProfile(referenceType ?? 'journal');
   const authorSignals = analyzeParsedAuthorStrings(parsed.authors);
   const locatorValue = parsed.pages ?? parsed['article-number'];
+  const titleLooksLikeLocator = looksLikeLocatorOnlyTitle(parsed.title);
   let score = 0;
-  if (parsed.title && parsed.title.split(/\s+/).length >= 4 && !looksLikeDateFragment(parsed.title) && !looksLikeSourceTailFragment(parsed.title)) score += 4;
-  else if (parsed.title && !looksLikeSourceTailFragment(parsed.title)) score += 1.5;
+  if (parsed.title && !titleLooksLikeLocator && parsed.title.split(/\s+/).length >= 4 && !looksLikeDateFragment(parsed.title) && !looksLikeSourceTailFragment(parsed.title)) score += 4;
+  else if (parsed.title && !titleLooksLikeLocator && !looksLikeSourceTailFragment(parsed.title)) score += 1.5;
   if (parsed.year) score += 2.5;
   if (hasParsedVenue(parsed)) score += 3;
   if (parsed.publisher || parsed.institution) score += 1.5;
@@ -636,12 +704,58 @@ function scoreCandidate(parsed: ParsedReference | null | undefined, referenceTyp
   if ((parsed.authors?.length ?? 0) >= 2 && authorSignals.compactVancouverCount === (parsed.authors?.length ?? 0)) score += 1.4;
   if (parsed.authors?.some((author) => author.length > 120 || /\. .+\./.test(author))) score -= 3;
   if (looksLikeInstitutionalAuthorList(parsed.authors)) score += 0.8;
+  if (titleLooksLikeLocator) score -= 6;
   if (parsed.title && looksLikeSourceTailFragment(parsed.title)) score -= 3.5;
   if (looksLikeAuthorEchoTitle(parsed)) score -= 5;
   if (isPlaceholderVenue(parsed.journal) || isPlaceholderVenue(parsed.volume) || isPlaceholderVenue(parsed.issue)) score -= 3;
   if (proceedingsSignal(parsed.conferenceTitle ?? parsed.bookTitle ?? parsed.journal) && (parsed.conferenceTitle || parsed.bookTitle || parsed.journal)) score += 1;
   if (referenceType && referenceType !== 'unknown') score += 1;
   return score;
+}
+
+function shouldShortCircuitDeterministicSelection(
+  input: string,
+  parsed: ParsedReference,
+  referenceType: string,
+  authorParse: ReturnType<typeof parseAuthorsForStyle>,
+  score: number,
+  splitArtifact?: V2SplitArtifact,
+  inputStyle?: string,
+): boolean {
+  if (!['journal', 'conference', 'book', 'chapter', 'thesis', 'preprint'].includes(referenceType)) {
+    return false;
+  }
+
+  const normalizedStyle = (inputStyle ?? 'auto').toLowerCase();
+  const requirements = getRequirementProfile(referenceType);
+  const locatorValue = parsed.pages ?? parsed['article-number'];
+  const hasCoreTitle = Boolean(parsed.title)
+    && !looksLikeLocatorOnlyTitle(parsed.title)
+    && !looksLikeDateFragment(parsed.title)
+    && !looksLikeSourceTailFragment(parsed.title);
+  const hasCoreAuthors = (parsed.authors?.length ?? 0) > 0;
+  const hasCoreYear = Boolean(parsed.year);
+  const hasExpectedLocator = !requirements.expected.includes('locator') || isLocatorLike(locatorValue);
+  const hasContainer = hasParsedVenue(parsed) || Boolean(parsed.publisher || parsed.institution);
+  const cleanAuthors = authorParse.warningFlags.length === 0 && authorParse.rejectedCandidates.length === 0;
+  const noSplitContamination = (splitArtifact?.contaminationFlags.length ?? 0) === 0;
+  const hasDelimitedCoauthorLead = /,\s*(?:&|and)\s+[A-Z]/i.test(input);
+  const styleConsistentCompactAuthors = authorParse.parserMode !== 'vancouver_compact'
+    && authorParse.parserMode !== 'vancouver_compact_array'
+    ? true
+    : normalizedStyle === 'vancouver';
+  const safeInvertedCoauthors = !(hasDelimitedCoauthorLead && authorParse.parserMode === 'inverted_or_generic');
+
+  return hasCoreTitle
+    && hasCoreAuthors
+    && hasCoreYear
+    && hasExpectedLocator
+    && hasContainer
+    && cleanAuthors
+    && safeInvertedCoauthors
+    && styleConsistentCompactAuthors
+    && noSplitContamination
+    && score >= 13;
 }
 
 function selectionReason(
@@ -692,6 +806,7 @@ function buildFieldConfidence(parsed: ParsedReference, referenceType: string) {
   const institutionalVenue = normalizeWhitespace(parsed.institution ?? parsed.publisher ?? '');
   const institutionalPublisher = Boolean(institutionalVenue) && isGroupAuthor(institutionalVenue);
   const titleEchoesAuthor = looksLikeAuthorEchoTitle(parsed);
+  const titleLooksLikeLocator = looksLikeLocatorOnlyTitle(parsed.title);
   const mostlyCompactVancouver = (parsed.authors?.length ?? 0) >= 2
     && authorSignals.compactVancouverCount >= Math.ceil((parsed.authors?.length ?? 0) * 0.7);
   const authorConfidenceFloor = authorSignals.contaminatedBlobCount > 0 ? 0.05 : 0.25;
@@ -716,7 +831,7 @@ function buildFieldConfidence(parsed: ParsedReference, referenceType: string) {
     : 0.1;
   return {
     authors: institutionalAuthors ? Math.max(authorConfidence, 0.9) : authorConfidence,
-    title: parsed.title ? ((looksLikeDateFragment(parsed.title) || looksLikeSourceTailFragment(parsed.title) || titleEchoesAuthor) ? 0.18 : 0.9) : 0.2,
+    title: parsed.title ? ((titleLooksLikeLocator || looksLikeDateFragment(parsed.title) || looksLikeSourceTailFragment(parsed.title) || titleEchoesAuthor) ? 0.08 : 0.9) : 0.2,
     year: parsed.year ? 0.92 : 0.1,
     journal: hasParsedVenue(parsed) ? 0.82 : (referenceType === 'journal' ? 0.18 : 0.12),
     volume: parsed.volume ? 0.82 : 0.1,
@@ -924,6 +1039,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     batchSize?: number;
     splitArtifact?: V2SplitArtifact;
     llmBudget?: { maxCalls: number; totalCalls: number; splitCalls: number; extractCalls: number; capReached: boolean };
+    debugEnabled?: boolean;
   }) {
     const deterministicBase = buildDeterministicCandidate(input, inputStyle);
     const deterministicSanitized = sanitizeParsedReference(deterministicBase.parsed, deterministicBase.referenceType);
@@ -932,7 +1048,28 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       parsed: deterministicSanitized.parsed,
       referenceType: deterministicSanitized.referenceType,
     };
-    const fallbackBase = buildYearAnchoredCandidate(input);
+    const deterministicAuthorParse = parseAuthorsForStyle(deterministic.parsed.authors ?? [], inputStyle);
+    const deterministicScore = scoreCandidate(deterministic.parsed, deterministic.referenceType)
+      - (deterministicAuthorParse.warningFlags.length * 2)
+      - (deterministicAuthorParse.rejectedCandidates.length * 1.5)
+      + ((deterministicAuthorParse.parserMode === 'alternating_pairs' || deterministicAuthorParse.parserMode === 'surname_given_pairs') ? 8 : 0);
+    const skipCompetingCandidates = shouldShortCircuitDeterministicSelection(
+      input,
+      deterministic.parsed,
+      deterministic.referenceType,
+      deterministicAuthorParse,
+      deterministicScore,
+      options?.splitArtifact,
+      inputStyle,
+    );
+    const emptyAuthorParseResult = {
+      authors: [],
+      parserMode: 'none',
+      warningFlags: [],
+      rejectedCandidates: [],
+    } satisfies ReturnType<typeof parseAuthorsForStyle>;
+
+    const fallbackBase = skipCompetingCandidates ? null : buildYearAnchoredCandidate(input);
     const fallback = fallbackBase
       ? (() => {
           const sanitized = sanitizeParsedReference(fallbackBase.parsed, fallbackBase.referenceType);
@@ -943,7 +1080,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
           };
         })()
       : null;
-    const institutionalBase = buildInstitutionalCandidate(input);
+    const institutionalBase = skipCompetingCandidates ? null : buildInstitutionalCandidate(input);
     const institutional = institutionalBase
       ? (() => {
           const sanitized = sanitizeParsedReference(institutionalBase.parsed, institutionalBase.referenceType);
@@ -954,13 +1091,12 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
           };
         })()
       : null;
-    const deterministicAuthorParse = parseAuthorsForStyle(deterministic.parsed.authors ?? [], inputStyle);
-    const fallbackAuthorParse = parseAuthorsForStyle(fallback?.parsed.authors ?? [], inputStyle);
-    const institutionalAuthorParse = parseAuthorsForStyle(institutional?.parsed.authors ?? [], inputStyle);
-    const deterministicScore = scoreCandidate(deterministic.parsed, deterministic.referenceType)
-      - (deterministicAuthorParse.warningFlags.length * 2)
-      - (deterministicAuthorParse.rejectedCandidates.length * 1.5)
-      + ((deterministicAuthorParse.parserMode === 'alternating_pairs' || deterministicAuthorParse.parserMode === 'surname_given_pairs') ? 8 : 0);
+    const fallbackAuthorParse = fallback
+      ? parseAuthorsForStyle(fallback.parsed.authors ?? [], inputStyle)
+      : emptyAuthorParseResult;
+    const institutionalAuthorParse = institutional
+      ? parseAuthorsForStyle(institutional.parsed.authors ?? [], inputStyle)
+      : emptyAuthorParseResult;
     const fallbackScore = scoreCandidate(fallback?.parsed, fallback?.referenceType)
       - (fallbackAuthorParse.warningFlags.length * 2)
       - (fallbackAuthorParse.rejectedCandidates.length * 1.5);
@@ -1185,6 +1321,11 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
         : llmAttempted && llmWarnings.some((warning) => warning.startsWith('llm_fallback_') || warning === 'llm_cap_reached')
           ? '_llm_invalid_or_failed'
           : '';
+    const selectedAuthorFingerprint = JSON.stringify(selectedBase.parsed.authors ?? []);
+    const mergedAuthorFingerprint = JSON.stringify(mergedSelection.authors ?? []);
+    const finalAuthorParse = selectedAuthorFingerprint === mergedAuthorFingerprint
+      ? selectedAuthorParse
+      : parseAuthorsForStyle(mergedSelection.authors ?? [], inputStyle);
 
     return {
       parsed: mergedSelection,
@@ -1194,7 +1335,13 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       extractorPath,
       selectedBranch: llmApplied ? 'hybrid' as const : selectedBranch,
       selectionReason: `${selectedReason}${selectionReasonSuffix}`,
-      rejectedCandidates,
+      canonicalAuthors: finalAuthorParse.authors,
+      authorParserMode: finalAuthorParse.parserMode,
+      authorWarningFlags: finalAuthorParse.warningFlags,
+      rejectedCandidates: [
+        ...rejectedCandidates,
+        ...finalAuthorParse.rejectedCandidates,
+      ],
       llmCapReached,
       fieldConfidence: selectedFieldConfidence,
       warnings: [
@@ -1204,32 +1351,34 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
         ...splitWarnings,
         ...llmWarnings,
       ],
-      debug: {
-        deterministic_raw: deterministic.parsed,
-        year_anchored_fallback_raw: fallback?.parsed ?? null,
-        institutional_heuristic_raw: institutional?.parsed ?? null,
-        grobid_raw: grobidCandidate?.parsed ?? null,
-        selected_branch: llmApplied ? 'hybrid' : selectedBranch,
-        selection_reason: `${selectedReason}${selectionReasonSuffix}`,
-        extractor_path: extractorPath,
-        deterministic_score: deterministicScore,
-        fallback_score: fallbackScore,
-        institutional_score: institutionalScore,
-        grobid_score: grobidScore,
-        deterministic_author_parser_mode: deterministicAuthorParse.parserMode,
-        deterministic_author_warning_flags: deterministicAuthorParse.warningFlags,
-        fallback_author_parser_mode: fallbackAuthorParse.parserMode,
-        fallback_author_warning_flags: fallbackAuthorParse.warningFlags,
-        institutional_author_parser_mode: institutionalAuthorParse.parserMode,
-        institutional_author_warning_flags: institutionalAuthorParse.warningFlags,
-        split_contamination_flags: splitContaminationFlags,
-        split_contamination_penalty: splitPenalty,
-        cleaned_chunk_length: splitArtifact?.chunkLength ?? input.length,
-        llm_attempted: llmAttempted,
-        llm_applied: llmApplied,
-        llm_cap_reached: llmCapReached,
-        rejectedCandidates,
-      },
+      debug: options?.debugEnabled
+        ? {
+            deterministic_raw: deterministic.parsed,
+            year_anchored_fallback_raw: fallback?.parsed ?? null,
+            institutional_heuristic_raw: institutional?.parsed ?? null,
+            grobid_raw: grobidCandidate?.parsed ?? null,
+            selected_branch: llmApplied ? 'hybrid' : selectedBranch,
+            selection_reason: `${selectedReason}${selectionReasonSuffix}`,
+            extractor_path: extractorPath,
+            deterministic_score: deterministicScore,
+            fallback_score: fallbackScore,
+            institutional_score: institutionalScore,
+            grobid_score: grobidScore,
+            deterministic_author_parser_mode: deterministicAuthorParse.parserMode,
+            deterministic_author_warning_flags: deterministicAuthorParse.warningFlags,
+            fallback_author_parser_mode: fallbackAuthorParse.parserMode,
+            fallback_author_warning_flags: fallbackAuthorParse.warningFlags,
+            institutional_author_parser_mode: institutionalAuthorParse.parserMode,
+            institutional_author_warning_flags: institutionalAuthorParse.warningFlags,
+            split_contamination_flags: splitContaminationFlags,
+            split_contamination_penalty: splitPenalty,
+            cleaned_chunk_length: splitArtifact?.chunkLength ?? input.length,
+            llm_attempted: llmAttempted,
+            llm_applied: llmApplied,
+            llm_cap_reached: llmCapReached,
+            rejectedCandidates,
+          }
+        : undefined,
     };
   }
 }
@@ -1444,40 +1593,30 @@ async function fetchWithProviderPolicy(
   throw new Error(`Unreachable provider retry state for ${provider}`);
 }
 
-function buildCrossrefFilters(query: ResolutionSearchQuery, includeTypeFilter: boolean): string | null {
+function buildCrossrefFilters(
+  query: ResolutionSearchQuery,
+  includeTypeFilter: boolean,
+): { filter: string | null; typeFilterApplied: boolean } {
   const filters: string[] = [];
+  const typeFilter = includeTypeFilter ? crossrefTypeFilterForSourceType(query.sourceType) : null;
   if (query.year != null) {
     filters.push(`from-pub-date:${query.year}-01-01`);
     filters.push(`until-pub-date:${query.year}-12-31`);
   }
-  if (includeTypeFilter) {
-    switch (query.sourceType) {
-      case 'journal':
-        filters.push('type:journal-article');
-        break;
-      case 'conference':
-        filters.push('type:proceedings-article');
-        break;
-      case 'report':
-        filters.push('type:report');
-        break;
-      case 'book':
-        filters.push('type:book');
-        break;
-      case 'chapter':
-        filters.push('type:book-chapter');
-        break;
-      case 'preprint':
-        filters.push('type:posted-content');
-        break;
-      default:
-        break;
-    }
+  if (typeFilter) {
+    filters.push(typeFilter);
   }
-  return filters.length > 0 ? filters.join(',') : null;
+  return {
+    filter: filters.length > 0 ? filters.join(',') : null,
+    typeFilterApplied: Boolean(typeFilter),
+  };
 }
 
-function buildCrossrefSearchUrl(query: ResolutionSearchQuery, limit: number, includeTypeFilter: boolean): string {
+function buildCrossrefSearchUrl(
+  query: ResolutionSearchQuery,
+  limit: number,
+  includeTypeFilter: boolean,
+): { url: string; typeFilterApplied: boolean } {
   const params = new URLSearchParams({
     rows: String(limit),
     select: 'DOI,title,author,issued,container-title,volume,issue,page,publisher,URL,type',
@@ -1489,9 +1628,12 @@ function buildCrossrefSearchUrl(query: ResolutionSearchQuery, limit: number, inc
   if (query.venue) params.set('query.container-title', query.venue);
 
   const filters = buildCrossrefFilters(query, includeTypeFilter);
-  if (filters) params.set('filter', filters);
+  if (filters.filter) params.set('filter', filters.filter);
 
-  return `https://api.crossref.org/works?${params.toString()}`;
+  return {
+    url: `https://api.crossref.org/works?${params.toString()}`,
+    typeFilterApplied: filters.typeFilterApplied,
+  };
 }
 
 function buildPubmedSearchTerm(query: ResolutionSearchQuery): string {
@@ -1530,10 +1672,11 @@ class DefaultResolutionProviderAdapter implements ResolutionProviderAdapter {
       },
       signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS.crossref),
     } satisfies RequestInit;
+    const primarySearch = buildCrossrefSearchUrl(query, limit, true);
 
     const primaryResponse = await fetchWithProviderPolicy(
       'crossref',
-      buildCrossrefSearchUrl(query, limit, true),
+      primarySearch.url,
       requestInit,
     );
     if (!primaryResponse.ok) {
@@ -1547,10 +1690,15 @@ class DefaultResolutionProviderAdapter implements ResolutionProviderAdapter {
     if (primaryItems.length > 0) {
       return primaryItems.map(mapCrossrefSearchItem);
     }
+    if (!primarySearch.typeFilterApplied) {
+      return [];
+    }
+
+    const relaxedSearch = buildCrossrefSearchUrl(query, limit, false);
 
     const relaxedResponse = await fetchWithProviderPolicy(
       'crossref',
-      buildCrossrefSearchUrl(query, limit, false),
+      relaxedSearch.url,
       requestInit,
     );
     if (!relaxedResponse.ok) {

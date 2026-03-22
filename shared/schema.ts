@@ -460,6 +460,14 @@ export type V2StageId =
 
 export type V2StageStatus = 'success' | 'warning' | 'error' | 'skipped';
 export type V2CitationStatus = 'active' | 'duplicate' | 'merged';
+
+export interface V2StageTiming {
+  stageId: V2StageId | string;
+  status: V2StageStatus;
+  durationMs: number;
+  workUnits?: number;
+  timeoutMs?: number;
+}
 export type CanonicalReferenceType =
   | 'journal'
   | 'book'
@@ -815,6 +823,8 @@ export interface V2ProcessingPath {
   executionMode?: 'sync' | 'async';
   extractorPathsUsed?: string[];
   partialReasons?: string[];
+  stageTimings?: V2StageTiming[];
+  slowestStages?: V2StageTiming[];
 }
 
 export interface V2ConversionResponse {

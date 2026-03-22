@@ -5,6 +5,7 @@ import type {
   CitationStyle,
   InputProfile,
   StageDiagnostic,
+  V2StageTiming,
   V2ConversionRequest,
   V2ConversionResponse,
   V2DuplicateEntry,
@@ -69,6 +70,7 @@ export interface V2PipelineContext {
   duplicates: V2DuplicateEntry[];
   groups: Record<string, string[]>;
   pipelineLog: StageDiagnostic[];
+  stageTimings: V2StageTiming[];
   stagesRun: string[];
   fallbacksUsed: string[];
   partialResult: boolean;
@@ -94,6 +96,7 @@ export interface ExtractorAdapter {
     batchSize?: number;
     splitArtifact?: V2SplitArtifact;
     llmBudget?: V2LlmBudget;
+    debugEnabled?: boolean;
   }): Promise<{
     parsed: {
       authors?: Array<string | CanonicalAuthor>;
@@ -119,7 +122,9 @@ export interface ExtractorAdapter {
     extractorPath?: 'deterministic' | 'grobid' | 'llm' | 'hybrid';
     selectedBranch?: 'deterministic_raw' | 'year_anchored_fallback_raw' | 'institutional_heuristic_raw' | 'hybrid';
     selectionReason?: string;
+    canonicalAuthors?: CanonicalAuthor[];
     authorParserMode?: string;
+    authorWarningFlags?: string[];
     rejectedCandidates?: string[];
     llmCapReached?: boolean;
     debug?: Record<string, unknown>;

@@ -3,11 +3,15 @@ import { isGroupAuthor, normalizeGroupAuthor, normalizeKnownContainerName } from
 import type { V2Stage } from '../contracts.js';
 import { normalizeLocatorValue } from '../qualityRules.js';
 import {
+  runStageTasksSequentiallyWithIsolation,
+} from '../stageIsolation.js';
+import {
   addCitationStageLog,
   attachCitationDebug,
   createStageDiagnostic,
   createFieldValue,
   fixUnicodeText,
+  isVerboseDebugEnabled,
   isLikelyAllCaps,
   logStructuredDebug,
   normalizeCanonicalAuthor,
@@ -85,179 +89,213 @@ export function createNormalizeStage(): V2Stage {
     id: 'normalize',
     async run(context) {
       const startedAt = Date.now();
+      const verboseDebug = isVerboseDebugEnabled();
 
-      const citations: CanonicalCitation[] = context.citations.map((citation) => {
-        const unicodeRepairedFields: string[] = [];
+      const isolation = await runStageTasksSequentiallyWithIsolation({
+        stageId: 'normalize',
+        items: context.citations,
+        run: (citation, index) => {
+          const unicodeRepairedFields: string[] = [];
 
-        const normalizedTitleBase = citation.title.value ? fixUnicodeText(citation.title.value).replace(/\.$/, '') : null;
-        const titleCaseApplied = Boolean(normalizedTitleBase && isLikelyAllCaps(normalizedTitleBase));
-        const normalizedTitle = titleCaseApplied && normalizedTitleBase ? toSmartTitleCase(normalizedTitleBase) : normalizedTitleBase;
-        if (citation.title.value && normalizedTitle && normalizedTitle !== citation.title.value) {
-          unicodeRepairedFields.push('title');
-        }
+          const normalizedTitleBase = citation.title.value ? fixUnicodeText(citation.title.value).replace(/\.$/, '') : null;
+          const titleCaseApplied = Boolean(normalizedTitleBase && isLikelyAllCaps(normalizedTitleBase));
+          const normalizedTitle = titleCaseApplied && normalizedTitleBase ? toSmartTitleCase(normalizedTitleBase) : normalizedTitleBase;
+          if (citation.title.value && normalizedTitle && normalizedTitle !== citation.title.value) {
+            unicodeRepairedFields.push('title');
+          }
 
-        const normalizedJournal = citation.journal.value ? fixUnicodeText(citation.journal.value) : null;
-        if (citation.journal.value && normalizedJournal && normalizedJournal !== citation.journal.value) {
-          unicodeRepairedFields.push('journal');
-        }
+          const normalizedJournal = citation.journal.value ? fixUnicodeText(citation.journal.value) : null;
+          if (citation.journal.value && normalizedJournal && normalizedJournal !== citation.journal.value) {
+            unicodeRepairedFields.push('journal');
+          }
 
-        const titleResult = normalizeNullableField(citation.title, (value) => {
-          const base = fixUnicodeText(value).replace(/\.$/, '');
-          return isLikelyAllCaps(base) ? toSmartTitleCase(base) : base;
-        }, 'normalize');
-        const journalResult = normalizeNullableField(citation.journal, fixUnicodeText, 'normalize');
-        const volumeResult = normalizeNullableField(citation.volume, normalizeWhitespace, 'normalize');
-        const issueResult = normalizeNullableField(citation.issue, normalizeWhitespace, 'normalize');
-        const pagesResult = normalizeNullableField(citation.pages, (value) => {
-          const repaired = fixUnicodeText(value).replace(/[–—]/g, '-');
-          return normalizeLocatorValue(repaired) ?? repaired;
-        }, 'normalize');
-        const publisherResult = normalizeNullableField(citation.publisher, fixUnicodeText, 'normalize');
-        const urlResult = normalizeNullableField(citation.url, (value) => normalizeWhitespace(value).replace(/\.$/, ''), 'normalize');
-        const doiResult = normalizeNullableField(citation.doi, normalizeDoiValue, 'normalize');
-        const conferenceResult = normalizeNullableField(citation.conferenceTitle, normalizeKnownContainerName, 'normalize');
-        const bookTitleResult = normalizeNullableField(citation.bookTitle, normalizeKnownContainerName, 'normalize');
-        const institutionResult = normalizeNullableField(citation.institution, (value) => {
-          const fixed = fixUnicodeText(value);
-          return isGroupAuthor(fixed) ? normalizeGroupAuthor(fixed) : fixed;
-        }, 'normalize');
-        const editionResult = normalizeNullableField(citation.edition, normalizeEditionValue, 'normalize');
-        const editorResult = normalizeNullableField(citation.editor, fixUnicodeText, 'normalize');
-        const authorsResult = normalizeAuthors(citation.authors);
-        const doiNormalized = Boolean(citation.doi.value && doiResult.field.value && citation.doi.value !== doiResult.field.value);
+          const titleResult = normalizeNullableField(citation.title, (value) => {
+            const base = fixUnicodeText(value).replace(/\.$/, '');
+            return isLikelyAllCaps(base) ? toSmartTitleCase(base) : base;
+          }, 'normalize');
+          const journalResult = normalizeNullableField(citation.journal, fixUnicodeText, 'normalize');
+          const volumeResult = normalizeNullableField(citation.volume, normalizeWhitespace, 'normalize');
+          const issueResult = normalizeNullableField(citation.issue, normalizeWhitespace, 'normalize');
+          const pagesResult = normalizeNullableField(citation.pages, (value) => {
+            const repaired = fixUnicodeText(value).replace(/[–—]/g, '-');
+            return normalizeLocatorValue(repaired) ?? repaired;
+          }, 'normalize');
+          const publisherResult = normalizeNullableField(citation.publisher, fixUnicodeText, 'normalize');
+          const urlResult = normalizeNullableField(citation.url, (value) => normalizeWhitespace(value).replace(/\.$/, ''), 'normalize');
+          const doiResult = normalizeNullableField(citation.doi, normalizeDoiValue, 'normalize');
+          const conferenceResult = normalizeNullableField(citation.conferenceTitle, normalizeKnownContainerName, 'normalize');
+          const bookTitleResult = normalizeNullableField(citation.bookTitle, normalizeKnownContainerName, 'normalize');
+          const institutionResult = normalizeNullableField(citation.institution, (value) => {
+            const fixed = fixUnicodeText(value);
+            return isGroupAuthor(fixed) ? normalizeGroupAuthor(fixed) : fixed;
+          }, 'normalize');
+          const editionResult = normalizeNullableField(citation.edition, normalizeEditionValue, 'normalize');
+          const editorResult = normalizeNullableField(citation.editor, fixUnicodeText, 'normalize');
+          const authorsResult = normalizeAuthors(citation.authors);
+          const doiNormalized = Boolean(citation.doi.value && doiResult.field.value && citation.doi.value !== doiResult.field.value);
 
-        let normalizedCitation: CanonicalCitation = {
-          ...citation,
-          authors: authorsResult.field,
-          title: titleResult.field,
-          journal: journalResult.field,
-          volume: volumeResult.field,
-          issue: issueResult.field,
-          pages: pagesResult.field,
-          doi: doiResult.field,
-          publisher: publisherResult.field,
-          url: urlResult.field,
-          conferenceTitle: conferenceResult.field,
-          bookTitle: bookTitleResult.field,
-          institution: institutionResult.field,
-          edition: editionResult.field,
-          editor: editorResult.field,
-          normalization: buildNormalizationMetadata(doiNormalized, unicodeRepairedFields, titleCaseApplied),
-        };
-
-        if (publisherResult.field.value && isGroupAuthor(publisherResult.field.value)) {
-          normalizedCitation = {
-            ...normalizedCitation,
-            publisher: createFieldValue(normalizeGroupAuthor(publisherResult.field.value), 'normalized', publisherResult.field.confidence, 'normalize'),
+          let normalizedCitation: CanonicalCitation = {
+            ...citation,
+            authors: authorsResult.field,
+            title: titleResult.field,
+            journal: journalResult.field,
+            volume: volumeResult.field,
+            issue: issueResult.field,
+            pages: pagesResult.field,
+            doi: doiResult.field,
+            publisher: publisherResult.field,
+            url: urlResult.field,
+            conferenceTitle: conferenceResult.field,
+            bookTitle: bookTitleResult.field,
+            institution: institutionResult.field,
+            edition: editionResult.field,
+            editor: editorResult.field,
+            normalization: buildNormalizationMetadata(doiNormalized, unicodeRepairedFields, titleCaseApplied),
           };
-        }
 
-        if (
-          normalizedCitation.referenceType === 'report'
-          && !normalizedCitation.institution.value
-          && normalizedCitation.publisher.value
-          && isGroupAuthor(normalizedCitation.publisher.value)
-        ) {
-          normalizedCitation = {
-            ...normalizedCitation,
-            institution: createFieldValue(normalizeGroupAuthor(normalizedCitation.publisher.value), 'normalized', normalizedCitation.publisher.confidence, 'normalize'),
-          };
-        }
-
-        if (
-          ['report', 'book'].includes(normalizedCitation.referenceType)
-          && normalizedCitation.authors.value.length === 0
-        ) {
-          const institutionalAuthor = normalizedCitation.institution.value ?? normalizedCitation.publisher.value;
-          if (institutionalAuthor && isGroupAuthor(institutionalAuthor)) {
+          if (publisherResult.field.value && isGroupAuthor(publisherResult.field.value)) {
             normalizedCitation = {
               ...normalizedCitation,
-              authors: createFieldValue([normalizeCanonicalAuthor({
-                first: null,
-                last: normalizeGroupAuthor(institutionalAuthor),
-                initials: null,
-                literal: normalizeGroupAuthor(institutionalAuthor),
-              })], 'normalized', 0.88, 'normalize'),
+              publisher: createFieldValue(normalizeGroupAuthor(publisherResult.field.value), 'normalized', publisherResult.field.confidence, 'normalize'),
             };
           }
-        }
 
-        if (
-          ['book', 'chapter'].includes(normalizedCitation.referenceType)
-          && !normalizedCitation.bookTitle.value
-          && normalizedCitation.journal.value
-          && /\b(handbook|manual|guide|encyclopedia|textbook)\b/i.test(normalizedCitation.journal.value)
-        ) {
-          normalizedCitation = {
-            ...normalizedCitation,
-            bookTitle: createFieldValue(normalizeKnownContainerName(normalizedCitation.journal.value), 'normalized', normalizedCitation.journal.confidence, 'normalize'),
-          };
-        }
+          if (
+            normalizedCitation.referenceType === 'report'
+            && !normalizedCitation.institution.value
+            && normalizedCitation.publisher.value
+            && isGroupAuthor(normalizedCitation.publisher.value)
+          ) {
+            normalizedCitation = {
+              ...normalizedCitation,
+              institution: createFieldValue(normalizeGroupAuthor(normalizedCitation.publisher.value), 'normalized', normalizedCitation.publisher.confidence, 'normalize'),
+            };
+          }
 
-        if (
-          normalizedCitation.referenceType === 'report'
-          && !normalizedCitation.institution.value
-          && normalizedCitation.journal.value
-          && isGroupAuthor(normalizedCitation.journal.value)
-        ) {
-          normalizedCitation = {
-            ...normalizedCitation,
-            institution: createFieldValue(normalizeGroupAuthor(normalizedCitation.journal.value), 'normalized', normalizedCitation.journal.confidence, 'normalize'),
-          };
-        }
+          if (
+            ['report', 'book'].includes(normalizedCitation.referenceType)
+            && normalizedCitation.authors.value.length === 0
+          ) {
+            const institutionalAuthor = normalizedCitation.institution.value ?? normalizedCitation.publisher.value;
+            if (institutionalAuthor && isGroupAuthor(institutionalAuthor)) {
+              normalizedCitation = {
+                ...normalizedCitation,
+                authors: createFieldValue([normalizeCanonicalAuthor({
+                  first: null,
+                  last: normalizeGroupAuthor(institutionalAuthor),
+                  initials: null,
+                  literal: normalizeGroupAuthor(institutionalAuthor),
+                })], 'normalized', 0.88, 'normalize'),
+              };
+            }
+          }
 
-        const changed = [
-          titleResult.changed,
-          journalResult.changed,
-          volumeResult.changed,
-          issueResult.changed,
-          pagesResult.changed,
-          publisherResult.changed,
-          urlResult.changed,
-          doiResult.changed,
-          conferenceResult.changed,
-          bookTitleResult.changed,
-          institutionResult.changed,
-          editionResult.changed,
-          editorResult.changed,
-          authorsResult.changed,
-        ].some(Boolean);
-        normalizedCitation = attachCitationDebug(normalizedCitation, 'normalize', {
-          changed,
-          doiNormalized,
-          unicodeRepairedFields,
-          titleCaseApplied,
-          reportInstitutionPromoted: normalizedCitation.referenceType === 'report' && Boolean(normalizedCitation.institution.value),
-          bookTitlePromoted: normalizedCitation.referenceType !== citation.referenceType || Boolean(normalizedCitation.bookTitle.value && !citation.bookTitle.value),
-        }, context.debugEnabled);
-        logStructuredDebug(context, 'normalize', context.citations.findIndex((item) => item.id === citation.id), normalizedCitation, {
-          warningFlags: unicodeRepairedFields,
-          titleCaseApplied,
-        });
+          if (
+            ['book', 'chapter'].includes(normalizedCitation.referenceType)
+            && !normalizedCitation.bookTitle.value
+            && normalizedCitation.journal.value
+            && /\b(handbook|manual|guide|encyclopedia|textbook)\b/i.test(normalizedCitation.journal.value)
+          ) {
+            normalizedCitation = {
+              ...normalizedCitation,
+              bookTitle: createFieldValue(normalizeKnownContainerName(normalizedCitation.journal.value), 'normalized', normalizedCitation.journal.confidence, 'normalize'),
+            };
+          }
 
-        return addCitationStageLog(
-          normalizedCitation,
-          createStageDiagnostic(
-            'normalize',
-            'success',
-            changed ? 'Normalized canonical field values.' : 'Canonical fields were already normalized.',
-            {
+          if (
+            normalizedCitation.referenceType === 'report'
+            && !normalizedCitation.institution.value
+            && normalizedCitation.journal.value
+            && isGroupAuthor(normalizedCitation.journal.value)
+          ) {
+            normalizedCitation = {
+              ...normalizedCitation,
+              institution: createFieldValue(normalizeGroupAuthor(normalizedCitation.journal.value), 'normalized', normalizedCitation.journal.confidence, 'normalize'),
+            };
+          }
+
+          const changed = [
+            titleResult.changed,
+            journalResult.changed,
+            volumeResult.changed,
+            issueResult.changed,
+            pagesResult.changed,
+            publisherResult.changed,
+            urlResult.changed,
+            doiResult.changed,
+            conferenceResult.changed,
+            bookTitleResult.changed,
+            institutionResult.changed,
+            editionResult.changed,
+            editorResult.changed,
+            authorsResult.changed,
+          ].some(Boolean);
+          if (context.debugEnabled && verboseDebug) {
+            normalizedCitation = attachCitationDebug(normalizedCitation, 'normalize', {
+              changed,
               doiNormalized,
               unicodeRepairedFields,
               titleCaseApplied,
-            },
+              reportInstitutionPromoted: normalizedCitation.referenceType === 'report' && Boolean(normalizedCitation.institution.value),
+              bookTitlePromoted: normalizedCitation.referenceType !== citation.referenceType || Boolean(normalizedCitation.bookTitle.value && !citation.bookTitle.value),
+            }, true);
+          }
+          logStructuredDebug(context, 'normalize', index, normalizedCitation, {
+            warningFlags: unicodeRepairedFields,
+            titleCaseApplied,
+          });
+
+          return addCitationStageLog(
+            normalizedCitation,
+            createStageDiagnostic(
+              'normalize',
+              'success',
+              changed ? 'Normalized canonical field values.' : 'Canonical fields were already normalized.',
+              {
+                doiNormalized,
+                unicodeRepairedFields,
+                titleCaseApplied,
+              },
+            ),
+          );
+        },
+        recover: ({ item: citation, message, timedOut }) => addCitationStageLog(
+          attachCitationDebug(citation, 'normalize', {
+            isolationRecovered: true,
+            timedOut,
+            errorMessage: message,
+          }, context.debugEnabled),
+          createStageDiagnostic(
+            'normalize',
+            'warning',
+            timedOut
+              ? 'Normalization timed out for this citation; keeping the pre-normalized fields.'
+              : 'Normalization failed for this citation; keeping the pre-normalized fields.',
+            { timedOut, message },
           ),
-        );
+        ),
       });
+      const citations = isolation.outcomes.map((outcome) => outcome.result);
+      const recoveredFallbacks = isolation.outcomes
+        .filter((outcome) => outcome.recovered)
+        .map((outcome) => outcome.timedOut ? 'normalize:item-timeout' : 'normalize:item-error');
 
       return {
         ...context,
         citations,
+        fallbacksUsed: [...context.fallbacksUsed, ...recoveredFallbacks],
+        partialResult: context.partialResult || isolation.recoveredCount > 0,
+        partialReasons: [...new Set([
+          ...context.partialReasons,
+          ...recoveredFallbacks,
+        ])],
         jobDebug: context.debugEnabled
           ? {
             ...context.jobDebug,
             normalize: {
               citationCount: citations.length,
+              recoveredCount: isolation.recoveredCount,
+              timeoutCount: isolation.timeoutCount,
             },
           }
           : context.jobDebug,

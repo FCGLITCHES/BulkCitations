@@ -19,6 +19,10 @@ export interface AssertionResult {
     assertionHighlights: AssertionHighlight[];
 }
 
+function escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 type StyleAssertionRule = {
     id: string;
     description: string;
@@ -404,6 +408,10 @@ export function runAssertions(
     const warnings: string[] = [];
     const details: AssertionDetail[] = [];
     const highlights: AssertionHighlight[] = [];
+    let passedCount = 0;
+    let failedCount = 0;
+    let failedCritical = 0;
+    let failedFormatting = 0;
 
     for (const a of assertions) {
         const passed = a.test(output, fields);
@@ -414,7 +422,15 @@ export function runAssertions(
             passed,
         });
 
-        if (!passed) {
+        if (passed) {
+            passedCount += 1;
+        } else {
+            failedCount += 1;
+            if (a.severity === 'error') {
+                failedCritical += 1;
+            } else {
+                failedFormatting += 1;
+            }
             warnings.push(`${a.severity}:${a.id}`);
             // Try to locate the problematic segment for inline highlights
             if (a.highlightPattern) {
@@ -436,6 +452,8 @@ export function runAssertions(
     if (output.includes('Unknown Title') || output.includes('Unknown Author')) {
         warnings.push('warning:missing_field');
         details.push({ id: 'universal:missing_field', description: 'Output contains placeholder text.', severity: 'warning', passed: false });
+        failedCount += 1;
+        failedFormatting += 1;
         const idx = output.indexOf('Unknown Title');
         if (idx >= 0) {
             highlights.push({ start: idx, end: idx + 13, ruleId: 'universal:missing_field', message: 'Placeholder title detected', severity: 'warning' });
@@ -448,15 +466,16 @@ export function runAssertions(
     if (isLocatableWork && fields._inputHadLocator && !hasLocator) {
         warnings.push('warning:missing_locator');
         details.push({ id: 'universal:missing_locator', description: 'Journal article is missing page/locator.', severity: 'warning', passed: false });
+        failedCount += 1;
+        failedFormatting += 1;
     }
 
-    const failedDetails = details.filter(d => !d.passed);
     const summary: AssertionSummary = {
         total: details.length,
-        passed: details.filter(d => d.passed).length,
-        failed: failedDetails.length,
-        failedCritical: failedDetails.filter(d => d.severity === 'error').length,
-        failedFormatting: failedDetails.filter(d => d.severity === 'warning').length,
+        passed: passedCount,
+        failed: failedCount,
+        failedCritical,
+        failedFormatting,
         details,
     };
 
@@ -515,6 +534,39 @@ const JOURNAL_ABBREVIATIONS: Record<string, string> = {
     'J Educ Technol': 'Journal of Educational Technology'
 };
 
+const MARKDOWN_LINK_RE = /\[([^\]]+)\]\(([^)]+)\)/g;
+const DOI_ANGLE_RE = /<(https?:\/\/[^>]+)>/g;
+const ET_AL_AMP_RE = /,?\s*&\s*et\s+al\./g;
+const ET_AL_DOT_AMP_RE = /\.\s*&\s*et\s+al\./g;
+const CURLY_DOUBLE_QUOTES_RE = /[\u201C\u201D\u201E\u201F]/g;
+const APA_PUBLISHER_LOCATION_RE = /(?:[a-zA-Z\s]+,\s*[A-Z]{2}|[A-Z][a-z]+(?:[\s-][A-Z][a-z]+)*):\s+(?=[A-Z0-9])/g;
+const APA_PRESERVE_RE = /\b(DFT-D|ChIP-Seq|EM|RNA|DNA|PCR|MACS|ORTEP-III|DOI|IIT\s+Bombay|IIT|ACM|IEEE|UC|U\.\s*C\.|PhD|IoT|MANET|iJIM|iJOE|iJEP|ICGCIoT|ICIIBMS|ICCIC|JOIV)\b/g;
+const APA_THREE_INITIALS_RE = /\b([A-Z])\.?([A-Z])\.?([A-Z])\.?\b/g;
+const APA_TWO_INITIALS_RE = /\b([A-Z])\.?([A-Z])\.?\b/g;
+const APA_STRAY_AMP_RE = /,\s*&\s*([A-Z]\.)/g;
+const APA_TRAILING_PUNCT_RE = /[.,\s]+$/;
+const HARVARD_DOUBLE_QUOTES_RE = /"([^"]+)"/g;
+const HARVARD_CURLY_QUOTES_RE = /“([^”]+)”/g;
+const IEEE_ONLINE_RE = /\[Online\]\.\s*Available\s+at:/i;
+const IEEE_AVAILABLE_AT_RE = /Available\s+at:/i;
+const MLA_TITLE_IN_QUOTES_RE = /"[^"]{3,}"/;
+const MLA_COMMA_AND_RE = /\b(\w+),\s+and\s+/g;
+const MLA_ROMAN_AFTER_PERIOD_RE = /\.(\s*)(i{1,3}|iv|v|vi{0,3}|ix|xi{0,3}|xiv|xv)\b/gi;
+const MLA_VOLUME_LABEL_RE = /\b(Volume|Vol)\s*(\d+)/gi;
+const MLA_SHORT_VOLUME_LABEL_RE = /\bvol\s+(\d+)/gi;
+const MLA_ISSUE_LABEL_RE = /\b(Number|No\.?)\s*(\d+)/gi;
+const MLA_SHORT_ISSUE_LABEL_RE = /\bno\s+(\d+)/gi;
+const MLA_PAGES_LABEL_RE = /\b(pages?|p\.?)\s*(\d+)/gi;
+const MLA_MISSING_PERIOD_RE = /\.\s*$/;
+const YEAR_SUFFIX_RE = /[\s,]*(?:19|20)\d{2}\.?\s*$/g;
+const JOURNAL_ABBREVIATION_RE = new RegExp(
+    Object.keys(JOURNAL_ABBREVIATIONS)
+        .sort((left, right) => right.length - left.length)
+        .map(escapeRegExp)
+        .join('|'),
+    'g'
+);
+
 /**
  * Structural fixer for CSL output strings.
  * Molds out-of-the-box CSL output perfectly to our targeted specifications.
@@ -523,20 +575,24 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
     let clean = output.trim();
 
     // 1. Remove Markdown Links globally
-    clean = clean.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$2');
+    if (clean.includes('](')) {
+        clean = clean.replace(MARKDOWN_LINK_RE, '$2');
+    }
     // Ensure DOI is plain text without `<...>` that CSL might add
-    clean = clean.replace(/<(https?:\/\/[^>]+)>/g, '$1');
+    if (clean.includes('<http')) {
+        clean = clean.replace(DOI_ANGLE_RE, '$1');
+    }
 
     // 1b. Normalize "et al." rendering: CSL treats it as a literal author,
     // producing "Author, A. & et al." — fix to "Author, A., et al."
-    clean = clean.replace(/,?\s*&\s*et\s+al\./g, ', et al.');
-    clean = clean.replace(/\.\s*&\s*et\s+al\./g, '., et al.');
+    if (/et\s+al\./i.test(clean)) {
+        clean = clean.replace(ET_AL_AMP_RE, ', et al.');
+        clean = clean.replace(ET_AL_DOT_AMP_RE, '., et al.');
+    }
 
     // 2. Expand known abbreviations globally before style-specific checks
-    for (const [abbr, full] of Object.entries(JOURNAL_ABBREVIATIONS)) {
-        // Use a regex with word boundaries to avoid partial matches
-        const escapedAbbr = abbr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        clean = clean.replace(new RegExp(`\\b${escapedAbbr}\\b`, 'g'), full);
+    if (clean.includes('J.') || clean.includes('Int J') || clean.includes('Int. J.') || clean.includes('Technol')) {
+        clean = clean.replace(JOURNAL_ABBREVIATION_RE, (match) => JOURNAL_ABBREVIATIONS[match] ?? match);
     }
 
     switch (style) {
@@ -544,10 +600,10 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
             // APA title casing normalization runs in parser.
             // Strip publisher location (APA 7 drops publisher location)
             // e.g. "New York, NY: Springer." -> "Springer."
-            clean = clean.replace(/(?:[a-zA-Z\s]+,\s*[A-Z]{2}|[A-Z][a-z]+(?:[\s-][A-Z][a-z]+)*):\s+(?=[A-Z0-9])/g, '');
+            clean = clean.replace(APA_PUBLISHER_LOCATION_RE, '');
             // Preserve hyphenated acronyms, known terms, and labels (DOI, IIT, etc.) before initial expansion
             const apaPreserved = new Map<string, string>();
-            clean = clean.replace(/\b(DFT-D|ChIP-Seq|EM|RNA|DNA|PCR|MACS|ORTEP-III|DOI|IIT\s+Bombay|IIT|ACM|IEEE|UC|U\.\s*C\.|PhD|IoT|MANET|iJIM|iJOE|iJEP|ICGCIoT|ICIIBMS|ICCIC|JOIV)\b/g, (m) => {
+            clean = clean.replace(APA_PRESERVE_RE, (m) => {
                 const t = `__APAPRES${apaPreserved.size}__`;
                 apaPreserved.set(t, m);
                 return t;
@@ -558,22 +614,21 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
                 const firstSegment = clean.slice(0, firstSegmentEnd + 1);
                 const rest = clean.slice(firstSegmentEnd + 1);
                 let authorOnly = firstSegment;
-                authorOnly = authorOnly.replace(/\b([A-Z])\.?([A-Z])\.?([A-Z])\.?\b/g, '$1. $2. $3.');
-                authorOnly = authorOnly.replace(/\b([A-Z])\.?([A-Z])\.?\b/g, '$1. $2.');
+                authorOnly = authorOnly.replace(APA_THREE_INITIALS_RE, '$1. $2. $3.');
+                authorOnly = authorOnly.replace(APA_TWO_INITIALS_RE, '$1. $2.');
                 // Restore preserved tokens in author segment for readability
-                apaPreserved.forEach((orig, tok) => { authorOnly = authorOnly.replace(tok, orig); });
+                apaPreserved.forEach((orig, tok) => { authorOnly = authorOnly.split(tok).join(orig); });
                 clean = authorOnly + rest;
             } else {
-                clean = clean.replace(/\b([A-Z])\.?([A-Z])\.?([A-Z])\.?\b/g, '$1. $2. $3.');
-                clean = clean.replace(/\b([A-Z])\.?([A-Z])\.?\b/g, '$1. $2.');
+                clean = clean.replace(APA_THREE_INITIALS_RE, '$1. $2. $3.');
+                clean = clean.replace(APA_TWO_INITIALS_RE, '$1. $2.');
             }
             // Globally restore any remaining preserved tokens (venue, conference names, acronyms)
             apaPreserved.forEach((orig, tok) => {
-                const re = new RegExp(tok, 'g');
-                clean = clean.replace(re, orig);
+                clean = clean.split(tok).join(orig);
             });
             // Remove stray "&" before initials in final author (e.g. "da Silva, & V.L." -> "da Silva, V.L.")
-            clean = clean.replace(/,\s*&\s*([A-Z]\.)/g, ', $1');
+            clean = clean.replace(APA_STRAY_AMP_RE, ', $1');
             // Remove duplicate trailing " (Year)." when year already appears earlier in the citation.
             if (fields?.year) {
               const year = String(fields.year);
@@ -583,7 +638,7 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
               if (firstIdx !== -1 && secondIdx !== -1) {
                 const between = clean.slice(firstIdx + token.length, secondIdx).trim();
                 if (between.length === 0) {
-                  clean = clean.slice(0, secondIdx).trim().replace(/[.,\s]+$/, '') + '.';
+                  clean = clean.slice(0, secondIdx).trim().replace(APA_TRAILING_PUNCT_RE, '') + '.';
                 }
               }
             }
@@ -592,8 +647,8 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
         case 'harvard-ctr':
             // Change double quotes to single quotes for article title.
             // Looking for standard CSL quotation marks.
-            clean = clean.replace(/"([^"]+)"/g, "'$1'");
-            clean = clean.replace(/“([^”]+)”/g, "'$1'");
+            clean = clean.replace(HARVARD_DOUBLE_QUOTES_RE, "'$1'");
+            clean = clean.replace(HARVARD_CURLY_QUOTES_RE, "'$1'");
             break;
 
         case 'chicago-ad':
@@ -606,8 +661,8 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
 
         case 'ieee':
             // Remove " [Online]. Available:" and switch to "Available:"
-            clean = clean.replace(/\[Online\]\.\s*Available\s+at:/i, 'Available:');
-            clean = clean.replace(/Available\s+at:/i, 'Available:');
+            clean = clean.replace(IEEE_ONLINE_RE, 'Available:');
+            clean = clean.replace(IEEE_AVAILABLE_AT_RE, 'Available:');
             break;
 
         case 'vancouver':
@@ -615,7 +670,7 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
 
         case 'mla': {
             // MLA 9th: article title in double quotes; sentence case for article titles; vol., no., pp.; end with period.
-            clean = clean.replace(/[\u201C\u201D\u201E\u201F]/g, '"');
+            clean = clean.replace(CURLY_DOUBLE_QUOTES_RE, '"');
             const title = (fields?.title || '').trim();
 
             // Restore spaced "I. I. I." if the engine collapsed it to "III" (do not collapse spaced Roman numeral tokens)
@@ -623,9 +678,9 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
                 clean = clean.replace(/\bIII\b/g, 'I. I. I.');
             }
 
-            if (title && !/"[^"]{3,}"/.test(clean)) {
+            if (title && !MLA_TITLE_IN_QUOTES_RE.test(clean)) {
                 // CSL may have rendered title without quotes — wrap first occurrence of title in quotes
-                const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const escaped = escapeRegExp(title);
                 const titleRe = new RegExp(`(${escaped})\\s*([.,])?`, 'i');
                 clean = clean.replace(titleRe, (_, t, punct) => `"${t.replace(/\.$/, '')}."`);
             }
@@ -636,19 +691,15 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
                 const [, before, quotedTitle, rest] = firstQuoted;
                 let sentenceCased = toMLASentenceCase(quotedTitle);
                 // Strip erroneous comma before "and" in phrases (e.g. "theory, and applications" → "theory and applications")
-                sentenceCased = sentenceCased.replace(/\b(\w+),\s+and\s+/g, '$1 and ');
+                sentenceCased = sentenceCased.replace(MLA_COMMA_AND_RE, '$1 and ');
                 // B1: Restore Roman numerals after period (run after sentence case so ". Iii" → ". III", ".III" → ". III")
-                sentenceCased = sentenceCased.replace(
-                    /\.(\s*)(i{1,3}|iv|v|vi{0,3}|ix|xi{0,3}|xiv|xv)\b/gi,
-                    (_, space, roman) => '.' + (space || ' ') + roman.toUpperCase()
-                );
+                sentenceCased = sentenceCased.replace(MLA_ROMAN_AFTER_PERIOD_RE, (_, space, roman) => '.' + (space || ' ') + roman.toUpperCase());
                 clean = `${before}"${sentenceCased}"${rest}`;
                 // C3: Strip duplicate title from remainder (curly-quoted or different case) so it is not emitted twice
                 const titleForDedup = (fields?.title || '').trim();
                 if (titleForDedup.length > 2) {
-                    const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                     const dupRe = new RegExp(
-                        `("${esc(sentenceCased)}")\\s*[\u201C\u201D"]?\\s*${esc(titleForDedup)}\\s*[\u201C\u201D"]?\\.?`,
+                        `("${escapeRegExp(sentenceCased)}")\\s*[\u201C\u201D"]?\\s*${escapeRegExp(titleForDedup)}\\s*[\u201C\u201D"]?\\.?`,
                         'gi'
                     );
                     clean = clean.replace(dupRe, '$1');
@@ -657,15 +708,15 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
 
             // Normalize volume/issue/page labels if CSL used different wording
             if (fields?.volume && /\d+/.test(clean)) {
-                clean = clean.replace(/\b(Volume|Vol)\s*(\d+)/gi, 'vol. $2');
-                clean = clean.replace(/\bvol\s+(\d+)/gi, 'vol. $1');
+                clean = clean.replace(MLA_VOLUME_LABEL_RE, 'vol. $2');
+                clean = clean.replace(MLA_SHORT_VOLUME_LABEL_RE, 'vol. $1');
             }
             if (fields?.issue && /\d+/.test(clean)) {
-                clean = clean.replace(/\b(Number|No\.?)\s*(\d+)/gi, 'no. $2');
-                clean = clean.replace(/\bno\s+(\d+)/gi, 'no. $1');
+                clean = clean.replace(MLA_ISSUE_LABEL_RE, 'no. $2');
+                clean = clean.replace(MLA_SHORT_ISSUE_LABEL_RE, 'no. $1');
             }
             if ((fields?.pages || (fields as any)?.page) && /\d+/.test(clean)) {
-                clean = clean.replace(/\b(pages?|p\.?)\s*(\d+)/gi, 'pp. $2');
+                clean = clean.replace(MLA_PAGES_LABEL_RE, 'pp. $2');
             }
             // MLA: year must be in brackets before pages — convert ", vol. X, no. Y, Year, pp." to ", vol. X, no. Y (Year): pp."
             clean = clean.replace(
@@ -713,10 +764,10 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
                 '$1 ($3): $2.'
             );
             // Remove duplicate trailing year when year already appears in brackets (e.g. "5263570. 2017." → "5263570.")
-            if (fields?.year && new RegExp(`\\(\\s*${(fields.year as string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\)`).test(clean)) {
-                clean = clean.replace(new RegExp(`[\\s,]*(?:19|20)\\d{2}\\.?\\s*$`, 'g'), '');
+            if (fields?.year && new RegExp(`\\(\\s*${escapeRegExp(String(fields.year))}\\s*\\)`).test(clean)) {
+                clean = clean.replace(YEAR_SUFFIX_RE, '');
             }
-            if (clean.length > 0 && !/\.\s*$/.test(clean.trim())) {
+            if (clean.length > 0 && !MLA_MISSING_PERIOD_RE.test(clean.trim())) {
                 clean = clean.trimEnd() + '.';
             }
             break;

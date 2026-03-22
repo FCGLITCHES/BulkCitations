@@ -38,6 +38,7 @@ function makeSplitContext(rawItems: string[], options?: { debug?: boolean; struc
     duplicates: [],
     groups: {},
     pipelineLog: [],
+    stageTimings: [],
     stagesRun: [],
     fallbacksUsed: [],
     partialResult: false,

@@ -8,19 +8,38 @@ export function createRespondStage(): V2Stage {
     id: 'respond',
     async run(context) {
       const startedAt = Date.now();
-      const inputCount = context.citations.filter((citation) => citation.status !== 'merged').length;
-      const uniqueCount = context.citations.filter((citation) => citation.status !== 'duplicate').length;
+      let inputCount = 0;
+      let uniqueCount = 0;
+      let enrichedCount = 0;
+      let confidenceTotal = 0;
+      let exportableCount = 0;
+      let retractedCount = 0;
+      let llmFallbackCount = 0;
+      const extractorPathSet = new Set<string>();
+
+      for (const citation of context.citations) {
+        if (citation.status !== 'merged') {
+          inputCount += 1;
+        }
+        if (citation.status !== 'duplicate') {
+          uniqueCount += 1;
+          exportableCount += 1;
+          confidenceTotal += citation.quality?.overall ?? 0;
+          if (citation.enrichment?.status === 'fetched') enrichedCount += 1;
+          if (citation.enrichment?.retractedFlag) retractedCount += 1;
+        }
+        if (citation.extraction?.fallbackUsed || citation.split?.fallbackUsed) {
+          llmFallbackCount += 1;
+        }
+        if (citation.extraction?.extractorPath) {
+          extractorPathSet.add(citation.extraction.extractorPath);
+        }
+      }
+
       const duplicateCount = Math.max(0, inputCount - uniqueCount);
-      const exportableCitations = context.citations.filter((citation) => citation.status !== 'duplicate');
-      const enrichedCount = exportableCitations.filter((citation) => citation.enrichment?.status === 'fetched').length;
-      const avgConfidence = average(exportableCitations.map((citation) => citation.quality?.overall ?? 0));
-      const retractedCount = exportableCitations.filter((citation) => citation.enrichment?.retractedFlag).length;
-      const llmFallbackCount = context.citations.filter((citation) => citation.extraction?.fallbackUsed || citation.split?.fallbackUsed).length;
-      const extractorPathsUsed = [...new Set(
-        context.citations
-          .map((citation) => citation.extraction?.extractorPath)
-          .filter((value): value is NonNullable<typeof value> => Boolean(value)),
-      )];
+      const avgConfidence = exportableCount > 0 ? confidenceTotal / exportableCount : average([]);
+      const extractorPathsUsed = [...extractorPathSet];
+      const slowestStages = [...context.stageTimings].sort((left, right) => right.durationMs - left.durationMs);
 
       const response: V2ConversionResponse = {
         job_id: context.jobId,
@@ -52,6 +71,8 @@ export function createRespondStage(): V2Stage {
           executionMode: context.executionMode,
           extractorPathsUsed,
           partialReasons: context.partialReasons,
+          stageTimings: context.stageTimings,
+          slowestStages,
         },
         debug: context.debugEnabled
           ? {

@@ -2,6 +2,12 @@ import { randomUUID } from 'node:crypto';
 import type { CanonicalAuthor, CanonicalCitation, EnrichmentMetadata, FieldValue, ResolutionMetadata, V2DuplicateEntry, V2FieldSource } from '@shared/schema';
 import type { V2Stage } from '../contracts.js';
 import { buildResolutionMetadata } from '../resolution.js';
+import {
+  getStageIsolationConcurrency,
+  getStageIsolationTimeoutMs,
+  getStageRuntimeTimeoutMs,
+  runStageTasksWithIsolation,
+} from '../stageIsolation.js';
 import { addCitationStageLog, average, createStageDiagnostic, firstAuthorLastName, normalizedField, normalizeWhitespace } from '../utils.js';
 import { hasCanonicalMalformedAuthors } from '../qualityRules.js';
 import { validateCitationOffline } from './validate.js';
@@ -499,63 +505,129 @@ export function createDedupStage(): V2Stage {
       }
 
       const groups = groupDuplicates(context.citations);
-      const duplicates: V2DuplicateEntry[] = [];
-      const citations: CanonicalCitation[] = [];
+      const isolation = await runStageTasksWithIsolation({
+        stageId: 'dedup',
+        items: groups,
+        concurrency: getStageIsolationConcurrency('dedup'),
+        timeoutMs: getStageIsolationTimeoutMs('dedup', getStageRuntimeTimeoutMs('dedup', context.stageConfig)),
+        run: async (group) => {
+          if (group.members.length === 1) {
+            return {
+              citations: [addCitationStageLog(
+                group.members[0],
+                createStageDiagnostic('dedup', 'success', 'Citation did not match any duplicate group.'),
+              )],
+              duplicates: [] as V2DuplicateEntry[],
+            };
+          }
 
-      for (const group of groups) {
-        if (group.members.length === 1) {
-          citations.push(addCitationStageLog(
-            group.members[0],
-            createStageDiagnostic('dedup', 'success', 'Citation did not match any duplicate group.'),
-          ));
-          continue;
-        }
-
-        const mergedCitation = await createMergedCitation(group.members, group.method);
-        const base = chooseBaseCitation(group.members);
-        const hydratedDuplicates = await Promise.all(group.members.map(async (citation) => {
-          const hydrated = await hydrateDuplicateCitation(citation, mergedCitation, group.method);
-          return addCitationStageLog(
-            {
-              ...hydrated,
-              status: 'duplicate',
-              duplicate: {
-                status: 'duplicate',
-                duplicateOf: mergedCitation.id,
-                method: group.method,
-                mergedFrom: [citation.id, mergedCitation.id],
-                mergeReason: citation.id === base.id ? 'base_promoted_to_merged_record' : 'duplicate_group_member',
-              },
+          const mergedCitation = await createMergedCitation(group.members, group.method);
+          const base = chooseBaseCitation(group.members);
+          const duplicateIsolation = await runStageTasksWithIsolation({
+            stageId: 'dedup',
+            items: group.members,
+            concurrency: getStageIsolationConcurrency('dedup'),
+            timeoutMs: getStageIsolationTimeoutMs('dedup', getStageRuntimeTimeoutMs('dedup', context.stageConfig)),
+            run: async (citation) => {
+              const hydrated = await hydrateDuplicateCitation(citation, mergedCitation, group.method);
+              return addCitationStageLog(
+                {
+                  ...hydrated,
+                  status: 'duplicate',
+                  duplicate: {
+                    status: 'duplicate',
+                    duplicateOf: mergedCitation.id,
+                    method: group.method,
+                    mergedFrom: [citation.id, mergedCitation.id],
+                    mergeReason: citation.id === base.id ? 'base_promoted_to_merged_record' : 'duplicate_group_member',
+                  },
+                },
+                createStageDiagnostic('dedup', 'warning', 'Citation marked as duplicate; merged record created.', {
+                  mergedId: mergedCitation.id,
+                  method: group.method,
+                }),
+              );
             },
-            createStageDiagnostic('dedup', 'warning', 'Citation marked as duplicate; merged record created.', {
-              mergedId: mergedCitation.id,
-              method: group.method,
-            }),
-          );
-        }));
-        citations.push(...hydratedDuplicates);
-        citations.push(mergedCitation);
-
-        for (const duplicate of group.members) {
-          if (duplicate.id === base.id) continue;
-          duplicates.push({
-            originalId: base.id,
-            duplicateId: duplicate.id,
-            method: group.method,
-            mergedId: mergedCitation.id,
+            recover: ({ item: citation, message, timedOut }) => addCitationStageLog(
+              {
+                ...citation,
+                status: 'duplicate',
+                duplicate: {
+                  status: 'duplicate',
+                  duplicateOf: mergedCitation.id,
+                  method: group.method,
+                  mergedFrom: [citation.id, mergedCitation.id],
+                  mergeReason: 'duplicate_group_member_unhydrated',
+                },
+              },
+              createStageDiagnostic(
+                'dedup',
+                'warning',
+                timedOut
+                  ? 'Duplicate hydration timed out for this member; keeping its existing fields inside the duplicate family.'
+                  : 'Duplicate hydration failed for this member; keeping its existing fields inside the duplicate family.',
+                { mergedId: mergedCitation.id, method: group.method, timedOut, message },
+              ),
+            ),
           });
-        }
-      }
+
+          const duplicates: V2DuplicateEntry[] = [];
+          for (const duplicate of group.members) {
+            if (duplicate.id === base.id) continue;
+            duplicates.push({
+              originalId: base.id,
+              duplicateId: duplicate.id,
+              method: group.method,
+              mergedId: mergedCitation.id,
+            });
+          }
+
+          return {
+            citations: [
+              ...duplicateIsolation.outcomes.map((outcome) => outcome.result),
+              mergedCitation,
+            ],
+            duplicates,
+          };
+        },
+        recover: ({ item: group, message, timedOut }) => ({
+          citations: group.members.map((citation) => addCitationStageLog(
+            citation,
+            createStageDiagnostic(
+              'dedup',
+              'warning',
+              timedOut
+                ? 'Deduplication timed out for this duplicate group; leaving members unchanged.'
+                : 'Deduplication failed for this duplicate group; leaving members unchanged.',
+              { method: group.method, timedOut, message },
+            ),
+          )),
+          duplicates: [] as V2DuplicateEntry[],
+        }),
+      });
+      const citations = isolation.outcomes.flatMap((outcome) => outcome.result.citations);
+      const duplicates = isolation.outcomes.flatMap((outcome) => outcome.result.duplicates);
+      const recoveredFallbacks = isolation.outcomes
+        .filter((outcome) => outcome.recovered)
+        .map((outcome) => outcome.timedOut ? 'dedup:item-timeout' : 'dedup:item-error');
 
       return {
         ...context,
         citations,
         duplicates,
+        fallbacksUsed: [...context.fallbacksUsed, ...recoveredFallbacks],
+        partialResult: context.partialResult || isolation.recoveredCount > 0,
+        partialReasons: [...new Set([
+          ...context.partialReasons,
+          ...recoveredFallbacks,
+        ])],
         jobDebug: context.debugEnabled
           ? {
             ...context.jobDebug,
             dedup: {
               duplicateCount: duplicates.length,
+              recoveredCount: isolation.recoveredCount,
+              timeoutCount: isolation.timeoutCount,
             },
           }
           : context.jobDebug,

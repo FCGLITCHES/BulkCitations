@@ -11,10 +11,19 @@ There is still a legacy `/api/convert` surface for the website, but that route n
 As of `2026-03-22`, the current v2 architecture has already absorbed several important reliability changes:
 
 - `enrich` is now a strict resolution-and-repair stage, not a passive metadata check
-- `enrich` has a per-citation timeout guard, so one stalled provider lookup does not fail the whole batch
+- `split`, `detect`, `extract`, `enrich`, `normalize`, `validate`, `truth`, `dedup`, `score`, and `render` now all use per-item isolation so one stalled or broken citation does not fail the whole batch
+- the pipeline now records wall-clock timing for every stage and exposes both `stageTimings` and a `slowestStages` view in `processingPath`, so performance tuning can target real phase costs instead of guesses
 - `dedup` does not just create a merged canonical citation anymore; duplicate-family members are also hydrated from the family canonical record and revalidated
 - `validate` is intentionally post-repair and offline in the strict-resolution path
-- `score` can keep locally strong citations in `ready` even when provider verification fails, as long as the only remaining unresolved signal is a benign provider miss
+- `extract` now has deterministic rescue coverage for quoted-title journal tails such as `BMJ 372 (2021): n71` and `Journal ... 51, no. 6 (1986): 1173-1182`
+- CPU-bound bulk stages such as `detect`, `normalize`, `score`, and `render` now use lighter sequential item isolation instead of per-item async timeout wrappers, and `extract` takes the same fast path when GROBID and LLM extraction are both off
+- `score` can keep locally strong citations in `ready` even when provider verification fails, and a strongly verified citation is no longer blocked only because the venue field stayed missing
+- provider source-type normalization has broader coverage for labels such as `working-paper`, `dissertation`, `edited-book`, `reference-entry`, and `proceedings-article`, so query routing and verified type upgrades are less brittle
+- CSL rendering now reuses template-scoped formatter instances instead of allocating a fresh `citation-js` wrapper per citation, which materially reduced render-phase cost without changing formatted output
+- `truth` now resolves against an in-memory active-truth index instead of reloading and rescanning the full store for every citation
+- `extract` can now skip fallback and institutional reparsing for already-strong deterministic candidates, which cuts CPU time without changing the verification rules
+- the default debug path is now compact by design: structured debug logging is off unless explicitly enabled, verbose stage payloads require `V2_DEBUG_VERBOSE=1`, and the legacy bridge strips repeated per-citation processing-path arrays and `inputProfile` in normal mode
+- the website now defaults new sessions to `v2`, preloads the results view while a conversion is running, defers PDF code until export time, defers bulk result props into the heavy output tree, memoizes per-citation confidence and row rendering, and avoids a duplicate-selection sync render on initial results load
 
 That combination is what made the latest 500-reference enrich/validate/dedup stress run land at `487/500 ready` (`97.4%`).
 
@@ -23,10 +32,18 @@ That combination is what made the latest 500-reference enrich/validate/dedup str
 These changes were added for a simple architectural reason: the engine was already doing expensive, high-value work, but it was not always allowed to fully use that work downstream.
 
 - `enrich` was upgraded because verification that does not repair fields is too weak. If the engine proves the correct authority record, keeping the wrong extracted fields would make verification decorative instead of operational.
-- the per-citation `enrich` timeout was added because a single stalled provider call should never be able to invalidate an entire batch run. The engine needs failure isolation, not batch-wide collapse.
+- per-item stage isolation was expanded across the pipeline because a single stalled citation should never be able to invalidate a bulk run. The engine needs local recovery, not batch-wide collapse.
+- once that isolation existed everywhere, the CPU-bound stages were switched to lighter sequential recovery boundaries because JavaScript timeouts do not actually preempt synchronous formatter/parser work. That preserved the failure model while removing avoidable promise and timer overhead.
 - `validate` was moved into a clearly post-repair role because validating the pre-repair parse produces false positives the engine has already earned the right to remove.
 - duplicate-family hydration was added because once dedup proves multiple citations are the same work, leaving one merged citation clean and the duplicate members dirty creates an inconsistent family state and pollutes downstream scoring and review.
-- the newer `score` ready paths were added because provider instability is not the same thing as citation unreliability. When the local parse is strong and the only unresolved problem is external verification failure, the bucket should reflect citation quality rather than network luck.
+- extractor venue-tail rescue was expanded because a parser that gets the title right but swallows the venue, volume, or issue still damages dedup, validation, and rendering downstream.
+- the newer `score` ready paths were added because provider instability is not the same thing as citation unreliability. When the local parse is strong and the only unresolved problem is external verification failure or a non-critical missing venue on an otherwise verified citation, the bucket should reflect citation quality rather than network luck.
+- stage timing telemetry was added because performance work should be driven by measured phase cost. The engine now reports which stages were actually slowest for a given job.
+- provider source-type normalization was expanded because external authorities do not agree on one small type vocabulary. If those labels are not normalized well, we lose both recall and safe type upgrades after a verified match.
+- the truth stage was indexed because exact alias matching should be O(1)-style lookup work during a batch, not repeated full-store scans.
+- deterministic extract short-circuiting was added because once a parse is already clean on title, authors, year, venue, locator, and type, paying for extra reparsing paths does not improve quality often enough to justify the cost.
+- the default debug payload was slimmed because the stress harness and the browser were both paying to build large debug objects that normal user flows do not read.
+- the website bridge and results view were slimmed because the UI should not pay bundle, payload, and rerender costs for per-citation metadata or list churn it is not actively showing during normal conversion flows.
 
 The general principle is:
 
@@ -99,6 +116,18 @@ That order matters. The main architectural idea is:
 - then validate the repaired citation
 - then deduplicate and score the final canonical form
 
+## Stage Reliability Model
+
+The v2 engine now treats most bulk-stage work as **item-isolated** rather than batch-atomic.
+
+- `split`, `detect`, `extract`, `enrich`, `normalize`, `validate`, `truth`, `dedup`, `score`, and `render` all run each citation or citation-group task behind a per-item timeout and recovery boundary
+- CPU-bound stages now prefer sequential recovery loops to async timeout wrappers, while network-sensitive stages such as `enrich` still use concurrency plus timeout control where that isolation is operationally meaningful
+- stage-level timeouts are scaled from estimated work units, per-item budgets, and concurrency so the stage budget grows with batch size instead of acting like a small fixed ceiling
+- a timed out or crashed item is downgraded into local fallback output plus stage diagnostics, instead of aborting the whole response
+- the pipeline also records per-stage wall time, estimated work units, and timeout budgets so we can see not just that a stage failed or succeeded, but how expensive it was when it ran
+
+This changes the failure model in an important way: the pipeline still surfaces partial-result warnings, but "one bad reference crashes the whole upload" is no longer the default behavior for bulk v2 runs.
+
 ## Stage Breakdown
 
 ### 1. `ingest`
@@ -161,6 +190,7 @@ That order matters. The main architectural idea is:
 - handling many real-world citation variants without needing one parser per style
 - preserving field confidence and rejection reasons
 - catching author-blob failures and venue/title leakage
+- rescuing quoted-title journal tails before the generic parser can swallow locators or venue text into the wrong field
 
 **Current gaps**
 
@@ -183,6 +213,7 @@ That order matters. The main architectural idea is:
 - candidates are scored locally
 - only strict verified matches are accepted
 - verified fields are merged into the citation
+- provider-specific source-type labels are normalized before compatibility checks and before any verified type upgrade is applied
 
 **Why this stage exists**
 
@@ -196,12 +227,42 @@ This is the engine’s “trust but verify” layer. Extraction is best-effort. 
 - avoiding silent overwrites of user-sourced fields
 - reusing in-flight lookups across duplicate-style variants
 - isolating slow provider calls so a single stuck citation does not timeout the whole stage
+- broadening provider type coverage without exploding our canonical citation-type taxonomy
 
 **Current gaps**
 
 - remaining misses are mostly coverage or exact-match ranking misses, not merge-conflict noise
 - provider recall still varies by citation type
 - provider instability can still reduce verification coverage, but it should no longer collapse the whole stage
+
+## Performance Telemetry
+
+Every v2 response now carries phase timing data in `processingPath`:
+
+- `stageTimings` preserves one timing record per stage with `stageId`, `status`, `durationMs`, `workUnits`, and `timeoutMs`
+- `slowestStages` is the same data sorted from longest to shortest so stress tooling and profiling can immediately surface the dominant bottlenecks
+
+That telemetry is intentionally operational rather than decorative. It exists so we can tune the actual expensive stages first, confirm that optimizations change the right part of the pipeline, and avoid trading citation quality for speed based on intuition alone.
+
+The first concrete win from that telemetry was the render path. Once timings showed `render` dominating the 250-case SDE batch, the engine switched from per-citation `new Cite(...)` allocation to reusable template-scoped formatter instances. On the SDE stress harness that dropped render time from roughly `1403ms` to `674ms` and reduced whole-job runtime from `2124ms` to `1455ms` while keeping the same accuracy outputs.
+
+The next optimization pass targeted `truth`, `extract`, and the website bridge:
+
+- `truth` now builds a short-lived active-truth alias index so fingerprint, DOI, and work-key matches no longer rescan the whole store for every citation
+- `extract` now skips year-anchored and institutional candidate construction when the deterministic parse is already clearly strong for citation types where that shortcut is safe
+- the `/api/convert` v2 bridge now keeps only non-success stage-log summaries in normal mode, which reduces response size and client-side object churn
+- the site defaults fresh users to `v2`, preloads the heavy results component during processing, and lazy-loads `jspdf` only when the user actually exports a PDF
+
+The latest optimization pass tightened the remaining hot loops instead of changing citation behavior:
+
+- `detect`, `normalize`, `score`, and `render` now use the lighter sequential isolation path, and deterministic-only `extract` follows that same model
+- `strictRenderer` now reuses precompiled regexes and cheap guard checks instead of rebuilding replacement patterns on every citation
+- `runAssertions` now computes counts in one pass instead of repeatedly filtering the same detail list
+- `extract` debug payloads reuse the parsed object directly instead of rebuilding selected-field clones for every citation
+- the legacy bridge now omits repeated processing-path arrays and repeated `inputProfile` data for each citation unless debug mode is explicitly enabled
+- the results view memoizes citation rows and confidence badges, passes per-row booleans instead of whole shared maps/sets, and no longer performs a post-render duplicate-selection synchronization pass
+
+On the 250-case SDE harness, those changes brought the debug-on batch from the earlier `1705ms` recovery point down to about `1188ms` while preserving the same summary accuracy (`style 0.508`, `reference type 0.428`, `field 0.4755`). The same harness now runs at about `1159ms` with `debug: false`, which is closer to the actual site execution path.
 
 ### 6. `normalize`
 
@@ -253,6 +314,7 @@ Validation is not just “did extraction succeed?” It asks whether the citatio
 - producing interpretable validation codes
 - staying offline for non-DOI checks in the v2 strict-resolution path
 - distinguishing real citation problems from external-provider failures
+- avoiding false blocking on citations whose identity is already strongly verified even if a venue field could not be recovered
 
 **Current gaps**
 
@@ -338,6 +400,8 @@ Validation is not just “did extraction succeed?” It asks whether the citatio
 - combining local parse quality and authority evidence into one review decision
 - allowing local-ready paths for source types with poor provider coverage
 - preventing high-confidence citations from dropping out of `ready` just because a provider timed out
+- allowing a strongly verified citation to remain `ready` when the only unresolved gap is a missing venue field
+- treating short-but-valid report titles and acronym venues such as `BMJ`, `WHO`, or `AIHW` as substantive enough for clean local-ready paths
 
 **Current gaps**
 
@@ -355,6 +419,7 @@ Validation is not just “did extraction succeed?” It asks whether the citatio
 
 - separating formatting concerns from parsing and repair
 - giving the UI a formatted citation plus warning metadata
+- preserving article locators verbatim in styles like APA, so outputs such as `Article n71` and `Article e1000097` keep the meaningful prefix instead of stripping it
 
 **Current gaps**
 
@@ -408,6 +473,8 @@ It was also necessary so validation could become more honest about the differenc
 - a citation that is structurally bad
 - and a citation that is structurally good but externally unverifiable at that moment
 
+Validation is now also careful not to treat "missing venue" as a blocking error when the citation identity is already strongly verified. In that case the missing venue is still recorded, but it is informational rather than disqualifying.
+
 ### `dedup`
 
 Dedup now behaves like a canonicalization phase, not just a clustering phase.
@@ -432,6 +499,7 @@ The reason for this change was not to make scoring looser in general. It was to 
 - malformed extraction should still be blocked
 - missing required fields should still be blocked
 - but clean, high-confidence citations should not be punished purely because Crossref or OpenAlex failed to answer in time
+- and a citation that is otherwise strongly verified should not fall out of `ready` only because no venue string was recovered
 
 ## Website Input Path
 
@@ -448,17 +516,24 @@ The site now has a better path for v2:
 
 This is the right architectural boundary because user input should be flexible, while canonical field constraints should still stay strict *inside* the engine.
 
+## Website v2 UX Notes
+
+The website now treats v2 engine output as the source of truth for confidence messaging and recheck behavior.
+
+- the confidence breakdown text is expected to explain what is actually limiting confidence, such as weak input evidence, unresolved required fields, or partial-result recovery, instead of showing a generic parsing-only disclaimer
+- the legacy recheck action is intentionally disabled for v2 citations because replaying the older path was making some already-good v2 outputs worse
+
 ## What Is Currently Strong
 
 - stage separation is clear
 - stage logs and debug metadata are good enough to tune systematically
 - strict resolution is materially better than first-hit enrichment
 - authority-applied field repair is now real
-- provider stalls no longer have to become stage-level enrich failures
+- provider stalls no longer have to become stage-level or item-family failures across the main bulk stages
 - dedup is more conservative in the presence of conflicting DOI evidence
 - dedup now strengthens duplicate-family members instead of only tagging them
 - local-ready logic for reports / books / websites is much more realistic than before
-- local-ready logic now also handles clean provider-error cases more gracefully
+- local-ready logic now also handles clean provider-error cases and verified-missing-venue cases more gracefully
 
 ## Main Known Gaps
 

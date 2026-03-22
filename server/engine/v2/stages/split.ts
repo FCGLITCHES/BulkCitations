@@ -17,6 +17,7 @@ import {
   normalizeWhitespace,
 } from '../utils.js';
 import { getOpenAiSplitTimeoutMs, recordLlmCapReached, tryConsumeLlmCall } from '../llmConfig.js';
+import { getStageRuntimeTimeoutMs, runStageTasksWithIsolation } from '../stageIsolation.js';
 
 export const OVERSIZED_CHUNK_CHARS = 800;
 export const OVERSIZED_CHUNK_LINES = 12;
@@ -488,100 +489,179 @@ export function createSplitStage(): V2Stage {
     id: 'split',
     async run(context) {
       const startedAt = Date.now();
-      const citations: CanonicalCitation[] = [];
       const fallbacksUsed = [...context.fallbacksUsed];
       let partialResult = context.partialResult;
       const partialReasons = [...context.partialReasons];
       const workingChunkByCitationId = { ...context.workingChunkByCitationId };
       const splitArtifactsByCitationId = { ...context.splitArtifactsByCitationId };
+      const llmEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_LLM_EXTRACTOR ?? '1') && Boolean(process.env.OPENAI_API_KEY);
+      const splitTimeoutMs = getStageRuntimeTimeoutMs('split', context.stageConfig);
+      const itemTimeoutMs = Math.max(
+        splitTimeoutMs,
+        llmEnabled ? getOpenAiSplitTimeoutMs() + 1_000 : splitTimeoutMs,
+      );
+      const isolation = await runStageTasksWithIsolation({
+        stageId: 'split',
+        items: context.rawItems,
+        concurrency: 1,
+        timeoutMs: itemTimeoutMs,
+        run: async (rawItem) => {
+          const citations: CanonicalCitation[] = [];
+          const localWorkingChunkByCitationId: Record<string, string> = {};
+          const localSplitArtifactsByCitationId: Record<string, V2SplitArtifact> = {};
+          const isStructuredSource = context.inputProfile?.structure === 'structured'
+            || !['text', 'url', 'pdf_base64'].includes(context.request.sourceType);
+          const baseReasons = context.inputProfile?.structure === 'unstructured'
+            ? ['profiled_unstructured']
+            : [];
 
-      for (const rawItem of context.rawItems) {
-        const isStructuredSource = context.inputProfile?.structure === 'structured'
-          || !['text', 'url', 'pdf_base64'].includes(context.request.sourceType);
-        const baseReasons = context.inputProfile?.structure === 'unstructured'
-          ? ['profiled_unstructured']
-          : [];
+          let candidates = isStructuredSource
+            ? [createCandidate([], 'structural', false)]
+            : buildInitialCandidates(rawItem, baseReasons);
 
-        let candidates = isStructuredSource
-          ? [createCandidate([], 'structural', false)]
-          : buildInitialCandidates(rawItem, baseReasons);
+          if (isStructuredSource) {
+            candidates[0].entries = toSourceLines(rawItem.trim())
+              .filter((line) => Boolean(line.text.trim()))
+              .map((line) => ({ kind: 'kept' as const, line }));
+          }
 
-        if (isStructuredSource) {
-          candidates[0].entries = toSourceLines(rawItem.trim())
-            .filter((line) => Boolean(line.text.trim()))
-            .map((line) => ({ kind: 'kept' as const, line }));
-        }
-
-        const expandedCandidates: SplitCandidate[] = [];
-        const resplitState = {
-          partialResult,
-          partialReasons,
-          llmBudget: context.llmBudget,
-        };
-        for (const candidate of candidates) {
-          const resplit = await maybeResplitCandidate(candidate, fallbacksUsed, resplitState);
-          expandedCandidates.push(...resplit);
-        }
-        partialResult = resplitState.partialResult;
-
-        const preparedCandidates = reattachOrphans(expandedCandidates.map((candidate) => prepareCandidate(candidate)));
-
-        for (const candidate of preparedCandidates) {
-          const rawChunk = auditRaw(candidate);
-          let citation = createEmptyCitation(rawChunk);
-          citation.split = {
-            confidence: candidate.confidence,
-            reasons: candidate.splitReasons,
-            method: candidate.splitMethod,
-            fallbackUsed: candidate.fallbackUsed,
+          const expandedCandidates: SplitCandidate[] = [];
+          const resplitState = {
+            partialResult,
+            partialReasons,
+            llmBudget: context.llmBudget,
           };
+          for (const candidate of candidates) {
+            const resplit = await maybeResplitCandidate(candidate, fallbacksUsed, resplitState);
+            expandedCandidates.push(...resplit);
+          }
+          partialResult = resplitState.partialResult;
 
-          const artifact = splitArtifact(candidate);
-          workingChunkByCitationId[citation.id] = artifact.cleanedChunk;
-          splitArtifactsByCitationId[citation.id] = artifact;
+          const preparedCandidates = reattachOrphans(expandedCandidates.map((candidate) => prepareCandidate(candidate)));
 
-          citation = attachCitationDebug(citation, 'split', {
-            cleanedChunk: artifact.cleanedChunk,
-            splitConfidence: artifact.confidence,
-            splitReasons: artifact.splitReasons,
-            splitMethod: artifact.splitMethod,
-            fallbackUsed: artifact.fallbackUsed,
-            contaminationFlags: artifact.contaminationFlags,
-            strippedRegions: artifact.strippedRegions,
-            repairActions: artifact.repairActions,
-            chunkLength: artifact.chunkLength,
-            lineCount: artifact.lineCount,
-          }, context.debugEnabled);
+          for (const candidate of preparedCandidates) {
+            const rawChunk = auditRaw(candidate);
+            let citation = createEmptyCitation(rawChunk);
+            citation.split = {
+              confidence: candidate.confidence,
+              reasons: candidate.splitReasons,
+              method: candidate.splitMethod,
+              fallbackUsed: candidate.fallbackUsed,
+            };
 
-          logStructuredDebug(context, 'split', citations.length, citation, {
-            warningFlags: [...artifact.splitReasons, ...artifact.contaminationFlags],
-            splitConfidence: artifact.confidence,
-            method: artifact.splitMethod,
-            contaminationFlags: artifact.contaminationFlags,
-            strippedRegionCount: artifact.strippedRegions.length,
-            repairActionCount: artifact.repairActions.length,
-          });
+            const artifact = splitArtifact(candidate);
+            localWorkingChunkByCitationId[citation.id] = artifact.cleanedChunk;
+            localSplitArtifactsByCitationId[citation.id] = artifact;
 
-          citations.push(addCitationStageLog(
-            citation,
-            createStageDiagnostic('split', artifact.contaminationFlags.length > 0 ? 'warning' : 'success', 'Prepared raw citation block for extraction.', {
+            citation = attachCitationDebug(citation, 'split', {
+              cleanedChunk: artifact.cleanedChunk,
               splitConfidence: artifact.confidence,
               splitReasons: artifact.splitReasons,
               splitMethod: artifact.splitMethod,
+              fallbackUsed: artifact.fallbackUsed,
+              contaminationFlags: artifact.contaminationFlags,
+              strippedRegions: artifact.strippedRegions,
+              repairActions: artifact.repairActions,
+              chunkLength: artifact.chunkLength,
+              lineCount: artifact.lineCount,
+            }, context.debugEnabled);
+
+            logStructuredDebug(context, 'split', citations.length, citation, {
+              warningFlags: [...artifact.splitReasons, ...artifact.contaminationFlags],
+              splitConfidence: artifact.confidence,
+              method: artifact.splitMethod,
               contaminationFlags: artifact.contaminationFlags,
               strippedRegionCount: artifact.strippedRegions.length,
               repairActionCount: artifact.repairActions.length,
-            }),
-          ));
-        }
+            });
+
+            citations.push(addCitationStageLog(
+              citation,
+              createStageDiagnostic('split', artifact.contaminationFlags.length > 0 ? 'warning' : 'success', 'Prepared raw citation block for extraction.', {
+                splitConfidence: artifact.confidence,
+                splitReasons: artifact.splitReasons,
+                splitMethod: artifact.splitMethod,
+                contaminationFlags: artifact.contaminationFlags,
+                strippedRegionCount: artifact.strippedRegions.length,
+                repairActionCount: artifact.repairActions.length,
+              }),
+            ));
+          }
+
+          return {
+            citations,
+            workingChunkByCitationId: localWorkingChunkByCitationId,
+            splitArtifactsByCitationId: localSplitArtifactsByCitationId,
+          };
+        },
+        recover: ({ item: rawItem, message, timedOut }) => {
+          const cleanedChunk = normalizeWhitespace(rawItem);
+          let citation = createEmptyCitation(cleanedChunk || rawItem);
+          const artifact: V2SplitArtifact = {
+            cleanedChunk: cleanedChunk || rawItem,
+            confidence: 0.3,
+            splitReasons: ['stage_isolation_recovery'],
+            splitMethod: 'structural',
+            fallbackUsed: true,
+            contaminationFlags: [],
+            strippedRegions: [],
+            repairActions: [],
+            chunkLength: (cleanedChunk || rawItem).length,
+            lineCount: toSourceLines(rawItem).filter((line) => Boolean(line.text.trim())).length,
+          };
+          citation.split = {
+            confidence: artifact.confidence,
+            reasons: artifact.splitReasons,
+            method: artifact.splitMethod,
+            fallbackUsed: artifact.fallbackUsed,
+          };
+          citation = attachCitationDebug(citation, 'split', {
+            ...artifact,
+            isolationRecovered: true,
+            timedOut,
+            errorMessage: message,
+          }, context.debugEnabled);
+
+          return {
+            citations: [addCitationStageLog(
+              citation,
+              createStageDiagnostic(
+                'split',
+                'warning',
+                timedOut
+                  ? 'Split timed out for this input block; continuing with the raw block as a single citation.'
+                  : 'Split failed for this input block; continuing with the raw block as a single citation.',
+                { timedOut, message },
+              ),
+            )],
+            workingChunkByCitationId: {
+              [citation.id]: artifact.cleanedChunk,
+            },
+            splitArtifactsByCitationId: {
+              [citation.id]: artifact,
+            },
+          };
+        },
+      });
+      const citations = isolation.outcomes.flatMap((outcome) => outcome.result.citations);
+      for (const outcome of isolation.outcomes) {
+        Object.assign(workingChunkByCitationId, outcome.result.workingChunkByCitationId);
+        Object.assign(splitArtifactsByCitationId, outcome.result.splitArtifactsByCitationId);
       }
+      const recoveredFallbacks = isolation.outcomes
+        .filter((outcome) => outcome.recovered)
+        .map((outcome) => outcome.timedOut ? 'split:item-timeout' : 'split:item-error');
+      fallbacksUsed.push(...recoveredFallbacks);
 
       return {
         ...context,
         citations,
         fallbacksUsed,
         partialResult,
-        partialReasons: [...new Set(partialReasons)],
+        partialReasons: [...new Set([
+          ...partialReasons,
+          ...recoveredFallbacks,
+        ])],
         workingChunkByCitationId,
         splitArtifactsByCitationId,
         jobDebug: context.debugEnabled
@@ -591,6 +671,8 @@ export function createSplitStage(): V2Stage {
               rawItems: context.rawItems.length,
               citationCount: citations.length,
               contaminationCount: citations.filter((citation) => splitArtifactsByCitationId[citation.id]?.contaminationFlags.length > 0).length,
+              recoveredCount: isolation.recoveredCount,
+              timeoutCount: isolation.timeoutCount,
               llmBudget: context.llmBudget,
             },
           }

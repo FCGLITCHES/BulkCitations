@@ -1,17 +1,19 @@
-import { useState, useEffect } from "react";
+import { Suspense, lazy, startTransition, useDeferredValue, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ReferenceInput from "./reference-input";
-import ReferenceOutput from "./reference-output";
 import ProcessingStatus from "./processing-status";
 import ErrorToast from "./error-toast";
 import { ConvertedReference, ConversionResponse, DuplicateGroup } from "@/lib/types";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import { FileText } from "lucide-react";
 
 const CAPTURE_BATCH_KEY = "bulkcitations_capture_batch";
+const loadReferenceOutput = () => import("./reference-output");
+const ReferenceOutput = lazy(loadReferenceOutput);
 
 function readCaptureBatch(): string {
   if (typeof window === "undefined") return "";
@@ -28,23 +30,28 @@ function readCaptureBatch(): string {
   }
 }
 
+function readStoredEngineVersion(): "v1" | "v2" {
+  if (typeof window === "undefined") return "v2";
+  const saved = window.localStorage.getItem("bulkcitations_engine_version");
+  return saved === "v1" ? "v1" : "v2";
+}
+
 export default function CitationConverter() {
   const [convertedReferences, setConvertedReferences] = useState<ConvertedReference[]>([]);
   const [clusters, setClusters] = useState<ConversionResponse["clusters"]>(undefined);
   const [duplicateGroups, setDuplicateGroups] = useState<DuplicateGroup[]>([]);
   const [groupDuplicates, setGroupDuplicates] = useState(true);
   const [isPro, setIsPro] = useState(true); // Pro by default for development; wire to auth when ready
-  const [engineVersion, setEngineVersion] = useState<"v1" | "v2">(() => {
-    if (typeof window === "undefined") return "v1";
-    const saved = window.localStorage.getItem("bulkcitations_engine_version");
-    return saved === "v2" ? "v2" : "v1";
-  });
-  const [lastEngineUsed, setLastEngineUsed] = useState<"v1" | "v2">("v1");
+  const [engineVersion, setEngineVersion] = useState<"v1" | "v2">(readStoredEngineVersion);
+  const [lastEngineUsed, setLastEngineUsed] = useState<"v1" | "v2">(readStoredEngineVersion);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState({ visible: false, title: "", message: "" });
   const [errorToast, setErrorToast] = useState({ visible: false, title: "", message: "", variant: "error" as "error" | "warning" });
   const [initialCaptureText, setInitialCaptureText] = useState(readCaptureBatch);
   const { toast } = useToast();
+  const deferredConvertedReferences = useDeferredValue(convertedReferences);
+  const deferredClusters = useDeferredValue(clusters);
+  const deferredDuplicateGroups = useDeferredValue(duplicateGroups);
 
   useEffect(() => {
     if (!initialCaptureText) return;
@@ -75,11 +82,19 @@ export default function CitationConverter() {
     window.localStorage.setItem("bulkcitations_engine_version", engineVersion);
   }, [engineVersion]);
 
+  useEffect(() => {
+    if (isProcessing || convertedReferences.length > 0) {
+      void loadReferenceOutput();
+    }
+  }, [convertedReferences.length, isProcessing]);
+
   const handleConversionResult = (response: ConversionResponse) => {
-    setConvertedReferences(response.convertedReferences);
-    setClusters(response.clusters ?? undefined);
-    setDuplicateGroups(response.duplicateGroups ?? []);
-    setLastEngineUsed(response.engineVersion ?? engineVersion);
+    startTransition(() => {
+      setConvertedReferences(response.convertedReferences);
+      setClusters(response.clusters ?? undefined);
+      setDuplicateGroups(response.duplicateGroups ?? []);
+      setLastEngineUsed(response.engineVersion ?? engineVersion);
+    });
 
     // Save to local storage history
     if (response.convertedReferences && response.convertedReferences.length > 0) {
@@ -123,6 +138,14 @@ export default function CitationConverter() {
 
   const handleRecheck = async (referenceId: string) => {
     try {
+      const existingReference = convertedReferences.find((reference) => reference.id === referenceId);
+      if (existingReference?.reportEngineSnapshot?.engineVersion === "v2") {
+        toast({
+          title: "Recheck unavailable",
+          description: "v2 citations already use the strict resolution pipeline, so the legacy recheck would only make this result less reliable.",
+        });
+        return;
+      }
       const res = await apiRequest("POST", "/api/recheck", { referenceId, force: true });
       const data = await res.json() as { authorityData?: ConvertedReference["authorityData"]; authorityStatus?: ConvertedReference["authorityStatus"]; confidence?: ConvertedReference["confidence"] };
       setConvertedReferences((prev) =>
@@ -133,8 +156,6 @@ export default function CitationConverter() {
                 authorityData: data.authorityData,
                 authorityStatus: data.authorityStatus,
                 confidence: data.confidence,
-                healthState: undefined,
-                healthReasons: undefined,
               }
             : r
         )
@@ -174,16 +195,18 @@ export default function CitationConverter() {
       const res = await apiRequest("POST", "/api/reformat", payload);
       const data = await res.json() as { convertedReferences: ConvertedReference[] };
       if (data.convertedReferences) {
-        setConvertedReferences(prev =>
-          data.convertedReferences.map(newRef => {
-            const orig = prev.find(p => p.id === newRef.id);
-            return {
-              ...newRef,
-              authorityData: orig?.authorityData ?? newRef.authorityData,
-              authorityStatus: orig?.authorityStatus ?? newRef.authorityStatus,
-            };
-          })
-        );
+        startTransition(() => {
+          setConvertedReferences(prev =>
+            data.convertedReferences.map(newRef => {
+              const orig = prev.find(p => p.id === newRef.id);
+              return {
+                ...newRef,
+                authorityData: orig?.authorityData ?? newRef.authorityData,
+                authorityStatus: orig?.authorityStatus ?? newRef.authorityStatus,
+              };
+            })
+          );
+        });
       }
     } catch (e) {
       console.warn("Style reformat failed:", e);
@@ -296,16 +319,34 @@ export default function CitationConverter() {
                 </div>
               </div>
 
-              <ReferenceOutput
-                convertedReferences={convertedReferences}
-                clusters={clusters}
-                duplicateGroups={duplicateGroups}
-                engineVersion={lastEngineUsed}
-                groupDuplicates={groupDuplicates}
-                onError={handleError}
-                isPro={isPro}
-                onRecheck={handleRecheck}
-              />
+              {deferredConvertedReferences.length > 0 ? (
+                <Suspense
+                  fallback={(
+                    <div className="text-center py-12 text-muted-foreground">
+                      <p className="text-sm">Loading results view...</p>
+                    </div>
+                  )}
+                >
+                  <ReferenceOutput
+                    convertedReferences={deferredConvertedReferences}
+                    clusters={deferredClusters}
+                    duplicateGroups={deferredDuplicateGroups}
+                    engineVersion={lastEngineUsed}
+                    groupDuplicates={groupDuplicates}
+                    onError={handleError}
+                    isPro={isPro}
+                    onRecheck={handleRecheck}
+                  />
+                </Suspense>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-muted-foreground mb-4">
+                    <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No converted references yet</p>
+                    <p className="text-sm">Convert some references to see them here</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>

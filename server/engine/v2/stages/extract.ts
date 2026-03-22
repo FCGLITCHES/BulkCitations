@@ -1,11 +1,17 @@
-import pLimit from 'p-limit';
 import type { CanonicalCitation } from '@shared/schema';
 import type { ExtractorAdapter, V2Stage } from '../contracts.js';
+import { getOpenAiExtractTimeoutMs } from '../llmConfig.js';
+import {
+  getStageRuntimeTimeoutMs,
+  runStageTasksSequentiallyWithIsolation,
+  runStageTasksWithIsolation,
+} from '../stageIsolation.js';
 import {
   addCitationStageLog,
   attachCitationDebug,
   createFieldValue,
   createStageDiagnostic,
+  isVerboseDebugEnabled,
   logStructuredDebug,
   parseAuthorsForStyle,
 } from '../utils.js';
@@ -15,6 +21,7 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
     id: 'extract',
     async run(context) {
       const startedAt = Date.now();
+      const verboseDebug = isVerboseDebugEnabled();
       const fallbacksUsed = [...context.fallbacksUsed];
       const grobidEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_GROBID_EXTRACTOR ?? '');
       const defaultExtractConcurrency = grobidEnabled ? 1 : 6;
@@ -25,9 +32,15 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
       const effectiveExtractConcurrency = Number.isFinite(configuredExtractConcurrency) && configuredExtractConcurrency > 0
         ? configuredExtractConcurrency
         : defaultExtractConcurrency;
-      const limit = pLimit(effectiveExtractConcurrency);
-
-      const citations = await Promise.all(context.citations.map((citation, citationIndex) => limit(async () => {
+      const llmEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_LLM_EXTRACTOR ?? '1') && Boolean(process.env.OPENAI_API_KEY);
+      const extractTimeoutMs = getStageRuntimeTimeoutMs('extract', context.stageConfig);
+      const itemTimeoutMs = Math.max(
+        extractTimeoutMs,
+        grobidEnabled ? 4_000 : extractTimeoutMs,
+        llmEnabled ? getOpenAiExtractTimeoutMs() + 1_000 : extractTimeoutMs,
+      );
+      const useDeterministicFastPath = !grobidEnabled && !llmEnabled;
+      const runCitation = async (citation: CanonicalCitation, citationIndex: number) => {
         const effectiveStyle = citation.detectedStyle.value ?? context.request.inputStyle;
         const workingChunk = context.workingChunkByCitationId[citation.id] ?? citation.raw;
         const splitArtifact = context.splitArtifactsByCitationId[citation.id];
@@ -37,8 +50,16 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           batchSize: context.inputProfile?.estimatedCount ?? context.citations.length,
           splitArtifact,
           llmBudget: context.llmBudget,
+          debugEnabled: context.debugEnabled,
         });
-        const authorParseResult = parseAuthorsForStyle(result.parsed.authors ?? [], effectiveStyle);
+        const authorParseResult = result.canonicalAuthors
+          ? {
+            authors: result.canonicalAuthors,
+            parserMode: result.authorParserMode ?? 'none',
+            warningFlags: result.authorWarningFlags ?? [],
+            rejectedCandidates: result.rejectedCandidates ?? [],
+          }
+          : parseAuthorsForStyle(result.parsed.authors ?? [], effectiveStyle);
         const yearValue = result.parsed.year ? Number.parseInt(result.parsed.year, 10) : null;
         if (result.fallbackUsed) {
           fallbacksUsed.push(`extract:${result.method}`);
@@ -73,7 +94,6 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
             selectionReason: result.selectionReason,
             authorParserMode: result.authorParserMode ?? authorParseResult.parserMode,
             rejectedCandidates: [
-              ...(result.rejectedCandidates ?? []),
               ...authorParseResult.rejectedCandidates,
             ],
           },
@@ -83,27 +103,12 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           selectionReason: result.selectionReason,
           extractorPath: result.extractorPath,
           authorParserMode: result.authorParserMode ?? authorParseResult.parserMode,
-          workingChunkLength: workingChunk.length,
           splitContaminationFlags: splitArtifact?.contaminationFlags ?? [],
           splitContaminationPenalty: result.debug?.split_contamination_penalty ?? 0,
           warningFlags: authorParseResult.warningFlags,
-          rejectedCandidates: [
-            ...(result.rejectedCandidates ?? []),
-            ...authorParseResult.rejectedCandidates,
-          ],
-          ...(result.debug ?? {}),
-          selectedParsed: {
-            authors: result.parsed.authors ?? [],
-            title: result.parsed.title ?? null,
-            year: result.parsed.year ?? null,
-            journal: result.parsed.journal ?? null,
-            conferenceTitle: result.parsed.conferenceTitle ?? null,
-            bookTitle: result.parsed.bookTitle ?? null,
-            volume: result.parsed.volume ?? null,
-            issue: result.parsed.issue ?? null,
-            pages: result.parsed.pages ?? null,
-          },
-          canonicalAuthors: authorParseResult.authors,
+          rejectedCandidates: authorParseResult.rejectedCandidates,
+          selectedParsed: result.parsed,
+          ...(verboseDebug ? (result.debug ?? {}) : {}),
         }, context.debugEnabled);
         logStructuredDebug(context, 'extract', citationIndex, nextCitation, {
           selectedBranch: result.selectedBranch,
@@ -113,10 +118,7 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           splitContaminationFlags: splitArtifact?.contaminationFlags ?? [],
           splitContaminationPenalty: result.debug?.split_contamination_penalty ?? 0,
           warningFlags: authorParseResult.warningFlags,
-          rejectedCandidates: [
-            ...(result.rejectedCandidates ?? []),
-            ...authorParseResult.rejectedCandidates,
-          ],
+          rejectedCandidates: authorParseResult.rejectedCandidates,
         });
 
         return addCitationStageLog(
@@ -129,17 +131,70 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
               method: result.method,
               fallbackUsed: result.fallbackUsed,
               extractorPath: result.extractorPath,
-              warnings: [
-                ...result.warnings,
-                ...authorParseResult.warningFlags,
-              ],
-              selectedBranch: result.selectedBranch,
-              selectionReason: result.selectionReason,
-              authorParserMode: result.authorParserMode ?? authorParseResult.parserMode,
-            },
+                warnings: [
+                  ...result.warnings,
+                  ...authorParseResult.warningFlags,
+                ],
+                selectedBranch: result.selectedBranch,
+                selectionReason: result.selectionReason,
+                authorParserMode: result.authorParserMode ?? authorParseResult.parserMode,
+                rejectedCandidates: authorParseResult.rejectedCandidates,
+              },
+            ),
+          );
+      };
+      const recoverCitation = ({ item: citation, message, timedOut }: {
+        item: CanonicalCitation;
+        index: number;
+        message: string;
+        timedOut: boolean;
+      }) => {
+        const nextCitation = attachCitationDebug({
+          ...citation,
+          extraction: {
+            method: 'deterministic',
+            fallbackUsed: true,
+            extractorPath: 'deterministic',
+            selectionReason: timedOut ? 'extract_item_timeout_isolated' : 'extract_item_error_isolated',
+            rejectedCandidates: [message],
+          },
+        }, 'extract', {
+          isolationRecovered: true,
+          timedOut,
+          errorMessage: message,
+        }, context.debugEnabled);
+        return addCitationStageLog(
+          nextCitation,
+          createStageDiagnostic(
+            'extract',
+            'warning',
+            timedOut
+              ? 'Extraction timed out for this citation; continuing with the raw split candidate.'
+              : 'Extraction failed for this citation; continuing with the raw split candidate.',
+            { timedOut, message },
           ),
         );
-      })));
+      };
+      const isolation = useDeterministicFastPath
+        ? await runStageTasksSequentiallyWithIsolation({
+          stageId: 'extract',
+          items: context.citations,
+          run: runCitation,
+          recover: recoverCitation,
+        })
+        : await runStageTasksWithIsolation({
+        stageId: 'extract',
+        items: context.citations,
+        concurrency: effectiveExtractConcurrency,
+        timeoutMs: itemTimeoutMs,
+        run: runCitation,
+        recover: recoverCitation,
+      });
+      const citations = isolation.outcomes.map((outcome) => outcome.result);
+      const recoveredFallbacks = isolation.outcomes
+        .filter((outcome) => outcome.recovered)
+        .map((outcome) => outcome.timedOut ? 'extract:item-timeout' : 'extract:item-error');
+      fallbacksUsed.push(...recoveredFallbacks);
 
       return {
         ...context,
@@ -150,6 +205,7 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           ...context.partialReasons,
           ...(fallbacksUsed.length > context.fallbacksUsed.length ? ['extract:fallback_used'] : []),
           ...(fallbacksUsed.includes('extract:llm_cap_reached') ? ['extract:llm_cap_reached'] : []),
+          ...recoveredFallbacks,
         ])],
         jobDebug: context.debugEnabled
           ? {
@@ -159,6 +215,8 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
               citationCount: citations.length,
               extractConcurrency: effectiveExtractConcurrency,
               fallbacksUsed,
+              recoveredCount: isolation.recoveredCount,
+              timeoutCount: isolation.timeoutCount,
               extractorPathsUsed: [...new Set(citations.map((citation) => citation.extraction?.extractorPath).filter(Boolean))],
               llmBudget: context.llmBudget,
             },

@@ -23,6 +23,30 @@ export function nowIso(): string {
   return new Date().toISOString();
 }
 
+export class TimeoutError extends Error {
+  readonly code = 'V2_TIMEOUT';
+  readonly timeoutMs: number;
+  readonly label: string;
+
+  constructor(label: string, timeoutMs: number) {
+    super(`${label} timed out after ${timeoutMs}ms`);
+    this.name = 'TimeoutError';
+    this.label = label;
+    this.timeoutMs = timeoutMs;
+  }
+}
+
+export function isTimeoutError(error: unknown): error is TimeoutError {
+  return error instanceof TimeoutError
+    || (
+      error instanceof Error
+      && (
+        (error as Error & { code?: string }).code === 'V2_TIMEOUT'
+        || error.name === 'TimeoutError'
+      )
+    );
+}
+
 export function clampConfidence(value: number): number {
   return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
 }
@@ -831,6 +855,7 @@ export function logStructuredDebug(
   details: Record<string, unknown>,
 ): void {
   if (!context.debugEnabled) return;
+  if (!/^(1|true|yes|on)$/i.test(process.env.V2_DEBUG_STRUCTURED_LOGS ?? '')) return;
   console.log(JSON.stringify({
     jobId: context.jobId,
     stage: stageId,
@@ -842,6 +867,10 @@ export function logStructuredDebug(
     warningFlags: details.warningFlags,
     ...details,
   }));
+}
+
+export function isVerboseDebugEnabled(): boolean {
+  return /^(1|true|yes|on)$/i.test(process.env.V2_DEBUG_VERBOSE ?? '');
 }
 
 const PARTICLES = new Set(['da', 'de', 'del', 'der', 'di', 'du', 'la', 'le', 'van', 'von', 'al-', 'bin']);
@@ -901,7 +930,7 @@ export function average(values: number[]): number {
 
 export async function runWithTimeout<T>(label: string, promise: Promise<T>, timeoutMs: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs);
+    const timeout = setTimeout(() => reject(new TimeoutError(label, timeoutMs)), timeoutMs);
     promise.then((value) => {
       clearTimeout(timeout);
       resolve(value);

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { V2ConversionRequest, V2StageId } from '@shared/schema';
+import type { V2ConversionRequest, V2StageId, V2StageTiming } from '@shared/schema';
 import { createDefaultAdapters } from './adapters.js';
 import { buildStageConfig, V2_STAGE_ORDER } from './config.js';
 import type { V2AdapterBundle, V2PipelineContext, V2Stage } from './contracts.js';
@@ -17,7 +17,8 @@ import { createScoreStage } from './stages/score.js';
 import { createSplitStage } from './stages/split.js';
 import { createTruthStage } from './stages/truth.js';
 import { createValidateStage } from './stages/validate.js';
-import { createStageDiagnostic, nowIso } from './utils.js';
+import { getStageIsolationConcurrency, getStageIsolationTimeoutMs } from './stageIsolation.js';
+import { createStageDiagnostic, nowIso, runWithTimeout } from './utils.js';
 
 function createStageMap(adapters: V2AdapterBundle): Record<V2StageId, V2Stage> {
   return {
@@ -37,19 +38,23 @@ function createStageMap(adapters: V2AdapterBundle): Record<V2StageId, V2Stage> {
   };
 }
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, stageId: V2StageId): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error(`Stage '${stageId}' timed out after ${timeoutMs}ms`)), timeoutMs);
-    promise
-      .then((value) => {
-        clearTimeout(timeout);
-        resolve(value);
-      })
-      .catch((error) => {
-        clearTimeout(timeout);
-        reject(error);
-      });
-  });
+function stageWorkUnits(context: V2PipelineContext, stageId: V2StageId): number {
+  const estimatedCount = context.inputProfile?.estimatedCount ?? 0;
+  const citationCount = context.citations.length;
+  const rawItemCount = context.rawItems.length;
+
+  switch (stageId) {
+    case 'split':
+      return Math.max(rawItemCount, estimatedCount, 1);
+    case 'ingest':
+      return Math.max(rawItemCount, 1);
+    case 'dedup':
+      return Math.max(citationCount, estimatedCount, 1);
+    case 'respond':
+      return Math.max(citationCount, 1);
+    default:
+      return Math.max(citationCount, rawItemCount, estimatedCount, 1);
+  }
 }
 
 function resolveStageTimeoutMs(
@@ -60,8 +65,15 @@ function resolveStageTimeoutMs(
   const llmEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_LLM_EXTRACTOR ?? '1') && Boolean(process.env.OPENAI_API_KEY);
 
   if (stageId === 'split') {
-    if (!llmEnabled) return baseTimeoutMs;
-    return Math.max(baseTimeoutMs, getOpenAiSplitTimeoutMs() + 1_500);
+    const workUnits = stageWorkUnits(context, stageId);
+    const concurrency = getStageIsolationConcurrency(stageId, 1);
+    const batches = Math.ceil(workUnits / Math.max(concurrency, 1));
+    const itemTimeoutMs = Math.max(baseTimeoutMs, llmEnabled ? getOpenAiSplitTimeoutMs() + 1_500 : baseTimeoutMs);
+    return Math.max(
+      baseTimeoutMs,
+      itemTimeoutMs,
+      (batches * itemTimeoutMs) + 1_500,
+    );
   }
 
   if (stageId === 'enrich') {
@@ -94,6 +106,19 @@ function resolveStageTimeoutMs(
     );
   }
 
+  if (['detect', 'normalize', 'validate', 'truth', 'dedup', 'score', 'render'].includes(stageId)) {
+    const workUnits = stageWorkUnits(context, stageId);
+    const concurrency = getStageIsolationConcurrency(stageId);
+    const itemTimeoutMs = getStageIsolationTimeoutMs(stageId, baseTimeoutMs);
+    const batches = Math.ceil(workUnits / Math.max(concurrency, 1));
+    const overheadMs = stageId === 'dedup' ? 4_000 : 2_000;
+
+    return Math.max(
+      baseTimeoutMs,
+      (batches * itemTimeoutMs) + overheadMs,
+    );
+  }
+
   if (stageId !== 'extract') return baseTimeoutMs;
 
   const citationCount = Math.max(
@@ -122,6 +147,22 @@ function resolveStageTimeoutMs(
   return Math.max(baseTimeoutMs, calculatedTimeoutMs, llmCalculatedTimeoutMs);
 }
 
+function createStageTiming(
+  stageId: V2StageId,
+  status: V2StageTiming['status'],
+  durationMs: number,
+  workUnits: number,
+  timeoutMs?: number,
+): V2StageTiming {
+  return {
+    stageId,
+    status,
+    durationMs,
+    workUnits,
+    timeoutMs,
+  };
+}
+
 export async function processV2Conversion(
   request: V2ConversionRequest,
   options?: {
@@ -146,6 +187,7 @@ export async function processV2Conversion(
     duplicates: [],
     groups: {},
     pipelineLog: [],
+    stageTimings: [],
     stagesRun: [],
     fallbacksUsed: [],
     partialResult: false,
@@ -159,6 +201,8 @@ export async function processV2Conversion(
 
   for (const stageId of V2_STAGE_ORDER) {
     const config = stageConfig[stageId];
+    const workUnits = config.enabled ? stageWorkUnits(context, stageId) : 0;
+
     if (!config.enabled) {
       context = {
         ...context,
@@ -166,10 +210,20 @@ export async function processV2Conversion(
           ...context.pipelineLog,
           createStageDiagnostic(stageId, 'skipped', `Stage '${stageId}' is disabled in the active v2 registry.`),
         ],
+        stageTimings: [
+          ...context.stageTimings,
+          createStageTiming(stageId, 'skipped', 0, workUnits, 0),
+        ],
         jobDebug: context.debugEnabled
           ? {
             ...context.jobDebug,
-            [stageId]: { status: 'skipped' },
+            [stageId]: {
+              ...(context.jobDebug[stageId] ?? {}),
+              status: 'skipped',
+              durationMs: 0,
+              workUnits,
+              timeoutMs: 0,
+            },
           }
           : context.jobDebug,
       };
@@ -177,19 +231,50 @@ export async function processV2Conversion(
     }
 
     const stage = stageMap[stageId];
+    const stageTimeoutMs = resolveStageTimeoutMs(context, stageId, config.timeoutMs);
+    const stageStartedAtMs = Date.now();
     context = {
       ...context,
       stagesRun: [...context.stagesRun, stageId],
     };
     try {
-      context = await withTimeout(stage.run(context), resolveStageTimeoutMs(context, stageId, config.timeoutMs), stageId);
+      const nextContext = await runWithTimeout(
+        `Stage '${stageId}'`,
+        stage.run(context),
+        stageTimeoutMs,
+      );
+      const durationMs = Date.now() - stageStartedAtMs;
+      context = {
+        ...nextContext,
+        stageTimings: [
+          ...nextContext.stageTimings,
+          createStageTiming(stageId, 'success', durationMs, workUnits, stageTimeoutMs),
+        ],
+        jobDebug: nextContext.debugEnabled
+          ? {
+            ...nextContext.jobDebug,
+            [stageId]: {
+              ...(nextContext.jobDebug[stageId] ?? {}),
+              status: nextContext.jobDebug[stageId]?.status ?? 'success',
+              durationMs,
+              workUnits,
+              timeoutMs: stageTimeoutMs,
+            },
+          }
+          : nextContext.jobDebug,
+      };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      const durationMs = Date.now() - stageStartedAtMs;
       context = {
         ...context,
         partialResult: true,
         fallbacksUsed: [...context.fallbacksUsed, `${stageId}:stage-error`],
         partialReasons: [...context.partialReasons, `${stageId}:stage-error`],
+        stageTimings: [
+          ...context.stageTimings,
+          createStageTiming(stageId, 'error', durationMs, workUnits, stageTimeoutMs),
+        ],
         pipelineLog: [
           ...context.pipelineLog,
           createStageDiagnostic(stageId, 'error', message),
@@ -198,8 +283,12 @@ export async function processV2Conversion(
           ? {
             ...context.jobDebug,
             [stageId]: {
+              ...(context.jobDebug[stageId] ?? {}),
               status: 'error',
               message,
+              durationMs,
+              workUnits,
+              timeoutMs: stageTimeoutMs,
             },
           }
           : context.jobDebug,
@@ -219,9 +308,19 @@ export async function processV2Conversion(
     throw new Error('v2 pipeline completed without producing a response envelope.');
   }
 
+  const stageTimings = [...context.stageTimings];
+  const slowestStages = [...stageTimings].sort((left, right) => right.durationMs - left.durationMs);
+  const durationMs = Date.now() - context.startedAtMs;
+
   return {
     response: {
       ...context.response,
+      processingPath: {
+        ...context.response.processingPath,
+        durationMs,
+        stageTimings,
+        slowestStages,
+      },
       pipeline_log: context.pipelineLog,
     },
     adapters,

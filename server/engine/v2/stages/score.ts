@@ -3,6 +3,9 @@ import { isPlaceholderFieldValue } from '@shared/referencePlaceholders';
 import { isGroupAuthor } from '../../shared/citationSemantics.js';
 import { matchTitlesStrict } from '../resolution.js';
 import type { V2Stage } from '../contracts.js';
+import {
+  runStageTasksSequentiallyWithIsolation,
+} from '../stageIsolation.js';
 import { addCitationStageLog, average, createStageDiagnostic, normalizeWhitespace } from '../utils.js';
 import {
   countStructuralValidationIssues,
@@ -111,7 +114,7 @@ function titleLooksSubstantive(citation: CanonicalCitation): boolean {
   const title = normalizeWhitespace(citation.title.value ?? '');
   if (!title) return false;
   const tokens = title.split(/\s+/).filter(Boolean);
-  if (tokens.length < 4) return false;
+  if (tokens.length < 3) return false;
   if (/\?/.test(title)) return false;
   if (/^[\p{L}'’.-]+\s*,\s*[\p{L}'’.-]+$/u.test(title)) return false;
   if (/\b(?:journal|conference|vol(?:ume)?|issue|pp?|pages?)\b/i.test(title) && /(?:19|20)\d{2}|\?/.test(title)) {
@@ -142,6 +145,7 @@ function venueLooksSubstantive(citation: CanonicalCitation): boolean {
   if (isPlaceholderFieldValue(normalized)) return false;
   if (GENERIC_VENUE_PATTERN.test(normalized)) return false;
   if (/(?:^|[\s,])(?:vol(?:ume)?|issue|pp?|pages?)\.?$/i.test(venue)) return false;
+  if (/\b[A-Z]{3,}\b/.test(venue)) return true;
   return normalized.split(/\s+/).filter(Boolean).some((token) => token.length >= 4);
 }
 
@@ -229,6 +233,25 @@ function doiVerified(citation: CanonicalCitation): boolean {
   return isVerifiedResolution(citation) && citation.resolution?.matchStrategy === 'crossref_doi';
 }
 
+function canIgnoreMissingVerifiedVenue(citation: CanonicalCitation): boolean {
+  if (!isVerifiedResolution(citation)) return false;
+  if (doiVerified(citation) || exactExternalTitleMatch(citation)) return true;
+  return Boolean(
+    citation.resolution?.acceptedCandidate?.title
+    && citation.title.confidence >= 0.88
+    && citation.year.confidence >= 0.88,
+  );
+}
+
+function effectiveRequiredFields(citation: CanonicalCitation, requirementProfile: ReturnType<typeof getRequirementProfile>): string[] {
+  return requirementProfile.required.filter((field) => !(field === 'venue' && canIgnoreMissingVerifiedVenue(citation)));
+}
+
+function effectiveMissingRequiredFields(citation: CanonicalCitation, missingRequired: string[]): string[] {
+  if (!canIgnoreMissingVerifiedVenue(citation)) return missingRequired;
+  return missingRequired.filter((field) => field !== 'venue');
+}
+
 function hasConfirmedSplitContamination(validationCodes: Set<string>): boolean {
   return [...CONFIRMED_SPLIT_CODES].some((code) => validationCodes.has(code));
 }
@@ -239,11 +262,13 @@ function hasAnySplitContamination(validationCodes: Set<string>): boolean {
 
 function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   const fieldScores = buildFieldScores(citation);
-  const missingRequired = getMissingRequiredFields(citation);
+  const rawMissingRequired = getMissingRequiredFields(citation);
   const missingExpected = getMissingExpectedFields(citation);
   const requirementProfile = getRequirementProfile(citation.referenceType);
+  const requiredFields = effectiveRequiredFields(citation, requirementProfile);
+  const missingRequired = effectiveMissingRequiredFields(citation, rawMissingRequired);
   const venueScore = getVenueScore(citation, fieldScores);
-  const requiredScores: number[] = requirementProfile.required.map((field) => {
+  const requiredScores: number[] = requiredFields.map((field) => {
     switch (field) {
       case 'authors':
         return fieldScores.authors;
@@ -266,7 +291,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
     }
   });
 
-  let overall = average(requiredScores);
+  let overall = requiredScores.length > 0 ? average(requiredScores) : 0;
 
   const expectedBonuses: number[] = [];
   if (citation.volume.value) expectedBonuses.push(fieldScores.volume);
@@ -346,6 +371,9 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   if (doiVerified(citation)) flags.push('doi_verified');
   else if (exactExternalTitleMatch(citation)) flags.push('exact_external_match');
   if (citation.resolution?.status === 'verified_with_year_tolerance') flags.push('year_tolerance_applied');
+  if (rawMissingRequired.includes('venue') && missingRequired.length === rawMissingRequired.length - 1) {
+    flags.push('verified_missing_venue');
+  }
 
   if (flags.includes('malformed_authors')) {
     overall = Math.min(overall, 0.45);
@@ -427,6 +455,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
       ...(!readyByResolution && !readyByLocalOnly && !readyByCleanUnresolvedResolution && readyByDuplicateConfidence
         ? ['High-confidence parse stayed ready even though the citation belongs to a duplicate family.']
         : []),
+      ...(flags.includes('verified_missing_venue') ? ['Identity was verified even though no venue field was recovered.'] : []),
     ];
   } else if (reviewNeeded) {
     bucket = 'worth_reviewing';
@@ -462,22 +491,69 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   };
 }
 
+function fallbackQuality(citation: CanonicalCitation, message: string, timedOut: boolean): CitationQualityScore {
+  const fieldScores = buildFieldScores(citation);
+  return {
+    overall: 0.45,
+    grade: 'F',
+    fieldScores,
+    flags: ['review', timedOut ? 'score_timeout' : 'score_error'],
+    missingRequired: getMissingRequiredFields(citation),
+    missingOptional: [],
+    bucket: 'action_needed',
+    bucketReasons: [
+      timedOut
+        ? 'Quality scoring timed out, so this citation needs a manual check before it can be treated as ready.'
+        : 'Quality scoring failed for this citation, so it needs a manual check before it can be treated as ready.',
+      message,
+    ],
+  };
+}
+
 export function createScoreStage(): V2Stage {
   return {
     id: 'score',
     async run(context) {
       const startedAt = Date.now();
-      const citations = context.citations.map((citation) => addCitationStageLog(
-        {
-          ...citation,
-          quality: scoreCitation(citation),
-        },
-        createStageDiagnostic('score', 'success', 'Calculated quality score for citation.'),
-      ));
+      const isolation = await runStageTasksSequentiallyWithIsolation({
+        stageId: 'score',
+        items: context.citations,
+        run: (citation) => addCitationStageLog(
+          {
+            ...citation,
+            quality: scoreCitation(citation),
+          },
+          createStageDiagnostic('score', 'success', 'Calculated quality score for citation.'),
+        ),
+        recover: ({ item: citation, message, timedOut }) => addCitationStageLog(
+          {
+            ...citation,
+            quality: fallbackQuality(citation, message, timedOut),
+          },
+          createStageDiagnostic(
+            'score',
+            'warning',
+            timedOut
+              ? 'Quality scoring timed out for this citation; marking it for manual review.'
+              : 'Quality scoring failed for this citation; marking it for manual review.',
+            { timedOut, message },
+          ),
+        ),
+      });
+      const citations = isolation.outcomes.map((outcome) => outcome.result);
+      const recoveredFallbacks = isolation.outcomes
+        .filter((outcome) => outcome.recovered)
+        .map((outcome) => outcome.timedOut ? 'score:item-timeout' : 'score:item-error');
 
       return {
         ...context,
         citations,
+        fallbacksUsed: [...context.fallbacksUsed, ...recoveredFallbacks],
+        partialResult: context.partialResult || isolation.recoveredCount > 0,
+        partialReasons: [...new Set([
+          ...context.partialReasons,
+          ...recoveredFallbacks,
+        ])],
         pipelineLog: [
           ...context.pipelineLog,
           createStageDiagnostic(

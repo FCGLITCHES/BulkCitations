@@ -139,6 +139,14 @@ function mapWarnings(citation: CanonicalCitation): string[] {
 }
 
 function buildReportEngineSnapshot(citation: CanonicalCitation, response: V2ConversionResponse): ConvertedReference['reportEngineSnapshot'] {
+  const stageLogSummary = citation.stageLog
+    .filter((entry) => response.debug?.enabled || entry.status !== 'success')
+    .map((entry) => ({
+      stageId: entry.stageId,
+      status: entry.status,
+      code: entry.code,
+      message: entry.message,
+    }));
   const splitContaminationFlags = response.debug?.enabled
     ? (citation.stageDebug?.split?.contaminationFlags as string[] | undefined) ?? []
     : citation.validationIssues
@@ -150,27 +158,27 @@ function buildReportEngineSnapshot(citation: CanonicalCitation, response: V2Conv
           || code.startsWith('page_artifact_')
           || code.startsWith('oversized_chunk_')
         ));
+  const processingPath = response.debug?.enabled
+    ? {
+        stagesRun: response.processingPath.stagesRun,
+        fallbacksUsed: response.processingPath.fallbacksUsed,
+        extractorPathsUsed: response.processingPath.extractorPathsUsed,
+        partialResult: response.processingPath.partialResult,
+        partialReasons: response.processingPath.partialReasons,
+      }
+    : {
+        partialResult: response.processingPath.partialResult,
+        partialReasons: response.processingPath.partialReasons,
+      };
 
   return {
     engineVersion: 'v2',
-    processingPath: {
-      stagesRun: response.processingPath.stagesRun,
-      fallbacksUsed: response.processingPath.fallbacksUsed,
-      extractorPathsUsed: response.processingPath.extractorPathsUsed,
-      partialResult: response.processingPath.partialResult,
-      partialReasons: response.processingPath.partialReasons,
-    },
-    stageLogSummary: citation.stageLog.map((entry) => ({
-      stageId: entry.stageId,
-      status: entry.status,
-      code: entry.code,
-      message: entry.message,
-    })),
+    processingPath,
+    stageLogSummary: stageLogSummary.length > 0 ? stageLogSummary : undefined,
     extractorPath: citation.extraction?.extractorPath,
-    validationCodes: citation.validationIssues.map((issue) => issue.code),
-    qualityFlags: citation.quality?.flags ?? [],
-    splitContaminationFlags,
-    inputProfile: response.inputProfile,
+    validationCodes: citation.validationIssues.length > 0 ? citation.validationIssues.map((issue) => issue.code) : undefined,
+    qualityFlags: citation.quality?.flags?.length ? citation.quality.flags : undefined,
+    splitContaminationFlags: splitContaminationFlags.length > 0 ? splitContaminationFlags : undefined,
     truthProvenance: citation.truth?.truthApplied
       ? {
           truthApplied: true,

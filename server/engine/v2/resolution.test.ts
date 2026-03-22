@@ -100,7 +100,7 @@ describe('strict resolution helpers', () => {
     expect(evaluated.reasons).toContain('source_type_incompatible');
   });
 
-  it('marks tied accepted candidates as ambiguous', () => {
+  it('prefers the strongest equivalent accepted candidate instead of marking an ambiguity', () => {
     const citation = makeCitation();
     const selection = chooseBestResolutionCandidate(citation, [
       {
@@ -121,8 +121,8 @@ describe('strict resolution helpers', () => {
       },
     ]);
 
-    expect(selection.ambiguous).toBe(true);
-    expect(selection.accepted).toBeUndefined();
+    expect(selection.ambiguous).toBe(false);
+    expect(selection.accepted?.candidate.provider).toBe('crossref');
   });
 
   it('builds minimum query evidence from title plus first author', () => {

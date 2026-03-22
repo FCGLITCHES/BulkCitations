@@ -27,6 +27,7 @@ function makeContext(citationOrCitations: any | any[], enrich = true) {
     duplicates: [],
     groups: {},
     pipelineLog: [],
+    stageTimings: [],
     stagesRun: [],
     fallbacksUsed: [],
     partialResult: false,
@@ -188,6 +189,36 @@ describe('strict enrich stage', () => {
     expect(enriched?.resolution?.status).toBe('verified');
     expect(enriched?.referenceType).toBe('conference');
     expect(enriched?.doi.value).toBe('10.1109/CVPR.2016.90');
+  });
+
+  it('maps working-paper provider source types into preprint when the local citation is still unknown', async () => {
+    const citation = makeCitation({
+      raw: 'Smith J. Foundation models for triage. 2024.',
+      referenceType: 'unknown',
+      authors: createFieldValue([
+        { first: 'J.', last: 'Smith', initials: 'J.' },
+      ], 'extracted', 0.95, 'extract'),
+      title: createFieldValue('Foundation models for triage', 'extracted', 0.95, 'extract'),
+      year: createFieldValue(2024, 'extracted', 0.96, 'extract'),
+      journal: createFieldValue(null, 'extracted', 0.1, 'extract'),
+    });
+    const provider = makeProvider({
+      searchCrossrefByTitle: vi.fn(async () => [{
+        provider: 'crossref',
+        title: 'Foundation models for triage',
+        authors: ['Smith, J.'],
+        year: 2024,
+        publisher: 'NBER',
+        url: 'https://example.test/working-paper',
+        sourceType: 'working-paper',
+      }]),
+    });
+
+    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const enriched = result.citations[0];
+
+    expect(enriched?.resolution?.status).toBe('verified');
+    expect(enriched?.referenceType).toBe('preprint');
   });
 
   it('rejects protected-venue mismatches and keeps the matching venue candidate', async () => {

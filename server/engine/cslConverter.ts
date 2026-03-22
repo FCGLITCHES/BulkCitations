@@ -19,6 +19,13 @@ import { ParsedReference, CitationStyle, ReferenceType } from '@shared/schema';
  */
 
 let stylesLoaded = false;
+type CiteInstance = InstanceType<typeof Cite>;
+
+const reusableCiteByTemplate = new Map<string, CiteInstance>();
+const FORMAT_OPTIONS_BY_TEMPLATE = new Map<string, { format: 'text'; template: string; lang: 'en-US' }>();
+const LEADING_ORDERED_ITEM_RE = /^1\.\s+/;
+const LEADING_IEEE_NUMBER_RE = /^\[1\]\s*/;
+const HTML_ENTITY_RE = /&amp;|&lt;|&gt;/g;
 
 /**
  * Initialize CSL styles. Call this once at server startup.
@@ -69,6 +76,30 @@ function getCSLTemplateName(style: CitationStyle): string {
         case 'vancouver': return 'vancouver';
         default: return 'apa';
     }
+}
+
+function getReusableCite(templateName: string): CiteInstance {
+    let cite = reusableCiteByTemplate.get(templateName);
+    if (!cite) {
+        // citation-js formatting is synchronous, so a template-scoped reusable instance
+        // avoids repeated allocator/setup cost without changing render semantics.
+        cite = new Cite([]);
+        reusableCiteByTemplate.set(templateName, cite);
+    }
+    return cite;
+}
+
+function getFormatOptions(templateName: string) {
+    let options = FORMAT_OPTIONS_BY_TEMPLATE.get(templateName);
+    if (!options) {
+        options = {
+            format: 'text',
+            template: templateName,
+            lang: 'en-US',
+        };
+        FORMAT_OPTIONS_BY_TEMPLATE.set(templateName, options);
+    }
+    return options;
 }
 
 /**
@@ -302,7 +333,7 @@ export function parsedReferenceToCSL(
         // For journal articles, render eLocators as "Article XXXXX" in the page field
         // so APA/Harvard CSL templates display them correctly (APA 7th ed. format)
         if (csl.type === 'article-journal' && !parsed.pages) {
-            csl.page = `Article ${artNum.replace(/^[eE]/, '')}`;
+            csl.page = `Article ${artNum}`;
         }
     }
     if (parsed.pages) {
@@ -391,7 +422,9 @@ export function formatCSLData(
     // Ensure styles are loaded
     initCSLStyles();
 
-    // Clone to avoid mutating the input
+    const templateName = getCSLTemplateName(targetStyle);
+
+    // Clone to avoid mutating the input; citation-js may normalize fields during set().
     const data = { ...cslData };
 
     // Ensure an ID exists
@@ -403,23 +436,34 @@ export function formatCSLData(
     }
 
     try {
-        const cite = new Cite([data]);
-        const templateName = getCSLTemplateName(targetStyle);
-
-        let result = cite.format('bibliography', {
-            format: 'text',
-            template: templateName,
-            lang: 'en-US'
-        });
+        const cite = getReusableCite(templateName);
+        cite.set([data]);
+        let result = cite.format('bibliography', getFormatOptions(templateName));
 
         // Clean up: remove leading numbering from some styles (IEEE needs [N] so keep it)
-        result = result.trim().replace(/^1\.\s+/, '');
-        if (targetStyle !== 'ieee') {
-            result = result.replace(/^\[1\]\s*/, '');
+        result = result.trim();
+        if (result.startsWith('1. ')) {
+            result = result.replace(LEADING_ORDERED_ITEM_RE, '');
+        }
+        if (targetStyle !== 'ieee' && result.startsWith('[1]')) {
+            result = result.replace(LEADING_IEEE_NUMBER_RE, '');
         }
 
         // Decode HTML entities that citation-js sometimes produces
-        result = result.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+        if (result.includes('&')) {
+            result = result.replace(HTML_ENTITY_RE, (match: string) => {
+                switch (match) {
+                    case '&amp;':
+                        return '&';
+                    case '&lt;':
+                        return '<';
+                    case '&gt;':
+                        return '>';
+                    default:
+                        return match;
+                }
+            });
+        }
 
         return result;
     } catch (error) {

@@ -10,8 +10,8 @@ import { Link, CheckCircle2, AlertTriangle, ExternalLink } from "lucide-react";
 import type { AuthorityData, ConfidenceResult, AuthorityStatus } from "@shared/schema";
 import { Button } from "./ui/button";
 import { RefreshCw } from "lucide-react";
-import { useState, useRef, useCallback } from "react";
-import type { HealthState } from "@/lib/types";
+import { memo, useCallback, useRef, useState } from "react";
+import type { HealthState, ConvertedReference } from "@/lib/types";
 import { CONFIDENCE_THRESHOLDS } from "@shared/confidenceThresholds";
 
 interface ScholarPreviewProps {
@@ -22,6 +22,8 @@ interface ScholarPreviewProps {
     referenceId?: string;
     onRecheck?: (referenceId: string) => Promise<void> | void;
     healthState?: HealthState;
+    healthReasons?: string[];
+    reportEngineSnapshot?: ConvertedReference["reportEngineSnapshot"];
 }
 
 function authorityStatusLabel(status: AuthorityStatus): string {
@@ -36,7 +38,47 @@ function authorityStatusLabel(status: AuthorityStatus): string {
     }
 }
 
-export function ScholarPreview({ confidence, authorityData, authorityStatus, isPro = false, referenceId, onRecheck, healthState }: ScholarPreviewProps) {
+function confidenceBreakdownMessage({
+    confidence,
+    authorityStatus,
+    healthState,
+    healthReasons,
+    reportEngineSnapshot,
+}: Pick<ScholarPreviewProps, "confidence" | "authorityStatus" | "healthState" | "healthReasons" | "reportEngineSnapshot">): string {
+    const primaryReason = healthReasons?.find(Boolean)?.replace(/\.$/, "");
+    if (primaryReason) {
+        if (healthState === "action_needed") {
+            return `${primaryReason}. Adding more source detail usually helps, especially author, title, year, and venue.`;
+        }
+        if (healthState === "review") {
+            return `${primaryReason}. The citation is still usable, but this part is worth a quick manual check.`;
+        }
+    }
+
+    if (reportEngineSnapshot?.processingPath?.partialResult) {
+        return "This result used a fallback path for part of the pipeline, so it is safer to review the fields before treating it as final.";
+    }
+
+    if (authorityStatus === "no_match") {
+        return "The citation was built from local parsing, but external sources did not confirm an exact match.";
+    }
+
+    if (authorityStatus === "error") {
+        return "The citation structure looks usable locally, but external validation could not complete on this run.";
+    }
+
+    if ((confidence?.score ?? 0) < 60) {
+        return "The input did not contain enough reliable detail to extract a strong citation. Supplying more of the original reference will help.";
+    }
+
+    if ((confidence?.score ?? 0) < 85) {
+        return "Most core fields were found, but one or more citation details still look incomplete or inconsistent.";
+    }
+
+    return "Core citation fields were extracted cleanly and no blocking health checks remain.";
+}
+
+function ScholarPreviewInner({ confidence, authorityData, authorityStatus, isPro = false, referenceId, onRecheck, healthState, healthReasons, reportEngineSnapshot }: ScholarPreviewProps) {
     if (!confidence) return null;
 
     if (!isPro) {
@@ -62,6 +104,7 @@ export function ScholarPreview({ confidence, authorityData, authorityStatus, isP
     const canRecheck = Boolean(
         onRecheck
         && referenceId
+        && reportEngineSnapshot?.engineVersion !== "v2"
         && (
             confidence.score < CONFIDENCE_THRESHOLDS.recheckCeiling
             || authorityStatus === "no_match"
@@ -123,7 +166,7 @@ export function ScholarPreview({ confidence, authorityData, authorityStatus, isP
             </div>
 
             <p className="mt-1 text-xs text-muted-foreground">
-                This score reflects parsing and formatting rules only. External validation status is shown separately and does not raise or lower the score.
+                {confidenceBreakdownMessage({ confidence, authorityStatus, healthState, healthReasons, reportEngineSnapshot })}
             </p>
 
             {authorityData && (
@@ -234,3 +277,5 @@ export function ScholarPreview({ confidence, authorityData, authorityStatus, isP
         </TooltipProvider>
     );
 }
+
+export const ScholarPreview = memo(ScholarPreviewInner);

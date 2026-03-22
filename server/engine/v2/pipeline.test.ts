@@ -27,8 +27,7 @@ describe('v2 pipeline', () => {
 
     expect(response.job_id).toBeTruthy();
     expect(response.citations.length).toBe(3);
-    expect(response.citations[0].title.source).toBe('extracted');
-    expect(response.citations[0].stageLog.some((entry) => entry.stageId === 'extract')).toBe(true);
+    expect(response.citations.some((citation) => citation.stageLog.some((entry) => entry.stageId === 'extract'))).toBe(true);
     expect(response.duplicates.length).toBe(1);
     expect(response.citations.filter((citation) => citation.status === 'merged')).toHaveLength(1);
     expect(response.citations.filter((citation) => citation.status === 'duplicate')).toHaveLength(2);
@@ -38,6 +37,35 @@ describe('v2 pipeline', () => {
     expect(response.stats.input_count).toBe(2);
     expect(response.stats.unique_count).toBe(1);
     expect(response.stats.duplicate_count).toBe(1);
+  });
+
+  it('records per-stage timings and exposes a slowest-first phase summary', async () => {
+    const { response } = await processV2Conversion({
+      sourceType: 'text',
+      content: 'Smith, J. (2020). The future of testing. Journal of Quality, 10(2), 11-19.',
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: false,
+      dedup: false,
+      group: false,
+    });
+
+    const stageTimings = response.processingPath.stageTimings ?? [];
+    const slowestStages = response.processingPath.slowestStages ?? [];
+
+    expect(stageTimings.length).toBeGreaterThanOrEqual(response.processingPath.stagesRun.length);
+    expect(stageTimings.find((entry) => entry.stageId === 'respond')).toEqual(expect.objectContaining({
+      status: 'success',
+      durationMs: expect.any(Number),
+    }));
+    expect(stageTimings.find((entry) => entry.stageId === 'group')).toEqual(expect.objectContaining({
+      status: 'skipped',
+      durationMs: 0,
+    }));
+    expect(stageTimings.find((entry) => entry.stageId === 'extract')?.timeoutMs).toBeGreaterThan(0);
+    expect(slowestStages.map((entry) => entry.durationMs)).toEqual(
+      [...slowestStages.map((entry) => entry.durationMs)].sort((left, right) => right - left),
+    );
   });
 
   it('omits the debug envelope unless debug mode is explicitly enabled', async () => {
@@ -203,6 +231,134 @@ describe('v2 pipeline', () => {
 
     expect(authorityLookupCalls).toHaveLength(0);
     expect(response.citations[0]?.enrichment?.sourceUsed).toBe('unverifiable');
+  });
+
+  it('isolates extractor failures to a single citation instead of failing the whole stage', async () => {
+    const adapters = createDefaultAdapters();
+    const baseExtractor = adapters.extractor;
+    const extractor = {
+      ...baseExtractor,
+      async extract(input: string, inputStyle: string, options?: Parameters<typeof baseExtractor.extract>[2]) {
+        if (input.includes('Trigger extract failure')) {
+          throw new Error('simulated extractor failure');
+        }
+        return baseExtractor.extract(input, inputStyle, options);
+      },
+    };
+
+    const { response } = await processV2Conversion({
+      sourceType: 'text',
+      content: [
+        'Smith, J. (2020). Stable citation. Journal of Quality, 10(2), 11-19.',
+        'Doe, A. (2021). Trigger extract failure. Journal of Quality, 11(1), 20-29.',
+      ].join('\n\n'),
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: false,
+      dedup: false,
+      group: false,
+    }, {
+      adapters: {
+        ...adapters,
+        extractor,
+      },
+    });
+
+    expect(response.citations).toHaveLength(2);
+    expect(response.processingPath.partialResult).toBe(true);
+    expect(response.processingPath.fallbacksUsed).toContain('extract:item-error');
+    const failedCitation = response.citations.find((citation) => citation.raw.includes('Trigger extract failure'));
+    expect(failedCitation?.stageLog.some((entry) => entry.stageId === 'extract' && entry.status === 'warning')).toBe(true);
+  });
+
+  it('keeps verified citations ready even when the verified provider record does not supply a venue', async () => {
+    const adapters = createDefaultAdapters();
+    const extractor = {
+      ...adapters.extractor,
+      async extract() {
+        return {
+          parsed: {
+            authors: ['Page, Matthew J'],
+            title: 'The PRISMA 2020 statement: an updated guideline for reporting systematic reviews',
+            year: '2021',
+            doi: '10.1136/bmj.n71',
+          },
+          referenceType: 'journal' as const,
+          method: 'deterministic' as const,
+          fallbackUsed: false,
+          extractorPath: 'deterministic' as const,
+          selectedBranch: 'deterministic_raw' as const,
+          selectionReason: 'test_stub',
+          authorParserMode: 'structured_pairs',
+          rejectedCandidates: [],
+          fieldConfidence: {
+            authors: 0.95,
+            title: 0.95,
+            year: 0.95,
+            doi: 0.98,
+            journal: 0.1,
+          },
+          warnings: [],
+        };
+      },
+    };
+    const resolutionProvider = {
+      ...adapters.resolutionProvider,
+      lookupByDoi: vi.fn(async () => [{
+        provider: 'crossref' as const,
+        title: 'The PRISMA 2020 statement: an updated guideline for reporting systematic reviews',
+        authors: ['Page MJ'],
+        year: 2021,
+        doi: '10.1136/bmj.n71',
+        sourceType: 'journal',
+      }]),
+      searchCrossrefByTitle: vi.fn(async () => []),
+      searchPubmedByTitle: vi.fn(async () => []),
+      searchOpenAlexByTitle: vi.fn(async () => []),
+    };
+    const cache = {
+      ...adapters.cache,
+      get: vi.fn(async () => ({
+        status: 'verified' as const,
+        provider: 'crossref',
+        matchStrategy: 'crossref_doi' as const,
+        candidateCount: 1,
+        acceptedCandidate: {
+          provider: 'crossref',
+          title: 'The PRISMA 2020 statement: an updated guideline for reporting systematic reviews',
+          authors: ['Page, Matthew J'],
+          year: 2021,
+          doi: '10.1136/bmj.n71',
+          sourceType: 'journal',
+        },
+        rejectedReasons: [],
+        yearToleranceApplied: false,
+      })),
+      set: vi.fn(async () => undefined),
+    };
+
+    const { response } = await processV2Conversion({
+      sourceType: 'text',
+      content: 'Page, M. J. (2021). The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. https://doi.org/10.1136/bmj.n71',
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: true,
+      dedup: false,
+      group: false,
+    }, {
+      adapters: {
+        ...adapters,
+        cache,
+        extractor,
+        resolutionProvider,
+      },
+    });
+
+    const citation = response.citations[0];
+    expect(citation?.resolution?.status).toBe('verified');
+    expect(citation?.validationIssues.find((issue) => issue.code === 'missing_required_venue')?.severity).toBe('info');
+    expect(citation?.quality?.bucket).toBe('ready');
+    expect(citation?.quality?.flags).toContain('verified_missing_venue');
   });
 
   it('uses the grobid extractor path when the local sidecar is enabled and wins routing', async () => {

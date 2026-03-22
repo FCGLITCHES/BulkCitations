@@ -15,6 +15,7 @@ import {
   normalizeProtectedTokenValue,
 } from '../shared/citationSemantics.js';
 import type { ResolutionCandidateRecord } from './contracts.js';
+import { providerSourceTypeMatchesReferenceType } from './sourceTypes.js';
 import { normalizeDoiValue, normalizeWhitespace } from './utils.js';
 
 const PROTECTED_TOKEN_RULES = [
@@ -314,31 +315,7 @@ function sourceTypeCompatible(
   sourceType?: string,
   allowPlaceholderFlex = false,
 ): boolean {
-  const normalized = normalizeWhitespace((sourceType ?? '').toLowerCase());
-  if (!normalized) return true;
-  switch (referenceType) {
-    case 'journal':
-      if (allowPlaceholderFlex) {
-        return /(journal|article|conference|proceeding|paper|book|monograph|chapter|report)/.test(normalized);
-      }
-      return /(journal|article)/.test(normalized);
-    case 'chapter':
-      return /(chapter|section|book)/.test(normalized);
-    case 'conference':
-      return /(conference|proceeding|paper)/.test(normalized);
-    case 'report':
-      return /(report)/.test(normalized);
-    case 'book':
-      return /(book|monograph)/.test(normalized);
-    case 'thesis':
-      return /(dissertation|thesis)/.test(normalized);
-    case 'website':
-      return /(website|webpage|site)/.test(normalized);
-    case 'preprint':
-      return /(preprint|posted-content|article)/.test(normalized);
-    default:
-      return true;
-  }
+  return providerSourceTypeMatchesReferenceType(referenceType, sourceType, allowPlaceholderFlex);
 }
 
 function isPreprintLike(citation: CanonicalCitation, candidate: ResolutionCandidateRecord): boolean {

@@ -26,6 +26,7 @@ function makeBaseContext(citation: any) {
     duplicates: [],
     groups: {},
     pipelineLog: [],
+    stageTimings: [],
     stagesRun: [],
     fallbacksUsed: [],
     partialResult: false,
@@ -281,6 +282,46 @@ describe('v2 validation false-positive regression checks', () => {
     expect(result.quality?.bucketReasons).toContain('High-confidence local parse with no exact provider coverage.');
   });
 
+  it('allows short but valid report titles to stay ready when only provider errors remain', async () => {
+    const citation = {
+      ...createEmptyCitation('Australian Institute of Health and Welfare. Australia’s health 2020. Canberra: AIHW; 2020.'),
+      referenceType: 'report',
+      authors: createFieldValue([{ first: null, last: 'Australian Institute of Health and Welfare', initials: null, literal: 'Australian Institute of Health and Welfare' }], 'extracted', 0.9, 'extract'),
+      title: createFieldValue("Australia's health 2020", 'extracted', 0.9, 'extract'),
+      year: createFieldValue(2020, 'extracted', 0.92, 'extract'),
+      institution: createFieldValue('Australian Institute of Health and Welfare', 'extracted', 0.9, 'extract'),
+      publisher: createFieldValue('AIHW', 'extracted', 0.9, 'extract'),
+      resolution: {
+        status: 'provider_error',
+        resolvedAt: new Date().toISOString(),
+        provider: 'strict-network-resolution',
+        matchStrategy: 'none',
+        candidateCount: 0,
+        rejectedReasons: ['resolution_execution_timeout'],
+        appliedFields: [],
+        conflictFields: [],
+        yearToleranceApplied: false,
+        queryEvidence: {
+          titlePresent: true,
+          titleTokenCount: 3,
+          groupAuthorLiteral: 'Australian Institute of Health and Welfare',
+          year: 2020,
+          venue: 'AIHW',
+          sourceType: 'report',
+        },
+      },
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    };
+
+    const result = await validateAndScore(citation);
+
+    expect(result.quality?.bucket).toBe('ready');
+    expect(result.quality?.bucketReasons).toContain('High-confidence local parse remained ready despite unresolved authority verification.');
+  });
+
   it('allows title-led websites with strong local evidence to reach ready without authors', async () => {
     const citation = {
       ...createEmptyCitation('Intelligent clinical trials. (2020). https://www2.deloitte.com/content/dam/insights/us/articles/22934_intelligent-clinical-trials/DI_Intelligent-clinical-.'),
@@ -521,6 +562,47 @@ describe('v2 validation false-positive regression checks', () => {
     };
 
     const result = await validateAndScore(citation);
+    expect(result.quality?.bucket).toBe('ready');
+    expect(result.quality?.bucketReasons).toContain('High-confidence local parse remained ready despite unresolved authority verification.');
+  });
+
+  it('allows acronym venues like BMJ to stay ready when unresolved authority warnings are otherwise clean', async () => {
+    const citation = {
+      ...createEmptyCitation('PRISMA Working Group. Preferred reporting items for systematic reviews and meta-analyses (PRISMA) 2020 statement. BMJ. 2021;372:n71.'),
+      referenceType: 'journal',
+      authors: createFieldValue([{ first: null, last: 'PRISMA Working Group', initials: null, literal: 'PRISMA Working Group' }], 'extracted', 0.93, 'extract'),
+      title: createFieldValue('Preferred reporting items for systematic reviews and meta-analyses (PRISMA) 2020 statement', 'extracted', 0.9, 'extract'),
+      year: createFieldValue(2021, 'extracted', 0.92, 'extract'),
+      journal: createFieldValue('BMJ', 'extracted', 0.9, 'extract'),
+      volume: createFieldValue('372', 'extracted', 0.9, 'extract'),
+      pages: createFieldValue('n71', 'extracted', 0.9, 'extract'),
+      resolution: {
+        status: 'no_exact_match',
+        resolvedAt: new Date().toISOString(),
+        provider: 'strict-network-resolution',
+        matchStrategy: 'none',
+        candidateCount: 0,
+        rejectedReasons: [],
+        appliedFields: [],
+        conflictFields: [],
+        yearToleranceApplied: false,
+        queryEvidence: {
+          titlePresent: true,
+          titleTokenCount: 11,
+          groupAuthorLiteral: 'PRISMA Working Group',
+          year: 2021,
+          venue: 'BMJ',
+          sourceType: 'journal',
+        },
+      },
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    };
+
+    const result = await validateAndScore(citation);
+
     expect(result.quality?.bucket).toBe('ready');
     expect(result.quality?.bucketReasons).toContain('High-confidence local parse remained ready despite unresolved authority verification.');
   });

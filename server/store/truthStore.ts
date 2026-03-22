@@ -423,12 +423,62 @@ const truthStorage: TruthStorage = databaseUrl
   ? new ResilientTruthStore(new PostgresTruthStore(databaseUrl), fileTruthStore)
   : fileTruthStore;
 
-export async function loadTruths(): Promise<TruthEntry[]> {
-  return truthStorage.listTruths();
+const TRUTH_CACHE_TTL_MS = 5_000;
+
+type CachedTruthList = {
+  truths: TruthEntry[];
+  expiresAt: number;
+};
+
+type ActiveTruthIndex = {
+  truths: TruthEntry[];
+  byFingerprint: Map<string, TruthEntry[]>;
+  byDoi: Map<string, TruthEntry[]>;
+  byWorkKey: Map<string, TruthEntry[]>;
+  expiresAt: number;
+};
+
+let allTruthsCache: CachedTruthList | null = null;
+let activeTruthIndexCache: ActiveTruthIndex | null = null;
+
+function cacheIsFresh(expiresAt: number): boolean {
+  return expiresAt > Date.now();
 }
 
-export async function listActiveTruths(): Promise<TruthEntry[]> {
-  const truths = await loadTruths();
+function invalidateTruthCaches(): void {
+  allTruthsCache = null;
+  activeTruthIndexCache = null;
+}
+
+async function getAllTruths(forceRefresh = false): Promise<TruthEntry[]> {
+  if (!forceRefresh && allTruthsCache && cacheIsFresh(allTruthsCache.expiresAt)) {
+    return allTruthsCache.truths;
+  }
+
+  const truths = await truthStorage.listTruths();
+  allTruthsCache = {
+    truths,
+    expiresAt: Date.now() + TRUTH_CACHE_TTL_MS,
+  };
+  return truths;
+}
+
+function pushIndexedTruth(map: Map<string, TruthEntry[]>, key: string | null, truth: TruthEntry): void {
+  if (!key) return;
+  const existing = map.get(key);
+  if (existing) {
+    existing.push(truth);
+    return;
+  }
+  map.set(key, [truth]);
+}
+
+async function getActiveTruthIndex(forceRefresh = false): Promise<ActiveTruthIndex> {
+  if (!forceRefresh && activeTruthIndexCache && cacheIsFresh(activeTruthIndexCache.expiresAt)) {
+    return activeTruthIndexCache;
+  }
+
+  const truths = await getAllTruths(forceRefresh);
   const activeByFamily = new Map<string, TruthEntry>();
 
   for (const truth of truths.sort((left, right) => right.validatedAt.localeCompare(left.validatedAt))) {
@@ -437,7 +487,45 @@ export async function listActiveTruths(): Promise<TruthEntry[]> {
     }
   }
 
-  return Array.from(activeByFamily.values());
+  const activeTruths = Array.from(activeByFamily.values());
+  const byFingerprint = new Map<string, TruthEntry[]>();
+  const byDoi = new Map<string, TruthEntry[]>();
+  const byWorkKey = new Map<string, TruthEntry[]>();
+
+  for (const truth of activeTruths) {
+    const aliases = truth.aliases ?? buildAliases(truth);
+    for (const alias of aliases) {
+      if (alias.aliasType === 'fingerprint') {
+        pushIndexedTruth(byFingerprint, alias.aliasValue, truth);
+        continue;
+      }
+      if (alias.aliasType === 'doi') {
+        pushIndexedTruth(byDoi, alias.aliasValue, truth);
+        continue;
+      }
+      if (alias.aliasType === 'workKey') {
+        pushIndexedTruth(byWorkKey, alias.aliasValue, truth);
+      }
+    }
+  }
+
+  activeTruthIndexCache = {
+    truths: activeTruths,
+    byFingerprint,
+    byDoi,
+    byWorkKey,
+    expiresAt: Date.now() + TRUTH_CACHE_TTL_MS,
+  };
+
+  return activeTruthIndexCache;
+}
+
+export async function loadTruths(): Promise<TruthEntry[]> {
+  return getAllTruths();
+}
+
+export async function listActiveTruths(): Promise<TruthEntry[]> {
+  return (await getActiveTruthIndex()).truths;
 }
 
 export async function saveTruth(entry: Omit<TruthEntry, 'validatedAt' | 'truthId' | 'truthFamilyId' | 'aliases'> & {
@@ -446,7 +534,9 @@ export async function saveTruth(entry: Omit<TruthEntry, 'validatedAt' | 'truthId
   aliases?: TruthAlias[];
   validatedAt?: string;
 }): Promise<TruthEntry> {
-  return truthStorage.saveTruth(entry);
+  const truth = await truthStorage.saveTruth(entry);
+  invalidateTruthCaches();
+  return truth;
 }
 
 function isStale(truth: TruthEntry): boolean {
@@ -470,24 +560,34 @@ export async function findBestTruthMatch(candidate: TruthLookupCandidate): Promi
   truth: TruthEntry;
   matchType: TruthMatchType;
 } | null> {
-  const truths = await listActiveTruths();
-  const matches: Array<{ truth: TruthEntry; matchType: TruthMatchType }> = [];
+  const activeIndex = await getActiveTruthIndex();
+  const matchesByTruthId = new Map<string, { truth: TruthEntry; matchType: TruthMatchType }>();
 
-  for (const truth of truths) {
-    const aliases = truth.aliases ?? buildAliases(truth);
-    if (candidate.fingerprint && aliases.some((alias) => alias.aliasType === 'fingerprint' && alias.aliasValue === candidate.fingerprint)) {
-      matches.push({ truth, matchType: 'fingerprint' });
-      continue;
+  const recordMatches = (truths: TruthEntry[] | undefined, matchType: TruthMatchType) => {
+    if (!truths?.length) return;
+    for (const truth of truths) {
+      const existing = matchesByTruthId.get(truth.truthId);
+      if (!existing || specificityScore(matchType) > specificityScore(existing.matchType)) {
+        matchesByTruthId.set(truth.truthId, { truth, matchType });
+      }
     }
-    if (candidate.doi && aliases.some((alias) => alias.aliasType === 'doi' && alias.aliasValue === normalizeAliasValue(candidate.doi))) {
-      matches.push({ truth, matchType: 'doi' });
-      continue;
-    }
-    if (candidate.workKey && aliases.some((alias) => alias.aliasType === 'workKey' && alias.aliasValue === normalizeAliasValue(candidate.workKey))) {
-      matches.push({ truth, matchType: 'workKey' });
-    }
+  };
+
+  if (candidate.fingerprint) {
+    recordMatches(activeIndex.byFingerprint.get(candidate.fingerprint), 'fingerprint');
   }
 
+  const normalizedDoi = normalizeAliasValue(candidate.doi);
+  if (normalizedDoi) {
+    recordMatches(activeIndex.byDoi.get(normalizedDoi), 'doi');
+  }
+
+  const normalizedWorkKey = normalizeAliasValue(candidate.workKey);
+  if (normalizedWorkKey) {
+    recordMatches(activeIndex.byWorkKey.get(normalizedWorkKey), 'workKey');
+  }
+
+  const matches = Array.from(matchesByTruthId.values());
   if (matches.length === 0) return null;
 
   matches.sort((left, right) => {
