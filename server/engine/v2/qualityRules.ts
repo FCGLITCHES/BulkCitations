@@ -8,6 +8,30 @@ import { normalizeWhitespace } from './utils.js';
 
 const RAW_LOCATOR_PATTERN = /\bpp?\.?\s*[A-Z]?\d|\bArt(?:icle)?\.?\s*(?:no\.?\s*)?[A-Z]?\d|\b\d+\(\d+\)\s*:\s*[A-Z]?\d|\bS\d+(?:[-–]S?\d+)?\b|(?:^|[\s(,;:])[A-Za-z]\d{2,}(?=$|[\s),.;:])|(?:^|[\s(,;:])\d{6,}(?=$|[\s),.;:])/i;
 const STRONG_LOCATOR_PATTERN = /\b(?:pp?\.?\s*[A-Z]?\d+(?:\s*[-–]\s*[A-Z]?\d+)?|pages?\s+[A-Z]?\d+(?:\s*[-–]\s*[A-Z]?\d+)?|Art(?:icle)?\.?\s*(?:no\.?\s*)?[A-Z]?\d+|(?:^|[\s(,;:])[A-Za-z]\d{2,}(?=$|[\s),.;:])|(?:^|[\s(,;:])\d{6,}(?=$|[\s),.;:])|\bS\d+(?:[-–]S?\d+)?)\b/i;
+const COMPACT_VANCOUVER_AUTHOR_PATTERN = /^(?:[\p{Lu}][\p{L}'’-]+|d'[\p{L}'’-]+)(?:\s+(?:da|de|del|der|di|du|la|le|van|von)\s+[\p{Lu}][\p{L}'’-]+)*(?:\s+[\p{Lu}][\p{L}'’-]+)*\s+[\p{Lu}]{1,6}(?:-[\p{Lu}]{1,6})?$/u;
+const AUTHOR_CONTENT_LEAK_DOI_OR_URL_PATTERN = /\b10\.\d{4,9}\/\S+|https?:\/\/\S+/i;
+const AUTHOR_CONTENT_LEAK_YEAR_LOCATOR_PATTERN = /\b(?:19|20)\d{2}\b\s*[,;]\s*\d+(?:\([^)]+\))?\s*:\s*(?:[A-Za-z]?\d+|10\.)/i;
+const AUTHOR_CONTENT_LEAK_SOURCE_TAIL_PATTERN = /\.\s+[A-Z][^.]{2,}\.\s+(?:19|20)\d{2}\b/;
+const AUTHOR_CONTENT_LEAK_COLON_TITLE_PATTERN = /:\s+[^\d.]+(?:\s+[^\d.]+){3,}/;
+
+export function looksLikeCompactVancouverAuthorString(value: string | null | undefined): boolean {
+  const normalized = normalizeWhitespace(value ?? '');
+  if (!normalized) return false;
+  return COMPACT_VANCOUVER_AUTHOR_PATTERN.test(normalized);
+}
+
+export function looksLikeAuthorContentLeak(value: string | null | undefined): boolean {
+  const normalized = normalizeWhitespace(value ?? '');
+  if (!normalized) return false;
+  if (looksLikeCompactVancouverAuthorString(normalized)) return false;
+  if (AUTHOR_CONTENT_LEAK_DOI_OR_URL_PATTERN.test(normalized)) return true;
+  if (AUTHOR_CONTENT_LEAK_YEAR_LOCATOR_PATTERN.test(normalized)) return true;
+  if (AUTHOR_CONTENT_LEAK_SOURCE_TAIL_PATTERN.test(normalized)) return true;
+  if (AUTHOR_CONTENT_LEAK_COLON_TITLE_PATTERN.test(normalized)) return true;
+
+  const wordCount = normalized.split(/\s+/).filter(Boolean).length;
+  return wordCount >= 12 && /[.:;]/.test(normalized);
+}
 
 export type RequirementProfile = {
   required: string[];
@@ -78,7 +102,11 @@ export function rawSuggestsLocator(raw: string): boolean {
 }
 
 export function rawSuggestsDroppedLocator(raw: string): boolean {
-  return STRONG_LOCATOR_PATTERN.test(raw);
+  const normalized = normalizeWhitespace(raw);
+  if (/\b(?:19|20)\d{2}\s*[,;]\s*\d+(?:\([^)]+\))?\s*:\s*10\.\d{4,9}\//i.test(normalized)) {
+    return false;
+  }
+  return STRONG_LOCATOR_PATTERN.test(normalized);
 }
 
 export function isLocatorLike(value: string | null | undefined): boolean {
@@ -135,6 +163,24 @@ export function getMissingRequiredFields(citation: CanonicalCitation): string[] 
 }
 
 export function getMissingExpectedFields(citation: CanonicalCitation): string[] {
+  if (citation.referenceType === 'journal') {
+    const normalizedRaw = normalizeWhitespace(citation.raw);
+    const missing: string[] = [];
+    const hasVolume = Boolean(citation.volume.value);
+    const hasIssue = Boolean(citation.issue.value);
+    const hasLocator = hasCitationField(citation, 'locator');
+    const rawSuggestsVolume = /\b(?:19|20)\d{2}\s*[,;]\s*\d+/i.test(normalizedRaw) || /\bvol\.?\s*\d+/i.test(normalizedRaw);
+    const rawSuggestsIssue = /\b(?:19|20)\d{2}\s*[,;]\s*\d+\([^)]+\)/i.test(normalizedRaw) || /\bno\.?\s*\d+/i.test(normalizedRaw);
+    const rawSuggestsLocator = rawSuggestsDroppedLocator(normalizedRaw)
+      || /\b(?:19|20)\d{2}\s*[,;]\s*\d+(?:\([^)]+\))?\s*:\s*(?!10\.)\S+/i.test(normalizedRaw)
+      || /\bpp?\.?\s*[A-Z]?\d+/i.test(normalizedRaw);
+
+    if (!hasVolume && rawSuggestsVolume) missing.push('volume');
+    if (!hasIssue && rawSuggestsIssue) missing.push('issue');
+    if (!hasLocator && rawSuggestsLocator) missing.push('locator');
+    return missing;
+  }
+
   const profile = getRequirementProfile(citation.referenceType);
   return profile.expected.filter((field) => !hasCitationField(citation, field));
 }
@@ -190,6 +236,8 @@ export function countStructuralValidationIssues(citation: CanonicalCitation): { 
 export function analyzeParsedAuthorStrings(authors: string[] | undefined): {
   missing: boolean;
   mergedBlobCount: number;
+  contaminatedBlobCount: number;
+  compactVancouverCount: number;
   initialsOnlyCount: number;
   singleCharacterTailCount: number;
   richness: number;
@@ -198,6 +246,8 @@ export function analyzeParsedAuthorStrings(authors: string[] | undefined): {
     return {
       missing: true,
       mergedBlobCount: 0,
+      contaminatedBlobCount: 0,
+      compactVancouverCount: 0,
       initialsOnlyCount: 0,
       singleCharacterTailCount: 0,
       richness: 0,
@@ -205,6 +255,8 @@ export function analyzeParsedAuthorStrings(authors: string[] | undefined): {
   }
 
   let mergedBlobCount = 0;
+  let contaminatedBlobCount = 0;
+  let compactVancouverCount = 0;
   let initialsOnlyCount = 0;
   let singleCharacterTailCount = 0;
   let richness = 0;
@@ -212,19 +264,29 @@ export function analyzeParsedAuthorStrings(authors: string[] | undefined): {
   for (const author of authors) {
     const normalized = normalizeWhitespace(author);
     if (!normalized) continue;
-    if ((normalized.match(/,/g) ?? []).length >= 2 || /\b(?:and|&)\b/i.test(normalized)) mergedBlobCount += 1;
-    if (/^[A-Z](?:\.?\s*[A-Z]){0,5}\.?$/i.test(normalized.replace(/\s+/g, ''))) initialsOnlyCount += 1;
-    if (/(?:^|[\s,])\p{L}\.?$/u.test(normalized)) singleCharacterTailCount += 1;
+    const isCompactVancouver = looksLikeCompactVancouverAuthorString(normalized);
+    const hasContentLeak = looksLikeAuthorContentLeak(normalized);
 
-    const initialsCount = (normalized.match(/[A-Z](?=\.|\b)/g) ?? []).length;
+    if (isCompactVancouver) compactVancouverCount += 1;
+    if (hasContentLeak) contaminatedBlobCount += 1;
+    if (!isCompactVancouver && ((normalized.match(/,/g) ?? []).length >= 2 || /\b(?:and|&)\b/i.test(normalized))) {
+      mergedBlobCount += 1;
+    }
+    if (/^[A-Z](?:\.?\s*[A-Z]){0,5}\.?$/i.test(normalized.replace(/\s+/g, ''))) initialsOnlyCount += 1;
+    if (!isCompactVancouver && /(?:^|[\s,])\p{L}\.?$/u.test(normalized)) singleCharacterTailCount += 1;
+
+    const initialsCount = (normalized.match(/[\p{Lu}](?=\.|\b)/gu) ?? []).length;
     if (initialsCount >= 2) richness += 1.2;
     else if (initialsCount === 1) richness += 0.6;
-    if (/,\s*[A-Z].*[A-Z]/.test(normalized) || /^[^,]+\s+[A-Z]{2,6}$/i.test(normalized)) richness += 0.8;
+    if (isCompactVancouver) richness += 0.5;
+    else if (/,\s*[A-Z].*[A-Z]/.test(normalized) || /^[^,]+\s+[\p{Lu}]{2,6}$/u.test(normalized)) richness += 0.8;
   }
 
   return {
     missing: false,
     mergedBlobCount,
+    contaminatedBlobCount,
+    compactVancouverCount,
     initialsOnlyCount,
     singleCharacterTailCount,
     richness: Number((richness / Math.max(authors.length, 1)).toFixed(2)),
@@ -236,6 +298,7 @@ export function hasCanonicalMalformedAuthors(authors: CanonicalAuthor[]): boolea
   let suspiciousCount = 0;
   for (const author of authors) {
     const last = normalizeWhitespace(author.last);
+    const combined = normalizeWhitespace([author.literal ?? '', author.last, author.first ?? '', author.initials ?? ''].join(' '));
     if (!last) {
       suspiciousCount += 1;
       continue;
@@ -243,6 +306,8 @@ export function hasCanonicalMalformedAuthors(authors: CanonicalAuthor[]): boolea
     if (/^(and|&|et)$/i.test(last)) suspiciousCount += 1;
     else if (/^[A-Z](?:\.\s*[A-Z])*\.?$/i.test(last)) suspiciousCount += 1;
     else if (last.length === 1) suspiciousCount += 1;
+    else if (looksLikeAuthorContentLeak(combined)) suspiciousCount += 1;
+    else if (combined.split(/\s+/).filter(Boolean).length >= 12 && /[.:;]/.test(combined)) suspiciousCount += 1;
   }
   return suspiciousCount > 0 && suspiciousCount >= Math.ceil(authors.length / 3);
 }

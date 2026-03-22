@@ -97,6 +97,28 @@ describe('strict enrich stage', () => {
     expect(result.citations[0]?.resolution?.rejectedReasons).toContain('parse_too_sparse');
   });
 
+  it('allows author-optional website references to stay local-only without becoming insufficient-evidence failures', async () => {
+    const citation = {
+      ...createEmptyCitation('Intelligent clinical trials. (2020). https://www2.deloitte.com/content/dam/insights/us/articles/22934_intelligent-clinical-trials/DI_Intelligent-clinical-.'),
+      referenceType: 'website',
+      authors: createFieldValue([], 'extracted', 0.1, 'extract'),
+      title: createFieldValue('Intelligent clinical trials', 'extracted', 0.94, 'extract'),
+      year: createFieldValue(2020, 'extracted', 0.96, 'extract'),
+      url: createFieldValue('https://www2.deloitte.com/content/dam/insights/us/articles/22934_intelligent-clinical-trials/DI_Intelligent-clinical-', 'extracted', 0.95, 'extract'),
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    } as any;
+    const provider = makeProvider();
+
+    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+
+    expect(provider.searchOpenAlexByTitle).not.toHaveBeenCalled();
+    expect(result.citations[0]?.resolution?.status).toBe('provider_no_coverage');
+    expect(result.citations[0]?.resolution?.rejectedReasons).toContain('local_only_author_optional_reference');
+  });
+
   it('accepts an exact external title match and backfills missing fields', async () => {
     const citation = makeCitation();
     const provider = makeProvider({
@@ -186,5 +208,237 @@ describe('strict enrich stage', () => {
     expect(enriched?.resolution?.status).toBe('verified');
     expect(enriched?.resolution?.conflictFields).toContain('journal');
     expect(enriched?.journal.value).toBe('Different Journal Name');
+  });
+
+  it('does not mark journal abbreviations and shortened page ranges as conflicts when they are semantically equivalent', async () => {
+    const citation = makeCitation({
+      raw: 'Dara S, Dhamercherla S, Jadav SS, Babu CM, Ahsan MJ. Machine learning in drug discovery: a review. Artif Intell Rev. 2022, 55:1947-99. 10.1007/s10462-021-10058-4',
+      authors: createFieldValue([
+        { first: 'S.', last: 'Dara', initials: 'S.' },
+        { first: 'S.', last: 'Dhamercherla', initials: 'S.' },
+        { first: 'S. S.', last: 'Jadav', initials: 'S. S.' },
+      ], 'extracted', 0.95, 'extract'),
+      title: createFieldValue('Machine learning in drug discovery: a review', 'extracted', 0.95, 'extract'),
+      year: createFieldValue(2022, 'extracted', 0.96, 'extract'),
+      journal: createFieldValue('Artif Intell Rev', 'extracted', 0.93, 'extract'),
+      volume: createFieldValue('55', 'extracted', 0.92, 'extract'),
+      pages: createFieldValue('1947-99', 'extracted', 0.92, 'extract'),
+      doi: createFieldValue('10.1007/s10462-021-10058-4', 'extracted', 0.96, 'extract'),
+    });
+    const provider = makeProvider({
+      lookupByDoi: vi.fn(async () => [{
+        provider: 'crossref',
+        title: 'Machine Learning in Drug Discovery: A Review',
+        authors: ['Dara, Suresh', 'Dhamercherla, Swetha'],
+        year: 2022,
+        venue: 'Artificial Intelligence Review',
+        volume: '55',
+        issue: '3',
+        pages: '1947-1999',
+        doi: '10.1007/s10462-021-10058-4',
+        url: 'https://doi.org/10.1007/s10462-021-10058-4',
+        sourceType: 'article-journal',
+      }]),
+    });
+
+    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const enriched = result.citations[0];
+
+    expect(enriched?.resolution?.status).toBe('verified');
+    expect(enriched?.resolution?.conflictFields).not.toContain('journal');
+    expect(enriched?.resolution?.conflictFields).not.toContain('pages');
+    expect(enriched?.issue.value).toBe('3');
+    expect(enriched?.journal.value).toBe('Artif Intell Rev');
+    expect(enriched?.pages.value).toBe('1947-99');
+  });
+
+  it('does not treat dash and apostrophe normalization differences in titles as hard conflicts', async () => {
+    const citation = makeCitation({
+      raw: "Bak M, Madai VI, Fritzsche MC, Mayrhofer MT, McLennan S. You can't have AI both ways: balancing health data privacy and access fairly. Front Genet. 2022, 13:10.3389/fgene.2022.929453",
+      authors: createFieldValue([
+        { first: 'M.', last: 'Bak', initials: 'M.' },
+        { first: 'V. I.', last: 'Madai', initials: 'V. I.' },
+      ], 'extracted', 0.95, 'extract'),
+      title: createFieldValue("You can't have AI both ways: balancing health data privacy and access fairly", 'extracted', 0.95, 'extract'),
+      year: createFieldValue(2022, 'extracted', 0.96, 'extract'),
+      journal: createFieldValue('Front Genet', 'extracted', 0.93, 'extract'),
+      volume: createFieldValue('13', 'extracted', 0.92, 'extract'),
+      doi: createFieldValue('10.3389/fgene.2022.929453', 'extracted', 0.96, 'extract'),
+    });
+    const provider = makeProvider({
+      lookupByDoi: vi.fn(async () => [{
+        provider: 'crossref',
+        title: 'You Can’t Have AI Both Ways: Balancing Health Data Privacy and Access Fairly',
+        authors: ['Bak, Marieke', 'Madai, Vince Istvan'],
+        year: 2022,
+        venue: 'Frontiers in Genetics',
+        volume: '13',
+        pages: '929453',
+        doi: '10.3389/fgene.2022.929453',
+        url: 'https://doi.org/10.3389/fgene.2022.929453',
+        sourceType: 'article-journal',
+      }]),
+    });
+
+    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const enriched = result.citations[0];
+
+    expect(enriched?.resolution?.status).toBe('verified');
+    expect(enriched?.resolution?.conflictFields).not.toContain('title');
+  });
+
+  it('does not treat electronic page prefixes as hard page conflicts when the numeric locator matches', async () => {
+    const citation = makeCitation({
+      raw: 'Syrowatka A, Song W, Amato MG, et al. Key use cases for artificial intelligence to reduce the frequency of adverse drug events: a scoping review. Lancet Digit Health. 2022, 4:137-48. 10.1016/S2589-7500(21)00229-6',
+      authors: createFieldValue([
+        { first: 'A.', last: 'Syrowatka', initials: 'A.' },
+        { first: 'W.', last: 'Song', initials: 'W.' },
+        { first: 'M. G.', last: 'Amato', initials: 'M. G.' },
+      ], 'extracted', 0.95, 'extract'),
+      title: createFieldValue('Key use cases for artificial intelligence to reduce the frequency of adverse drug events: a scoping review', 'extracted', 0.95, 'extract'),
+      year: createFieldValue(2022, 'extracted', 0.96, 'extract'),
+      journal: createFieldValue('Lancet Digit Health', 'extracted', 0.93, 'extract'),
+      volume: createFieldValue('4', 'extracted', 0.92, 'extract'),
+      pages: createFieldValue('137-48', 'extracted', 0.92, 'extract'),
+      doi: createFieldValue('10.1016/S2589-7500(21)00229-6', 'extracted', 0.96, 'extract'),
+    });
+    const provider = makeProvider({
+      lookupByDoi: vi.fn(async () => [{
+        provider: 'crossref',
+        title: 'Key use cases for artificial intelligence to reduce the frequency of adverse drug events: a scoping review',
+        authors: ['Syrowatka, Ania', 'Song, Wenyu', 'Amato, Mary G'],
+        year: 2022,
+        venue: 'The Lancet Digital Health',
+        volume: '4',
+        issue: '2',
+        pages: 'e137-e148',
+        doi: '10.1016/S2589-7500(21)00229-6',
+        url: 'https://doi.org/10.1016/S2589-7500(21)00229-6',
+        sourceType: 'article-journal',
+      }]),
+    });
+
+    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const enriched = result.citations[0];
+
+    expect(enriched?.resolution?.status).toBe('verified');
+    expect(enriched?.resolution?.conflictFields).not.toContain('pages');
+  });
+
+  it('does not treat article-number-like locators as hard page conflicts when the authority record has the normalized article number', async () => {
+    const citation = makeCitation({
+      raw: 'Fan B, Fan W, Smith C, Garner HS. Adverse drug event detection and extraction from open data: a deep learning approach. Inf Process Manag. 2020, 57:102131-10. 10.1016/j.ipm.2019.102131',
+      authors: createFieldValue([
+        { first: 'B.', last: 'Fan', initials: 'B.' },
+        { first: 'W.', last: 'Fan', initials: 'W.' },
+        { first: 'C.', last: 'Smith', initials: 'C.' },
+        { first: 'H. S.', last: 'Garner', initials: 'H. S.' },
+      ], 'extracted', 0.95, 'extract'),
+      title: createFieldValue('Adverse drug event detection and extraction from open data: a deep learning approach', 'extracted', 0.95, 'extract'),
+      year: createFieldValue(2020, 'extracted', 0.96, 'extract'),
+      journal: createFieldValue('Inf Process Manag', 'extracted', 0.93, 'extract'),
+      volume: createFieldValue('57', 'extracted', 0.92, 'extract'),
+      pages: createFieldValue('102131-10', 'extracted', 0.92, 'extract'),
+      doi: createFieldValue('10.1016/j.ipm.2019.102131', 'extracted', 0.96, 'extract'),
+    });
+    const provider = makeProvider({
+      lookupByDoi: vi.fn(async () => [{
+        provider: 'crossref',
+        title: 'Adverse drug event detection and extraction from open data: A deep learning approach',
+        authors: ['Fan, Brandon', 'Fan, Weiguo', 'Smith, Carly', 'Garner, Harold "Skip"'],
+        year: 2020,
+        venue: 'Information Processing & Management',
+        volume: '57',
+        issue: '1',
+        pages: '102131',
+        doi: '10.1016/j.ipm.2019.102131',
+        url: 'https://doi.org/10.1016/j.ipm.2019.102131',
+        sourceType: 'article-journal',
+      }]),
+    });
+
+    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const enriched = result.citations[0];
+
+    expect(enriched?.resolution?.status).toBe('verified');
+    expect(enriched?.resolution?.conflictFields).not.toContain('pages');
+  });
+
+  it('does not treat parenthetical journal qualifiers as hard conflicts when the base title matches', async () => {
+    const citation = makeCitation({
+      raw: 'Barardo DG, Newby D, Thornton D, Ghafourian T, de Magalhães JP, Freitas AA. Machine learning for predicting lifespan-extending chemical compounds. Aging (Albany NY). 2017, 9:1721-37. 10.18632/aging.101264',
+      authors: createFieldValue([
+        { first: 'D. G.', last: 'Barardo', initials: 'D. G.' },
+        { first: 'D.', last: 'Newby', initials: 'D.' },
+      ], 'extracted', 0.95, 'extract'),
+      title: createFieldValue('Machine learning for predicting lifespan-extending chemical compounds', 'extracted', 0.95, 'extract'),
+      year: createFieldValue(2017, 'extracted', 0.96, 'extract'),
+      journal: createFieldValue('Aging (Albany NY)', 'extracted', 0.93, 'extract'),
+      volume: createFieldValue('9', 'extracted', 0.92, 'extract'),
+      pages: createFieldValue('1721-37', 'extracted', 0.92, 'extract'),
+      doi: createFieldValue('10.18632/aging.101264', 'extracted', 0.96, 'extract'),
+    });
+    const provider = makeProvider({
+      lookupByDoi: vi.fn(async () => [{
+        provider: 'crossref',
+        title: 'Machine learning for predicting lifespan-extending chemical compounds',
+        authors: ['Barardo, Diogo G.', 'Newby, Danielle'],
+        year: 2017,
+        venue: 'Aging',
+        volume: '9',
+        issue: '7',
+        pages: '1721-1737',
+        doi: '10.18632/aging.101264',
+        url: 'https://doi.org/10.18632/aging.101264',
+        sourceType: 'article-journal',
+      }]),
+    });
+
+    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const enriched = result.citations[0];
+
+    expect(enriched?.resolution?.status).toBe('verified');
+    expect(enriched?.resolution?.conflictFields).not.toContain('journal');
+  });
+
+  it('promotes authority pages for DOI-verified online-first locators when the verified record supplies the missing volume', async () => {
+    const citation = makeCitation({
+      raw: 'Botsis T, Kreimeyer K. Improving drug safety with adverse event detection using natural language processing. Expert Opin Drug Saf. 2023, 1-10. 10.1080/14740338.2023.2228197',
+      authors: createFieldValue([
+        { first: 'T.', last: 'Botsis', initials: 'T.' },
+        { first: 'K.', last: 'Kreimeyer', initials: 'K.' },
+      ], 'extracted', 0.95, 'extract'),
+      title: createFieldValue('Improving drug safety with adverse event detection using natural language processing', 'extracted', 0.95, 'extract'),
+      year: createFieldValue(2023, 'extracted', 0.96, 'extract'),
+      journal: createFieldValue('Expert Opin Drug Saf', 'extracted', 0.93, 'extract'),
+      volume: createFieldValue(null, 'extracted', 0.1, 'extract'),
+      issue: createFieldValue(null, 'extracted', 0.1, 'extract'),
+      pages: createFieldValue('1-10', 'extracted', 0.82, 'extract'),
+      doi: createFieldValue('10.1080/14740338.2023.2228197', 'extracted', 0.96, 'extract'),
+    });
+    const provider = makeProvider({
+      lookupByDoi: vi.fn(async () => [{
+        provider: 'crossref',
+        title: 'Improving drug safety with adverse event detection using natural language processing',
+        authors: ['Botsis, Taxiarchis', 'Kreimeyer, Kory'],
+        year: 2023,
+        venue: 'Expert Opinion on Drug Safety',
+        volume: '22',
+        issue: '8',
+        pages: '659-668',
+        doi: '10.1080/14740338.2023.2228197',
+        url: 'https://doi.org/10.1080/14740338.2023.2228197',
+        sourceType: 'article-journal',
+      }]),
+    });
+
+    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const enriched = result.citations[0];
+
+    expect(enriched?.resolution?.status).toBe('verified');
+    expect(enriched?.resolution?.conflictFields).not.toContain('pages');
+    expect(enriched?.volume.value).toBe('22');
+    expect(enriched?.issue.value).toBe('8');
+    expect(enriched?.pages.value).toBe('659-668');
   });
 });

@@ -63,6 +63,17 @@ describe('v2 author rescue utilities', () => {
     ]);
   });
 
+  it('does not collapse compact Vancouver author arrays into alternating surname-given pairs', () => {
+    const result = parseAuthorsForStyle(['Skalic M', 'Jiménez J', 'Sabbadin D', 'De Fabritiis G'], 'auto');
+
+    expect(result.authors).toMatchObject([
+      { last: 'Skalic', initials: 'M.' },
+      { last: 'Jiménez', initials: 'J.' },
+      { last: 'Sabbadin', initials: 'D.' },
+      { last: 'de Fabritiis', initials: 'G.' },
+    ]);
+  });
+
   it('expands compact given names with glued trailing initials', () => {
     const result = parseAuthorsForStyle(['Baron, ReubenM. and Kenny, DavidA.'], 'harvard');
 
@@ -78,10 +89,27 @@ describe('v2 author rescue utilities', () => {
     expect(analysis.singleCharacterTailCount).toBe(0);
   });
 
+  it('does not penalize compact Vancouver author lists as trailing single-character tails', () => {
+    const analysis = analyzeParsedAuthorStrings(['Yang S', 'Hwang D', 'Lee S', 'Ryu S', 'Hwang SJ']);
+
+    expect(analysis.singleCharacterTailCount).toBe(0);
+    expect(analysis.compactVancouverCount).toBe(5);
+    expect(analysis.contaminatedBlobCount).toBe(0);
+  });
+
   it('still flags standalone trailing initials when they are present', () => {
     const analysis = analyzeParsedAuthorStrings(['Smith, J', 'Doe, A.']);
 
     expect(analysis.singleCharacterTailCount).toBe(2);
+  });
+
+  it('detects author blobs that leak title and source content into the author field', () => {
+    const analysis = analyzeParsedAuthorStrings([
+      'Skalic M, Jiménez J, Sabbadin D, De Fabritiis G: Shape-based generative modeling for de novo drug design. J Chem Inf Model. 2019, 59:1205-14. 10.1021/acs.jcim.8b00706',
+    ]);
+
+    expect(analysis.contaminatedBlobCount).toBe(1);
+    expect(analysis.mergedBlobCount).toBeGreaterThanOrEqual(1);
   });
 
   it('repairs common mojibake in author names and locators', () => {
@@ -89,6 +117,9 @@ describe('v2 author rescue utilities', () => {
     expect(fixUnicodeText('MÃ¼ller')).toBe('Müller');
     expect(fixUnicodeText('Oâ€™Connor')).toBe("O'Connor");
     expect(fixUnicodeText('98â€“652')).toBe('98-652');
+    expect(fixUnicodeText('2â€013')).toBe('2013');
+    expect(fixUnicodeText('2020â€, 26:1351-6â€3.')).toBe('2020, 26:1351-63.');
+    expect(fixUnicodeText('ADME￾Tox prediction')).toBe('ADMETox prediction');
   });
 
   it('collapses split acronym-led group authors back into a literal institutional author', () => {

@@ -5,6 +5,7 @@ import type { V2Stage } from '../contracts.js';
 import { addCitationStageLog, average, createStageDiagnostic } from '../utils.js';
 import {
   countStructuralValidationIssues,
+  getRequirementProfile,
   getMissingExpectedFields,
   getMissingRequiredFields,
 } from '../qualityRules.js';
@@ -94,10 +95,29 @@ function buildFieldScores(citation: CanonicalCitation): Record<string, number> {
 }
 
 function keyFieldConfidenceReady(citation: CanonicalCitation, fieldScores: Record<string, number>): boolean {
-  return fieldScores.title >= 0.88
-    && fieldScores.authors >= 0.88
-    && fieldScores.year >= 0.88
-    && getVenueScore(citation, fieldScores) >= 0.88;
+  const profile = getRequirementProfile(citation.referenceType);
+  return profile.required.every((field) => {
+    switch (field) {
+      case 'authors':
+        return fieldScores.authors >= 0.88;
+      case 'title':
+        return fieldScores.title >= 0.88;
+      case 'year':
+        return fieldScores.year >= 0.88;
+      case 'venue':
+        return getVenueScore(citation, fieldScores) >= 0.88;
+      case 'publisher':
+        return fieldScores.publisher >= 0.88;
+      case 'institution':
+        return Math.max(fieldScores.institution, fieldScores.publisher) >= 0.88;
+      case 'bookTitle':
+        return fieldScores.bookTitle >= 0.88;
+      case 'url':
+        return fieldScores.url >= 0.88;
+      default:
+        return true;
+    }
+  });
 }
 
 function localReadyWithoutCoverage(citation: CanonicalCitation, overall: number, fieldScores: Record<string, number>): boolean {
@@ -140,15 +160,30 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   const fieldScores = buildFieldScores(citation);
   const missingRequired = getMissingRequiredFields(citation);
   const missingExpected = getMissingExpectedFields(citation);
+  const requirementProfile = getRequirementProfile(citation.referenceType);
   const venueScore = getVenueScore(citation, fieldScores);
-  const requiredScores: number[] = [fieldScores.authors, fieldScores.title, fieldScores.year];
-
-  if (citation.referenceType === 'book') requiredScores.push(Math.max(fieldScores.publisher, fieldScores.bookTitle));
-  else if (citation.referenceType === 'thesis') requiredScores.push(Math.max(fieldScores.publisher, fieldScores.institution));
-  else if (citation.referenceType === 'conference') requiredScores.push(Math.max(venueScore, fieldScores.publisher));
-  else if (citation.referenceType === 'chapter') requiredScores.push(Math.max(fieldScores.bookTitle, fieldScores.publisher));
-  else if (citation.referenceType === 'website') requiredScores.push(Math.max(fieldScores.url, fieldScores.publisher));
-  else requiredScores.push(Math.max(fieldScores.journal, fieldScores.publisher, fieldScores.institution));
+  const requiredScores: number[] = requirementProfile.required.map((field) => {
+    switch (field) {
+      case 'authors':
+        return fieldScores.authors;
+      case 'title':
+        return fieldScores.title;
+      case 'year':
+        return fieldScores.year;
+      case 'venue':
+        return venueScore;
+      case 'publisher':
+        return fieldScores.publisher;
+      case 'institution':
+        return Math.max(fieldScores.institution, fieldScores.publisher);
+      case 'bookTitle':
+        return Math.max(fieldScores.bookTitle, fieldScores.publisher);
+      case 'url':
+        return fieldScores.url;
+      default:
+        return 0;
+    }
+  });
 
   let overall = average(requiredScores);
 

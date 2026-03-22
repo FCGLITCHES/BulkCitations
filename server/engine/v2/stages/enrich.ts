@@ -7,7 +7,7 @@ import type {
   ResolutionMetadata,
 } from '@shared/schema';
 import { isPlaceholderFieldValue } from '@shared/referencePlaceholders';
-import { isGroupAuthor, normalizeGroupAuthor } from '../../shared/citationSemantics.js';
+import { isGroupAuthor, normalizeGroupAuthor, normalizeKnownContainerName } from '../../shared/citationSemantics.js';
 import type {
   CacheAdapter,
   ResolutionCandidateRecord,
@@ -66,7 +66,13 @@ function updateStringField(
     };
   }
 
-  if (normalizer(field.value) !== normalizer(nextValue) && !conflictFields.includes(conflictName)) {
+  const normalizedCurrent = normalizer(field.value);
+  const normalizedIncoming = normalizer(nextValue);
+  const equivalent = conflictName === 'journal'
+    ? areVenueValuesEquivalent(field.value, nextValue)
+    : normalizedCurrent === normalizedIncoming;
+
+  if (!equivalent && !conflictFields.includes(conflictName)) {
     conflictFields.push(conflictName);
   }
   return field;
@@ -96,7 +102,81 @@ function updateNumericField(
 }
 
 function buildVenueNormalizer(value: string): string {
-  return normalizeWhitespace(value.toLowerCase()).replace(/[^\p{L}\p{N}\s]+/gu, ' ');
+  const STOP_TOKENS = new Set(['and', 'of', 'the', 'in', 'on']);
+  const tokens = normalizeWhitespace(normalizeKnownContainerName(value).toLowerCase())
+    .replace(/&amp;|&/g, ' and ')
+    .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
+    .split(/\s+/)
+    .filter((token) => token && !STOP_TOKENS.has(token))
+    .map((token) => {
+      if (token.endsWith('ies') && token.length > 4) return `${token.slice(0, -3)}y`;
+      if (token.endsWith('s') && token.length > 4) return token.slice(0, -1);
+      return token;
+    });
+  return tokens.join(' ');
+}
+
+function areVenueValuesEquivalent(left: string, right: string): boolean {
+  const leftTokens = buildVenueNormalizer(left).split(/\s+/).filter(Boolean);
+  const rightTokens = buildVenueNormalizer(right).split(/\s+/).filter(Boolean);
+  if (leftTokens.length === 0 || rightTokens.length === 0) return false;
+  const tokensEquivalent = (shorter: string[], longer: string[]) => shorter.every((token, index) => {
+    const other = longer[index] ?? '';
+    return token === other || token.startsWith(other) || other.startsWith(token);
+  });
+  if (leftTokens.length === rightTokens.length) {
+    return leftTokens.every((token, index) => {
+      const other = rightTokens[index] ?? '';
+      return token === other || token.startsWith(other) || other.startsWith(token);
+    });
+  }
+
+  const leftHasParentheticalQualifier = /\([^)]*\)/.test(left);
+  const rightHasParentheticalQualifier = /\([^)]*\)/.test(right);
+  if (!leftHasParentheticalQualifier && !rightHasParentheticalQualifier) return false;
+
+  const shorter = leftTokens.length < rightTokens.length ? leftTokens : rightTokens;
+  const longer = shorter === leftTokens ? rightTokens : leftTokens;
+  return tokensEquivalent(shorter, longer);
+}
+
+function normalizeTextComparisonValue(value: string): string {
+  return normalizeWhitespace(
+    value
+      .normalize('NFKC')
+      .replace(/[‘’]/g, "'")
+      .replace(/[“”]/g, '"')
+      .replace(/[‐‑‒–—−]/g, '-')
+      .replace(/[^\p{L}\p{N}\s'-]+/gu, ' ')
+      .toLowerCase(),
+  );
+}
+
+function normalizePageComparisonValue(value: string): string {
+  const normalized = normalizeWhitespace(value)
+    .replace(/\be(?=\d)/ig, '')
+    .replace(/–/g, '-')
+    .replace(/\s*-\s*/g, '-')
+    .replace(/^pp?\.?\s*/i, '');
+  const articleNumberLikeRange = normalized.match(/^(\d{5,})-(\d{1,3})$/);
+  if (articleNumberLikeRange) return articleNumberLikeRange[1];
+  const rangeMatch = normalized.match(/^([A-Za-z]?)(\d+)-([A-Za-z]?)(\d+)$/);
+  if (!rangeMatch) return normalized;
+
+  const [, startPrefix = '', startDigits, endPrefixRaw = '', endDigits] = rangeMatch;
+  const endPrefix = endPrefixRaw || startPrefix;
+  let expandedEnd = endDigits;
+
+  if (/^\d+$/.test(startDigits) && /^\d+$/.test(endDigits) && endDigits.length < startDigits.length) {
+    expandedEnd = `${startDigits.slice(0, startDigits.length - endDigits.length)}${endDigits}`;
+  }
+
+  return `${startPrefix}${startDigits}-${endPrefix}${expandedEnd}`;
+}
+
+function isLikelyOnlineFirstLocator(value: string | null | undefined): boolean {
+  if (!value) return false;
+  return /^1-\d{1,2}$/.test(normalizePageComparisonValue(value));
 }
 
 function cacheKeyForCitation(citation: CanonicalCitation): string {
@@ -122,6 +202,18 @@ function isCorporateHeavy(citation: CanonicalCitation): boolean {
   if (citation.publisher.value && isGroupAuthor(citation.publisher.value)) return true;
   if (citation.institution.value && isGroupAuthor(citation.institution.value)) return true;
   return false;
+}
+
+function canUseLocalOnlyResolutionFallback(citation: CanonicalCitation, queryEvidence: ReturnType<typeof buildResolutionQueryEvidence>): boolean {
+  if (!queryEvidence.titlePresent) return false;
+  if (queryEvidence.firstAuthorSurname || queryEvidence.groupAuthorLiteral) return false;
+  if (!['website', 'report', 'book'].includes(citation.referenceType)) return false;
+
+  if (citation.referenceType === 'website') {
+    return Boolean(citation.url.value);
+  }
+
+  return Boolean(citation.publisher.value || citation.institution.value || citation.bookTitle.value);
 }
 
 function providerOrderForCitation(citation: CanonicalCitation): ProviderKey[] {
@@ -175,16 +267,29 @@ function applyVerifiedCandidate(
   candidate: ResolutionAcceptedCandidate,
 ): { citation: CanonicalCitation; conflictFields: string[] } {
   const conflictFields: string[] = [];
+  const promoteAuthorityPages = citation.referenceType === 'journal'
+    && !citation.volume.value
+    && !citation.issue.value
+    && Boolean(candidate.volume)
+    && Boolean(candidate.pages)
+    && isLikelyOnlineFirstLocator(citation.pages.value);
 
   let nextCitation: CanonicalCitation = {
     ...citation,
-    title: updateStringField(citation.title, candidate.title, 'enrich', conflictFields, 'title'),
+    title: updateStringField(citation.title, candidate.title, 'enrich', conflictFields, 'title', normalizeTextComparisonValue),
     year: updateNumericField(citation.year, candidate.year, 'enrich', conflictFields, 'year'),
     doi: updateStringField(citation.doi, candidate.doi ? normalizeDoiValue(candidate.doi) : undefined, 'enrich', conflictFields, 'doi', normalizeDoiValue),
     url: updateStringField(citation.url, candidate.url, 'enrich', conflictFields, 'url'),
     volume: updateStringField(citation.volume, candidate.volume, 'enrich', conflictFields, 'volume'),
     issue: updateStringField(citation.issue, candidate.issue, 'enrich', conflictFields, 'issue'),
-    pages: updateStringField(citation.pages, candidate.pages, 'enrich', conflictFields, 'pages'),
+    pages: promoteAuthorityPages
+      ? {
+          value: normalizeWhitespace(candidate.pages ?? ''),
+          source: 'authority',
+          confidence: Math.max(citation.pages.confidence, 0.94),
+          stageId: 'enrich',
+        }
+      : updateStringField(citation.pages, candidate.pages, 'enrich', conflictFields, 'pages', normalizePageComparisonValue),
     publisher: updateStringField(citation.publisher, candidate.publisher, 'enrich', conflictFields, 'publisher'),
   };
 
@@ -335,7 +440,8 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
         }
 
         const queryEvidence = buildResolutionQueryEvidence(citation);
-        if (!queryEvidence.titlePresent || (!queryEvidence.firstAuthorSurname && !queryEvidence.groupAuthorLiteral)) {
+        const localOnlyResolutionFallback = canUseLocalOnlyResolutionFallback(citation, queryEvidence);
+        if (!queryEvidence.titlePresent || (!queryEvidence.firstAuthorSurname && !queryEvidence.groupAuthorLiteral && !localOnlyResolutionFallback)) {
           const nextCitation = attachCitationDebug({
             ...citation,
             resolution: {
@@ -362,6 +468,39 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
             citation: addCitationStageLog(nextCitation, createStageDiagnostic('enrich', 'warning', 'Skipped network resolution because parse evidence was insufficient.', {
               provider: resolutionProvider.id,
               reason: 'parse_too_sparse',
+            })),
+            fallbacksUsed: localFallbacks,
+            partialResult: localPartialResult,
+          };
+        }
+
+        if (localOnlyResolutionFallback) {
+          const nextCitation = attachCitationDebug({
+            ...citation,
+            resolution: {
+              ...buildResolutionMetadata(citation, 'provider_no_coverage', {
+                resolvedAt: nowIso(),
+                provider: resolutionProvider.id,
+                matchStrategy: 'none',
+              }),
+              rejectedReasons: ['local_only_author_optional_reference'],
+            },
+            enrichment: buildEnrichmentFromResolution('no_match', resolutionProvider.id, 'unverifiable'),
+          }, 'enrich', {
+            status: 'provider_no_coverage',
+            providerOrder: [],
+            candidateCount: 0,
+            warningFlags: ['local_only_author_optional_reference'],
+          }, context.debugEnabled);
+          logStructuredDebug(context, 'enrich', citationIndex, nextCitation, {
+            providerOrder: [],
+            warningFlags: ['local_only_author_optional_reference'],
+            candidateCount: 0,
+          });
+          return {
+            citation: addCitationStageLog(nextCitation, createStageDiagnostic('enrich', 'success', 'Skipped external resolution for an author-optional reference with strong local evidence.', {
+              provider: resolutionProvider.id,
+              reason: 'local_only_author_optional_reference',
             })),
             fallbacksUsed: localFallbacks,
             partialResult: localPartialResult,

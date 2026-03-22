@@ -188,6 +188,7 @@ function buildCitationReport(citation: CanonicalCitation, index: number, manifes
     validationCodes: citation.validationIssues.map((issue) => issue.code),
     validationIssues: citation.validationIssues,
     quality: citation.quality ?? null,
+    renderedOutput: citation.rendered?.formatted ?? null,
     fieldConfidence: {
       authors: citation.authors.confidence,
       title: citation.title.confidence,

@@ -63,6 +63,8 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
   const issues: ValidationIssue[] = [];
   const journalActsAsVenue = citation.referenceType === 'journal'
     || (!citation.conferenceTitle.value && !citation.bookTitle.value);
+  const missingRequired = new Set(getMissingRequiredFields(citation));
+  const authorsRequired = missingRequired.has('authors');
 
   const titleWordCount = citation.title.value ? citation.title.value.split(/\s+/).filter(Boolean).length : 0;
   if (!citation.title.value) {
@@ -114,7 +116,7 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
     });
   }
 
-  if (citation.authors.value.length === 0) {
+  if (citation.authors.value.length === 0 && authorsRequired) {
     issues.push({
       field: 'authors',
       severity: 'error',
@@ -150,7 +152,7 @@ function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[]
     });
   }
 
-  if (hasCanonicalMalformedAuthors(citation.authors.value)) {
+  if (citation.authors.value.length > 0 && hasCanonicalMalformedAuthors(citation.authors.value)) {
     issues.push({
       field: 'authors',
       severity: 'error',

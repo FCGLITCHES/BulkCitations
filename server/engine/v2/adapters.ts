@@ -11,6 +11,7 @@ import {
   canonicalReferenceTypeToParsed,
   canonicalToParsedReference,
   coerceCanonicalAuthor,
+  fixUnicodeText,
   looksLikeAlternatingTokenArray,
   normalizeDoiValue,
   normalizeWhitespace,
@@ -23,6 +24,7 @@ import {
   hasParsedVenue,
   isLocatorLike,
   isPlaceholderValue,
+  looksLikeAuthorContentLeak,
   proceedingsSignal,
   sanitizeParsedReference,
 } from './qualityRules.js';
@@ -119,10 +121,34 @@ function openGrobidCooldown(reason: string) {
   }));
 }
 
+function looksLikeAuthorColonVancouverReference(input: string): boolean {
+  const normalized = normalizeWhitespace(input);
+  if (!/^[^:]{6,}:\s+.+\.\s+[A-Z][^.]+?\.\s+(?:19|20)\d{2}\s*[,;]\s*\d+/i.test(normalized)) {
+    return false;
+  }
+
+  const authorLead = normalized.slice(0, normalized.indexOf(':')).trim();
+  if (!authorLead) return false;
+
+  const compactSingleAuthor = /^(?:[A-Z][A-Za-z'’-]+|d'[A-Za-z'’-]+)(?:\s+(?:da|de|del|der|di|du|la|le|van|von)\s+[A-Z][A-Za-z'’-]+)*(?:\s+[A-Z][A-Za-z'’-]+)*\s+[A-Z]{1,4}$/i.test(authorLead);
+  const commaSeparatedCompactAuthors = ((authorLead.match(/,/g) ?? []).length >= 1 || /\bet\s+al\.?$/i.test(authorLead))
+    && /\b[A-Z]{1,4}\b/.test(authorLead);
+
+  return compactSingleAuthor || commaSeparatedCompactAuthors;
+}
+
+function preNormalizeExtractorInput(parser: CitationParser, input: string): string {
+  return parser.preNormalize(fixUnicodeText(input));
+}
+
 function buildDeterministicCandidate(input: string, inputStyle: string) {
   const parser = getParser();
-  const normalized = parser.preNormalize(input);
-  const detectedStyle = inputStyle !== 'auto' ? inputStyle : parser.detectStyle(normalized) ?? 'apa';
+  const normalized = preNormalizeExtractorInput(parser, input);
+  const detectedStyle = inputStyle !== 'auto'
+    ? inputStyle
+    : looksLikeAuthorColonVancouverReference(normalized)
+      ? 'vancouver'
+      : parser.detectStyle(normalized) ?? 'apa';
   const { parsed } = parser.parseReference(normalized, detectedStyle as CitationStyle);
   const doiMatch = normalized.match(DOI_PATTERN);
   if (!parsed.doi && doiMatch) {
@@ -139,7 +165,7 @@ function buildDeterministicCandidate(input: string, inputStyle: string) {
 
 function buildYearAnchoredCandidate(input: string) {
   const parser = getParser();
-  const normalized = parser.preNormalize(input);
+  const normalized = preNormalizeExtractorInput(parser, input);
   const parsed = parser.parseYearAnchored(normalized);
   if (!parsed) return null;
   return {
@@ -208,7 +234,16 @@ function looksLikeInstitutionalLead(segment: string): boolean {
   if (INSTITUTIONAL_KEYWORD_PATTERN.test(normalized) && normalized.split(/\s+/).length >= 2) return true;
   if (/^[A-Z0-9][A-Za-z0-9.+-]*$/.test(normalized)) return true;
   if (normalized.split(/\s+/).length <= 4 && normalized.split(/\s+/).some((token) => looksLikeInstitutionalAcronymToken(token))) return true;
-  return normalized.split(/\s+/).length >= 3 && !/[A-Z]\.$/.test(normalized);
+  const connectiveTokens = new Set(['and', 'for', 'of', 'the', 'in', 'on', 'at', 'to', 'de', 'del', 'la', 'le', 'van', 'von']);
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  const titleCaseOrConnectorTokens = tokens.filter((token) => (
+    connectiveTokens.has(token.toLowerCase())
+    || /^[A-Z0-9][A-Za-z0-9.+-]*$/.test(token)
+    || looksLikeInstitutionalAcronymToken(token)
+  )).length;
+  return tokens.length >= 3
+    && titleCaseOrConnectorTokens >= Math.max(2, tokens.length - 1)
+    && !/[A-Z]\.$/.test(normalized);
 }
 
 function looksLikeSourceTailFragment(value: string | undefined): boolean {
@@ -247,9 +282,46 @@ function looksLikeAuthorEchoTitle(parsed: ParsedReference): boolean {
   return title === normalizedAuthor || title.startsWith(`${normalizedAuthor}.`);
 }
 
+function buildTitleLedWebsiteCandidate(
+  normalized: string,
+  leadingSegment: string,
+  remainder: string,
+): ParsedSelectionCandidate | null {
+  const url = cleanTrailingUrl(remainder.match(/\bAvailable from:\s*(https?:\/\/\S+)/i)?.[1])
+    ?? cleanTrailingUrl(remainder.match(URL_PATTERN)?.[0]);
+  if (!url) return null;
+
+  const tailWithoutUrl = stripTrailingPeriod(normalizeWhitespace(
+    remainder
+      .replace(/\bAvailable from:\s*https?:\/\/\S+/i, '')
+      .replace(URL_PATTERN, ''),
+  ));
+  const normalizedTail = normalizeWhitespace(tailWithoutUrl).replace(/[()]/g, '');
+  const year = extractLastYear(remainder) ?? extractLastYear(leadingSegment);
+  const title = stripTrailingPeriod(leadingSegment);
+
+  if (!title || !year) return null;
+  if (normalizedTail && normalizedTail !== year) return null;
+
+  const parsed: ParsedReference = {
+    title,
+    year,
+    url,
+    parseWarnings: ['title-led-website-heuristic'],
+  };
+
+  return {
+    branch: 'institutional_heuristic_raw',
+    normalized,
+    parsed,
+    referenceType: 'website',
+    warnings: parsed.parseWarnings ?? [],
+  };
+}
+
 function buildInstitutionalCandidate(input: string): ParsedSelectionCandidate | null {
   const parser = getParser();
-  const normalized = parser.preNormalize(input);
+  const normalized = preNormalizeExtractorInput(parser, input);
   const authorMatch = normalized.match(/^(.+?)\.\s+(.+)$/);
   if (!authorMatch) return null;
 
@@ -258,6 +330,8 @@ function buildInstitutionalCandidate(input: string): ParsedSelectionCandidate | 
   if (!remainder) return null;
   const likelyInstitutionalTail = INSTITUTIONAL_TAIL_PATTERN.test(remainder);
   if (!looksLikeInstitutionalLead(leadingSegment)) {
+    const titleLedWebsite = buildTitleLedWebsiteCandidate(normalized, leadingSegment, remainder);
+    if (titleLedWebsite) return titleLedWebsite;
     if (!likelyInstitutionalTail || PERSONAL_AUTHOR_LEAD_PATTERN.test(leadingSegment)) {
       return null;
     }
@@ -526,8 +600,9 @@ function looksLikeDateFragment(value: string | undefined): boolean {
 
 function looksLikeMergedAuthorBlob(author: string): boolean {
   const normalized = normalizeWhitespace(author);
+  if (looksLikeAuthorContentLeak(normalized)) return true;
   const commaCount = (normalized.match(/,/g) ?? []).length;
-  return commaCount >= 2 || /\b(?:and|&)\b/.test(normalized);
+  return !isGroupAuthor(normalized) && (commaCount >= 2 || /\b(?:and|&)\b/.test(normalized));
 }
 
 function isPlaceholderVenue(value: string | undefined): boolean {
@@ -554,9 +629,11 @@ function scoreCandidate(parsed: ParsedReference | null | undefined, referenceTyp
   if (parsed.authors && looksLikeAlternatingTokenArray(parsed.authors)) score -= 2;
   if (parsed.authors?.some((author) => looksLikeMergedAuthorBlob(author))) score -= 4;
   if (authorSignals.mergedBlobCount > 0) score -= authorSignals.mergedBlobCount * 2.5;
+  if (authorSignals.contaminatedBlobCount > 0) score -= authorSignals.contaminatedBlobCount * 6;
   if (authorSignals.initialsOnlyCount > Math.ceil((parsed.authors?.length ?? 0) / 2)) score -= 2;
-  if (authorSignals.singleCharacterTailCount > 0) score -= authorSignals.singleCharacterTailCount * 1.2;
+  if (authorSignals.singleCharacterTailCount > 0) score -= authorSignals.singleCharacterTailCount * 0.35;
   score += authorSignals.richness * 1.5;
+  if ((parsed.authors?.length ?? 0) >= 2 && authorSignals.compactVancouverCount === (parsed.authors?.length ?? 0)) score += 1.4;
   if (parsed.authors?.some((author) => author.length > 120 || /\. .+\./.test(author))) score -= 3;
   if (looksLikeInstitutionalAuthorList(parsed.authors)) score += 0.8;
   if (parsed.title && looksLikeSourceTailFragment(parsed.title)) score -= 3.5;
@@ -596,7 +673,13 @@ function fillMissingFromFallback(selected: ParsedReference, fallback: ParsedRefe
       merged[field] = fallback[field];
     }
   }
-  if ((!merged.authors || merged.authors.length === 0) && fallback.authors?.length) {
+  const fallbackAuthorEchoesSelectedTitle = Boolean(
+    (!merged.authors || merged.authors.length === 0)
+    && fallback.authors?.length === 1
+    && merged.title
+    && normalizeWhitespace((fallback.authors[0] ?? '').toLowerCase()) === normalizeWhitespace(merged.title.toLowerCase()),
+  );
+  if ((!merged.authors || merged.authors.length === 0) && fallback.authors?.length && !fallbackAuthorEchoesSelectedTitle) {
     merged.authors = fallback.authors;
   }
   return merged;
@@ -609,15 +692,21 @@ function buildFieldConfidence(parsed: ParsedReference, referenceType: string) {
   const institutionalVenue = normalizeWhitespace(parsed.institution ?? parsed.publisher ?? '');
   const institutionalPublisher = Boolean(institutionalVenue) && isGroupAuthor(institutionalVenue);
   const titleEchoesAuthor = looksLikeAuthorEchoTitle(parsed);
+  const mostlyCompactVancouver = (parsed.authors?.length ?? 0) >= 2
+    && authorSignals.compactVancouverCount >= Math.ceil((parsed.authors?.length ?? 0) * 0.7);
+  const authorConfidenceFloor = authorSignals.contaminatedBlobCount > 0 ? 0.05 : 0.25;
   const authorConfidence = parsed.authors?.length
     ? Math.max(
-      0.25,
+      authorConfidenceFloor,
       Math.min(
-        0.94,
+        0.97,
         0.84
-          + (authorSignals.richness * 0.04)
-          - (authorSignals.mergedBlobCount * 0.12)
-          - (authorSignals.singleCharacterTailCount * 0.08)
+          + (authorSignals.richness * 0.05)
+          - (authorSignals.mergedBlobCount * 0.18)
+          - (authorSignals.contaminatedBlobCount * 0.5)
+          - (authorSignals.singleCharacterTailCount * 0.03)
+          - (authorSignals.initialsOnlyCount > Math.ceil((parsed.authors?.length ?? 0) / 2) ? 0.08 : 0)
+          + (mostlyCompactVancouver ? 0.08 : 0)
           + (institutionalAuthors ? 0.06 : 0),
       ),
     )
@@ -799,7 +888,10 @@ class DefaultClassifierAdapter implements ClassifierAdapter {
 
   async detectStyle(input: string): Promise<{ style: CitationStyle | null; confidence: number }> {
     const parser = getParser();
-    const normalized = parser.preNormalize(input);
+    const normalized = preNormalizeExtractorInput(parser, input);
+    if (looksLikeAuthorColonVancouverReference(normalized)) {
+      return { style: 'vancouver', confidence: 0.9 };
+    }
     if (/^\s*\[\d+\]/.test(normalized) || /\bvol\.\s*\d+/i.test(normalized) && /"\s*,?\s*[A-Z]/.test(normalized)) {
       return { style: 'ieee', confidence: 0.91 };
     }

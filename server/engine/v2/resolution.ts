@@ -347,6 +347,20 @@ export function evaluateResolutionCandidate(
 
   const venueOverlap = venueTokenOverlap(citation, candidate);
   const sourceTypeScore = sourceTypeCompatible(citation.referenceType, candidate.sourceType) ? 1 : 0;
+  if (!sourceTypeScore && citation.referenceType !== 'unknown') {
+    reasons.push('source_type_incompatible');
+    return {
+      candidate,
+      accepted: false,
+      band: 0,
+      score: 0,
+      reasons,
+      yearToleranceApplied: year.toleranceApplied,
+      extraAuthorMatches,
+      venueOverlap,
+      titleMatch,
+    };
+  }
   const band: 1 | 2 = titleMatch.exact ? 2 : 1;
   const score = (titleMatch.exact ? 100 : 90)
     + (year.toleranceApplied ? 4 : 10)

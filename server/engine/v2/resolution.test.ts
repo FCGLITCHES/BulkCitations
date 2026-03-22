@@ -81,6 +81,25 @@ describe('strict resolution helpers', () => {
     expect(evaluated.yearToleranceApplied).toBe(true);
   });
 
+  it('rejects source-type incompatible candidates for non-unknown citations', () => {
+    const citation = makeCitation({
+      title: createFieldValue('Hit and lead discovery with explorative RL and fragment-based molecule generation', 'extracted', 0.95, 'extract'),
+      journal: createFieldValue('Adv Neural Inf Process Syst', 'extracted', 0.93, 'extract'),
+      year: createFieldValue(2021, 'extracted', 0.97, 'extract'),
+    });
+    const evaluated = evaluateResolutionCandidate(citation, {
+      provider: 'openalex',
+      title: 'Hit and lead discovery with explorative RL and fragment-based molecule generation',
+      authors: ['Smith, J.', 'Doe, A.', 'Muller, T.'],
+      year: 2021,
+      venue: 'arXiv (Cornell University)',
+      sourceType: 'preprint',
+    });
+
+    expect(evaluated.accepted).toBe(false);
+    expect(evaluated.reasons).toContain('source_type_incompatible');
+  });
+
   it('marks tied accepted candidates as ambiguous', () => {
     const citation = makeCitation();
     const selection = chooseBestResolutionCandidate(citation, [

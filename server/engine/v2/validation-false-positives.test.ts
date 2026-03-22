@@ -89,6 +89,55 @@ describe('v2 validation false-positive regression checks', () => {
     expect(issueCodes).not.toContain('locator_missing_from_source');
   });
 
+  it('does not require a dropped locator when a journal tail contains only volume and DOI', async () => {
+    const citation = {
+      ...createEmptyCitation('Li Y, Zhang L, Wang Y, et al. Generative deep learning enables the discovery of a potent and selective RIPK1 inhibitor. Nat Commun. 2022, 13: 10.1038/s41467-022-34692-w'),
+      referenceType: 'journal',
+      authors: createFieldValue([
+        { first: 'Y.', last: 'Li', initials: 'Y.' },
+        { first: 'L.', last: 'Zhang', initials: 'L.' },
+        { first: 'Y.', last: 'Wang', initials: 'Y.' },
+      ], 'extracted', 0.95, 'extract'),
+      title: createFieldValue('Generative deep learning enables the discovery of a potent and selective RIPK1 inhibitor', 'extracted', 0.94, 'extract'),
+      year: createFieldValue(2022, 'extracted', 0.96, 'extract'),
+      journal: createFieldValue('Nat Commun', 'extracted', 0.93, 'extract'),
+      volume: createFieldValue('13', 'extracted', 0.91, 'extract'),
+      doi: createFieldValue('10.1038/s41467-022-34692-w', 'extracted', 0.96, 'extract'),
+      resolution: {
+        status: 'verified',
+        resolvedAt: new Date().toISOString(),
+        provider: 'crossref',
+        matchStrategy: 'crossref_doi',
+        candidateCount: 1,
+        rejectedReasons: [],
+        conflictFields: [],
+        yearToleranceApplied: false,
+        queryEvidence: {
+          titlePresent: true,
+          titleTokenCount: 12,
+          firstAuthorSurname: 'Li',
+          year: 2022,
+          venue: 'Nat Commun',
+          sourceType: 'journal',
+        },
+        acceptedCandidate: {
+          title: 'Generative deep learning enables the discovery of a potent and selective RIPK1 inhibitor',
+        },
+      },
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    };
+
+    const result = await validateAndScore(citation);
+    const issueCodes = result.validationIssues.map((issue) => issue.code);
+
+    expect(issueCodes).not.toContain('locator_missing_from_source');
+    expect(result.quality?.bucket).toBe('ready');
+    expect(result.quality?.bucketReasons).toContain('Verified by DOI against Crossref.');
+  });
+
   it('still flags dropped locators when the input had them and the output lost them', async () => {
     const citation = makeJournalCitation(
       'Smith, J. (2021). Deep work matters. Example Journal, 10(2), pp. 33-44.',
@@ -230,6 +279,42 @@ describe('v2 validation false-positive regression checks', () => {
     expect(result.quality?.bucketReasons).toContain('High-confidence local parse with no exact provider coverage.');
   });
 
+  it('allows title-led websites with strong local evidence to reach ready without authors', async () => {
+    const citation = {
+      ...createEmptyCitation('Intelligent clinical trials. (2020). https://www2.deloitte.com/content/dam/insights/us/articles/22934_intelligent-clinical-trials/DI_Intelligent-clinical-.'),
+      referenceType: 'website',
+      authors: createFieldValue([], 'extracted', 0.1, 'extract'),
+      title: createFieldValue('Intelligent clinical trials', 'extracted', 0.94, 'extract'),
+      year: createFieldValue(2020, 'extracted', 0.96, 'extract'),
+      url: createFieldValue('https://www2.deloitte.com/content/dam/insights/us/articles/22934_intelligent-clinical-trials/DI_Intelligent-clinical-', 'extracted', 0.95, 'extract'),
+      resolution: {
+        status: 'provider_no_coverage',
+        resolvedAt: new Date().toISOString(),
+        provider: 'strict-network-resolution',
+        matchStrategy: 'none',
+        candidateCount: 0,
+        rejectedReasons: ['local_only_author_optional_reference'],
+        conflictFields: [],
+        yearToleranceApplied: false,
+        queryEvidence: {
+          titlePresent: true,
+          titleTokenCount: 3,
+          year: 2020,
+          venue: null,
+          sourceType: 'website',
+        },
+      },
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    };
+
+    const result = await validateAndScore(citation);
+    expect(result.quality?.bucket).toBe('ready');
+    expect(result.quality?.bucketReasons).toContain('High-confidence local parse with no exact provider coverage.');
+  });
+
   it('does not emit truncated_group_author for already-stable institutional authors', async () => {
     const citation = {
       ...createEmptyCitation('OpenAI. GPT-5.1 system card. 2026. Available from: https://openai.com/research/gpt-5-1.'),
@@ -247,6 +332,27 @@ describe('v2 validation false-positive regression checks', () => {
 
     const result = await validateAndScore(citation);
     expect(result.validationIssues.map((issue) => issue.code)).not.toContain('truncated_group_author');
+  });
+
+  it('does not require authors for title-led website references', async () => {
+    const citation = {
+      ...createEmptyCitation('Intelligent clinical trials. (2020). https://www2.deloitte.com/content/dam/insights/us/articles/22934_intelligent-clinical-trials/DI_Intelligent-clinical-.'),
+      referenceType: 'website',
+      authors: createFieldValue([], 'extracted', 0.1, 'extract'),
+      title: createFieldValue('Intelligent clinical trials', 'extracted', 0.94, 'extract'),
+      year: createFieldValue(2020, 'extracted', 0.96, 'extract'),
+      url: createFieldValue('https://www2.deloitte.com/content/dam/insights/us/articles/22934_intelligent-clinical-trials/DI_Intelligent-clinical-', 'extracted', 0.95, 'extract'),
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    };
+
+    const result = await validateAndScore(citation);
+    const issueCodes = result.validationIssues.map((issue) => issue.code);
+
+    expect(issueCodes).not.toContain('authors_missing');
+    expect(issueCodes).not.toContain('author_structure_unstable');
   });
 
   it('does not demote duplicate-family citations to review when confidence is above the duplicate ready threshold', async () => {

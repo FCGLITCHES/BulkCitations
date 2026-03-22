@@ -114,6 +114,65 @@ Stabilize the v2 citation engine so the stress harness:
 
 - Report / book / website citations are now allowed to become `ready` on a clean local parse when exact provider coverage is absent, instead of being artificially capped below the threshold.
 
+### 11. Duplicate-family scoring no longer over-demotes clean parses
+
+- Citations marked as part of a duplicate family no longer automatically drop into `worth_reviewing`.
+- When local quality is `>= 0.85`, duplicate-family citations can now remain `ready`.
+- This prevents the duplicate marker from overriding an otherwise clean parse.
+
+### 12. Pre-parse mojibake cleanup now protects extractor input
+
+- Common UTF-8/CP1252 mojibake is now repaired before extractor parsing begins.
+- This protects:
+  - diacritics in names such as `López`, `Fernández`, and `Ramírez`
+  - page ranges such as `113â€“730`
+  - acronym-led institutional authors such as `IBM Research Team`
+- This was added as an additive pre-normalization step rather than a parser replacement, so the existing extraction stack stays intact while receiving cleaner input.
+
+### 13. Colon-led Vancouver parsing is now first-class
+
+- The extractor and classifier now recognize compact references shaped like:
+  - `Author A, Author B: Title. Journal. 2021, 55:1947-99. DOI`
+- The Vancouver parser now splits:
+  - author block
+  - title
+  - journal
+  - year
+  - volume
+  - locator
+- This fixed the main failure mode in the drug-discovery / AI stress batch, where the old parser was swallowing the title and venue into the author field.
+
+### 14. Expected-field checks are now source-aware
+
+- Journal citations are no longer punished for missing `issue` or `locator` fields unless the raw source actually suggests those fields were present.
+- DOI-only tails such as:
+  - `2022, 13:10.1038/...`
+  no longer trigger false `locator_missing_from_source` warnings.
+
+### 15. Verified-merge conflicts are now normalized before being treated as hard errors
+
+- Equivalent journal venue strings are now treated as compatible when they differ only by abbreviation or expansion:
+  - `Artif Intell Rev` vs `Artificial Intelligence Review`
+  - `Nat Med` vs `Nature Medicine`
+- Equivalent locator/page strings are now treated as compatible when they differ only by shortened page ranges:
+  - `1947-99` vs `1947-1999`
+  - `1351-63` vs `1351-1363`
+- Title conflicts are no longer raised for punctuation-only differences such as:
+  - straight vs curly apostrophes
+  - hyphen vs en dash / figure dash
+
+### 16. Resolver now rejects source-type-incompatible candidates
+
+- Non-unknown citations are no longer allowed to verify against clearly incompatible external records such as:
+  - journal parse -> preprint candidate
+  - journal parse -> chapter candidate
+- This prevents exact-title matches from being accepted when the external record is for the wrong publication type.
+
+### 17. DOI-verified online-first placeholders can now be upgraded
+
+- When a journal citation only carries a provisional locator like `1-10`, has no extracted volume/issue, and the verified DOI record supplies the final volume/issue/pages, the authority pages are now promoted.
+- This avoids treating early-online placeholder locators as hard conflicts when the DOI record is clearly more authoritative.
+
 ## Current Measured Status
 
 ### Test status
@@ -123,6 +182,40 @@ Stabilize the v2 citation engine so the stress harness:
   - `62` tests passed
 - `npm run check`
   - passed
+
+### Additional targeted regression status
+
+- `npx vitest run server/engine/v2/adapters.test.ts server/engine/v2/utils.test.ts server/engine/v2/validation-false-positives.test.ts server/engine/v2/enrich-stage.test.ts server/engine/v2/resolution.test.ts`
+  - `5` test files passed
+  - `47` tests passed
+- `npm run check`
+  - passed after the drug/AI stress-batch fixes
+
+### Drug / AI stress batch results
+
+Fixture:
+
+- `D:\Coding\Citing\scripts\data\stress-batch-20260322-drug-ai.txt`
+
+Latest report:
+
+- `D:\Coding\Citing\output\stress\20260322-045657Z-stress-batch-20260322-drug-ai.json`
+
+Counts in that report:
+
+- `ready = 26`
+- `worth_reviewing = 33`
+- `action_needed = 1`
+
+Main structural improvements that drove this:
+
+- colon-led Vancouver parsing rescue
+- truncated mojibake repair for broken years / locators
+- DOI hyphen-wrap repair
+- source-aware expected field logic
+- equivalence-aware merge conflict handling
+- source-type compatibility hard rejection
+- online-first locator promotion on DOI verification
 
 ### Latest saved batch results
 
@@ -187,6 +280,11 @@ Current main remaining action-needed cases:
 - `#114`
   - `National Academies of Sciences, Engineering, and Medicine...`
   - extractor still drops the title in this book/report-like format
+- `drug-ai #32`
+  - truncated reference:
+    - `Bate A, Hobbiger SF: Artificial intelligence, real-world automation and the safety of medicines . Drug Saf.`
+  - this is genuinely too sparse for strict resolution because year / final locator / DOI are absent
+  - the right structural next step is a softer incomplete-journal fallback bucket, not forced verification
 
 ### 3. Improve remaining `worth_reviewing` cases
 
@@ -197,6 +295,10 @@ Main patterns still left in review:
 - `Information Research` style locators such as `paper 872`
 - a few conference / book-like citations that remain slightly under the ready threshold
 - some edge-case title/venue confidence outcomes on synthetic references
+- compact Vancouver references that are structurally clean but still need more reliable promotion to `ready` when local evidence is strong
+- author-field false positives where a merged blob still contains title / venue / year / DOI content and must be demoted earlier in extraction
+- mixed-encoding PDF/OCR noise outside the current UTF-8/CP1252 repair pass
+  - especially cases where the source text has already lost byte-level information before ingestion
 
 ## What We Need To Focus On Next
 
@@ -225,6 +327,13 @@ Main patterns still left in review:
 5. Locator policy improvements
    - `paper 872`
    - issue-less article-number journals
+6. Remaining encoding-noise coverage
+   - validate that the new pre-parse mojibake cleanup fully covers acronym-led group authors and PDF-derived diacritic corruption on larger mixed batches
+7. Confidence calibration for author parsing
+   - reward clean compact Vancouver author lists
+   - heavily demote author strings that leak title/source metadata
+8. Render/report observability
+   - include rendered output in stress artifacts so duplicated-year regressions can be traced from the saved JSON instead of reproduced manually
 
 ## What I Wanted To Fix Next Before The Interrupted Run
 
@@ -258,6 +367,8 @@ This was the exact next sequence I was working toward:
 
 - author parsing / diacritics / group-author handling
 - author-tail confidence bug regression
+- compact-Vancouver author confidence regression
+- author-content-leak false-positive regression
 - institutional extractor regressions
 - protected-token false positives
 - report-ready local scoring path
@@ -271,8 +382,23 @@ What is already true:
 - the engine is materially better than it was at the start of this work
 - we crossed the `>85% ready` target on the saved stress batch from the scoring/parsing side
 - parser quality, institutional handling, and confidence calibration are much stronger
+- the latest extended drug-AI stress run reached:
+  - `ready=52`
+  - `worth_reviewing=7`
+  - `action_needed=1`
+  - report: `D:\Coding\Citing\output\stress\20260322-053229Z-stress-batch-20260322-drug-ai-extended.json`
+- compact Vancouver author arrays now stay intact instead of being collapsed into fake surname/given pairs
+- merged author/title/source blobs are now heavily demoted instead of receiving misleadingly high author confidence
+- title-led websites no longer invent corporate authors or duplicate the year in rendered output
+- page/journal conflict handling is more tolerant of:
+  - abbreviated page ranges versus expanded ranges
+  - `e`-prefixed page locators
+  - article-number-like locators
+  - parenthetical journal qualifiers such as `Aging (Albany NY)`
 
 What is not fully closed yet:
 
-- we still need one full enrich-complete batch artifact so the saved report shows true strict-resolution results instead of a timeout fallback
+- one genuinely truncated citation still remains action-needed:
+  - `Bate A, Hobbiger SF: Artificial intelligence, real-world automation and the safety of medicines . Drug Saf.`
+- the remaining `worth_reviewing` items are mostly true `no_exact_external_match` cases rather than parser corruption
 - a small set of extractor edge cases still needs targeted architectural cleanup

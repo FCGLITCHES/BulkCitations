@@ -232,8 +232,10 @@ function repairMojibake(value: string): string {
 export function fixUnicodeText(value: string): string {
   return normalizeWhitespace(
     repairMojibake(value)
+      .replace(/â€(?=[\d,.;:)\]-])/g, '')
       .normalize('NFKC')
       .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      .replace(/[\uFFF9-\uFFFF]/g, '')
       .replace(/[“”]/g, '"')
       .replace(/[‘’]/g, "'")
       .replace(/[–—]/g, '-'),
@@ -524,6 +526,7 @@ function expandAuthorBlobs(authors: Array<string | CanonicalAuthor>): Array<stri
 function looksLikeGivenNamesToken(token: string): boolean {
   const normalized = normalizeWhitespace(token);
   if (!normalized) return false;
+  if (parseCompactVancouverAuthor(normalized)) return false;
   if (INITIALS_TOKEN_PATTERN.test(normalized.replace(/\s+/g, ''))) return true;
   return /[\p{Ll}]/u.test(normalized) && normalized.split(/\s+/).length <= 4;
 }
@@ -532,6 +535,7 @@ function looksLikeSurnameToken(token: string): boolean {
   const normalized = normalizeWhitespace(token);
   if (!normalized) return false;
   if (normalized.includes(',')) return false;
+  if (parseCompactVancouverAuthor(normalized)) return false;
   if (INITIALS_TOKEN_PATTERN.test(normalized.replace(/\s+/g, ''))) return false;
   return /^[\p{L}'’-]+(?:\s+[\p{L}'’-]+){0,3}$/u.test(normalized);
 }
@@ -680,6 +684,36 @@ export function parseAuthorsForStyle(
 
   const expandedAuthors = expandAuthorBlobs(authors);
   const rawStrings = expandedAuthors.filter((author): author is string => typeof author === 'string').map((author) => fixUnicodeText(author));
+  const compactVancouverArray = rawStrings.length === expandedAuthors.length
+    && rawStrings.filter((author) => !/^et\s+al\.?$/i.test(author)).length >= 2
+    && rawStrings.every((author) => /^et\s+al\.?$/i.test(author) || Boolean(parseCompactVancouverAuthor(author)) || isGroupAuthor(author));
+  if (compactVancouverArray) {
+    return {
+      authors: rawStrings.map((author) => {
+        if (/^et\s+al\.?$/i.test(author)) {
+          return {
+            first: null,
+            last: 'et al.',
+            initials: null,
+            literal: 'et al.',
+          };
+        }
+        if (isGroupAuthor(author)) {
+          const group = normalizeGroupAuthor(author);
+          return {
+            first: null,
+            last: group,
+            initials: null,
+            literal: group,
+          };
+        }
+        return parseCompactVancouverAuthor(author) ?? parseAuthorToCanonical(author);
+      }),
+      parserMode: 'vancouver_compact_array',
+      warningFlags: [],
+      rejectedCandidates: [],
+    };
+  }
   if (rawStrings.length === expandedAuthors.length && looksLikeAlternatingTokenArray(rawStrings)) {
     return {
       authors: parseAlternatingTokenArray(rawStrings),

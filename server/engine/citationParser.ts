@@ -298,6 +298,7 @@ export class CitationParser {
   preNormalize(raw: string): PreNormalizedText {
     let { text: s, map } = protectTokens(raw.trim());
     if (!s) return s as PreNormalizedText;
+    s = s.replace(/(10\.\d{4,9}\/[A-Za-z0-9._;()/:+-]+)-\s+([A-Za-z0-9._;()/:+-]+)/gi, '$1-$2');
     // Per-line: strip leading numbering (1. / 2) / 3 - / [4] etc.)
     s = s.split(/\n/).map((line) => {
       return stripLeadingNumbering(line.trim());
@@ -396,6 +397,12 @@ export class CitationParser {
     if (/^[A-Z][a-z'’-]+(?:\s+(?:da|de|del|der|di|du|la|le|van|von))?(?:\s+[A-Z][a-z'’-]+)?\s+[A-Z]{1,4}(?:,\s*(?:[A-Z][a-z'’-]+(?:\s+(?:da|de|del|der|di|du|la|le|van|von))?(?:\s+[A-Z][a-z'’-]+)?\s+[A-Z]{1,4}|(?:da|de|del|der|di|du|la|le|van|von)\s+[A-Z][a-z'’-]+\s+[A-Z]{1,4}))+\./.test(scrubbedForDetection)) scores.vancouver += 6;
     if (/^(?:(?:[A-Z][A-Za-z'’-]+|d'[A-Za-z'’-]+)(?:\s+(?:da|de|del|der|di|du|van|von)\s+[A-Z][A-Za-z'’-]+)*(?:\s+[A-Z][A-Za-z'’-]+)*\s+[A-Z]{1,4},\s*){2,}.+\.\s+\d{4}(?:\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2})?;/.test(scrubbedForDetection)) scores.vancouver += 10;
     if (/^(?:(?:[A-Z][A-Za-z'’-]+|d'[A-Za-z'’-]+)(?:\s+(?:da|de|del|der|di|du|van|von)\s+[A-Z][A-Za-z'’-]+)*(?:\s+[A-Z][A-Za-z'’-]+)*\s+[A-Z]{1,4},\s*){2,}.+\.\s+In\s+.+\b\d{4}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2}\s+\(pp\.?\s*\d+/i.test(scrubbedForDetection)) scores.vancouver += 12;
+    if (
+      /^[^:]{10,}:\s+.+\.\s+[A-Z][^.]+?\.\s+(?:19|20)\d{2}\s*[,;]\s*\d+/i.test(scrubbedForDetection)
+      && /^(?:[^:]*\b[A-Z]{1,4}\b[^:]*,\s*){2,}[^:]*\b(?:[A-Z]{1,4}|et\s+al\.?)\b\s*:/i.test(scrubbedForDetection)
+    ) {
+      scores.vancouver += 18;
+    }
     // Vancouver: "Author AB. Title. Publisher. YYYY;?:" (OpenAlex placeholder) — decisive so Vancouver wins over APA
     if (/\d{4}\s*;\s*\??\s*:?/.test(trimmed) || /\d{4}\s*;\s*[^;]*$/.test(trimmed)) scores.vancouver += 60;
     // Compact-initial author (no comma before year) + semicolon: "Holland JH. Title. Publisher. 1992;"
@@ -1920,6 +1927,53 @@ export class CitationParser {
 
     // Remove leading number
     let cleanText = stripLeadingNumbering(text).trim();
+    const normalizeInlineWhitespace = (value: string): string => value.replace(/\s+/g, ' ').trim();
+    const splitLeadAuthorTitle = (value: string): { authors: string[]; title: string } | null => {
+      const colonIndex = value.indexOf(':');
+      if (colonIndex <= 0) return null;
+
+      const authorPart = value.slice(0, colonIndex).trim();
+      const titlePart = value.slice(colonIndex + 1).trim().replace(/^\.+/, '').trim();
+      if (!authorPart || !titlePart) return null;
+
+      const authors = this.parseAuthorList(authorPart, 'vancouver');
+      const compactSingleAuthor = /^(?:[A-Z][A-Za-z'’-]+|d'[A-Za-z'’-]+)(?:\s+(?:da|de|del|der|di|du|la|le|van|von)\s+[A-Z][A-Za-z'’-]+)*(?:\s+[A-Z][A-Za-z'’-]+)*\s+[A-Z]{1,4}$/i.test(authorPart);
+      if (
+        authors.length < 2
+        && !(authors.length === 1 && compactSingleAuthor)
+        && !/\bet\s+al\.?$/i.test(authorPart)
+      ) {
+        return null;
+      }
+      if (titlePart.split(/\s+/).length < 3) return null;
+
+      return {
+        authors,
+        title: titlePart,
+      };
+    };
+    const assignLeadSegments = (beforeYearStr: string): boolean => {
+      const segments = beforeYearStr
+        .replace(/\.\s*$/, '')
+        .split(/\.\s+/)
+        .map((segment) => segment.trim())
+        .filter(Boolean);
+      if (segments.length === 0) return false;
+
+      const colonLead = splitLeadAuthorTitle(segments[0]);
+      if (!colonLead) return false;
+
+      parsed.authors = colonLead.authors;
+      parsed.title = colonLead.title;
+      if (segments.length >= 2) {
+        parsed.journal = segments.slice(1).join('. ').trim();
+      }
+      return true;
+    };
+    const stripTrailingDoi = (value: string): string => value
+      .replace(/\b10\.\d{4,9}\/\S+\b.*$/i, '')
+      .replace(/[.;,\s]+$/g, '')
+      .trim();
 
     // Special-case "Author, Author, Title, YYYY." shapes that were misclassified as Vancouver.
     // Example: "Goldberg DE, Holland JH, Genetic algorithms and machine learning, 1988."
@@ -1960,20 +2014,28 @@ export class CitationParser {
 
     // Vancouver key pattern: Year;Volume(Issue):Pages  (or slight comma variants)
     // E.g., "2011;42(2):167-176" or "2011;42(2),167-176"
-    const yearVolMatch = cleanText.match(/(\d{4})(?:\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2})?;([^(:]+)(?:\(([^)]+)\))?(?::|,)(.*?)(?=\s*$|\s+[^a-z])/i);
+    const yearVolMatch = cleanText.match(/(\d{4})(?:\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2})?[;,]\s*([^(:]+?)(?:\(([^)]+)\))?\s*:\s*(.+?)\s*$/i);
+    const yearLocatorOnlyMatch = !yearVolMatch
+      ? cleanText.match(/(\d{4})(?:\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2})?[;,]\s*([A-Za-z]?\d+(?:[-–][A-Za-z]?\d+)?)\s*(?:\.\s*10\.\d{4,9}\/\S+)?\s*$/i)
+      : null;
 
     if (yearVolMatch) {
       parsed.year = yearVolMatch[1];
-      parsed.volume = yearVolMatch[2];
+      parsed.volume = yearVolMatch[2].trim();
       if (yearVolMatch[3]) parsed.issue = yearVolMatch[3];
-      if (yearVolMatch[4]) parsed.pages = yearVolMatch[4].replace(/\.$/, ''); // clean trailing period from pages
+      const rawTail = yearVolMatch[4].trim().replace(/\.$/, '');
+      const locatorTail = stripTrailingDoi(rawTail);
+      if (locatorTail && !/^10\.\d{4,9}\//i.test(locatorTail)) {
+        parsed.pages = locatorTail;
+      }
 
       // Everything before "Year;" needs to be split into author(s), title, journal
       const beforeYearStr = cleanText.substring(0, cleanText.indexOf(yearVolMatch[0])).trim().replace(/\.\s*$/, '');
 
       // Prefer period-split (Author. Title. Journal); if that yields too few segments, try comma-split for search inputs
-      let segments = beforeYearStr.split(/\.\s+/);
-      if (segments.length < 3 && beforeYearStr.includes(',')) {
+      if (!assignLeadSegments(beforeYearStr)) {
+        const segments = beforeYearStr.split(/\.\s+/);
+        if (segments.length < 3 && beforeYearStr.includes(',')) {
         const commaSegs = beforeYearStr.split(',').map((s) => s.trim()).filter(Boolean);
         if (commaSegs.length >= 3) {
           parsed.authors = this.parseAuthorList(commaSegs.slice(0, -2).join(', '), 'vancouver');
@@ -1985,23 +2047,23 @@ export class CitationParser {
         } else if (commaSegs.length === 1) {
           parsed.title = commaSegs[0];
         }
-      } else if (segments.length >= 3) {
-        parsed.authors = this.parseAuthorList(segments[0].trim(), 'vancouver');
-        parsed.title = segments[1].trim();
-        parsed.journal = segments.slice(2).join('. ').trim();
-      } else if (segments.length === 2) {
-        parsed.authors = this.parseAuthorList(segments[0].trim(), 'vancouver');
-        parsed.title = segments[1].trim();
-      } else if (segments.length === 1) {
-        parsed.title = segments[0].trim();
+        } else if (segments.length >= 3) {
+          parsed.authors = this.parseAuthorList(segments[0].trim(), 'vancouver');
+          parsed.title = segments[1].trim();
+          parsed.journal = segments.slice(2).join('. ').trim();
+        } else if (segments.length === 2) {
+          parsed.authors = this.parseAuthorList(segments[0].trim(), 'vancouver');
+          parsed.title = segments[1].trim();
+        } else if (segments.length === 1) {
+          parsed.title = segments[0].trim();
+        }
       }
-    } else {
-      // Fallback: "Author. Title. Journal. YYYY;" or "Author. Title. Journal. YYYY;?:" (no volume after semicolon)
-      const yyyySemicolonEnd = cleanText.match(/(\d{4})\s*;\s*$/);
-      if (yyyySemicolonEnd) {
-        parsed.year = yyyySemicolonEnd[1];
-        const beforeYearStr = cleanText.substring(0, cleanText.indexOf(yyyySemicolonEnd[0])).trim().replace(/\.\s*$/, '');
-        const segments = beforeYearStr.split(/\.\s+/);
+    } else if (yearLocatorOnlyMatch) {
+      parsed.year = yearLocatorOnlyMatch[1];
+      parsed.pages = yearLocatorOnlyMatch[2].replace(/–/g, '-');
+      const beforeYearStr = cleanText.substring(0, cleanText.indexOf(yearLocatorOnlyMatch[0])).trim().replace(/\.\s*$/, '');
+      if (!assignLeadSegments(beforeYearStr)) {
+        const segments = beforeYearStr.split(/\.\s+/).map((segment) => segment.trim()).filter(Boolean);
         if (segments.length >= 3) {
           parsed.authors = this.parseAuthorList(segments[0].trim(), 'vancouver');
           parsed.title = segments[1].trim();
@@ -2012,14 +2074,37 @@ export class CitationParser {
         } else if (segments.length === 1) {
           parsed.title = segments[0].trim();
         }
+      }
+    } else {
+      // Fallback: "Author. Title. Journal. YYYY;" or "Author. Title. Journal. YYYY;?:" (no volume after semicolon)
+      const yyyySemicolonEnd = cleanText.match(/(\d{4})\s*;\s*$/);
+      if (yyyySemicolonEnd) {
+        parsed.year = yyyySemicolonEnd[1];
+        const beforeYearStr = cleanText.substring(0, cleanText.indexOf(yyyySemicolonEnd[0])).trim().replace(/\.\s*$/, '');
+        if (!assignLeadSegments(beforeYearStr)) {
+          const segments = beforeYearStr.split(/\.\s+/);
+          if (segments.length >= 3) {
+            parsed.authors = this.parseAuthorList(segments[0].trim(), 'vancouver');
+            parsed.title = segments[1].trim();
+            parsed.journal = segments.slice(2).join('. ').trim();
+          } else if (segments.length === 2) {
+            parsed.authors = this.parseAuthorList(segments[0].trim(), 'vancouver');
+            parsed.title = segments[1].trim();
+          } else if (segments.length === 1) {
+            parsed.title = segments[0].trim();
+          }
+        }
       } else {
         // Fallback: split by periods
-        const segments = cleanText.replace(/\.\s*$/, '').split(/\.\s+/);
-        if (segments.length >= 2) {
-          parsed.authors = this.parseAuthorList(segments[0].trim(), 'vancouver');
-          parsed.title = segments[1].trim();
-          if (segments.length >= 3) {
-            parsed.journal = segments[2].trim();
+        const beforeTail = cleanText.replace(/\.\s*$/, '');
+        if (!assignLeadSegments(beforeTail)) {
+          const segments = beforeTail.split(/\.\s+/);
+          if (segments.length >= 2) {
+            parsed.authors = this.parseAuthorList(segments[0].trim(), 'vancouver');
+            parsed.title = segments[1].trim();
+            if (segments.length >= 3) {
+              parsed.journal = segments[2].trim();
+            }
           }
           const yearMatch = cleanText.match(/\b((?:19|20)\d{2}|n\.d\.)\b/i);
           if (yearMatch) parsed.year = yearMatch[1];
