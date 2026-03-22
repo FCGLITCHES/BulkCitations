@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeParsedAuthorStrings } from './qualityRules.js';
 import {
+  fixUnicodeText,
   looksLikeSurnameGivenAlternatingArray,
+  normalizeCanonicalAuthor,
   parseAuthorsForStyle,
 } from './utils.js';
 
@@ -80,5 +82,27 @@ describe('v2 author rescue utilities', () => {
     const analysis = analyzeParsedAuthorStrings(['Smith, J', 'Doe, A.']);
 
     expect(analysis.singleCharacterTailCount).toBe(2);
+  });
+
+  it('repairs common mojibake in author names and locators', () => {
+    expect(fixUnicodeText('LÃ³pez')).toBe('López');
+    expect(fixUnicodeText('MÃ¼ller')).toBe('Müller');
+    expect(fixUnicodeText('Oâ€™Connor')).toBe("O'Connor");
+    expect(fixUnicodeText('98â€“652')).toBe('98-652');
+  });
+
+  it('collapses split acronym-led group authors back into a literal institutional author', () => {
+    const author = normalizeCanonicalAuthor({
+      first: 'IBM',
+      last: 'Research Team',
+      initials: 'I. B. M.',
+    });
+
+    expect(author).toMatchObject({
+      first: null,
+      last: 'IBM Research Team',
+      initials: null,
+      literal: 'IBM Research Team',
+    });
   });
 });

@@ -155,9 +155,83 @@ export function doiToUrl(doi: string): string {
   return `https://doi.org/${normalizeDoiValue(doi)}`;
 }
 
+const CP1252_REVERSE_BYTE_MAP = new Map<string, number>([
+  ['€', 0x80],
+  ['‚', 0x82],
+  ['ƒ', 0x83],
+  ['„', 0x84],
+  ['…', 0x85],
+  ['†', 0x86],
+  ['‡', 0x87],
+  ['ˆ', 0x88],
+  ['‰', 0x89],
+  ['Š', 0x8A],
+  ['‹', 0x8B],
+  ['Œ', 0x8C],
+  ['Ž', 0x8E],
+  ['‘', 0x91],
+  ['’', 0x92],
+  ['“', 0x93],
+  ['”', 0x94],
+  ['•', 0x95],
+  ['–', 0x96],
+  ['—', 0x97],
+  ['˜', 0x98],
+  ['™', 0x99],
+  ['š', 0x9A],
+  ['›', 0x9B],
+  ['œ', 0x9C],
+  ['ž', 0x9E],
+  ['Ÿ', 0x9F],
+]);
+
+function containsSuspiciousMojibake(value: string): boolean {
+  return /(?:Ã.|Â.|â.|Ð.|Ñ.|¤|�)/u.test(value);
+}
+
+function mojibakePenalty(value: string): number {
+  let penalty = 0;
+  penalty += (value.match(/�/g) ?? []).length * 4;
+  penalty += (value.match(/[ÃÂâÐÑ¤]/g) ?? []).length * 2;
+  penalty += (value.match(/[\u0000-\u001f]/g) ?? []).length * 3;
+  return penalty;
+}
+
+function decodeUtf8Mojibake(value: string): string {
+  const bytes: number[] = [];
+  for (const char of value) {
+    const codePoint = char.codePointAt(0);
+    if (codePoint == null) continue;
+    if (codePoint <= 0xFF) {
+      bytes.push(codePoint);
+      continue;
+    }
+    const mapped = CP1252_REVERSE_BYTE_MAP.get(char);
+    if (mapped == null) {
+      return value;
+    }
+    bytes.push(mapped);
+  }
+  return Buffer.from(bytes).toString('utf8');
+}
+
+function repairMojibake(value: string): string {
+  if (!containsSuspiciousMojibake(value)) return value;
+
+  let current = value;
+  for (let iteration = 0; iteration < 2; iteration += 1) {
+    const candidate = decodeUtf8Mojibake(current);
+    if (!candidate || candidate === current) break;
+    if (mojibakePenalty(candidate) > mojibakePenalty(current)) break;
+    current = candidate;
+    if (!containsSuspiciousMojibake(current)) break;
+  }
+  return current;
+}
+
 export function fixUnicodeText(value: string): string {
   return normalizeWhitespace(
-    value
+    repairMojibake(value)
       .normalize('NFKC')
       .replace(/[\u200B-\u200D\uFEFF]/g, '')
       .replace(/[“”]/g, '"')
@@ -295,11 +369,32 @@ export function normalizeCanonicalAuthor(author: CanonicalAuthor): CanonicalAuth
     return parseAuthorToCanonical(author.literal);
   }
 
+  const first = author.first ? fixUnicodeText(author.first) : null;
+  const last = normalizePersonLastName(author.last ? fixUnicodeText(author.last) : 'Unknown');
+  const literal = author.literal ? fixUnicodeText(author.literal) : undefined;
+  const combinedGroupCandidate = [
+    literal,
+    normalizeWhitespace([first, last].filter(Boolean).join(' ')),
+    last,
+  ]
+    .find((candidate) => Boolean(candidate) && isGroupAuthor(candidate ?? ''));
+
+  if (combinedGroupCandidate) {
+    const group = normalizeGroupAuthor(combinedGroupCandidate);
+    return {
+      first: null,
+      last: group,
+      initials: null,
+      literal: group,
+      orcid: author.orcid ? normalizeWhitespace(author.orcid) : undefined,
+    };
+  }
+
   return {
-    first: author.first ? fixUnicodeText(author.first) : null,
-    last: normalizePersonLastName(author.last ? fixUnicodeText(author.last) : 'Unknown'),
-    initials: author.initials ? fixUnicodeText(author.initials) : initialsFromWords((author.first ?? '').split(/\s+/).filter(Boolean)),
-    literal: author.literal ? fixUnicodeText(author.literal) : undefined,
+    first,
+    last,
+    initials: author.initials ? fixUnicodeText(author.initials) : initialsFromWords((first ?? '').split(/\s+/).filter(Boolean)),
+    literal,
     orcid: author.orcid ? normalizeWhitespace(author.orcid) : undefined,
   };
 }

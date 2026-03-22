@@ -29,6 +29,8 @@ const SUSPECTED_SPLIT_CODES = new Set([
   'oversized_chunk_suspected',
 ]);
 
+const DUPLICATE_AUTO_READY_THRESHOLD = 0.85;
+
 function grade(overall: number): 'A' | 'B' | 'C' | 'F' {
   if (overall >= 0.9) return 'A';
   if (overall >= 0.75) return 'B';
@@ -111,6 +113,10 @@ function allowsLocalReadyOnResolutionMiss(citation: CanonicalCitation): boolean 
 function localReadyWithoutResolution(citation: CanonicalCitation, overall: number, fieldScores: Record<string, number>): boolean {
   if (citation.resolution) return false;
   return overall >= 0.9 && keyFieldConfidenceReady(citation, fieldScores);
+}
+
+function duplicateAutoReady(citation: CanonicalCitation, overall: number): boolean {
+  return citation.status === 'duplicate' && overall >= DUPLICATE_AUTO_READY_THRESHOLD;
 }
 
 function exactExternalTitleMatch(citation: CanonicalCitation): boolean {
@@ -244,6 +250,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   const noErrorLevelIssues = errorIssues.length === 0;
   const readyByResolution = doiVerified(citation) || exactExternalTitleMatch(citation) || localReadyWithoutCoverage(citation, overall, fieldScores);
   const readyByLocalOnly = localReadyWithoutResolution(citation, overall, fieldScores);
+  const readyByDuplicateConfidence = duplicateAutoReady(citation, overall);
   const actionNeeded = citation.status !== 'duplicate' && (
     hasInsufficientEvidence
     || flags.includes('malformed_authors')
@@ -259,7 +266,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
     ].includes(issue.code))
   );
 
-  const reviewNeeded = citation.status === 'duplicate'
+  const reviewNeeded = (citation.status === 'duplicate' && !readyByDuplicateConfidence)
     || hasAmbiguousMatch
     || hasResolutionMiss
     || hasProviderError
@@ -281,7 +288,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
       ...(hasConfirmedSplit ? ['Confirmed split contamination suggests the citation contains more than one reference or a truncated fragment.'] : []),
       ...(hasHardConflicts ? [`Verified external data conflicted with extracted fields: ${citation.resolution?.conflictFields.join(', ')}.`] : []),
     ];
-  } else if (noErrorLevelIssues && (readyByResolution || readyByLocalOnly)) {
+  } else if (noErrorLevelIssues && (readyByResolution || readyByLocalOnly || readyByDuplicateConfidence)) {
     bucket = 'ready';
     bucketReasons = [
       ...(doiVerified(citation) ? ['Verified by DOI against Crossref.'] : []),
@@ -290,6 +297,9 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
         ? ['High-confidence local parse with no exact provider coverage.']
         : []),
       ...(!readyByResolution && readyByLocalOnly ? ['High-confidence local parse with no unresolved validation errors.'] : []),
+      ...(!readyByResolution && !readyByLocalOnly && readyByDuplicateConfidence
+        ? ['High-confidence parse stayed ready even though the citation belongs to a duplicate family.']
+        : []),
     ];
   } else if (reviewNeeded) {
     bucket = 'worth_reviewing';

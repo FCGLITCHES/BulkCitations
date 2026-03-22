@@ -248,4 +248,30 @@ describe('v2 validation false-positive regression checks', () => {
     const result = await validateAndScore(citation);
     expect(result.validationIssues.map((issue) => issue.code)).not.toContain('truncated_group_author');
   });
+
+  it('does not demote duplicate-family citations to review when confidence is above the duplicate ready threshold', async () => {
+    const citation = {
+      ...makeJournalCitation(
+        'Smith, J. (2021). Deep work matters. Example Journal, 10(2), 33-44.',
+      ),
+      status: 'duplicate',
+      duplicate: {
+        status: 'duplicate',
+        method: 'structural',
+        duplicateOf: 'base-citation-id',
+        mergeReason: 'structural_duplicate_group',
+      },
+      authors: createFieldValue([{ first: 'J.', last: 'Smith', initials: 'J.' }], 'extracted', 0.9, 'extract'),
+      title: createFieldValue('Deep work matters', 'extracted', 0.9, 'extract'),
+      year: createFieldValue(2021, 'extracted', 0.92, 'extract'),
+      journal: createFieldValue('Example Journal', 'extracted', 0.82, 'extract'),
+      volume: createFieldValue('10', 'extracted', 0.82, 'extract'),
+      issue: createFieldValue('2', 'extracted', 0.8, 'extract'),
+      pages: createFieldValue('33-44', 'extracted', 0.82, 'extract'),
+    };
+
+    const result = await validateAndScore(citation);
+    expect(result.quality?.bucket).toBe('ready');
+    expect(result.quality?.bucketReasons).toContain('High-confidence parse stayed ready even though the citation belongs to a duplicate family.');
+  });
 });
