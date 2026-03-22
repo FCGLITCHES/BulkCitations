@@ -44,14 +44,8 @@ import {
 import { useState } from "react";
 import type { CitationReport, ReportStatus } from "@shared/schema";
 import { adminFetch } from "@/lib/admin-api";
+import { removeReportsFromGroupedCaches, type GroupedReport } from "@/lib/admin-report-cache";
 import { useToast } from "@/hooks/use-toast";
-
-interface GroupedReport {
-  fingerprint: string;
-  reports: CitationReport[];
-  totalCount: number;
-  category: string;
-}
 
 type SortKey = "freq" | "category" | "source" | "targetStyle";
 type SortDirection = "asc" | "desc";
@@ -166,9 +160,9 @@ export default function AdminReportQueue() {
         body: JSON.stringify({ ids }),
       });
     },
-    onSuccess: (data) => {
+    onSuccess: (data, ids) => {
       setSelectedFingerprints(new Set());
-      queryClient.invalidateQueries({ queryKey: ["/api/reports/grouped"] });
+      removeReportsFromGroupedCaches(queryClient, ids);
       toast({
         title: "Reports deleted",
         description: `Removed ${data.deletedCount} report${data.deletedCount === 1 ? "" : "s"} from the queue.`,

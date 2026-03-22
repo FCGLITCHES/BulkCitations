@@ -117,6 +117,31 @@ function mapLegacyReport(v1: V1Report): CitationReport {
 
 class FileReportStore implements IReportStore {
   private migrationReady = false;
+  private cachedReports: CitationReport[] | null = null;
+
+  private cloneReport(report: CitationReport): CitationReport {
+    return hydrateReport({
+      ...report,
+      failureCategories: report.failureCategories ? [...report.failureCategories] : undefined,
+      reviewEvents: report.reviewEvents ? [...report.reviewEvents] : [],
+    });
+  }
+
+  private readReports(): CitationReport[] {
+    if (this.cachedReports) {
+      return this.cachedReports.map((report) => this.cloneReport(report));
+    }
+
+    const rows = readJsonlFile<CitationReport>(REPORTS_FILE).map(hydrateReport);
+    this.cachedReports = rows;
+    return rows.map((report) => this.cloneReport(report));
+  }
+
+  private writeReports(rows: CitationReport[]): void {
+    const hydratedRows = rows.map(hydrateReport);
+    this.cachedReports = hydratedRows;
+    writeJsonlFile(REPORTS_FILE, hydratedRows);
+  }
 
   private ensureLegacyMigration(): void {
     if (this.migrationReady) return;
@@ -143,7 +168,7 @@ class FileReportStore implements IReportStore {
       }
     }
 
-    writeJsonlFile(REPORTS_FILE, migrated);
+    this.writeReports(migrated);
     appendMigrationLog(MIGRATION_LOG_FILE, {
       key: migrationKey,
       sourcePath: LEGACY_REPORTS_FILE,
@@ -158,7 +183,7 @@ class FileReportStore implements IReportStore {
 
   async saveReport(report: CitationReport): Promise<CitationReport> {
     this.ensureLegacyMigration();
-    const rows = await this.loadReports();
+    const rows = this.readReports();
 
     if (report.fingerprint) {
       const existingIndex = rows.findIndex((candidate) => (
@@ -179,20 +204,20 @@ class FileReportStore implements IReportStore {
           reviewEvents: existing.reviewEvents ?? [],
         };
         rows[existingIndex] = merged;
-        writeJsonlFile(REPORTS_FILE, rows);
+        this.writeReports(rows);
         return merged;
       }
     }
 
     const next = hydrateReport(report);
     rows.push(next);
-    writeJsonlFile(REPORTS_FILE, rows);
+    this.writeReports(rows);
     return next;
   }
 
   async loadReports(): Promise<CitationReport[]> {
     this.ensureLegacyMigration();
-    return readJsonlFile<CitationReport>(REPORTS_FILE).map(hydrateReport);
+    return this.readReports();
   }
 
   async getReportById(id: string): Promise<CitationReport | null> {
@@ -201,7 +226,7 @@ class FileReportStore implements IReportStore {
   }
 
   async updateReport(id: string, updates: Partial<CitationReport>): Promise<CitationReport | null> {
-    const rows = await this.loadReports();
+    const rows = this.readReports();
     const index = rows.findIndex((report) => report.id === id);
     if (index === -1) return null;
 
@@ -212,7 +237,7 @@ class FileReportStore implements IReportStore {
       reviewEvents: updates.reviewEvents ?? current.reviewEvents ?? [],
     });
     rows[index] = merged;
-    writeJsonlFile(REPORTS_FILE, rows);
+    this.writeReports(rows);
     return merged;
   }
 
@@ -223,7 +248,7 @@ class FileReportStore implements IReportStore {
     const remaining = rows.filter((report) => !idSet.has(report.id));
     const deletedCount = rows.length - remaining.length;
     if (deletedCount > 0) {
-      writeJsonlFile(REPORTS_FILE, remaining);
+      this.writeReports(remaining);
     }
     return deletedCount;
   }

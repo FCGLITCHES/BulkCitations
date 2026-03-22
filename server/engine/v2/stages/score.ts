@@ -34,9 +34,9 @@ const SUSPECTED_SPLIT_CODES = new Set([
   'oversized_chunk_suspected',
 ]);
 
-const DUPLICATE_AUTO_READY_THRESHOLD = 0.85;
-const CLEAN_UNRESOLVED_DUPLICATE_READY_THRESHOLD = 0.82;
 const CLEAN_UNRESOLVED_ACTIVE_READY_THRESHOLD = 0.83;
+const DUPLICATE_AUTO_READY_THRESHOLD = CLEAN_UNRESOLVED_ACTIVE_READY_THRESHOLD;
+const CLEAN_UNRESOLVED_DUPLICATE_READY_THRESHOLD = CLEAN_UNRESOLVED_ACTIVE_READY_THRESHOLD;
 const GENERIC_VENUE_PATTERN = /^(?:journal|conference|proceedings|book|report|website|site|web(?:page)?)(?:\s+(?:vol(?:ume)?|issue|no|number|pp?|pages?|article|\d+))*$/i;
 const CLEAN_UNRESOLVED_VALIDATION_CODES = new Set([
   'no_exact_external_match',
@@ -318,6 +318,12 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   const hasResolutionMiss = citation.resolution?.status === 'no_exact_match';
   const hasProviderError = citation.resolution?.status === 'provider_error';
   const hasProviderNoCoverage = citation.resolution?.status === 'provider_no_coverage';
+  const duplicatePenalty = citation.status === 'duplicate'
+    ? citation.duplicate?.confidencePenalty ?? 0
+    : 0;
+  const duplicateChangedFields = citation.status === 'duplicate'
+    ? citation.duplicate?.changedFields ?? []
+    : [];
 
   overall = Math.max(0, overall - (structuralIssues.severe * 0.18) - (structuralIssues.review * 0.04));
 
@@ -338,6 +344,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   if (citation.extraction?.method === 'hybrid') overall *= 0.95;
   if (citation.extraction?.fallbackUsed) overall = Math.max(0, overall - 0.04);
   if (citation.enrichment?.retractedFlag) overall = Math.min(overall, 0.4);
+  if (duplicatePenalty > 0) overall = Math.max(0, overall - duplicatePenalty);
 
   const missingOptional: string[] = [];
   for (const optionalField of ['doi', 'journal', 'volume', 'issue', 'pages', 'publisher', 'url'] as const) {
@@ -348,6 +355,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
 
   const flags: string[] = [];
   if (citation.status === 'duplicate') flags.push('duplicate');
+  if (duplicatePenalty > 0) flags.push('duplicate_fields_changed');
   if (citation.extraction?.fallbackUsed) flags.push('llm_extracted');
   if (citation.title.confidence < 0.5) flags.push('low_confidence_title');
   if (citation.authors.value.some((author) => Boolean(author.literal) && !isGroupAuthor(author.literal ?? ''))) {
@@ -418,8 +426,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
     ].includes(issue.code))
   );
 
-  const reviewNeeded = (citation.status === 'duplicate' && !readyByDuplicateConfidence && !readyByCleanUnresolvedResolution)
-    || hasAmbiguousMatch
+  const reviewNeeded = hasAmbiguousMatch
     || hasResolutionMiss
     || hasProviderError
     || hasProviderNoCoverage
@@ -437,7 +444,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
       ...(flags.includes('malformed_authors') ? ['Author parsing remains malformed.'] : []),
       ...(missingRequired.length > 0 ? [`Missing required fields: ${missingRequired.join(', ')}.`] : []),
       ...(flags.includes('protected_token_corruption') ? ['Protected title or venue tokens were corrupted.'] : []),
-      ...(hasConfirmedSplit ? ['Confirmed split contamination suggests the citation contains more than one reference or a truncated fragment.'] : []),
+      ...(hasConfirmedSplit ? ['Confirmed split contamination was detected and the citation likely needs cleanup.'] : []),
       ...(hasHardConflicts ? [`Verified external data conflicted with extracted fields: ${citation.resolution?.conflictFields.join(', ')}.`] : []),
     ];
   } else if (noErrorLevelIssues && (readyByResolution || readyByLocalOnly || readyByCleanUnresolvedResolution || readyByDuplicateConfidence)) {
@@ -460,7 +467,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   } else if (reviewNeeded) {
     bucket = 'worth_reviewing';
     bucketReasons = [
-      ...(citation.status === 'duplicate' ? ['Citation is part of a duplicate family.'] : []),
+      ...(duplicateChangedFields.length > 0 ? [`Duplicate merge changed: ${duplicateChangedFields.join(', ')}.`] : []),
       ...(hasAmbiguousMatch ? ['External resolution returned multiple equally strong candidates.'] : []),
       ...(hasResolutionMiss ? ['No exact external title match was accepted.'] : []),
       ...(hasProviderError ? ['External resolution encountered a provider error.'] : []),

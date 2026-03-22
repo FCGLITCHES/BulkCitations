@@ -13,6 +13,7 @@ const AUTHOR_CONTENT_LEAK_DOI_OR_URL_PATTERN = /\b10\.\d{4,9}\/\S+|https?:\/\/\S
 const AUTHOR_CONTENT_LEAK_YEAR_LOCATOR_PATTERN = /\b(?:19|20)\d{2}\b\s*[,;]\s*\d+(?:\([^)]+\))?\s*:\s*(?:[A-Za-z]?\d+|10\.)/i;
 const AUTHOR_CONTENT_LEAK_SOURCE_TAIL_PATTERN = /\.\s+[A-Z][^.]{2,}\.\s+(?:19|20)\d{2}\b/;
 const AUTHOR_CONTENT_LEAK_COLON_TITLE_PATTERN = /:\s+[^\d.]+(?:\s+[^\d.]+){3,}/;
+const PARSED_YEAR_PATTERN = /\b(?:19|20)\d{2}\b/g;
 
 export function looksLikeCompactVancouverAuthorString(value: string | null | undefined): boolean {
   const normalized = normalizeWhitespace(value ?? '');
@@ -328,11 +329,17 @@ export function sanitizeParsedReference(
   const articleNumber =
     normalizedArticleNumber
       ?? (classifiedPageLocator?.kind === 'article-number' ? classifiedPageLocator.value ?? undefined : undefined);
+  const normalizedYearValue = (() => {
+    const rawYear = normalizeWhitespace(parsed.year ?? '');
+    if (!rawYear) return undefined;
+    const matches = [...rawYear.matchAll(PARSED_YEAR_PATTERN)];
+    return matches.length > 0 ? matches[matches.length - 1]?.[0] : rawYear;
+  })();
 
   const sanitized: ParsedReference = {
     ...parsed,
     title: normalizeWhitespace(parsed.title ?? '') || undefined,
-    year: normalizeWhitespace(parsed.year ?? '') || undefined,
+    year: normalizedYearValue,
     journal: normalizeKnownContainerName(normalizeWhitespace(parsed.journal ?? '')) || undefined,
     volume: normalizeWhitespace(parsed.volume ?? '') || undefined,
     issue: normalizeWhitespace(parsed.issue ?? '') || undefined,

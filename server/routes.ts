@@ -161,12 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // this by default, while tests and internal callers can disable it for
       // deterministic local-only conversion.
       const shouldAttemptValidation = validatedData.enrichWithAuthority;
-      const envUseV2Engine = !/^(0|false|no|off)$/i.test(process.env.USE_V2_ENGINE ?? 'true');
-      const useV2Engine = validatedData.engineVersion === 'v2'
-        ? true
-        : validatedData.engineVersion === 'v1'
-          ? false
-          : envUseV2Engine;
+      const useV2Engine = validatedData.engineVersion !== 'v1';
 
       if (!useV2Engine) {
         const pipelineResult = await processReferences(incomingReferences, {

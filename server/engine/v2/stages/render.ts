@@ -17,7 +17,7 @@ import {
 
 let cslReady = false;
 const SPACE_BEFORE_PUNCT_RE = /\s+([,.;:])/g;
-const DUPLICATE_PUNCT_RE = /([,.;:]){2,}/g;
+const DUPLICATE_PUNCT_RE = /([,.;:])\1+/g;
 const EMPTY_PARENS_PUNCT_RE = /\(\s*[,.;:]\s*\)/g;
 const MULTI_SPACE_RE = /\s{2,}/g;
 

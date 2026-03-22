@@ -12,7 +12,6 @@ import type {
 } from '@shared/schema';
 import {
   addToStressTest,
-  appendReviewEvent,
   checkRateLimit,
   computeFingerprint,
   deleteReports,
@@ -85,6 +84,17 @@ function parsePatternExport(pattern?: ProposedPattern, generatedBy?: string) {
     return { error: validationError };
   }
   return { artifact: buildPatternExportArtifact(pattern, generatedBy) };
+}
+
+async function updateReportWithEvents(
+  report: CitationReport,
+  updates: Partial<CitationReport>,
+  events: NonNullable<CitationReport['reviewEvents']> = [],
+): Promise<CitationReport | null> {
+  return updateReport(report.id, {
+    ...updates,
+    reviewEvents: [...(report.reviewEvents ?? []), ...events],
+  });
 }
 
 router.post('/', async (req, res) => {
@@ -313,14 +323,12 @@ router.post('/:id/assign', async (req, res) => {
     if (!report) return res.status(404).json({ message: 'Report not found' });
 
     const assigneeName = actorName(req.body?.assigneeName, 'admin');
-    const updated = await updateReport(report.id, { assigneeName });
-    if (!updated) return res.status(404).json({ message: 'Report not found' });
-
     const event = createReviewEvent('assign', actorName(req.body?.actor, assigneeName), `Assigned to ${assigneeName}`, {
       assigneeName,
     });
-    const withEvent = await appendReviewEvent(report.id, event);
-    return res.json({ success: true, report: withEvent ?? updated });
+    const updated = await updateReportWithEvents(report, { assigneeName }, [event]);
+    if (!updated) return res.status(404).json({ message: 'Report not found' });
+    return res.json({ success: true, report: updated });
   } catch (error) {
     console.error('POST /api/reports/:id/assign error:', error instanceof Error ? error.message : String(error));
     return res.status(500).json({ message: 'Failed to assign report' });
@@ -337,7 +345,7 @@ router.post('/:id/comments', async (req, res) => {
     }
 
     const event = createReviewEvent('comment', actorName(req.body?.actor, 'admin'), message);
-    const updated = await appendReviewEvent(report.id, event);
+    const updated = await updateReportWithEvents(report, {}, [event]);
     return res.json({ success: true, report: updated });
   } catch (error) {
     console.error('POST /api/reports/:id/comments error:', error instanceof Error ? error.message : String(error));
@@ -371,22 +379,21 @@ router.post('/:id/accept', async (req, res) => {
       }
     }
 
-    const updated = await updateReport(report.id, {
+    const event = createReviewEvent(
+      'resolve',
+      verifiedBy,
+      'Accepted report',
+      { patternWritten },
+    );
+    const updated = await updateReportWithEvents(report, {
       status: 'accepted',
       resolvedAt: new Date().toISOString(),
       verifiedBy,
       fixType: (req.body?.fixType || report.fixType) as FixType | undefined,
       referenceType: req.body?.referenceType || report.referenceType,
       patternExport,
-    });
+    }, [event]);
     if (!updated) return res.status(404).json({ message: 'Report not found' });
-
-    const withEvent = await appendReviewEvent(updated.id, createReviewEvent(
-      'resolve',
-      verifiedBy,
-      'Accepted report',
-      { patternWritten },
-    ));
 
     if (report.originalText) {
       try { addToStressTest(report.originalText); } catch { /* non-fatal */ }
@@ -394,7 +401,7 @@ router.post('/:id/accept', async (req, res) => {
 
     return res.json({
       success: true,
-      report: withEvent ?? updated,
+      report: updated,
       patternWritten,
     });
   } catch (error) {
@@ -501,9 +508,6 @@ router.post('/:id/resolve', async (req, res) => {
     const savedGeneratedRegression = await saveGeneratedRegressionFixture(generatedRegression);
     baseUpdated.regressionFixtureId = savedGeneratedRegression.id;
 
-    const updated = await updateReport(report.id, baseUpdated);
-    if (!updated) return res.status(404).json({ message: 'Report not found' });
-
     const reviewEvents = [
       createReviewEvent('resolve', verifiedBy, 'Resolved report', {
         fixType: baseUpdated.fixType,
@@ -513,20 +517,18 @@ router.post('/:id/resolve', async (req, res) => {
       }),
       ...(truthId ? [createReviewEvent('truth_saved', verifiedBy, 'Saved approved truth', { truthId })] : []),
       ...(patternExport ? [createReviewEvent('pattern_exported', verifiedBy, 'Generated pattern export artifact', { filePath: patternExport.filePath, patternWritten })] : []),
-      [createReviewEvent(
+      createReviewEvent(
         'regression_generated',
         verifiedBy,
         savedGeneratedRegression.skipped ? 'Skipped generated regression fixture' : 'Generated regression fixture',
         savedGeneratedRegression.skipped
           ? { skipReason: savedGeneratedRegression.skipReason }
           : { regressionFixtureId: savedGeneratedRegression.id },
-      )],
-    ].flat();
+      ),
+    ];
 
-    let latest = updated;
-    for (const event of reviewEvents) {
-      latest = (await appendReviewEvent(report.id, event)) ?? latest;
-    }
+    const updated = await updateReportWithEvents(report, baseUpdated, reviewEvents);
+    if (!updated) return res.status(404).json({ message: 'Report not found' });
 
     if (report.originalText) {
       try { addToStressTest(report.originalText); } catch { /* non-fatal */ }
@@ -534,7 +536,7 @@ router.post('/:id/resolve', async (req, res) => {
 
     return res.json({
       success: true,
-      report: latest,
+      report: updated,
       patternWritten,
       generatedRegression: savedGeneratedRegression,
     });
@@ -550,21 +552,19 @@ router.post('/:id/reject', async (req, res) => {
     if (!report) return res.status(404).json({ message: 'Report not found' });
 
     const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : undefined;
-    const updated = await updateReport(report.id, {
+    const updated = await updateReportWithEvents(report, {
       status: 'rejected',
       resolvedAt: new Date().toISOString(),
       proposedStyleFix: reason ? `Rejected: ${reason}` : report.proposedStyleFix,
       resolutionTrace: buildResolutionTrace(report, actorName(req.body?.actor, 'admin'), reason),
-    });
-    if (!updated) return res.status(404).json({ message: 'Report not found' });
-
-    const withEvent = await appendReviewEvent(report.id, createReviewEvent(
+    }, [createReviewEvent(
       'reject',
       actorName(req.body?.actor, 'admin'),
       reason || 'Rejected report',
-    ));
+    )]);
+    if (!updated) return res.status(404).json({ message: 'Report not found' });
 
-    return res.json({ success: true, report: withEvent ?? updated });
+    return res.json({ success: true, report: updated });
   } catch (error) {
     console.error('POST /api/reports/:id/reject error:', error instanceof Error ? error.message : String(error));
     return res.status(500).json({ message: 'Failed to reject report' });
@@ -575,20 +575,18 @@ router.post('/:id/duplicate', async (req, res) => {
   try {
     const report = await getReportById(req.params.id);
     if (!report) return res.status(404).json({ message: 'Report not found' });
-    const updated = await updateReport(report.id, {
+    const updated = await updateReportWithEvents(report, {
       status: 'duplicate',
       resolvedAt: new Date().toISOString(),
       resolutionTrace: buildResolutionTrace(report, actorName(req.body?.actor, 'admin'), 'Marked as duplicate'),
-    });
-    if (!updated) return res.status(404).json({ message: 'Report not found' });
-
-    const withEvent = await appendReviewEvent(report.id, createReviewEvent(
+    }, [createReviewEvent(
       'duplicate',
       actorName(req.body?.actor, 'admin'),
       'Marked as duplicate',
-    ));
+    )]);
+    if (!updated) return res.status(404).json({ message: 'Report not found' });
 
-    return res.json({ success: true, report: withEvent ?? updated });
+    return res.json({ success: true, report: updated });
   } catch (error) {
     console.error('POST /api/reports/:id/duplicate error:', error instanceof Error ? error.message : String(error));
     return res.status(500).json({ message: 'Failed to mark as duplicate' });

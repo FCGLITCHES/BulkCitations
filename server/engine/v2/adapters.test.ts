@@ -254,6 +254,64 @@ describe('default extractor institutional heuristics', () => {
     expect(result.parsed.pages).toBe('1173-1182');
     expect(result.warnings).toContain('quoted-title-journal-locator-heuristic');
   });
+
+  it('extracts conference containers from quoted-title in-source references without folding venue text into authors', async () => {
+    const result = await extractor.extract(
+      'Aljohani, Mohammed, and Tanweer Alam. "An algorithm for accessing traffic database using wireless technologies." In Computational Intelligence and Computing Research (ICCIC), 2015 IEEE International Conference on, pp. 1-4. IEEE, 2015. DOI: https://doi.org/10.1109/iccic.2015.7435818',
+      'auto',
+      {},
+    );
+
+    expect(result.selectedBranch).toBe('in_source_heuristic_raw');
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.title).toBe('An algorithm for accessing traffic database using wireless technologies');
+    expect(result.parsed.conferenceTitle).toBe('2015 IEEE International Conference on Computational Intelligence and Computing Research (ICCIC)');
+    expect(result.parsed.publisher).toBe('IEEE');
+    expect(result.parsed.pages).toBe('1-4');
+    expect(result.parsed.year).toBe('2015');
+    expect(result.parsed.doi).toBe('10.1109/iccic.2015.7435818');
+    expect(result.canonicalAuthors).toMatchObject([
+      { last: 'Aljohani', first: 'Mohammed' },
+      { last: 'Alam', first: 'Tanweer' },
+    ]);
+  });
+
+  it('extracts chapter containers and publisher tails from quoted-title in-source references', async () => {
+    const result = await extractor.extract(
+      'Shapiro, Jonathan. "Genetic algorithms in machine learning." In Advanced Course on Arti- ficial Intelligence, pp. 146-168. Springer, Berlin, Heidelberg, 1999.',
+      'auto',
+      {},
+    );
+
+    expect(result.selectedBranch).toBe('in_source_heuristic_raw');
+    expect(result.referenceType).toBe('chapter');
+    expect(result.parsed.title).toBe('Genetic algorithms in machine learning');
+    expect(result.parsed.bookTitle).toBe('Advanced Course on Artificial Intelligence');
+    expect(result.parsed.publisher).toBe('Berlin, Heidelberg: Springer Berlin Heidelberg');
+    expect(result.parsed.placeOfPublication).toBe('Berlin, Heidelberg');
+    expect(result.parsed.pages).toBe('146-168');
+    expect(result.parsed.year).toBe('1999');
+    expect(result.canonicalAuthors).toMatchObject([
+      { last: 'Shapiro', first: 'Jonathan' },
+    ]);
+  });
+
+  it('normalizes extracted year fragments down to the publication year', async () => {
+    const result = await extractor.extract(
+      '[10] Tabassum M, Mathew K, A genetic algorithm analysis towards optimization solutions, International Journal of Digital Information and Wireless Communications (IJDIWC), 2014 Jan 1, 4(1), 124-42.',
+      'auto',
+      {},
+    );
+
+    expect(result.parsed.year).toBe('2014');
+    expect(result.parsed.authors).toEqual(['Tabassum M', 'Mathew K']);
+    expect(result.parsed.title).toBe('A genetic algorithm analysis towards optimization solutions');
+    expect(result.parsed.journal).toBe('International Journal of Digital Information and Wireless Communications (IJDIWC)');
+    expect(result.parsed.volume).toBe('4');
+    expect(result.parsed.issue).toBe('1');
+    expect(result.parsed.pages).toBe('124-42');
+    expect(result.warnings).toContain('compact-journal-tail-heuristic');
+  });
 });
 
 describe('default resolution provider', () => {

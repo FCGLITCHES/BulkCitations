@@ -522,6 +522,8 @@ export interface DuplicateMetadata {
   mergedFrom?: string[];
   clusterKey?: string;
   mergeReason?: string;
+  changedFields?: string[];
+  confidencePenalty?: number;
 }
 
 export interface EnrichmentMetadata {
@@ -622,7 +624,7 @@ export interface ExtractionMetadata {
   method: 'deterministic' | 'llm' | 'hybrid';
   fallbackUsed: boolean;
   extractorPath?: 'deterministic' | 'grobid' | 'llm' | 'hybrid';
-  selectedBranch?: 'deterministic_raw' | 'year_anchored_fallback_raw' | 'institutional_heuristic_raw' | 'hybrid';
+  selectedBranch?: 'deterministic_raw' | 'year_anchored_fallback_raw' | 'institutional_heuristic_raw' | 'in_source_heuristic_raw' | 'hybrid';
   selectionReason?: string;
   authorParserMode?: string;
   rejectedCandidates?: string[];

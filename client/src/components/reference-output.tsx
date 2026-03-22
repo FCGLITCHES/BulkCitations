@@ -398,7 +398,7 @@ function CitationRow({
     [citationText, diffAgainstText],
   );
   const isLongCitation = citationText.length > 150;
-  const confidenceBadge = refData.confidence ? (
+  const confidenceBadge = showDebug && refData.confidence ? (
     <ScholarPreview
       confidence={refData.confidence}
       authorityData={refData.authorityData}
@@ -420,13 +420,13 @@ function CitationRow({
         </Badge>
       )}
 
-      {showInputFormat && (
+      {showDebug && showInputFormat && (
         <Button variant="outline" size="sm" className="h-6 px-2 text-xs shrink-0">
           From {INPUT_STYLE_LABELS[refData.inputStyle] ?? refData.inputStyle}
         </Button>
       )}
 
-      {refData.styleDetectionFailed && (
+      {showDebug && refData.styleDetectionFailed && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -444,7 +444,7 @@ function CitationRow({
         </TooltipProvider>
       )}
 
-      {refData.assertionSummary && (
+      {showDebug && refData.assertionSummary && (
         <AssertionBadge summary={refData.assertionSummary} style={refData.outputStyle} />
       )}
     </>
@@ -760,7 +760,7 @@ export default function ReferenceOutput({
   convertedReferences,
   clusters = [],
   duplicateGroups = [],
-  engineVersion = "v1",
+  engineVersion = "v2",
   groupDuplicates = true,
   onError,
   isPro = false,
@@ -769,16 +769,16 @@ export default function ReferenceOutput({
   const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
   const [reportedIds, setReportedIds] = useState<Set<string>>(new Set());
   const [showDebug, setShowDebug] = useState(false);
-  const [showInputFormat, setShowInputFormat] = useState(true);
   const [showOriginalInput, setShowOriginalInput] = useState(false);
   const [allCopied, setAllCopied] = useState(false);
   const [showNumbered, setShowNumbered] = useState(false);
   const [keepItalics, setKeepItalics] = useState(false);
   const [hasShownDoiToast, setHasShownDoiToast] = useState(false);
   const [healthFilter, setHealthFilter] = useState<HealthState | "all">("all");
-  const [showStageDebug, setShowStageDebug] = useState(false);
   const [isScrollPastThreshold, setIsScrollPastThreshold] = useState(false);
   const [selectedDuplicateOverrides, setSelectedDuplicateOverrides] = useState<Record<string, string>>({});
+  const showInputFormat = showDebug;
+  const showStageDebug = false;
 
   useEffect(() => {
     const onScroll = () => setIsScrollPastThreshold(window.scrollY > SCROLL_THRESHOLD);
@@ -1231,22 +1231,11 @@ export default function ReferenceOutput({
             <input
               type="checkbox"
               checked={showDebug}
-              onChange={(e) => setShowDebug(e.target.checked)}
+            onChange={(e) => setShowDebug(e.target.checked)}
               className="rounded"
             />
-            Show parsing details
+            Advanced details
           </label>
-          <Button
-            variant={showInputFormat ? "default" : "outline"}
-            size="sm"
-            className="text-xs sm:text-sm"
-            onClick={() => setShowInputFormat((prev) => !prev)}
-          >
-            {showInputFormat ? "Hide detected source style" : "Show detected source style"}
-          </Button>
-          <Badge variant="outline" className="text-xs">
-            Engine {engineVersion.toUpperCase()}
-          </Badge>
           <Button
             variant={showOriginalInput ? "default" : "outline"}
             size="sm"
@@ -1254,14 +1243,6 @@ export default function ReferenceOutput({
             onClick={() => setShowOriginalInput((prev) => !prev)}
           >
             {showOriginalInput ? "Hide original input" : "Show original input for all"}
-          </Button>
-          <Button
-            variant={showStageDebug ? "default" : "outline"}
-            size="sm"
-            className="text-xs sm:text-sm"
-            onClick={() => setShowStageDebug((prev) => !prev)}
-          >
-            {showStageDebug ? "Hide review hotspots" : "Show review hotspots"}
           </Button>
         </div>
       </div>

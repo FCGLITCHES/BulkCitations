@@ -59,6 +59,77 @@ function normalizedPages(citation: CanonicalCitation): string {
     .toLowerCase();
 }
 
+const DUPLICATE_FIELD_PENALTIES: Record<string, number> = {
+  authors: 0.02,
+  title: 0.02,
+  year: 0.02,
+  journal: 0.02,
+  conferenceTitle: 0.02,
+  bookTitle: 0.02,
+  referenceType: 0.02,
+  publisher: 0.015,
+  institution: 0.015,
+  volume: 0.01,
+  issue: 0.01,
+  pages: 0.01,
+  doi: 0.01,
+  url: 0.01,
+  edition: 0.01,
+  editor: 0.01,
+};
+
+function normalizedScalarValue(value: string | number | null | undefined): string {
+  return normalizeWhitespace(String(value ?? ''))
+    .toLowerCase()
+    .replace(/[–—]/g, '-');
+}
+
+function normalizedAuthorsValue(citation: CanonicalCitation): string {
+  return citation.authors.value
+    .map((author) => normalizeWhitespace([
+      author.literal ?? '',
+      author.last,
+      author.first ?? '',
+      author.initials ?? '',
+    ].join('|')).toLowerCase())
+    .filter(Boolean)
+    .join('||');
+}
+
+function changedDuplicateFields(original: CanonicalCitation, hydrated: CanonicalCitation): string[] {
+  const changed: string[] = [];
+  const comparisons: Array<[string, string, string]> = [
+    ['authors', normalizedAuthorsValue(original), normalizedAuthorsValue(hydrated)],
+    ['title', normalizedScalarValue(original.title.value), normalizedScalarValue(hydrated.title.value)],
+    ['year', normalizedScalarValue(original.year.value), normalizedScalarValue(hydrated.year.value)],
+    ['journal', normalizedScalarValue(original.journal.value), normalizedScalarValue(hydrated.journal.value)],
+    ['conferenceTitle', normalizedScalarValue(original.conferenceTitle.value), normalizedScalarValue(hydrated.conferenceTitle.value)],
+    ['bookTitle', normalizedScalarValue(original.bookTitle.value), normalizedScalarValue(hydrated.bookTitle.value)],
+    ['publisher', normalizedScalarValue(original.publisher.value), normalizedScalarValue(hydrated.publisher.value)],
+    ['institution', normalizedScalarValue(original.institution.value), normalizedScalarValue(hydrated.institution.value)],
+    ['volume', normalizedScalarValue(original.volume.value), normalizedScalarValue(hydrated.volume.value)],
+    ['issue', normalizedScalarValue(original.issue.value), normalizedScalarValue(hydrated.issue.value)],
+    ['pages', normalizedScalarValue(original.pages.value), normalizedScalarValue(hydrated.pages.value)],
+    ['doi', normalizedScalarValue(original.doi.value), normalizedScalarValue(hydrated.doi.value)],
+    ['url', normalizedScalarValue(original.url.value), normalizedScalarValue(hydrated.url.value)],
+    ['edition', normalizedScalarValue(original.edition.value), normalizedScalarValue(hydrated.edition.value)],
+    ['editor', normalizedScalarValue(original.editor.value), normalizedScalarValue(hydrated.editor.value)],
+    ['referenceType', normalizedScalarValue(original.referenceType), normalizedScalarValue(hydrated.referenceType)],
+  ];
+
+  for (const [field, left, right] of comparisons) {
+    if (left !== right) changed.push(field);
+  }
+
+  return changed;
+}
+
+function duplicateConfidencePenalty(changedFields: string[]): number | undefined {
+  if (changedFields.length === 0) return undefined;
+  const penalty = changedFields.reduce((sum, field) => sum + (DUPLICATE_FIELD_PENALTIES[field] ?? 0.01), 0);
+  return Number(Math.min(0.15, penalty).toFixed(2));
+}
+
 function sharedAuthorSignature(left: CanonicalCitation, right: CanonicalCitation): boolean {
   const leftAuthors = left.authors.value.map((author) => normalizeWhitespace(author.last).toLowerCase()).filter(Boolean);
   const rightAuthors = right.authors.value.map((author) => normalizeWhitespace(author.last).toLowerCase()).filter(Boolean);
@@ -530,6 +601,8 @@ export function createDedupStage(): V2Stage {
             timeoutMs: getStageIsolationTimeoutMs('dedup', getStageRuntimeTimeoutMs('dedup', context.stageConfig)),
             run: async (citation) => {
               const hydrated = await hydrateDuplicateCitation(citation, mergedCitation, group.method);
+              const changedFields = changedDuplicateFields(citation, hydrated);
+              const confidencePenalty = duplicateConfidencePenalty(changedFields);
               return addCitationStageLog(
                 {
                   ...hydrated,
@@ -540,11 +613,14 @@ export function createDedupStage(): V2Stage {
                     method: group.method,
                     mergedFrom: [citation.id, mergedCitation.id],
                     mergeReason: citation.id === base.id ? 'base_promoted_to_merged_record' : 'duplicate_group_member',
+                    changedFields,
+                    confidencePenalty,
                   },
                 },
                 createStageDiagnostic('dedup', 'warning', 'Citation marked as duplicate; merged record created.', {
                   mergedId: mergedCitation.id,
                   method: group.method,
+                  changedFields,
                 }),
               );
             },

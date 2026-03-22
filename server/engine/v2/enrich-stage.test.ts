@@ -121,6 +121,52 @@ describe('strict enrich stage', () => {
     expect(result.citations[0]?.resolution?.rejectedReasons).toContain('local_only_author_optional_reference');
   });
 
+  it('skips provider calls for strong DOI-backed local parses in larger synchronous batches', async () => {
+    const baseCitation = makeCitation({
+      volume: createFieldValue('40', 'extracted', 0.93, 'extract'),
+      issue: createFieldValue('12', 'extracted', 0.92, 'extract'),
+      pages: createFieldValue('3412-3424', 'extracted', 0.92, 'extract'),
+      doi: createFieldValue('10.1109/TMI.2021.3098765', 'extracted', 0.98, 'extract'),
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    });
+    const provider = makeProvider({
+      lookupByDoi: vi.fn(async () => [{
+        provider: 'crossref',
+        title: citation.title.value ?? undefined,
+        authors: ['Smith, J.', 'Doe, A.', 'Muller, T.'],
+        year: 2021,
+        venue: 'IEEE Transactions on Medical Imaging',
+        volume: '40',
+        issue: '12',
+        pages: '3412-3424',
+        doi: '10.1109/TMI.2021.3098765',
+        url: 'https://doi.org/10.1109/TMI.2021.3098765',
+        sourceType: 'journal-article',
+      }]),
+    });
+
+    const citations = Array.from({ length: 8 }, (_, index) => ({
+      ...baseCitation,
+      id: `strong-local-doi-${index + 1}`,
+      raw: `${baseCitation.raw} Batch ${index + 1}.`,
+    }));
+    const result = await createEnrichStage(provider, cache as any).run(makeContext(citations));
+
+    expect(provider.lookupByDoi).not.toHaveBeenCalled();
+    for (const citation of result.citations) {
+      expect(citation?.resolution).toBeUndefined();
+      expect(citation?.enrichment?.status).toBe('skipped');
+      expect(citation?.enrichment?.raw).toEqual(
+        expect.objectContaining({
+          strongLocalSkipReason: 'strong_local_doi_skip',
+        }),
+      );
+    }
+  });
+
   it('accepts an exact external title match and backfills missing fields', async () => {
     const citation = makeCitation();
     const provider = makeProvider({

@@ -3,7 +3,6 @@ import type { ExtractorAdapter, V2Stage } from '../contracts.js';
 import { getOpenAiExtractTimeoutMs } from '../llmConfig.js';
 import {
   getStageRuntimeTimeoutMs,
-  runStageTasksSequentiallyWithIsolation,
   runStageTasksWithIsolation,
 } from '../stageIsolation.js';
 import {
@@ -24,7 +23,12 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
       const verboseDebug = isVerboseDebugEnabled();
       const fallbacksUsed = [...context.fallbacksUsed];
       const grobidEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_GROBID_EXTRACTOR ?? '');
-      const defaultExtractConcurrency = grobidEnabled ? 1 : 6;
+      const llmEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_LLM_EXTRACTOR ?? '1') && Boolean(process.env.OPENAI_API_KEY);
+      const defaultExtractConcurrency = grobidEnabled
+        ? 1
+        : llmEnabled
+          ? 6
+          : 12;
       const configuredExtractConcurrency = Number.parseInt(
         process.env.V2_EXTRACT_CONCURRENCY ?? String(defaultExtractConcurrency),
         10,
@@ -32,14 +36,12 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
       const effectiveExtractConcurrency = Number.isFinite(configuredExtractConcurrency) && configuredExtractConcurrency > 0
         ? configuredExtractConcurrency
         : defaultExtractConcurrency;
-      const llmEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_LLM_EXTRACTOR ?? '1') && Boolean(process.env.OPENAI_API_KEY);
       const extractTimeoutMs = getStageRuntimeTimeoutMs('extract', context.stageConfig);
       const itemTimeoutMs = Math.max(
         extractTimeoutMs,
         grobidEnabled ? 4_000 : extractTimeoutMs,
         llmEnabled ? getOpenAiExtractTimeoutMs() + 1_000 : extractTimeoutMs,
       );
-      const useDeterministicFastPath = !grobidEnabled && !llmEnabled;
       const runCitation = async (citation: CanonicalCitation, citationIndex: number) => {
         const effectiveStyle = citation.detectedStyle.value ?? context.request.inputStyle;
         const workingChunk = context.workingChunkByCitationId[citation.id] ?? citation.raw;
@@ -48,6 +50,7 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           inputProfile: context.inputProfile,
           detectionConfidence: citation.detectedStyle.confidence,
           batchSize: context.inputProfile?.estimatedCount ?? context.citations.length,
+          executionMode: context.executionMode,
           splitArtifact,
           llmBudget: context.llmBudget,
           debugEnabled: context.debugEnabled,
@@ -175,14 +178,7 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           ),
         );
       };
-      const isolation = useDeterministicFastPath
-        ? await runStageTasksSequentiallyWithIsolation({
-          stageId: 'extract',
-          items: context.citations,
-          run: runCitation,
-          recover: recoverCitation,
-        })
-        : await runStageTasksWithIsolation({
+      const isolation = await runStageTasksWithIsolation({
         stageId: 'extract',
         items: context.citations,
         concurrency: effectiveExtractConcurrency,

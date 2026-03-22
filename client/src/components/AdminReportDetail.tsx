@@ -33,10 +33,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import type { CitationReport, FixType } from "@shared/schema";
 import { adminFetch } from "@/lib/admin-api";
+import { removeReportsFromGroupedCaches, updateGroupedReportCaches } from "@/lib/admin-report-cache";
 
 type EditableFieldKey =
   | "authors"
@@ -110,6 +112,7 @@ export default function AdminReportDetail() {
   const { id } = params || {};
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const reportQueryKey = [`/api/reports/${id}`];
 
   const [fixType, setFixType] = useState<FixType>("renderer-fix");
   const [targetReferenceType, setTargetReferenceType] = useState<string>("");
@@ -126,10 +129,11 @@ export default function AdminReportDetail() {
   const [resolvedByVersion, setResolvedByVersion] = useState("");
 
   const { data: report, isLoading } = useQuery<CitationReport>({
-    queryKey: [`/api/reports/${id}`],
+    queryKey: reportQueryKey,
     queryFn: async () => {
       return adminFetch<CitationReport>(`/api/reports/${id}`);
     },
+    enabled: Boolean(id),
   });
 
   useEffect(() => {
@@ -164,10 +168,9 @@ export default function AdminReportDetail() {
       });
     },
     onSuccess: (data) => {
-      queryClient.setQueryData([`/api/reports/${id}`], data.report);
+      queryClient.setQueryData(reportQueryKey, data.report);
+      updateGroupedReportCaches(queryClient, data.report, report);
       toast({ title: "Assignment updated" });
-      queryClient.invalidateQueries({ queryKey: [`/api/reports/${id}`] });
-      queryClient.invalidateQueries({ queryKey: ["/api/reports/grouped"] });
     },
   });
 
@@ -183,25 +186,25 @@ export default function AdminReportDetail() {
       });
     },
     onSuccess: (data) => {
-      queryClient.setQueryData([`/api/reports/${id}`], data.report);
+      queryClient.setQueryData(reportQueryKey, data.report);
+      updateGroupedReportCaches(queryClient, data.report, report);
       setNewComment("");
       toast({ title: "Comment added" });
-      queryClient.invalidateQueries({ queryKey: [`/api/reports/${id}`] });
-      queryClient.invalidateQueries({ queryKey: ["/api/reports/grouped"] });
     },
   });
 
   const rejectMutation = useMutation({
     mutationFn: async (reason: string) => {
-      return adminFetch(`/api/reports/${id}/reject`, {
+      return adminFetch<{ report: CitationReport }>(`/api/reports/${id}/reject`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason })
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.setQueryData(reportQueryKey, data.report);
+      updateGroupedReportCaches(queryClient, data.report, report);
       toast({ title: "Report rejected" });
-      queryClient.invalidateQueries({ queryKey: [`/api/reports/${id}`] });
     }
   });
 
@@ -213,8 +216,9 @@ export default function AdminReportDetail() {
       });
     },
     onSuccess: () => {
+      queryClient.removeQueries({ queryKey: reportQueryKey, exact: true });
+      removeReportsFromGroupedCaches(queryClient, id ? [id] : []);
       toast({ title: "Report deleted" });
-      queryClient.invalidateQueries({ queryKey: ["/api/reports/grouped"] });
       setLocation("/admin/reports");
     },
     onError: (err: Error) => {
@@ -285,10 +289,9 @@ export default function AdminReportDetail() {
         title = "Marked as Duplicate";
       }
 
-      queryClient.setQueryData([`/api/reports/${id}`], data.report);
+      queryClient.setQueryData(reportQueryKey, data.report);
+      updateGroupedReportCaches(queryClient, data.report, report);
       toast({ title, description });
-      queryClient.invalidateQueries({ queryKey: [`/api/reports/${id}`] });
-      queryClient.invalidateQueries({ queryKey: ["/api/reports/grouped"] });
     },
     onError: (err: Error) => {
       toast({ title: "Resolution Failed", description: err.message, variant: "destructive" });
@@ -441,47 +444,57 @@ export default function AdminReportDetail() {
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Resolution Snapshot</CardTitle>
-              <CardDescription>Compare the original engine understanding, approved fields, and final approved output side by side.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Original engine output</Label>
-                <div className="rounded-md border border-border/60 bg-muted/20 p-3 text-xs space-y-2">
-                  <div><span className="text-muted-foreground">Type:</span> {report.originalEngineOutput?.referenceType ?? report.referenceType ?? "N/A"}</div>
-                  <div><span className="text-muted-foreground">Confidence:</span> {report.originalEngineOutput?.confidence ?? report.confidence ?? "N/A"}</div>
-                  <div className="break-words font-mono text-[11px]">{report.originalEngineOutput?.convertedText ?? report.convertedText}</div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Approved fields</Label>
-                <div className="rounded-md border border-border/60 bg-muted/20 p-3 text-xs space-y-2">
-                  {Object.entries(report.correctedFields ?? {}).length === 0 ? (
-                    <p className="text-muted-foreground">No corrected fields stored yet.</p>
-                  ) : (
-                    Object.entries(report.correctedFields ?? {}).map(([field, value]) => (
-                      <div key={field} className="grid grid-cols-[110px,1fr] gap-2">
-                        <span className="font-medium capitalize text-muted-foreground">{field}</span>
-                        <span className="break-words">
-                          {Array.isArray(value)
-                            ? value.map((entry) => ("literal" in entry && entry.literal ? entry.literal : "first" in entry && entry.first ? `${entry.last}, ${entry.first}` : "last" in entry ? entry.last : String(entry))).join("; ")
-                            : value == null
-                              ? "null"
-                              : String(value)}
-                        </span>
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="resolution-snapshot" className="border-b-0">
+                <CardHeader className="pb-0">
+                  <AccordionTrigger className="py-0 hover:no-underline">
+                    <div className="text-left">
+                      <CardTitle className="text-lg">Resolution Snapshot</CardTitle>
+                      <CardDescription>Open this only when you need the full before-and-after audit trail.</CardDescription>
+                    </div>
+                  </AccordionTrigger>
+                </CardHeader>
+                <AccordionContent>
+                  <CardContent className="grid grid-cols-1 xl:grid-cols-3 gap-4 pt-4">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Original engine output</Label>
+                      <div className="rounded-md border border-border/60 bg-muted/20 p-3 text-xs space-y-2">
+                        <div><span className="text-muted-foreground">Type:</span> {report.originalEngineOutput?.referenceType ?? report.referenceType ?? "N/A"}</div>
+                        <div><span className="text-muted-foreground">Confidence:</span> {report.originalEngineOutput?.confidence ?? report.confidence ?? "N/A"}</div>
+                        <div className="break-words font-mono text-[11px]">{report.originalEngineOutput?.convertedText ?? report.convertedText}</div>
                       </div>
-                    ))
-                  )}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Final approved output</Label>
-                <div className="rounded-md border border-emerald-200/50 bg-emerald-50/10 p-3 text-xs leading-6">
-                  {report.finalApprovedOutput || proposedStyleFix || report.proposedStyleFix || "No final approved output stored yet."}
-                </div>
-              </div>
-            </CardContent>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Approved fields</Label>
+                      <div className="rounded-md border border-border/60 bg-muted/20 p-3 text-xs space-y-2">
+                        {Object.entries(report.correctedFields ?? {}).length === 0 ? (
+                          <p className="text-muted-foreground">No corrected fields stored yet.</p>
+                        ) : (
+                          Object.entries(report.correctedFields ?? {}).map(([field, value]) => (
+                            <div key={field} className="grid grid-cols-[110px,1fr] gap-2">
+                              <span className="font-medium capitalize text-muted-foreground">{field}</span>
+                              <span className="break-words">
+                                {Array.isArray(value)
+                                  ? value.map((entry) => ("literal" in entry && entry.literal ? entry.literal : "first" in entry && entry.first ? `${entry.last}, ${entry.first}` : "last" in entry ? entry.last : String(entry))).join("; ")
+                                  : value == null
+                                    ? "null"
+                                    : String(value)}
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Final approved output</Label>
+                      <div className="rounded-md border border-emerald-200/50 bg-emerald-50/10 p-3 text-xs leading-6">
+                        {report.finalApprovedOutput || proposedStyleFix || report.proposedStyleFix || "No final approved output stored yet."}
+                      </div>
+                    </div>
+                  </CardContent>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </Card>
         </div>
 
@@ -491,56 +504,45 @@ export default function AdminReportDetail() {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <ArrowRightLeft className="h-4 w-4 text-blue-500" />
-                Workflow & Provenance
+                Reviewer Notes
               </CardTitle>
               <CardDescription>
-                Review stage blame, assign ownership, and keep a visible timeline without opening debug payloads.
+                Keep the active review lightweight. The deeper provenance and timeline stay tucked into advanced context.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-4 space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Likely failing stage</p>
-                    <div className="mt-1 flex items-center gap-2">
-                      <Badge variant={report.likelyStageBlame && report.likelyStageBlame.confidence >= 0.8 ? "default" : report.likelyStageBlame && report.likelyStageBlame.confidence >= 0.5 ? "secondary" : "outline"}>
-                        {report.likelyStageBlame?.likelyStage ?? "unknown"}
-                      </Badge>
-                      <span className="text-sm font-medium">
-                        {report.likelyStageBlame ? `${Math.round(report.likelyStageBlame.confidence * 100)}% confidence` : "No stage blame captured"}
-                      </span>
-                    </div>
-                  </div>
-                  {report.engineSnapshot?.truthProvenance?.truthApplied && (
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Quick status</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Badge variant={report.likelyStageBlame && report.likelyStageBlame.confidence >= 0.8 ? "default" : report.likelyStageBlame && report.likelyStageBlame.confidence >= 0.5 ? "secondary" : "outline"}>
+                    {report.likelyStageBlame?.likelyStage ?? "unknown stage"}
+                  </Badge>
+                  <Badge variant="outline" className="text-[10px]">
+                    {report.likelyStageBlame ? `${Math.round(report.likelyStageBlame.confidence * 100)}% confidence` : "No stage blame"}
+                  </Badge>
+                  {report.assigneeName ? (
+                    <Badge variant="secondary" className="text-[10px]">
+                      <GitBranch className="mr-1 h-3 w-3" />
+                      {report.assigneeName}
+                    </Badge>
+                  ) : (
                     <Badge variant="outline" className="text-[10px]">
-                      Truth applied
+                      Unassigned
+                    </Badge>
+                  )}
+                  {report.truthId && (
+                    <Badge variant="outline" className="text-[10px]">
+                      <ShieldCheck className="mr-1 h-3 w-3" />
+                      Truth linked
+                    </Badge>
+                  )}
+                  {report.regressionFixtureId && (
+                    <Badge variant="outline" className="text-[10px]">
+                      <AlertCircle className="mr-1 h-3 w-3" />
+                      Regression saved
                     </Badge>
                   )}
                 </div>
-                {!!report.likelyStageBlame?.evidence?.length && (
-                  <div className="space-y-1">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Evidence</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {report.likelyStageBlame.evidence.map((entry) => (
-                        <Badge key={entry} variant="outline" className="text-[10px]">
-                          {entry}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {!!report.likelyStageBlame?.alternatives?.length && (
-                  <div className="space-y-1">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Alternatives</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {report.likelyStageBlame.alternatives.map((alternative) => (
-                        <Badge key={`${alternative.stage}-${alternative.confidence}`} variant="outline" className="text-[10px]">
-                          {alternative.stage} {Math.round(alternative.confidence * 100)}%
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="grid grid-cols-1 gap-3">
@@ -613,80 +615,134 @@ export default function AdminReportDetail() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Truth</p>
-                  <div className="mt-2 text-xs">
-                    {report.truthId ? (
-                      <div className="space-y-1">
-                        <p className="font-medium">Truth linked</p>
-                        <p className="font-mono break-all text-muted-foreground">{report.truthId}</p>
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground">No truth entry linked yet.</p>
-                    )}
-                  </div>
-                </div>
-                <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Pattern export</p>
-                  <div className="mt-2 text-xs">
-                    {report.patternExport ? (
-                      <div className="space-y-2">
-                        <p className="font-mono break-all text-muted-foreground">{report.patternExport.filePath}</p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="h-7 text-xs"
-                          onClick={() => navigator.clipboard.writeText(report.patternExport?.content ?? "")}
-                        >
-                          <CopyCheck className="mr-1.5 h-3.5 w-3.5" />
-                          Copy snippet
-                        </Button>
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground">No pattern export generated.</p>
-                    )}
-                  </div>
-                </div>
-                <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Regression fixture</p>
-                  <div className="mt-2 text-xs">
-                    {report.regressionFixtureId ? (
-                      <div className="space-y-1">
-                        <p className="font-medium">Generated</p>
-                        <p className="font-mono break-all text-muted-foreground">{report.regressionFixtureId}</p>
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground">No generated fixture linked yet.</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-[10px] uppercase text-muted-foreground inline-flex items-center gap-1.5">
-                  Review timeline
-                  <Clock3 className="h-3.5 w-3.5" />
-                </Label>
-                <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-border/60 bg-muted/10 p-3">
-                  {(report.reviewEvents ?? []).length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No review events recorded yet.</p>
-                  ) : (
-                    (report.reviewEvents ?? []).map((event) => (
-                      <div key={event.id} className="rounded border border-border/60 bg-background/80 p-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-[10px] uppercase">{event.type}</Badge>
-                            <span className="text-xs font-medium">{event.actor}</span>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="advanced-review-context" className="rounded-lg border border-border/60 px-4">
+                  <AccordionTrigger className="py-3 text-sm font-medium hover:no-underline">
+                    Advanced context
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-4 pb-1">
+                    <div className="rounded-lg border border-border/60 bg-muted/20 p-4 space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Likely failing stage</p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <Badge variant={report.likelyStageBlame && report.likelyStageBlame.confidence >= 0.8 ? "default" : report.likelyStageBlame && report.likelyStageBlame.confidence >= 0.5 ? "secondary" : "outline"}>
+                              {report.likelyStageBlame?.likelyStage ?? "unknown"}
+                            </Badge>
+                            <span className="text-sm font-medium">
+                              {report.likelyStageBlame ? `${Math.round(report.likelyStageBlame.confidence * 100)}% confidence` : "No stage blame captured"}
+                            </span>
                           </div>
-                          <span className="text-[10px] text-muted-foreground">{new Date(event.createdAt).toLocaleString()}</span>
                         </div>
-                        {event.message && <p className="mt-2 text-xs leading-5">{event.message}</p>}
+                        {report.engineSnapshot?.truthProvenance?.truthApplied && (
+                          <Badge variant="outline" className="text-[10px]">
+                            Truth applied
+                          </Badge>
+                        )}
                       </div>
-                    ))
-                  )}
-                </div>
-              </div>
+                      {!!report.likelyStageBlame?.evidence?.length && (
+                        <div className="space-y-1">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Evidence</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {report.likelyStageBlame.evidence.map((entry) => (
+                              <Badge key={entry} variant="outline" className="text-[10px]">
+                                {entry}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {!!report.likelyStageBlame?.alternatives?.length && (
+                        <div className="space-y-1">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Alternatives</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {report.likelyStageBlame.alternatives.map((alternative) => (
+                              <Badge key={`${alternative.stage}-${alternative.confidence}`} variant="outline" className="text-[10px]">
+                                {alternative.stage} {Math.round(alternative.confidence * 100)}%
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                      <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Truth</p>
+                        <div className="mt-2 text-xs">
+                          {report.truthId ? (
+                            <div className="space-y-1">
+                              <p className="font-medium">Truth linked</p>
+                              <p className="font-mono break-all text-muted-foreground">{report.truthId}</p>
+                            </div>
+                          ) : (
+                            <p className="text-muted-foreground">No truth entry linked yet.</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Pattern export</p>
+                        <div className="mt-2 text-xs">
+                          {report.patternExport ? (
+                            <div className="space-y-2">
+                              <p className="font-mono break-all text-muted-foreground">{report.patternExport.filePath}</p>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="h-7 text-xs"
+                                onClick={() => navigator.clipboard.writeText(report.patternExport?.content ?? "")}
+                              >
+                                <CopyCheck className="mr-1.5 h-3.5 w-3.5" />
+                                Copy snippet
+                              </Button>
+                            </div>
+                          ) : (
+                            <p className="text-muted-foreground">No pattern export generated.</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Regression fixture</p>
+                        <div className="mt-2 text-xs">
+                          {report.regressionFixtureId ? (
+                            <div className="space-y-1">
+                              <p className="font-medium">Generated</p>
+                              <p className="font-mono break-all text-muted-foreground">{report.regressionFixtureId}</p>
+                            </div>
+                          ) : (
+                            <p className="text-muted-foreground">No generated fixture linked yet.</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase text-muted-foreground inline-flex items-center gap-1.5">
+                        Review timeline
+                        <Clock3 className="h-3.5 w-3.5" />
+                      </Label>
+                      <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-border/60 bg-muted/10 p-3">
+                        {(report.reviewEvents ?? []).length === 0 ? (
+                          <p className="text-xs text-muted-foreground">No review events recorded yet.</p>
+                        ) : (
+                          (report.reviewEvents ?? []).map((event) => (
+                            <div key={event.id} className="rounded border border-border/60 bg-background/80 p-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-[10px] uppercase">{event.type}</Badge>
+                                  <span className="text-xs font-medium">{event.actor}</span>
+                                </div>
+                                <span className="text-[10px] text-muted-foreground">{new Date(event.createdAt).toLocaleString()}</span>
+                              </div>
+                              {event.message && <p className="mt-2 text-xs leading-5">{event.message}</p>}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </CardContent>
           </Card>
 

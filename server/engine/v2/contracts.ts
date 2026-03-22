@@ -94,6 +94,7 @@ export interface ExtractorAdapter {
     inputProfile?: InputProfile;
     detectionConfidence?: number;
     batchSize?: number;
+    executionMode?: 'sync' | 'async';
     splitArtifact?: V2SplitArtifact;
     llmBudget?: V2LlmBudget;
     debugEnabled?: boolean;
@@ -120,7 +121,7 @@ export interface ExtractorAdapter {
     method: 'deterministic' | 'llm' | 'hybrid';
     fallbackUsed: boolean;
     extractorPath?: 'deterministic' | 'grobid' | 'llm' | 'hybrid';
-    selectedBranch?: 'deterministic_raw' | 'year_anchored_fallback_raw' | 'institutional_heuristic_raw' | 'hybrid';
+    selectedBranch?: 'deterministic_raw' | 'year_anchored_fallback_raw' | 'institutional_heuristic_raw' | 'in_source_heuristic_raw' | 'hybrid';
     selectionReason?: string;
     canonicalAuthors?: CanonicalAuthor[];
     authorParserMode?: string;

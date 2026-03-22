@@ -126,6 +126,37 @@ describe('v2 pipeline', () => {
     expect(response.debug?.citations[0]?.stages.extract).toBeTruthy();
   });
 
+  it('renders conference and chapter container heuristics without dropping the recovered venue context', async () => {
+    const { response } = await processV2Conversion({
+      sourceType: 'text',
+      content: [
+        'Aljohani, Mohammed, and Tanweer Alam. "An algorithm for accessing traffic database using wireless technologies." In Computational Intelligence and Computing Research (ICCIC), 2015 IEEE International Conference on, pp. 1-4. IEEE, 2015. DOI: https://doi.org/10.1109/iccic.2015.7435818',
+        'Shapiro, Jonathan. "Genetic algorithms in machine learning." In Advanced Course on Arti- ficial Intelligence, pp. 146-168. Springer, Berlin, Heidelberg, 1999.',
+        '[10] Tabassum M, Mathew K, A genetic algorithm analysis towards optimization solutions, International Journal of Digital Information and Wireless Communications (IJDIWC), 2014 Jan 1, 4(1), 124-42.',
+      ].join('\n\n'),
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: false,
+      dedup: false,
+      group: false,
+      debug: false,
+    });
+
+    const conference = response.citations[0];
+    expect(conference.rendered?.formatted).toContain('Aljohani, M., & Alam, T. (2015).');
+    expect(conference.rendered?.formatted).toContain('In 2015 IEEE International Conference on Computational Intelligence and Computing Research (ICCIC)');
+    expect(conference.rendered?.formatted).toContain('(pp. 1-4)');
+    expect(conference.rendered?.formatted).toContain('IEEE.');
+
+    const chapter = response.citations[1];
+    expect(chapter.rendered?.formatted).toContain('In Advanced Course on Artificial Intelligence (pp. 146-168)');
+    expect(chapter.rendered?.formatted).toContain('Berlin, Heidelberg: Springer Berlin Heidelberg.');
+
+    const compactJournal = response.citations[2];
+    expect(compactJournal.rendered?.formatted).toContain('International Journal of Digital Information and Wireless Communications (IJDIWC)');
+    expect(compactJournal.rendered?.formatted).not.toContain('Jan 1');
+  });
+
   it('deduplicates only the true mixed-format duplicate pair in a broader mixed-style citation set', async () => {
     const { response } = await processV2Conversion({
       sourceType: 'text',
@@ -230,7 +261,7 @@ describe('v2 pipeline', () => {
     });
 
     expect(authorityLookupCalls).toHaveLength(0);
-    expect(response.citations[0]?.enrichment?.sourceUsed).toBe('unverifiable');
+    expect(response.citations[0]?.enrichment?.sourceUsed).toBe('skipped');
   });
 
   it('isolates extractor failures to a single citation instead of failing the whole stage', async () => {

@@ -21,6 +21,24 @@ interface StressCase {
 }
 
 const TOTAL_STRESS_CASES = 500;
+const EXPLICIT_STRESS_CASES: StressCase[] = [
+  {
+    id: 'manual-conference-in-source',
+    kind: 'conference',
+    expectedDoi: '10.1109/iccic.2015.7435818',
+    reference: 'Aljohani, Mohammed, and Tanweer Alam. "An algorithm for accessing traffic database using wireless technologies." In Computational Intelligence and Computing Research (ICCIC), 2015 IEEE International Conference on, pp. 1-4. IEEE, 2015. DOI: https://doi.org/10.1109/iccic.2015.7435818',
+  },
+  {
+    id: 'manual-chapter-in-source',
+    kind: 'conference',
+    reference: 'Shapiro, Jonathan. "Genetic algorithms in machine learning." In Advanced Course on Arti- ficial Intelligence, pp. 146-168. Springer, Berlin, Heidelberg, 1999.',
+  },
+  {
+    id: 'manual-compact-journal-tail',
+    kind: 'abbrev_journal',
+    reference: '[10] Tabassum M, Mathew K, A genetic algorithm analysis towards optimization solutions, International Journal of Digital Information and Wireless Communications (IJDIWC), 2014 Jan 1, 4(1), 124-42.',
+  },
+];
 const STRESS_KINDS: StressCaseKind[] = [
   'clean_apa',
   'clean_ieee',
@@ -140,7 +158,10 @@ function buildStressCase(index: number): StressCase {
 }
 
 function buildStressCorpus() {
-  return Array.from({ length: TOTAL_STRESS_CASES }, (_, index) => buildStressCase(index));
+  return [
+    ...EXPLICIT_STRESS_CASES,
+    ...Array.from({ length: TOTAL_STRESS_CASES - EXPLICIT_STRESS_CASES.length }, (_, index) => buildStressCase(index)),
+  ];
 }
 
 describe('v2 500-case stress corpus', () => {
@@ -261,6 +282,28 @@ describe('v2 500-case stress corpus', () => {
       );
       expect(splitDebug.contaminationFlags).not.toContain('multiline_truncation_suspected');
     }
+
+    const manualConference = response.citations[0];
+    expect(manualConference.referenceType).toBe('conference');
+    expect(manualConference.title.value).toBe('An algorithm for accessing traffic database using wireless technologies');
+    expect(manualConference.conferenceTitle.value).toBe('2015 IEEE International Conference on Computational Intelligence and Computing Research (ICCIC)');
+    expect(manualConference.publisher.value).toBe('IEEE');
+    expect(manualConference.doi.value).toBe('10.1109/iccic.2015.7435818');
+
+    const manualChapter = response.citations[1];
+    expect(manualChapter.referenceType).toBe('chapter');
+    expect(manualChapter.title.value).toBe('Genetic algorithms in machine learning');
+    expect(manualChapter.bookTitle.value).toBe('Advanced Course on Artificial Intelligence');
+    expect(manualChapter.publisher.value).toBe('Berlin, Heidelberg: Springer Berlin Heidelberg');
+
+    const manualCompactJournal = response.citations[2];
+    expect(manualCompactJournal.referenceType).toBe('journal');
+    expect(manualCompactJournal.title.value).toBe('A genetic algorithm analysis towards optimization solutions');
+    expect(manualCompactJournal.journal.value).toBe('International Journal of Digital Information and Wireless Communications (IJDIWC)');
+    expect(manualCompactJournal.year.value).toBe(2014);
+    expect(manualCompactJournal.volume.value).toBe('4');
+    expect(manualCompactJournal.issue.value).toBe('1');
+    expect(manualCompactJournal.pages.value).toBe('124-42');
 
     const populatedTitles = response.citations.filter((citation) => (citation.title.value ?? '').trim().length > 0);
     const populatedRendered = response.citations.filter((citation) => (citation.rendered?.formatted ?? '').trim().length > 0);

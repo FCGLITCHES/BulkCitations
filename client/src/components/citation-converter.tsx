@@ -277,15 +277,15 @@ export default function CitationConverter() {
               <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Admin Engine
+                    Engine
                   </Label>
                   <Select value={engineVersion} onValueChange={(value: "v1" | "v2") => setEngineVersion(value)}>
                     <SelectTrigger className="w-full sm:w-[180px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="v1">v1 engine</SelectItem>
-                      <SelectItem value="v2">v2 engine</SelectItem>
+                      <SelectItem value="v2">v2 recommended</SelectItem>
+                      <SelectItem value="v1">v1 legacy</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

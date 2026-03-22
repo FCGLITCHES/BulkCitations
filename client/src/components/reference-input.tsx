@@ -35,7 +35,7 @@ export default function ReferenceInput({
   isProcessing,
   isPro = false,
   onOutputStyleChange,
-  engineVersion = "v1",
+  engineVersion = "v2",
   groupDuplicates = true,
   onGroupDuplicatesChange,
   initialCaptureText = "",

@@ -38,9 +38,11 @@ import {
 import { providerSourceTypeToCanonical } from '../sourceTypes.js';
 
 const PROVIDER_LIMIT = 5;
-const DEFAULT_ENRICH_CONCURRENCY = 3;
-const DEFAULT_ENRICH_CITATION_TIMEOUT_MS = 15_000;
+const DEFAULT_ENRICH_CONCURRENCY = 8;
+const DEFAULT_ENRICH_CITATION_TIMEOUT_MS = 5_000;
 const AUTHORITY_FIELD_CONFIDENCE = 0.97;
+const LARGE_SYNC_BATCH_RESOLUTION_THRESHOLD = 25;
+const LOCAL_ONLY_SYNC_REFERENCE_TYPES: CanonicalReferenceType[] = ['conference', 'chapter', 'book', 'report', 'website'];
 
 type ProviderKey = 'doi' | 'crossref' | 'pubmed' | 'openalex';
 
@@ -388,6 +390,46 @@ function canUseLocalOnlyResolutionFallback(citation: CanonicalCitation, queryEvi
   return Boolean(citation.publisher.value || citation.institution.value || citation.bookTitle.value);
 }
 
+function strongLocalResolutionSkipReason(
+  citation: CanonicalCitation,
+  executionMode: 'sync' | 'async',
+  batchSize: number,
+): 'strong_local_doi_skip' | 'strong_local_sync_skip' | 'strong_local_batch_skip' | null {
+  if (executionMode !== 'sync') return null;
+
+  const venueConfidence = Math.max(
+    citation.journal.confidence,
+    citation.conferenceTitle.confidence,
+    citation.bookTitle.confidence,
+    citation.publisher.confidence,
+    citation.institution.confidence,
+  );
+  const requiresAuthors = !['website'].includes(citation.referenceType);
+  const requiresVenue = ['journal', 'conference', 'chapter', 'book', 'report'].includes(citation.referenceType);
+  const strongAuthors = !requiresAuthors || (citation.authors.value.length > 0 && citation.authors.confidence >= 0.86);
+  const strongVenue = !requiresVenue || venueConfidence >= 0.85;
+  const strongUrl = citation.referenceType !== 'website' || citation.url.confidence >= 0.88;
+
+  const strongLocalIdentity = strongAuthors
+    && citation.title.confidence >= 0.9
+    && citation.year.confidence >= 0.88
+    && strongVenue
+    && strongUrl;
+
+  if (!strongLocalIdentity) return null;
+  if (batchSize >= LARGE_SYNC_BATCH_RESOLUTION_THRESHOLD) {
+    return 'strong_local_batch_skip';
+  }
+  if (citation.extraction?.fallbackUsed || citation.extraction?.method === 'hybrid') return null;
+  if (citation.doi.value && citation.doi.confidence >= 0.95 && batchSize >= 8) {
+    return 'strong_local_doi_skip';
+  }
+  if (LOCAL_ONLY_SYNC_REFERENCE_TYPES.includes(citation.referenceType)) {
+    return 'strong_local_sync_skip';
+  }
+  return null;
+}
+
 function providerOrderForCitation(citation: CanonicalCitation): ProviderKey[] {
   if (citation.doi.value) return ['doi'];
   if (isBiomedical(citation) && ['journal', 'preprint', 'unknown'].includes(citation.referenceType)) {
@@ -682,6 +724,7 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
         : DEFAULT_ENRICH_CITATION_TIMEOUT_MS;
       const limit = pLimit(Number.isFinite(concurrency) && concurrency > 0 ? concurrency : DEFAULT_ENRICH_CONCURRENCY);
       const inFlightResolutionByKey = new Map<string, Promise<ResolutionExecutionResult>>();
+      const batchSize = context.citations.length;
 
       const executeResolutionForCitation = async (
         citation: CanonicalCitation,
@@ -879,6 +922,44 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
             citation: addCitationStageLog(nextCitation, createStageDiagnostic('enrich', 'success', 'Skipped external resolution for an author-optional reference with strong local evidence.', {
               provider: resolutionProvider.id,
               reason: 'local_only_author_optional_reference',
+            })),
+            fallbacksUsed: localFallbacks,
+            partialResult: localPartialResult,
+          };
+        }
+
+        const strongLocalSkipReason = strongLocalResolutionSkipReason(citation, context.executionMode, batchSize);
+        if (strongLocalSkipReason) {
+          const skipMessage = strongLocalSkipReason === 'strong_local_doi_skip'
+            ? 'Skipped network resolution because the citation already has a strong local DOI-backed parse.'
+            : strongLocalSkipReason === 'strong_local_sync_skip'
+              ? 'Skipped network resolution because this citation type already has strong local evidence in synchronous mode.'
+              : 'Skipped network resolution for a strong local parse in a large synchronous batch.';
+          const nextCitation = attachCitationDebug({
+            ...citation,
+            enrichment: buildEnrichmentFromResolution('skipped', resolutionProvider.id, 'skipped', undefined, {
+              strongLocalSkipReason,
+              batchSize,
+            }),
+          }, 'enrich', {
+            status: 'skipped_strong_local_sync',
+            providerOrder: [],
+            candidateCount: 0,
+            warningFlags: [],
+            batchSize,
+            strongLocalSkipReason,
+          }, context.debugEnabled);
+          logStructuredDebug(context, 'enrich', citationIndex, nextCitation, {
+            providerOrder: [],
+            candidateCount: 0,
+            batchSize,
+            strongLocalSkipReason,
+          });
+          return {
+            citation: addCitationStageLog(nextCitation, createStageDiagnostic('enrich', 'skipped', skipMessage, {
+              provider: resolutionProvider.id,
+              reason: strongLocalSkipReason,
+              batchSize,
             })),
             fallbacksUsed: localFallbacks,
             partialResult: localPartialResult,

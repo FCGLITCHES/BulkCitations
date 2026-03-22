@@ -26,6 +26,7 @@ import {
   isLocatorLike,
   isPlaceholderValue,
   looksLikeAuthorContentLeak,
+  looksLikeCompactVancouverAuthorString,
   proceedingsSignal,
   sanitizeParsedReference,
 } from './qualityRules.js';
@@ -65,6 +66,13 @@ const PERSONAL_AUTHOR_LEAD_PATTERN = /(?:^|,\s*)[A-Z][A-Za-z'’.-]+(?:\s+[A-Z][
 const BRACKETED_IDENTIFIER_PATTERN = /\[[A-Z]{1,12}[A-Z0-9-]*\d+[A-Z0-9-]*\]/;
 const INSTITUTIONAL_TAIL_PATTERN = /(?:available from:|:\s*[^.;]+;\s*(?:19|20)\d{2}$|;\s*(?:19|20)\d{2}$|(?:^|[.]\s+)version\b|\[[A-Z]{1,12}[A-Z0-9-]*\d+[A-Z0-9-]*\])/i;
 const QUOTED_JOURNAL_LOCATOR_PATTERN = /^(?<authors>.+?)\s+"(?<title>[^"]+?)"\.?\s+(?<journal>.+?)\s+(?:vol\.?\s*)?(?<volume>\d+)(?:\s*,\s*no\.?\s*(?<issue>[A-Za-z0-9-]+))?\s*\((?<year>(?:19|20)\d{2})\)\s*:\s*(?<locator>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?)\.?(?:\s+(?<tail>.+))?$/i;
+const COMPACT_JOURNAL_TAIL_PATTERN = /^(?<lead>.+?),\s*(?<year>(?:19|20)\d{2}(?:\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\s+\d{1,2})?)\s*,\s*(?<volume>\d+)(?:\((?<issue>[A-Za-z0-9-]+)\))?\s*,\s*(?<pages>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?)\.?(?:\s+(?<tail>.+))?$/i;
+const IN_SOURCE_QUOTED_PATTERN = /^(?<authors>.+?)\.\s+"(?<title>[^"]+?)"\.?\s+In\s+(?<tail>.+)$/i;
+const IN_SOURCE_PLAIN_PATTERN = /^(?<authors>.+?)\.\s+(?<title>[^.]+?)\.\s+In\s+(?<tail>.+)$/i;
+const IN_SOURCE_LOCATOR_PATTERN = /\bpp?\.?\s*(?<pages>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?)\b/i;
+const CONFERENCE_SIGNAL_PATTERN = /\b(?:conference|symposium|workshop|congress|meeting|proceedings|forum|summit|colloquium)\b/i;
+const PUBLISHER_SEGMENT_PATTERN = /\b(?:IEEE|ACM|Springer|Elsevier|Wiley|Routledge|Sage|Taylor\s*&\s*Francis|Oxford University Press|Cambridge University Press|CRC Press|MDPI|Pearson|McGraw-Hill|Palgrave)\b/i;
+const PLACE_SEGMENT_PATTERN = /^(?:[A-Z][A-Za-z'’.-]+(?:,\s*[A-Z][A-Za-z'’.-]+){0,3})$/;
 
 let grobidCooldownUntil = 0;
 
@@ -150,6 +158,10 @@ function buildDeterministicCandidate(input: string, inputStyle: string) {
   if (quotedTitleJournalLocator) {
     return quotedTitleJournalLocator;
   }
+  const compactJournalTail = buildCompactJournalTailCandidate(normalized);
+  if (compactJournalTail) {
+    return compactJournalTail;
+  }
   const detectedStyle = inputStyle !== 'auto'
     ? inputStyle
     : looksLikeAuthorColonVancouverReference(normalized)
@@ -182,7 +194,11 @@ function buildYearAnchoredCandidate(input: string) {
   };
 }
 
-type ExtractorSelectionBranch = 'deterministic_raw' | 'year_anchored_fallback_raw' | 'institutional_heuristic_raw';
+type ExtractorSelectionBranch =
+  | 'deterministic_raw'
+  | 'year_anchored_fallback_raw'
+  | 'institutional_heuristic_raw'
+  | 'in_source_heuristic_raw';
 
 type ParsedSelectionCandidate = {
   branch: ExtractorSelectionBranch;
@@ -202,8 +218,34 @@ function extractLastYear(value: string): string | undefined {
   return matches.length > 0 ? matches[matches.length - 1]?.[0] : undefined;
 }
 
+function normalizeParsedYear(value: string | undefined): string | undefined {
+  const normalized = normalizeWhitespace(value ?? '');
+  if (!normalized) return undefined;
+  return extractLastYear(normalized) ?? normalized;
+}
+
 function stripTrailingPeriod(value: string): string {
   return normalizeWhitespace(value.replace(/[.]+$/g, ''));
+}
+
+function stripLeadingPunctuation(value: string): string {
+  return normalizeWhitespace(value.replace(/^[\s,.;:()[\]{}"'-]+/, ''));
+}
+
+function cleanContainerTitle(value: string): string {
+  return normalizeWhitespace(
+    stripLeadingPunctuation(
+      stripTrailingPeriod(
+        value
+          .replace(/(\p{L})-\s+(\p{L})/gu, '$1$2')
+          .replace(/\bdoi:\s*/i, '')
+          .replace(DOI_PATTERN, '')
+          .replace(URL_PATTERN, '')
+          .replace(IN_SOURCE_LOCATOR_PATTERN, '')
+          .replace(/^[,;:\s]+|[,;:\s]+$/g, ''),
+      ),
+    ),
+  );
 }
 
 function splitSentenceSegments(value: string): string[] {
@@ -349,6 +391,53 @@ function buildQuotedTitleJournalLocatorCandidate(normalized: string): {
   };
 }
 
+function buildCompactJournalTailCandidate(normalized: string): {
+  normalized: string;
+  parsed: ParsedReference;
+  referenceType: ReturnType<typeof parsedReferenceTypeToCanonical>;
+  warnings: string[];
+} | null {
+  const match = normalized.match(COMPACT_JOURNAL_TAIL_PATTERN);
+  if (!match?.groups) return null;
+
+  const leadSegments = normalizeWhitespace(match.groups.lead ?? '')
+    .split(/\s*,\s*/)
+    .map((segment) => cleanContainerTitle(segment))
+    .filter(Boolean);
+  if (leadSegments.length < 4) return null;
+
+  const journal = cleanContainerTitle(leadSegments[leadSegments.length - 1] ?? '');
+  const title = stripTrailingPeriod(leadSegments[leadSegments.length - 2] ?? '');
+  const authors = leadSegments.slice(0, -2).map((segment) => normalizeWhitespace(segment)).filter(Boolean);
+  if (!journal || !title || authors.length === 0) return null;
+  if (!authors.every((author) => looksLikeCompactVancouverAuthorString(author) || /^(?:[A-Z][A-Za-z'’.-]+(?:\s+[A-Z][A-Za-z'’.-]+){0,2}|[A-Z][A-Za-z'’.-]+\s+[A-Z]{1,4})$/.test(author))) {
+    return null;
+  }
+
+  const tail = normalizeWhitespace(match.groups.tail ?? '');
+  const doiMatch = tail.match(DOI_PATTERN);
+  const urlMatch = tail.match(URL_PATTERN);
+  const parsed: ParsedReference = {
+    authors,
+    title,
+    journal,
+    year: normalizeParsedYear(match.groups.year),
+    volume: normalizeWhitespace(match.groups.volume ?? '') || undefined,
+    issue: normalizeWhitespace(match.groups.issue ?? '') || undefined,
+    pages: normalizeWhitespace(match.groups.pages ?? '').replace(/\s*[-–]\s*/g, '-') || undefined,
+    doi: doiMatch ? normalizeDoiValue(doiMatch[0]) : undefined,
+    url: urlMatch ? cleanTrailingUrl(urlMatch[0]) : undefined,
+    parseWarnings: ['compact-journal-tail-heuristic'],
+  };
+
+  return {
+    normalized,
+    parsed,
+    referenceType: 'journal',
+    warnings: parsed.parseWarnings ?? [],
+  };
+}
+
 function buildTitleLedWebsiteCandidate(
   normalized: string,
   leadingSegment: string,
@@ -382,6 +471,188 @@ function buildTitleLedWebsiteCandidate(
     normalized,
     parsed,
     referenceType: 'website',
+    warnings: parsed.parseWarnings ?? [],
+  };
+}
+
+function looksLikePublisherSegment(value: string): boolean {
+  const normalized = cleanContainerTitle(value);
+  if (!normalized) return false;
+  if (PUBLISHER_SEGMENT_PATTERN.test(normalized)) return true;
+  return /^(?:[A-Z]{2,10}|[A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+){0,3}\s+Press)$/.test(normalized);
+}
+
+function normalizePublisherName(publisher: string | undefined, place: string | undefined): string | undefined {
+  const normalizedPublisher = cleanContainerTitle(publisher ?? '');
+  const normalizedPlace = cleanContainerTitle(place ?? '');
+  if (!normalizedPublisher) return undefined;
+  if (/^springer$/i.test(normalizedPublisher) && normalizedPlace) {
+    return normalizeWhitespace(`${normalizedPublisher} ${normalizedPlace.replace(/,\s*/g, ' ')}`);
+  }
+  return normalizedPublisher;
+}
+
+function normalizeConferenceContainer(segments: string[]): string | undefined {
+  const cleanedSegments = segments
+    .map((segment) => cleanContainerTitle(segment))
+    .filter((segment) => segment && !/^(?:19|20)\d{2}$/.test(segment));
+  if (cleanedSegments.length === 0) return undefined;
+
+  const signalIndex = cleanedSegments.findIndex((segment) => CONFERENCE_SIGNAL_PATTERN.test(segment));
+  if (signalIndex === -1) {
+    return normalizeWhitespace(cleanedSegments.join(', '));
+  }
+
+  const signalSegment = cleanedSegments[signalIndex];
+  const remaining = cleanedSegments.filter((_, index) => index !== signalIndex);
+  if (remaining.length === 0) return signalSegment;
+
+  if (/\b(?:on|for|of)$/i.test(signalSegment)) {
+    return normalizeWhitespace(`${signalSegment} ${remaining.join(', ')}`);
+  }
+
+  return normalizeWhitespace([signalSegment, ...remaining].join(', '));
+}
+
+function buildAuthorsFromInSourceLead(value: string): string[] | undefined {
+  const normalized = stripTrailingPeriod(normalizeWhitespace(value).replace(/^\[\d+\]\s*/, ''));
+  if (!normalized) return undefined;
+
+  const explicitLeadAndTail = normalized.match(/^([^,]+,\s*[^,]+),\s*(?:and|&)\s+(.+)$/i);
+  if (explicitLeadAndTail) {
+    return [
+      normalizeWhitespace(explicitLeadAndTail[1] ?? ''),
+      normalizeWhitespace(explicitLeadAndTail[2] ?? ''),
+    ].filter(Boolean);
+  }
+
+  const invertedThenLead = normalized.match(/^([^,]+),\s*([^,]+),\s*(?:and|&)\s+(.+)$/i);
+  if (invertedThenLead) {
+    return [
+      normalizeWhitespace(`${invertedThenLead[1]}, ${invertedThenLead[2]}`),
+      normalizeWhitespace(invertedThenLead[3] ?? ''),
+    ].filter(Boolean);
+  }
+
+  if (/\s+(?:and|&)\s+/i.test(normalized)) {
+    return normalized.split(/\s+(?:and|&)\s+/i).map((segment) => normalizeWhitespace(segment)).filter(Boolean);
+  }
+
+  const commaSegments = normalized.split(/\s*,\s*/).map((segment) => normalizeWhitespace(segment)).filter(Boolean);
+  if (commaSegments.length === 2) {
+    return [normalizeWhitespace(`${commaSegments[0]}, ${commaSegments[1]}`)];
+  }
+  if (commaSegments.length >= 4 && commaSegments.length % 2 === 0) {
+    const authors: string[] = [];
+    for (let index = 0; index < commaSegments.length; index += 2) {
+      authors.push(normalizeWhitespace(`${commaSegments[index]}, ${commaSegments[index + 1]}`));
+    }
+    return authors.filter(Boolean);
+  }
+
+  return [normalized];
+}
+
+function buildInSourceCandidate(input: string, inputStyle: string): ParsedSelectionCandidate | null {
+  const parser = getParser();
+  const normalized = preNormalizeExtractorInput(parser, input);
+  const match = normalized.match(IN_SOURCE_QUOTED_PATTERN) ?? normalized.match(IN_SOURCE_PLAIN_PATTERN);
+  if (!match?.groups) return null;
+
+  const authorLead = stripTrailingPeriod(match.groups.authors ?? '');
+  const title = stripTrailingPeriod(match.groups.title ?? '');
+  if (!authorLead || !title) return null;
+
+  const year = normalizeParsedYear(match.groups.tail ?? normalized);
+  if (!year) return null;
+
+  const doi = normalized.match(DOI_PATTERN)?.[0];
+  const locator = match.groups.tail?.match(IN_SOURCE_LOCATOR_PATTERN)?.groups?.pages;
+  const tailWithoutDoi = normalizeWhitespace((match.groups.tail ?? '')
+    .replace(/\bdoi:\s*/i, '')
+    .replace(DOI_PATTERN, '')
+    .replace(URL_PATTERN, ''));
+  const tailWithoutYear = tailWithoutDoi.replace(new RegExp(`[;,.\\s]+${year}[.]?$`), '');
+  const tailWithoutLocator = normalizeWhitespace(tailWithoutYear.replace(IN_SOURCE_LOCATOR_PATTERN, ''));
+  const segments = tailWithoutLocator
+    .split(/\s*,\s*/)
+    .map((segment) => cleanContainerTitle(segment))
+    .filter((segment) => segment && segment.toLowerCase() !== 'in');
+  if (segments.length === 0) return null;
+
+  const conferenceLike = segments.some((segment) => CONFERENCE_SIGNAL_PATTERN.test(segment));
+  const authors = buildAuthorsFromInSourceLead(authorLead);
+
+  if (conferenceLike) {
+    const publisher = looksLikePublisherSegment(segments[segments.length - 1]) ? cleanContainerTitle(segments.pop()) : undefined;
+    const conferenceTitle = normalizeConferenceContainer(segments);
+    if (!conferenceTitle) return null;
+
+    const parsed: ParsedReference = {
+      authors,
+      title,
+      year,
+      conferenceTitle,
+      pages: locator ? locator.replace(/\s*[-–]\s*/g, '-') : undefined,
+      publisher,
+      doi: doi ? normalizeDoiValue(doi) : undefined,
+      parseWarnings: ['in-source-container-heuristic'],
+    };
+
+    return {
+      branch: 'in_source_heuristic_raw',
+      normalized,
+      parsed,
+      referenceType: 'conference',
+      warnings: parsed.parseWarnings ?? [],
+    };
+  }
+
+  const [bookTitleSegment, ...tailSegments] = segments;
+  const bookTitle = cleanContainerTitle(bookTitleSegment);
+  if (!bookTitle) return null;
+
+  let publisher: string | undefined;
+  let placeOfPublication: string | undefined;
+  if (tailSegments.length > 0) {
+    const publisherIndex = tailSegments.findIndex((segment) => looksLikePublisherSegment(segment));
+    if (publisherIndex >= 0) {
+      const publisherSeed = tailSegments[publisherIndex];
+      const placeSeed = tailSegments.slice(publisherIndex + 1)
+        .filter((segment) => PLACE_SEGMENT_PATTERN.test(segment))
+        .join(', ');
+      placeOfPublication = normalizeWhitespace(placeSeed) || undefined;
+      const normalizedPublisher = normalizePublisherName(publisherSeed, placeSeed);
+      publisher = placeOfPublication && normalizedPublisher
+        ? normalizeWhitespace(`${placeOfPublication}: ${normalizedPublisher}`)
+        : normalizedPublisher;
+    } else {
+      const placeSeed = tailSegments.slice(1).join(', ');
+      placeOfPublication = normalizeWhitespace(placeSeed) || undefined;
+      const normalizedPublisher = normalizePublisherName(tailSegments[0], placeSeed);
+      publisher = placeOfPublication && normalizedPublisher
+        ? normalizeWhitespace(`${placeOfPublication}: ${normalizedPublisher}`)
+        : normalizedPublisher;
+    }
+  }
+
+  const parsed: ParsedReference = {
+    authors,
+    title,
+    year,
+    bookTitle,
+    pages: locator ? locator.replace(/\s*[-–]\s*/g, '-') : undefined,
+    publisher,
+    placeOfPublication,
+    doi: doi ? normalizeDoiValue(doi) : undefined,
+    parseWarnings: ['in-source-container-heuristic'],
+  };
+
+  return {
+    branch: 'in_source_heuristic_raw',
+    normalized,
+    parsed,
+    referenceType: 'chapter',
     warnings: parsed.parseWarnings ?? [],
   };
 }
@@ -763,9 +1034,10 @@ function selectionReason(
   deterministic: ParsedReference,
   fallback: ParsedReference | null,
   institutional: ParsedReference | null,
+  inSource: ParsedReference | null,
 ): string {
   if (selectedBranch === 'deterministic_raw') {
-    if (!fallback && !institutional) return 'no_competing_candidate';
+    if (!fallback && !institutional && !inSource) return 'no_competing_candidate';
     if (looksLikeAlternatingTokenArray(deterministic.authors ?? [])) return 'deterministic_retained_for_structured_fields_with_author_recovery';
     return 'deterministic_scored_higher';
   }
@@ -773,6 +1045,11 @@ function selectionReason(
     if (!deterministic.title && institutional?.title) return 'deterministic_missing_title_institutional_selected';
     if (looksLikeSourceTailFragment(deterministic.title)) return 'deterministic_title_looked_like_source_tail';
     return 'institutional_heuristic_scored_higher';
+  }
+  if (selectedBranch === 'in_source_heuristic_raw') {
+    if (!deterministic.conferenceTitle && !deterministic.bookTitle) return 'deterministic_missing_container_in_source_selected';
+    if (!deterministic.title && inSource?.title) return 'deterministic_missing_title_in_source_selected';
+    return 'in_source_heuristic_scored_higher';
   }
   if (!deterministic.title && fallback?.title) return 'deterministic_missing_title';
   if ((!deterministic.authors || deterministic.authors.length === 0) && fallback?.authors?.length) return 'deterministic_missing_authors';
@@ -849,6 +1126,46 @@ function needsLlmFallback(parsed: ParsedReference, fieldConfidence: Record<strin
     .map((field) => fieldConfidence[field] ?? 0)
     .some((value) => value < 0.45);
   return missingRequired || lowConfidenceCritical;
+}
+
+function shouldAllowLlmFallback(
+  parsed: ParsedReference,
+  referenceType: string,
+  selectionScore: number,
+  batchSize: number,
+  executionMode: 'sync' | 'async' | undefined,
+): boolean {
+  const requirements = getRequirementProfile(referenceType);
+  const missingRequiredCount = requirements.required.reduce((count, field) => {
+    if (field === 'venue') {
+      return count + (hasParsedVenue(parsed) ? 0 : 1);
+    }
+    if (field === 'bookTitle') {
+      return count + (parsed.bookTitle ? 0 : 1);
+    }
+    if (field === 'publisher') {
+      return count + (parsed.publisher ? 0 : 1);
+    }
+    if (field === 'institution') {
+      return count + ((parsed.institution ?? parsed.publisher) ? 0 : 1);
+    }
+    return count + (parsed[field as keyof ParsedReference] ? 0 : 1);
+  }, 0);
+  const catastrophic =
+    !parsed.title
+    || !parsed.year
+    || missingRequiredCount >= 2
+    || selectionScore < 5
+    || ((parsed.authors?.length ?? 0) === 0 && !['website'].includes(referenceType));
+
+  if (executionMode === 'sync') {
+    if (batchSize >= 50) return catastrophic;
+    if (batchSize >= 10) return catastrophic || (missingRequiredCount >= 1 && selectionScore < 6);
+  }
+
+  if (batchSize >= 100) return catastrophic;
+  if (batchSize >= 25) return catastrophic || (missingRequiredCount >= 1 && selectionScore < 6);
+  return true;
 }
 
 function splitContaminationPenalty(splitArtifact?: V2SplitArtifact): number {
@@ -1037,6 +1354,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     inputProfile?: { structure: string; estimatedCount?: number };
     detectionConfidence?: number;
     batchSize?: number;
+    executionMode?: 'sync' | 'async';
     splitArtifact?: V2SplitArtifact;
     llmBudget?: { maxCalls: number; totalCalls: number; splitCalls: number; extractCalls: number; capReached: boolean };
     debugEnabled?: boolean;
@@ -1091,11 +1409,25 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
           };
         })()
       : null;
+    const inSourceBase = skipCompetingCandidates ? null : buildInSourceCandidate(input, inputStyle);
+    const inSource = inSourceBase
+      ? (() => {
+          const sanitized = sanitizeParsedReference(inSourceBase.parsed, inSourceBase.referenceType);
+          return {
+            ...inSourceBase,
+            parsed: sanitized.parsed,
+            referenceType: sanitized.referenceType,
+          };
+        })()
+      : null;
     const fallbackAuthorParse = fallback
       ? parseAuthorsForStyle(fallback.parsed.authors ?? [], inputStyle)
       : emptyAuthorParseResult;
     const institutionalAuthorParse = institutional
       ? parseAuthorsForStyle(institutional.parsed.authors ?? [], inputStyle)
+      : emptyAuthorParseResult;
+    const inSourceAuthorParse = inSource
+      ? parseAuthorsForStyle(inSource.parsed.authors ?? [], inputStyle)
       : emptyAuthorParseResult;
     const fallbackScore = scoreCandidate(fallback?.parsed, fallback?.referenceType)
       - (fallbackAuthorParse.warningFlags.length * 2)
@@ -1104,6 +1436,10 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       - (institutionalAuthorParse.warningFlags.length * 2)
       - (institutionalAuthorParse.rejectedCandidates.length * 1.5)
       + (institutional ? 1.2 : 0);
+    const inSourceScore = scoreCandidate(inSource?.parsed, inSource?.referenceType)
+      - (inSourceAuthorParse.warningFlags.length * 2)
+      - (inSourceAuthorParse.rejectedCandidates.length * 1.5)
+      + (inSource ? 1.8 : 0);
     const scoredCandidates = [
       {
         branch: 'deterministic_raw' as const,
@@ -1119,6 +1455,11 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
         branch: 'institutional_heuristic_raw' as const,
         candidate: institutional,
         score: institutionalScore,
+      }] : []),
+      ...(inSource ? [{
+        branch: 'in_source_heuristic_raw' as const,
+        candidate: inSource,
+        score: inSourceScore,
       }] : []),
     ].sort((left, right) => right.score - left.score);
     const selectedCandidate = scoredCandidates[0] ?? {
@@ -1137,11 +1478,19 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       const promotedReferenceType = scoredCandidates.find((entry) => entry.candidate.referenceType !== 'unknown')?.candidate.referenceType;
       if (promotedReferenceType) selectedReferenceType = promotedReferenceType;
     }
-    const selectedReason = selectionReason(selectedBranch, deterministic.parsed, fallback?.parsed ?? null, institutional?.parsed ?? null);
+    const selectedReason = selectionReason(
+      selectedBranch,
+      deterministic.parsed,
+      fallback?.parsed ?? null,
+      institutional?.parsed ?? null,
+      inSource?.parsed ?? null,
+    );
     const selectedAuthorParse = selectedBranch === 'year_anchored_fallback_raw'
       ? fallbackAuthorParse
       : selectedBranch === 'institutional_heuristic_raw'
         ? institutionalAuthorParse
+        : selectedBranch === 'in_source_heuristic_raw'
+          ? inSourceAuthorParse
         : deterministicAuthorParse;
     let selectedFieldConfidence = buildFieldConfidence(mergedSelection, selectedReferenceType);
     const splitArtifact = options?.splitArtifact;
@@ -1157,6 +1506,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     if (looksLikeAlternatingTokenArray(deterministic.parsed.authors ?? [])) rejectedCandidates.push('deterministic_alternating_author_tokens');
     if (fallback?.parsed.title && looksLikeDateFragment(fallback.parsed.title)) rejectedCandidates.push('year_anchored_title_looks_like_date_fragment');
     if (institutional && selectedBranch !== 'institutional_heuristic_raw') rejectedCandidates.push('institutional_heuristic_not_selected');
+    if (inSource && selectedBranch !== 'in_source_heuristic_raw') rejectedCandidates.push('in_source_heuristic_not_selected');
 
     const inputStructure = options?.inputProfile?.structure ?? 'unknown';
     const batchSize = options?.batchSize ?? options?.inputProfile?.estimatedCount ?? 1;
@@ -1178,8 +1528,15 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       || selectedAuthorParse.warningFlags.length > 0
       || selectedAuthorParse.rejectedCandidates.length > 0
       || splitContaminationFlags.length > 0;
+    const allowLlmFallback = shouldAllowLlmFallback(
+      mergedSelection,
+      selectedReferenceType,
+      selectedCandidate.score - contaminationScorePenalty,
+      batchSize,
+      options?.executionMode,
+    );
 
-    if (llmEnabled && weakSelection) {
+    if (llmEnabled && weakSelection && allowLlmFallback) {
       llmAttempted = true;
       if (!tryConsumeLlmCall(options?.llmBudget, 'extract')) {
         llmCapReached = true;
@@ -1209,6 +1566,9 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
           llmWarnings.push(`llm_fallback_failed:${error instanceof Error ? error.message : String(error)}`);
         }
       }
+    } else if (llmEnabled && weakSelection && !allowLlmFallback) {
+      rejectedCandidates.push('llm_batch_gated');
+      llmWarnings.push('llm_batch_gated');
     }
 
     const currentSelectionScore = scoreCandidate(mergedSelection, selectedReferenceType);
@@ -1254,7 +1614,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
         if (grobidCandidate) {
           grobidScore = scoreCandidate(grobidCandidate.parsed, grobidCandidate.referenceType) + 1;
           const grobidPreferredProfile = ['structured', 'semi_structured'].includes(inputStructure);
-          const currentBestScore = Math.max(currentSelectionScore, deterministicScore, fallbackScore, institutionalScore);
+          const currentBestScore = Math.max(currentSelectionScore, deterministicScore, fallbackScore, institutionalScore, inSourceScore);
           const grobidLooksUsable = Boolean(grobidCandidate.parsed.title) && Boolean(grobidCandidate.parsed.authors?.length);
           if (
             (grobidLooksUsable && grobidPreferredProfile)
@@ -1280,6 +1640,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
               deterministicScore,
               fallbackScore,
               institutionalScore,
+              inSourceScore,
               currentSelectionScore,
             }));
           } else {
@@ -1295,6 +1656,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
               deterministicScore,
               fallbackScore,
               institutionalScore,
+              inSourceScore,
               currentSelectionScore,
             }));
           }
@@ -1348,6 +1710,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
         ...deterministic.warnings,
         ...(fallback?.warnings ?? []),
         ...(institutional?.warnings ?? []),
+        ...(inSource?.warnings ?? []),
         ...splitWarnings,
         ...llmWarnings,
       ],
@@ -1356,6 +1719,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             deterministic_raw: deterministic.parsed,
             year_anchored_fallback_raw: fallback?.parsed ?? null,
             institutional_heuristic_raw: institutional?.parsed ?? null,
+            in_source_heuristic_raw: inSource?.parsed ?? null,
             grobid_raw: grobidCandidate?.parsed ?? null,
             selected_branch: llmApplied ? 'hybrid' : selectedBranch,
             selection_reason: `${selectedReason}${selectionReasonSuffix}`,
@@ -1363,6 +1727,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             deterministic_score: deterministicScore,
             fallback_score: fallbackScore,
             institutional_score: institutionalScore,
+            in_source_score: inSourceScore,
             grobid_score: grobidScore,
             deterministic_author_parser_mode: deterministicAuthorParse.parserMode,
             deterministic_author_warning_flags: deterministicAuthorParse.warningFlags,
@@ -1370,6 +1735,8 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             fallback_author_warning_flags: fallbackAuthorParse.warningFlags,
             institutional_author_parser_mode: institutionalAuthorParse.parserMode,
             institutional_author_warning_flags: institutionalAuthorParse.warningFlags,
+            in_source_author_parser_mode: inSourceAuthorParse.parserMode,
+            in_source_author_warning_flags: inSourceAuthorParse.warningFlags,
             split_contamination_flags: splitContaminationFlags,
             split_contamination_penalty: splitPenalty,
             cleaned_chunk_length: splitArtifact?.chunkLength ?? input.length,

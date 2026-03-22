@@ -543,6 +543,7 @@ const APA_PUBLISHER_LOCATION_RE = /(?:[a-zA-Z\s]+,\s*[A-Z]{2}|[A-Z][a-z]+(?:[\s-
 const APA_PRESERVE_RE = /\b(DFT-D|ChIP-Seq|EM|RNA|DNA|PCR|MACS|ORTEP-III|DOI|IIT\s+Bombay|IIT|ACM|IEEE|UC|U\.\s*C\.|PhD|IoT|MANET|iJIM|iJOE|iJEP|ICGCIoT|ICIIBMS|ICCIC|JOIV)\b/g;
 const APA_THREE_INITIALS_RE = /\b([A-Z])\.?([A-Z])\.?([A-Z])\.?\b/g;
 const APA_TWO_INITIALS_RE = /\b([A-Z])\.?([A-Z])\.?\b/g;
+const APA_SINGLE_INITIAL_RE = /,\s*([A-Z])(?=(?:,\s*(?:&|and\b)|\s*(?:&|and\b)|\s*\(|$))/g;
 const APA_STRAY_AMP_RE = /,\s*&\s*([A-Z]\.)/g;
 const APA_TRAILING_PUNCT_RE = /[.,\s]+$/;
 const HARVARD_DOUBLE_QUOTES_RE = /"([^"]+)"/g;
@@ -566,6 +567,76 @@ const JOURNAL_ABBREVIATION_RE = new RegExp(
         .join('|'),
     'g'
 );
+
+function ensureTerminalPeriod(value: string): string {
+    const normalized = value.replace(/\s+/g, ' ').trim().replace(/[.,;:\s]+$/g, '');
+    return normalized ? `${normalized}.` : '';
+}
+
+function normalizeLocatorRange(value: string | undefined): string | undefined {
+    const normalized = (value ?? '').trim();
+    return normalized ? normalized.replace(/\s*[-–]\s*/g, '-') : undefined;
+}
+
+function normalizeDoiUrl(value: string | undefined): string | undefined {
+    const normalized = (value ?? '').trim();
+    if (!normalized) return undefined;
+    if (/^https?:\/\//i.test(normalized)) return normalized;
+    return `https://doi.org/${normalized.replace(/^doi:\s*/i, '').replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, '')}`;
+}
+
+function extractApaTitlePrefix(clean: string, title: string | undefined): string {
+    const normalizedTitle = (title ?? '').trim();
+    if (!normalizedTitle) return clean.trim();
+    const prefixIndex = clean.toLowerCase().indexOf(normalizedTitle.toLowerCase());
+    if (prefixIndex === -1) return clean.trim();
+    return ensureTerminalPeriod(clean.slice(0, prefixIndex + normalizedTitle.length));
+}
+
+function formatStructuredApaContainer(clean: string, fields: ParsedFields): string {
+    const type = fields?.type;
+    const isConference = type === 'conference' || type === 'paper-conference';
+    const isChapter = type === 'bookChapter' || type === 'chapter';
+    if (!isConference && !isChapter) return clean;
+
+    const prefix = extractApaTitlePrefix(clean, fields?.title);
+    if (!prefix) return clean;
+
+    if (isConference) {
+        const container = (fields?.conferenceTitle || fields?.bookTitle || fields?.journal || '').trim();
+        if (!container) return clean;
+        const pages = normalizeLocatorRange(fields?.pages || fields?.page);
+        const publisher = (fields?.publisher || '').trim();
+        const doiUrl = normalizeDoiUrl(fields?.doi);
+        let rebuilt = `${prefix} In ${container}`;
+        if (pages) rebuilt += ` (pp. ${pages})`;
+        rebuilt += '.';
+        if (publisher) rebuilt += ` ${ensureTerminalPeriod(publisher)}`;
+        if (doiUrl) rebuilt += ` ${doiUrl}`;
+        return rebuilt.trim();
+    }
+
+    const bookTitle = (fields?.bookTitle || fields?.conferenceTitle || '').trim();
+    if (!bookTitle) return clean;
+    const pages = normalizeLocatorRange(fields?.pages || fields?.page);
+    const placeOfPublication = (fields?.placeOfPublication || '').trim();
+    const publisher = (fields?.publisher || '').trim();
+    const doiUrl = normalizeDoiUrl(fields?.doi);
+    let rebuilt = `${prefix} In ${bookTitle}`;
+    if (pages) rebuilt += ` (pp. ${pages})`;
+    rebuilt += '.';
+    if (placeOfPublication && publisher) rebuilt += ` ${placeOfPublication}: ${ensureTerminalPeriod(publisher)}`;
+    else if (publisher) rebuilt += ` ${ensureTerminalPeriod(publisher)}`;
+    if (doiUrl) rebuilt += ` ${doiUrl}`;
+    return rebuilt.trim();
+}
+
+function normalizeApaAuthorSegment(authorSegment: string): string {
+    let normalized = authorSegment.replace(APA_THREE_INITIALS_RE, '$1. $2. $3.');
+    normalized = normalized.replace(APA_TWO_INITIALS_RE, '$1. $2.');
+    normalized = normalized.replace(APA_SINGLE_INITIAL_RE, ', $1.');
+    return normalized;
+}
 
 /**
  * Structural fixer for CSL output strings.
@@ -613,20 +684,18 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
             if (firstSegmentEnd !== -1) {
                 const firstSegment = clean.slice(0, firstSegmentEnd + 1);
                 const rest = clean.slice(firstSegmentEnd + 1);
-                let authorOnly = firstSegment;
-                authorOnly = authorOnly.replace(APA_THREE_INITIALS_RE, '$1. $2. $3.');
-                authorOnly = authorOnly.replace(APA_TWO_INITIALS_RE, '$1. $2.');
+                let authorOnly = normalizeApaAuthorSegment(firstSegment);
                 // Restore preserved tokens in author segment for readability
                 apaPreserved.forEach((orig, tok) => { authorOnly = authorOnly.split(tok).join(orig); });
                 clean = authorOnly + rest;
             } else {
-                clean = clean.replace(APA_THREE_INITIALS_RE, '$1. $2. $3.');
-                clean = clean.replace(APA_TWO_INITIALS_RE, '$1. $2.');
+                clean = normalizeApaAuthorSegment(clean);
             }
             // Globally restore any remaining preserved tokens (venue, conference names, acronyms)
             apaPreserved.forEach((orig, tok) => {
                 clean = clean.split(tok).join(orig);
             });
+            clean = clean.replace(/,\s*([A-Z])(?=,\s*&)/g, ', $1.');
             // Remove stray "&" before initials in final author (e.g. "da Silva, & V.L." -> "da Silva, V.L.")
             clean = clean.replace(APA_STRAY_AMP_RE, ', $1');
             // Remove duplicate trailing " (Year)." when year already appears earlier in the citation.
@@ -642,6 +711,7 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
                 }
               }
             }
+            clean = formatStructuredApaContainer(clean, fields);
             break;
 
         case 'harvard-ctr':
