@@ -6,6 +6,35 @@ This document describes the **v2 citation engine**, which is the system we are a
 
 There is still a legacy `/api/convert` surface for the website, but that route now mainly acts as a **bridge into v2** when `engineVersion = "v2"`. The core architecture worth understanding is therefore the v2 pipeline, not the legacy v1 parser.
 
+## Current Status
+
+As of `2026-03-22`, the current v2 architecture has already absorbed several important reliability changes:
+
+- `enrich` is now a strict resolution-and-repair stage, not a passive metadata check
+- `enrich` has a per-citation timeout guard, so one stalled provider lookup does not fail the whole batch
+- `dedup` does not just create a merged canonical citation anymore; duplicate-family members are also hydrated from the family canonical record and revalidated
+- `validate` is intentionally post-repair and offline in the strict-resolution path
+- `score` can keep locally strong citations in `ready` even when provider verification fails, as long as the only remaining unresolved signal is a benign provider miss
+
+That combination is what made the latest 500-reference enrich/validate/dedup stress run land at `487/500 ready` (`97.4%`).
+
+## Why These Changes Were Added
+
+These changes were added for a simple architectural reason: the engine was already doing expensive, high-value work, but it was not always allowed to fully use that work downstream.
+
+- `enrich` was upgraded because verification that does not repair fields is too weak. If the engine proves the correct authority record, keeping the wrong extracted fields would make verification decorative instead of operational.
+- the per-citation `enrich` timeout was added because a single stalled provider call should never be able to invalidate an entire batch run. The engine needs failure isolation, not batch-wide collapse.
+- `validate` was moved into a clearly post-repair role because validating the pre-repair parse produces false positives the engine has already earned the right to remove.
+- duplicate-family hydration was added because once dedup proves multiple citations are the same work, leaving one merged citation clean and the duplicate members dirty creates an inconsistent family state and pollutes downstream scoring and review.
+- the newer `score` ready paths were added because provider instability is not the same thing as citation unreliability. When the local parse is strong and the only unresolved problem is external verification failure, the bucket should reflect citation quality rather than network luck.
+
+The general principle is:
+
+- be permissive at the input edge
+- be strict when proving identity
+- be conservative when overwriting fields
+- and once something is verified, let the rest of the engine benefit from that proof
+
 ## Design Goals
 
 The engine is built around a few non-negotiable ideas:
@@ -165,11 +194,14 @@ This is the engine’s “trust but verify” layer. Extraction is best-effort. 
 - backfilling and correcting missing or wrong fields
 - recording `appliedFields` separately from unresolved `conflictFields`
 - avoiding silent overwrites of user-sourced fields
+- reusing in-flight lookups across duplicate-style variants
+- isolating slow provider calls so a single stuck citation does not timeout the whole stage
 
 **Current gaps**
 
 - remaining misses are mostly coverage or exact-match ranking misses, not merge-conflict noise
 - provider recall still varies by citation type
+- provider instability can still reduce verification coverage, but it should no longer collapse the whole stage
 
 ### 6. `normalize`
 
@@ -220,6 +252,7 @@ Validation is not just “did extraction succeed?” It asks whether the citatio
 - catching parser lies
 - producing interpretable validation codes
 - staying offline for non-DOI checks in the v2 strict-resolution path
+- distinguishing real citation problems from external-provider failures
 
 **Current gaps**
 
@@ -253,16 +286,20 @@ Validation is not just “did extraction succeed?” It asks whether the citatio
 - the strongest citation becomes the base
 - the strongest field wins during merge
 - merged citations are revalidated
+- duplicate-family members can inherit the merged family’s repaired canonical fields
+- hydrated duplicate members are revalidated before scoring
 
 **What it is good at**
 
 - collapsing duplicate families without losing the best available field values
 - preserving authority-backed fields during merge
 - rerunning validation after merge so stale pre-merge warnings do not leak through
+- preventing a clean merged family record from sitting next to several still-broken duplicate siblings
 
 **Important recent change**
 
 - structural dedup is now blocked when two citations have **different explicit DOIs**
+- duplicate members now inherit the merged family citation’s strongest safe fields instead of only being marked as duplicates
 
 **Current gaps**
 
@@ -300,6 +337,7 @@ Validation is not just “did extraction succeed?” It asks whether the citatio
 
 - combining local parse quality and authority evidence into one review decision
 - allowing local-ready paths for source types with poor provider coverage
+- preventing high-confidence citations from dropping out of `ready` just because a provider timed out
 
 **Current gaps**
 
@@ -345,8 +383,11 @@ Now:
 
 - once the resolver proves a candidate is the same citation, authority fields can repair the canonical citation
 - the system records exactly what got changed
+- if a provider call stalls, that single citation is downgraded to a provider error instead of hanging the whole batch
 
 That is a better design because it turns verification into something operational, not decorative.
+
+It was also changed this way because stage-level reliability matters just as much as candidate quality. A strict resolver that can still lose the whole batch to one hung provider is not production-safe, so `enrich` now isolates slow citations instead of letting them poison the full run.
 
 ### `validate`
 
@@ -362,6 +403,11 @@ not:
 
 This change reduced a very common false positive pattern where a citation stayed noisy even after the engine had enough evidence to fix it.
 
+It was also necessary so validation could become more honest about the difference between:
+
+- a citation that is structurally bad
+- and a citation that is structurally good but externally unverifiable at that moment
+
 ### `dedup`
 
 Dedup now behaves like a canonicalization phase, not just a clustering phase.
@@ -372,7 +418,20 @@ That matters because once duplicates are detected, the merge result becomes a ne
 - revalidated
 - scored on its own merits
 
-This is why dedup now prefers authority-backed fields and reruns validation after merge.
+This is why dedup now prefers authority-backed fields, reruns validation after merge, and hydrates duplicate-family members from the merged canonical record so the family does not stay internally inconsistent.
+
+That hydration step was added because duplicate handling is not finished once a merged citation exists. If the family is known to represent the same work, the duplicate members should not keep dragging review metrics down with stale partial fields that the family has already corrected.
+
+### `score`
+
+`score` was expanded to recognize clean unresolved cases because strict verification is valuable, but provider behavior is still imperfect.
+
+The reason for this change was not to make scoring looser in general. It was to make scoring more faithful to reality:
+
+- poor citation quality should still be blocked
+- malformed extraction should still be blocked
+- missing required fields should still be blocked
+- but clean, high-confidence citations should not be punished purely because Crossref or OpenAlex failed to answer in time
 
 ## Website Input Path
 
@@ -395,8 +454,11 @@ This is the right architectural boundary because user input should be flexible, 
 - stage logs and debug metadata are good enough to tune systematically
 - strict resolution is materially better than first-hit enrichment
 - authority-applied field repair is now real
+- provider stalls no longer have to become stage-level enrich failures
 - dedup is more conservative in the presence of conflicting DOI evidence
+- dedup now strengthens duplicate-family members instead of only tagging them
 - local-ready logic for reports / books / websites is much more realistic than before
+- local-ready logic now also handles clean provider-error cases more gracefully
 
 ## Main Known Gaps
 
@@ -404,6 +466,7 @@ This is the right architectural boundary because user input should be flexible, 
 - source-type misclassification ranking is still deferred
 - extractor field-loss ranking is still deferred
 - provider coverage and exact-match recall are still the main reason some good citations land in `worth_reviewing`
+- extractor corruption is now the main cause of true `action_needed` cases on the latest stress runs
 - some truncated or severely corrupted raw citations still cannot be safely recovered
 
 ## Practical Rule Of Thumb

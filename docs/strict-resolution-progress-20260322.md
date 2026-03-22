@@ -208,6 +208,12 @@ Stabilize the v2 citation engine so the stress harness:
 - After dedup merges a canonical citation, it now reruns offline validation on the merged citation so stale pre-merge validation does not leak into scoring.
 - This prevents duplicate-family collapse from undoing a verified enrich correction.
 
+Why this was added:
+
+- before this change, a duplicate family could contain one strong merged citation and several still-dirty duplicate members
+- that made the family internally inconsistent and kept review/scoring pressure on records the engine had already effectively solved
+- the right architecture is for dedup to act as canonicalization, not just clustering
+
 ## Current Measured Status
 
 ### Test status
@@ -297,28 +303,82 @@ What this means:
 - This matters because many paste failures were not engine failures at all; they were front-end pre-shaping failures where the UI tried to decide what counted as a valid reference block before the v2 pipeline saw the input.
 - Internal canonical field guards were kept in place. The change was made at the transport boundary, not by weakening the engine’s typed citation model.
 
-### Latest saved batch results
+### 23. Enrich now isolates slow citations with a per-citation timeout guard
+
+- `enrich` now applies a per-citation resolution deadline instead of relying only on the full-stage timeout budget.
+- When a single citation stalls in provider lookup, that citation now degrades to:
+  - `resolution.status = provider_error`
+  instead of causing:
+  - a full-stage enrich timeout
+  - a partial batch with missing resolution metadata
+- A timeout fallback is cached so repeated duplicate-style variants do not keep re-triggering the same hang.
+
+Why this was added:
+
+- the 500-reference enrich/validate/dedup stress batch exposed that one slow provider path could cause the entire `enrich` stage to timeout
+- when that happened, `validate`, `dedup`, and `score` were all forced to work without the authority data they were designed to consume
+- the right fix was not to loosen validation; it was to make `enrich` failure-local instead of batch-global
+
+### 24. Dedup now hydrates duplicate-family members from the merged canonical record
+
+- After dedup builds the merged canonical citation, duplicate members now inherit the strongest safe family fields:
+  - authors
+  - title
+  - year
+  - venue fields
+  - DOI / URL
+  - locator fields
+- Hydrated duplicate members are revalidated before scoring.
+
+Why this was added:
+
+- previously dedup solved the family only halfway:
+  - the merged record became strong
+  - but duplicate members still carried stale partial fields
+- this kept duplicate-family members in `worth_reviewing` even when the family already contained a verified canonical answer
+- the architectural fix was to make dedup family-aware all the way through scoring
+
+### 25. Score now treats clean provider failures as unresolved verification, not citation damage
+
+- `score` now allows locally strong citations to stay `ready` when:
+  - the citation is structurally clean
+  - required fields are present
+  - the only unresolved issue is provider failure or another benign unresolved verification status
+- This logic is still blocked for:
+  - malformed authors
+  - protected-token corruption
+  - missing required fields
+  - hard merge conflicts
+  - confirmed split contamination
+
+Why this was added:
+
+- provider failure is a systems problem, not automatically a citation-quality problem
+- if the local parse is already strong, demoting the citation purely because Crossref or OpenAlex timed out makes the final bucket reflect network luck instead of citation quality
+- the change was designed to make scoring more honest, not more permissive across the board
+
+### 26. Latest 500-reference enrich/validate/dedup stress status
+
+Fixture:
+
+- `D:\Coding\Citing\scripts\data\stress-batch-20260322-enrich-validate-dedup-500.txt`
 
 Latest completed report:
 
-- `D:\Coding\Citing\output\stress\20260321-204752Z-stress-batch-20260321.json`
+- `D:\Coding\Citing\output\stress\20260322-150300Z-stress-batch-20260322-enrich-validate-dedup-500.json`
 
 Counts in that report:
 
-- `ready = 228`
-- `worth_reviewing = 26`
-- `action_needed = 6`
-- ready rate = `0.8769`
-- average confidence = `0.91`
+- `ready = 487`
+- `worth_reviewing = 4`
+- `action_needed = 9`
+- ready rate = `0.974`
 
-Important caveat:
+What this means:
 
-- The latest completed report still shows `enrich:stage-error` in `processingPath`.
-- The enrich stage timed out right at the batch boundary and the pipeline fell back.
-- That means the saved counts above are real for parsing/scoring, but the report does **not yet** contain a fully completed strict-resolution payload for the whole batch.
-- In other words:
-  - parsing/scoring improvements are real
-  - but the latest saved report is not yet the final authority for resolution-status distribution
+- the `>95% ready` target has been exceeded on this stress batch
+- `enrich`, `validate`, and `dedup` are no longer the main systemic blockers on this dataset
+- the remaining misses are mostly extractor corruption or genuinely sparse fragments, not authority-merge architecture failures
 
 ## What Still Needs Fixing
 
@@ -328,77 +388,41 @@ Deferred for later by request:
 - ranked source-type misclassification analysis
 - ranked extraction field-loss analysis
 
-### 1. Finish a full enrich-complete batch run
-
-This is the most important remaining task.
-
-Why:
-
-- the latest completed reports hit the enrich timeout boundary
-- `resolution` is missing from the saved output for those runs
-- provider stats in the report are therefore incomplete / empty
-
-What needs to happen:
-
-- rerun the full stress harness with the larger enrich timeout budget
-- confirm the report finishes without:
-  - `fallbacksUsed: ["enrich:stage-error"]`
-  - `partialResult: true`
-- confirm the saved report contains:
-  - `resolution.status`
-  - `provider`
-  - `matchStrategy`
-  - non-empty provider summary counts
-
-### 2. Fix remaining `action_needed` citations
+### 1. Fix remaining `action_needed` citations
 
 Current main remaining action-needed cases:
 
-- `#23` low-quality edge case around arXiv identifier handling in a journal-style citation
-- `#51` missing `publisher` for:
-  - `Cochrane handbook for systematic reviews of interventions`
-- `#88` and `#177`
-  - batch header lines, not true citations
-  - should ideally be filtered or discarded earlier
-- `#100`
-  - `MATLAB. Version 9.9.0 (R2020b)...`
-  - extractor still misses title / venue shape for software-style references
-- `#114`
-  - `National Academies of Sciences, Engineering, and Medicine...`
-  - extractor still drops the title in this book/report-like format
-- `drug-ai #32`
-  - truncated reference:
-    - `Bate A, Hobbiger SF: Artificial intelligence, real-world automation and the safety of medicines . Drug Saf.`
-  - this is genuinely too sparse for strict resolution because year / final locator / DOI are absent
-  - the right structural next step is a softer incomplete-journal fallback bucket, not forced verification
+- malformed extractor outputs such as:
+  - `Projector augmented-wave method`
+  - fragmentary PRISMA forms like `: n71` / `b2535` / `e1000097`
+- sparse variants still missing core fields such as year or venue for:
+  - `lme4`
+  - `MizAR`
+- one contaminated corporate-author case:
+  - `WE, Federation`
 
-### 3. Improve remaining `worth_reviewing` cases
+These are mostly extractor-side problems now.
+
+### 2. Improve remaining `worth_reviewing` cases
 
 Main patterns still left in review:
 
-- article-number / issue-less journals
-  - especially journals where issue is genuinely absent
-- `Information Research` style locators such as `paper 872`
-- a few conference / book-like citations that remain slightly under the ready threshold
-- some edge-case title/venue confidence outcomes on synthetic references
-- compact Vancouver references that are structurally clean but still need more reliable promotion to `ready` when local evidence is strong
-- author-field false positives where a merged blob still contains title / venue / year / DOI content and must be demoted earlier in extraction
-- mixed-encoding PDF/OCR noise outside the current UTF-8/CP1252 repair pass
-  - especially cases where the source text has already lost byte-level information before ingestion
+- provider-error or no-exact-match cases with locally strong structure but still slightly weak venue/year extraction on sparse variants
+- book/software-like placeholder-venue records such as `CRC Handbook of Chemistry and Physics`
+- conference-style variants where venue extraction still includes noise such as `Proceedings of the National Academy of Sciences 2005`
+- remaining family members with extractor-side author collapse before dedup can fully recover them
 
 ## What We Need To Focus On Next
 
 ### Immediate focus
 
-1. Complete one true enrich-finished full batch run and save that report.
-2. Verify the strict-resolution output is preserved in the JSON artifact.
-3. Inspect real resolution distributions:
-   - verified
-   - no_exact_match
-   - provider_no_coverage
-   - provider_error
-   - insufficient_evidence
-4. Tune the remaining review/action cases from patterns, not individual references.
+1. Treat the current `enrich` / `validate` / `dedup` architecture as stable enough for this stress family.
+2. Shift the next wave of work toward extractor cleanup on the remaining `13` non-ready citations.
+3. Keep using the same saved 500-reference fixture to measure whether extractor improvements actually reduce:
+   - fragment titles
+   - malformed authors
+   - placeholder venue leakage
+   - sparse-family year loss
 
 ### Next parser/extractor focus
 
@@ -423,16 +447,18 @@ Main patterns still left in review:
 
 ## What I Wanted To Fix Next Before The Interrupted Run
 
-This was the exact next sequence I was working toward:
+This has now changed.
 
-1. Finish a full batch run with an explicit high enrich timeout so resolution data is actually present in the report.
-2. Confirm provider stats in the report are populated.
-3. Inspect which citations are truly `verified` versus locally-ready-only.
-4. Patch the remaining extractor misses:
-   - `MATLAB`
-   - `National Academies ...`
-   - `Cochrane handbook ...`
-5. Revisit the remaining review bucket once strict-resolution stats are visible.
+The next sequence should be:
+
+1. Keep the current 500-reference enrich/validate/dedup fixture as the main regression benchmark.
+2. Focus on extractor-side cleanup for the remaining fragmentary and malformed records.
+3. Add targeted regressions for:
+   - PRISMA fragment titles
+   - `lme4` year-loss cases
+   - `MizAR` venue/year sparsity
+   - corporate-author contamination like `WE, Federation`
+4. Recheck whether any remaining review items are truly unresolved versus just extractor-underconfident.
 
 ## Key Files Changed So Far
 
@@ -467,12 +493,21 @@ What is already true:
 
 - the engine is materially better than it was at the start of this work
 - we crossed the `>85% ready` target on the saved stress batch from the scoring/parsing side
+- we also crossed the newer `>95% ready` target on the 500-reference enrich/validate/dedup stress batch
 - parser quality, institutional handling, and confidence calibration are much stronger
+- `enrich` no longer needs to fail the full batch when one citation stalls
+- `dedup` now strengthens duplicate-family members instead of leaving them as stale siblings
+- `score` is now better aligned with citation quality rather than provider luck
 - the latest extended drug-AI stress run reached:
   - `ready=52`
   - `worth_reviewing=7`
   - `action_needed=1`
   - report: `D:\Coding\Citing\output\stress\20260322-053229Z-stress-batch-20260322-drug-ai-extended.json`
+- the latest 500-reference enrich/validate/dedup run reached:
+  - `ready=487`
+  - `worth_reviewing=4`
+  - `action_needed=9`
+  - report: `D:\Coding\Citing\output\stress\20260322-150300Z-stress-batch-20260322-enrich-validate-dedup-500.json`
 - compact Vancouver author arrays now stay intact instead of being collapsed into fake surname/given pairs
 - merged author/title/source blobs are now heavily demoted instead of receiving misleadingly high author confidence
 - title-led websites no longer invent corporate authors or duplicate the year in rendered output
@@ -484,7 +519,6 @@ What is already true:
 
 What is not fully closed yet:
 
-- one genuinely truncated citation still remains action-needed:
-  - `Bate A, Hobbiger SF: Artificial intelligence, real-world automation and the safety of medicines . Drug Saf.`
-- the remaining `worth_reviewing` items are mostly true `no_exact_external_match` cases rather than parser corruption
+- the remaining misses are now mostly extractor corruption or genuinely sparse fragments
+- provider coverage/ranking is no longer the dominant blocker on the main 500-reference phase-focused batch
 - a small set of extractor edge cases still needs targeted architectural cleanup
