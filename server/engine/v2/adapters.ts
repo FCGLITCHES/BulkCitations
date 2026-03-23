@@ -73,6 +73,8 @@ const IN_SOURCE_LOCATOR_PATTERN = /\bpp?\.?\s*(?<pages>[A-Za-z]?\d+(?:\s*[-–]\
 const CONFERENCE_SIGNAL_PATTERN = /\b(?:conference|symposium|workshop|congress|meeting|proceedings|forum|summit|colloquium)\b/i;
 const PUBLISHER_SEGMENT_PATTERN = /\b(?:IEEE|ACM|Springer|Elsevier|Wiley|Routledge|Sage|Taylor\s*&\s*Francis|Oxford University Press|Cambridge University Press|CRC Press|MDPI|Pearson|McGraw-Hill|Palgrave)\b/i;
 const PLACE_SEGMENT_PATTERN = /^(?:[A-Z][A-Za-z'’.-]+(?:,\s*[A-Z][A-Za-z'’.-]+){0,3})$/;
+const BOOK_TAIL_PATTERN = /(?<place>[A-Z][^.:]{1,80}?)\s*:\s*(?<publisher>[^.;]+?)(?:[;,]\s*(?<year>(?:19|20)\d{2}))?\.?$/i;
+const BOOK_NOTE_PATTERN = /^(?<title>.+?)\.\s*(?<note>(?:translated|edited|with\s+a\s+foreword|foreword|preface|introduction)\b.+)$/i;
 
 let grobidCooldownUntil = 0;
 
@@ -161,6 +163,10 @@ function buildDeterministicCandidate(input: string, inputStyle: string) {
   const compactJournalTail = buildCompactJournalTailCandidate(normalized);
   if (compactJournalTail) {
     return compactJournalTail;
+  }
+  const bookTail = buildBookTailCandidate(normalized, inputStyle);
+  if (bookTail) {
+    return bookTail;
   }
   const detectedStyle = inputStyle !== 'auto'
     ? inputStyle
@@ -435,6 +441,96 @@ function buildCompactJournalTailCandidate(normalized: string): {
     parsed,
     referenceType: 'journal',
     warnings: parsed.parseWarnings ?? [],
+  };
+}
+
+function extractBookTitleLead(value: string): { title: string | undefined; edition: string | undefined } {
+  let normalized = stripTrailingPeriod(normalizeWhitespace(value));
+  if (!normalized) {
+    return { title: undefined, edition: undefined };
+  }
+
+  const noteMatch = normalized.match(BOOK_NOTE_PATTERN);
+  if (noteMatch?.groups?.title) {
+    normalized = stripTrailingPeriod(noteMatch.groups.title);
+  }
+
+  const editionMatch = normalized.match(/\((?<edition>\d+(?:st|nd|rd|th)\s+ed(?:ition)?\.?)\)/i);
+  const edition = editionMatch?.groups?.edition
+    ? normalizeWhitespace(editionMatch.groups.edition)
+    : undefined;
+  if (editionMatch) {
+    normalized = normalizeWhitespace(normalized.replace(editionMatch[0], ' '));
+  }
+
+  return {
+    title: normalized || undefined,
+    edition,
+  };
+}
+
+function buildBookTailCandidate(normalized: string, inputStyle: string): {
+  normalized: string;
+  parsed: ParsedReference;
+  referenceType: ReturnType<typeof parsedReferenceTypeToCanonical>;
+  warnings: string[];
+} | null {
+  if (/\bIn\s+.+\bpp?\.?\s*[A-Za-z]?\d+/i.test(normalized)) return null;
+  if (/\b(?:conference|proceedings|symposium|workshop)\b/i.test(normalized)) return null;
+  if (/\b(?:vol\.?|no\.?|issue|journal)\b/i.test(normalized)) return null;
+
+  const tailMatch = normalized.match(BOOK_TAIL_PATTERN);
+  if (!tailMatch?.groups || tailMatch.index == null) return null;
+
+  const placeOfPublication = cleanContainerTitle(tailMatch.groups.place ?? '');
+  const publisher = cleanContainerTitle(tailMatch.groups.publisher ?? '');
+  if (!placeOfPublication || !publisher) return null;
+
+  const beforeTail = stripTrailingPeriod(normalized.slice(0, tailMatch.index).trim());
+  if (!beforeTail) return null;
+
+  let authorLead = '';
+  let titleLead = '';
+  let year = normalizeParsedYear(tailMatch.groups.year);
+
+  const parentheticalYear = beforeTail.match(/\((?<year>(?:19|20)\d{2})\)/);
+  if (parentheticalYear?.index != null) {
+    authorLead = stripTrailingPeriod(beforeTail.slice(0, parentheticalYear.index));
+    titleLead = stripLeadingPunctuation(
+      beforeTail.slice(parentheticalYear.index + parentheticalYear[0].length),
+    );
+    year = year ?? normalizeParsedYear(parentheticalYear.groups?.year);
+  } else {
+    const leadParts = beforeTail.match(/^(?<authors>.+?)\.\s+(?<title>.+)$/);
+    if (!leadParts?.groups) return null;
+    authorLead = stripTrailingPeriod(leadParts.groups.authors ?? '');
+    titleLead = normalizeWhitespace(leadParts.groups.title ?? '');
+  }
+
+  if (!authorLead || !titleLead) return null;
+
+  const { title, edition } = extractBookTitleLead(titleLead);
+  if (!title) return null;
+
+  const authorParse = parseAuthorsForStyle([authorLead], inputStyle);
+  const authors = authorParse.authors.map((author) => renderAuthor(author)).filter(Boolean);
+  if (authors.length === 0) return null;
+
+  const parsed: ParsedReference = {
+    authors,
+    title,
+    year,
+    publisher,
+    placeOfPublication,
+    edition,
+    parseWarnings: ['book-tail-heuristic'],
+  };
+
+  return {
+    normalized,
+    parsed,
+    referenceType: 'book',
+    warnings: [...(parsed.parseWarnings ?? []), ...authorParse.warningFlags],
   };
 }
 
@@ -1509,13 +1605,23 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     if (inSource && selectedBranch !== 'in_source_heuristic_raw') rejectedCandidates.push('in_source_heuristic_not_selected');
 
     const inputStructure = options?.inputProfile?.structure ?? 'unknown';
+    const inputSignals = new Set(options?.inputProfile?.signals ?? []);
     const batchSize = options?.batchSize ?? options?.inputProfile?.estimatedCount ?? 1;
     const grobidEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_GROBID_EXTRACTOR ?? '');
-    const llmEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_LLM_EXTRACTOR ?? '1') && Boolean(process.env.OPENAI_API_KEY);
+    const forceGrobid = options?.forceGrobid === true;
+    const llmEnabled = !forceGrobid
+      && /^(1|true|yes|on)$/i.test(process.env.ENABLE_LLM_EXTRACTOR ?? '1')
+      && Boolean(process.env.OPENAI_API_KEY);
     const detectionConfidence = options?.detectionConfidence ?? 0;
+    const noisyProfileSignals = ['ocr_noise_markers', 'mixed_style_markers', 'long_prose_lines', 'footnote_markers']
+      .filter((signal) => inputSignals.has(signal));
+    const deterministicFriendlySignals = ['book_tail_markers', 'conference_tail_markers', 'doi_heavy']
+      .filter((signal) => inputSignals.has(signal));
     const profilePrefersGrobid = inputStructure === 'semi_structured'
       || inputStructure === 'unstructured'
+      || noisyProfileSignals.length > 0
       || splitContaminationFlags.some((flag) => ['header_bleed_suspected', 'page_artifact_present', 'multiline_truncation_suspected', 'oversized_chunk'].includes(flag));
+    const profilePrefersDeterministic = deterministicFriendlySignals.length > 0;
 
     let llmApplied = false;
     let llmAttempted = false;
@@ -1572,18 +1678,20 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     }
 
     const currentSelectionScore = scoreCandidate(mergedSelection, selectedReferenceType);
-    const grobidRouteReason = (
-      needsLlmFallback(mergedSelection, selectedFieldConfidence)
-      || (currentSelectionScore - contaminationScorePenalty) < 8
-      || splitContaminationFlags.length > 0
-    )
+    const grobidRouteReason = forceGrobid
+      ? options?.forceGrobidReason ?? 'forced_unresolved_recovery'
+      : (
+        needsLlmFallback(mergedSelection, selectedFieldConfidence)
+        || (currentSelectionScore - contaminationScorePenalty) < 8
+        || splitContaminationFlags.length > 0
+      )
           ? 'weak_selected_parse'
-      : detectionConfidence < 0.65
-        ? 'low_detection_confidence'
-        : profilePrefersGrobid && detectionConfidence < 0.9
-          ? 'noisy_profile_medium_confidence'
-          : 'not_needed';
-    const shouldTryGrobid = grobidEnabled && grobidRouteReason !== 'not_needed';
+        : detectionConfidence < 0.65
+          ? 'low_detection_confidence'
+          : profilePrefersGrobid && !profilePrefersDeterministic && detectionConfidence < 0.9
+            ? 'noisy_profile_medium_confidence'
+            : 'not_needed';
+    const shouldTryGrobid = grobidEnabled && (forceGrobid || grobidRouteReason !== 'not_needed');
 
     if (grobidEnabled && !shouldTryGrobid) {
       console.log(JSON.stringify({
@@ -1594,6 +1702,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
         batchSize,
         detectionConfidence,
         inputStructure,
+        inputSignals: [...inputSignals],
       }));
     }
 
@@ -1608,16 +1717,19 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
           batchSize,
           detectionConfidence,
           inputStructure,
+          inputSignals: [...inputSignals],
           reason: grobidRouteReason,
         }));
         grobidCandidate = await extractWithGrobid(input);
         if (grobidCandidate) {
           grobidScore = scoreCandidate(grobidCandidate.parsed, grobidCandidate.referenceType) + 1;
-          const grobidPreferredProfile = ['structured', 'semi_structured'].includes(inputStructure);
+          const grobidPreferredProfile = ['structured', 'semi_structured'].includes(inputStructure)
+            && !profilePrefersDeterministic;
           const currentBestScore = Math.max(currentSelectionScore, deterministicScore, fallbackScore, institutionalScore, inSourceScore);
           const grobidLooksUsable = Boolean(grobidCandidate.parsed.title) && Boolean(grobidCandidate.parsed.authors?.length);
           if (
-            (grobidLooksUsable && grobidPreferredProfile)
+            (forceGrobid && grobidLooksUsable)
+            || (grobidLooksUsable && grobidPreferredProfile)
             || grobidScore > currentBestScore + 0.5
             || (grobidPreferredProfile && grobidLooksUsable && grobidScore >= currentBestScore - 0.25)
           ) {
@@ -1635,6 +1747,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
               batchSize,
               detectionConfidence,
               inputStructure,
+              inputSignals: [...inputSignals],
               reason: grobidRouteReason,
               grobidScore,
               deterministicScore,
@@ -1651,6 +1764,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
               batchSize,
               detectionConfidence,
               inputStructure,
+              inputSignals: [...inputSignals],
               reason: grobidRouteReason,
               grobidScore,
               deterministicScore,
@@ -1670,6 +1784,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
           batchSize,
           detectionConfidence,
           inputStructure,
+          inputSignals: [...inputSignals],
           reason: grobidRouteReason,
           error: error instanceof Error ? error.message : String(error),
         }));
@@ -1739,6 +1854,9 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             in_source_author_warning_flags: inSourceAuthorParse.warningFlags,
             split_contamination_flags: splitContaminationFlags,
             split_contamination_penalty: splitPenalty,
+            input_profile_signals: [...inputSignals],
+            grobid_noisy_profile_signals: noisyProfileSignals,
+            deterministic_friendly_signals: deterministicFriendlySignals,
             cleaned_chunk_length: splitArtifact?.chunkLength ?? input.length,
             llm_attempted: llmAttempted,
             llm_applied: llmApplied,

@@ -18,6 +18,8 @@
     "stress:v2": "tsx scripts/stressV2.ts",
     "stress:sde:generate": "tsx scripts/generateSdeStress250.ts",
     "stress:sde": "tsx scripts/stressSdeV2.ts",
+    "baseline:v2:freeze": "tsx scripts/v2PhaseBaseline.ts freeze",
+    "baseline:v2:check": "tsx scripts/v2PhaseBaseline.ts check",
     "benchmark": "tsx scripts/benchmark.ts",
     "test:pdf": "tsx tests/test-pdf-citations.test.ts"
   },
@@ -76,7 +78,7 @@
     "fuzzball": "^2.2.3",
     "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
-    "jsdom": "^29.0.1",
+    "jsdom": "26.1.0",
     "jspdf": "^4.2.0",
     "lucide-react": "^0.453.0",
     "mammoth": "^1.11.0",

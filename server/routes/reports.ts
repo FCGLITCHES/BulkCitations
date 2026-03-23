@@ -6,10 +6,13 @@ import type {
   FailureCategory,
   FieldApprovalMap,
   FixType,
+  ParsedReference,
   ProposedPattern,
+  ReferenceType,
   ReportEngineSnapshot,
   ReportStatus,
 } from '@shared/schema';
+import { normalizeCitationStyle } from '@shared/schema';
 import {
   addToStressTest,
   checkRateLimit,
@@ -24,6 +27,8 @@ import {
 } from '../store/reportStore.js';
 import { saveGeneratedRegressionFixture } from '../store/generatedRegressionStore.js';
 import { saveTruth } from '../store/truthStore.js';
+import { formatCSLData, initCSLStyles, parsedReferenceToCSL } from '../engine/cslConverter.js';
+import { fixFormatting } from '../engine/strictRenderer.js';
 import { requireAdmin } from '../utils/adminAuth.js';
 import { readPatterns, validatePattern, writePattern } from '../utils/patternWriter.js';
 import {
@@ -63,6 +68,55 @@ const VALID_FIX_TYPES: FixType[] = ['dynamic-pattern', 'parser-logic', 'scoring-
 
 const router: Router = Router();
 
+const APPROVED_TRUTH_FIELD_KEYS = [
+  'authors',
+  'title',
+  'year',
+  'journal',
+  'volume',
+  'issue',
+  'pages',
+  'doi',
+  'publisher',
+  'url',
+  'conferenceTitle',
+  'bookTitle',
+  'institution',
+  'edition',
+  'editor',
+  'referenceType',
+] as const;
+
+const NORMALIZED_REFERENCE_TYPE_MAP: Record<string, ReferenceType> = {
+  article: 'journal',
+  journal: 'journal',
+  'journal-article': 'journal',
+  book: 'book',
+  chapter: 'bookChapter',
+  'book-chapter': 'bookChapter',
+  bookchapter: 'bookChapter',
+  conference: 'conference',
+  'conference-paper': 'conference',
+  'paper-conference': 'conference',
+  thesis: 'thesis',
+  report: 'report',
+  website: 'website',
+  webpage: 'website',
+  preprint: 'preprint',
+  other: 'other',
+  unknown: 'other',
+};
+
+type ApprovedTruthFieldKey = typeof APPROVED_TRUTH_FIELD_KEYS[number];
+
+type PersistedTruthResult = {
+  correctedFields?: ApprovedCanonicalFields;
+  didSave: boolean;
+  fieldApproval?: FieldApprovalMap;
+  truthId?: string;
+  validatedOutput?: string;
+};
+
 function normalizeCategory(value: string): FailureCategory | null {
   if (VALID_CATEGORIES.includes(value as FailureCategory)) {
     return value as FailureCategory;
@@ -84,6 +138,205 @@ function parsePatternExport(pattern?: ProposedPattern, generatedBy?: string) {
     return { error: validationError };
   }
   return { artifact: buildPatternExportArtifact(pattern, generatedBy) };
+}
+
+function textValue(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function normalizeReferenceType(value: unknown): ReferenceType | undefined {
+  if (typeof value !== 'string') return undefined;
+  return NORMALIZED_REFERENCE_TYPE_MAP[value.trim().toLowerCase()];
+}
+
+function normalizeApprovedCanonicalFields(fields?: ApprovedCanonicalFields): ApprovedCanonicalFields | undefined {
+  if (!fields) return undefined;
+
+  const normalizedReferenceType = normalizeReferenceType(fields.referenceType);
+  return {
+    ...fields,
+    ...(normalizedReferenceType ? { referenceType: normalizedReferenceType } : {}),
+  };
+}
+
+function normalizeFieldApprovalMap(fieldApproval?: FieldApprovalMap): FieldApprovalMap | undefined {
+  if (!fieldApproval) return undefined;
+
+  const normalizedReferenceType = normalizeReferenceType(fieldApproval.referenceType?.value);
+  return {
+    ...fieldApproval,
+    ...(fieldApproval.referenceType
+      ? {
+          referenceType: {
+            ...fieldApproval.referenceType,
+            ...(normalizedReferenceType ? { value: normalizedReferenceType } : {}),
+          },
+        }
+      : {}),
+  };
+}
+
+function approvedFieldKeys(fieldApproval?: FieldApprovalMap): ApprovedTruthFieldKey[] {
+  if (!fieldApproval) return [];
+  return APPROVED_TRUTH_FIELD_KEYS.filter((field) => fieldApproval[field]?.approved === true);
+}
+
+function approvedAuthorsToParsed(authors?: ApprovedCanonicalFields['authors']): string[] | undefined {
+  if (!authors) return undefined;
+  return authors.map((author) => author.literal || (author.first ? `${author.last}, ${author.first}` : author.last));
+}
+
+function mergeApprovedFieldsIntoParsed(
+  base: ParsedReference | undefined,
+  correctedFields?: ApprovedCanonicalFields,
+  fieldApproval?: FieldApprovalMap,
+): ParsedReference | undefined {
+  if (!base && !correctedFields) return undefined;
+
+  const next: ParsedReference = {
+    ...(base ?? {}),
+  };
+
+  if (fieldApproval?.authors?.approved) next.authors = approvedAuthorsToParsed(correctedFields?.authors) ?? [];
+  if (fieldApproval?.title?.approved) next.title = correctedFields?.title ?? undefined;
+  if (fieldApproval?.year?.approved) next.year = correctedFields?.year != null ? String(correctedFields.year) : undefined;
+  if (fieldApproval?.journal?.approved) next.journal = correctedFields?.journal ?? undefined;
+  if (fieldApproval?.volume?.approved) next.volume = correctedFields?.volume ?? undefined;
+  if (fieldApproval?.issue?.approved) next.issue = correctedFields?.issue ?? undefined;
+  if (fieldApproval?.pages?.approved) next.pages = correctedFields?.pages ?? undefined;
+  if (fieldApproval?.doi?.approved) next.doi = correctedFields?.doi ?? undefined;
+  if (fieldApproval?.publisher?.approved) next.publisher = correctedFields?.publisher ?? undefined;
+  if (fieldApproval?.url?.approved) next.url = correctedFields?.url ?? undefined;
+  if (fieldApproval?.conferenceTitle?.approved) next.conferenceTitle = correctedFields?.conferenceTitle ?? undefined;
+  if (fieldApproval?.bookTitle?.approved) next.bookTitle = correctedFields?.bookTitle ?? undefined;
+  if (fieldApproval?.institution?.approved) next.institution = correctedFields?.institution ?? undefined;
+  if (fieldApproval?.edition?.approved) next.edition = correctedFields?.edition ?? undefined;
+  if (fieldApproval?.editor?.approved) next.editor = correctedFields?.editor ?? undefined;
+
+  return next;
+}
+
+function hasStructuredParsedContent(parsed?: ParsedReference): boolean {
+  if (!parsed) return false;
+  return Object.values(parsed).some((value) => {
+    if (Array.isArray(value)) return value.length > 0;
+    return value != null && String(value).trim().length > 0;
+  });
+}
+
+function deriveApprovedOutput(args: {
+  approvedOutput?: string;
+  correctedFields?: ApprovedCanonicalFields;
+  fieldApproval?: FieldApprovalMap;
+  referenceType?: ReferenceType;
+  report: CitationReport;
+}): string | undefined {
+  const explicitApprovedOutput = textValue(args.approvedOutput);
+  if (explicitApprovedOutput) return explicitApprovedOutput;
+
+  const baseParsed = args.report.originalEngineOutput?.parsedData ?? args.report.parsedData;
+  const mergedParsed = mergeApprovedFieldsIntoParsed(baseParsed, args.correctedFields, args.fieldApproval);
+  if (!mergedParsed || !hasStructuredParsedContent(mergedParsed)) return undefined;
+
+  const renderedReferenceType =
+    (args.fieldApproval?.referenceType?.approved
+      ? normalizeReferenceType(args.correctedFields?.referenceType)
+      : undefined)
+    ?? args.referenceType
+    ?? normalizeReferenceType(args.report.referenceType)
+    ?? normalizeReferenceType(args.report.originalEngineOutput?.referenceType)
+    ?? 'other';
+
+  try {
+    initCSLStyles();
+    const normalizedStyle = normalizeCitationStyle(args.report.outputStyle);
+    const cslData = parsedReferenceToCSL(
+      mergedParsed,
+      renderedReferenceType,
+      `truth-${computeFingerprint(args.report.originalText)}`,
+    );
+    const rawOutput = formatCSLData(cslData, normalizedStyle, { includeDoi: false });
+    const formatted = fixFormatting(normalizedStyle, rawOutput, mergedParsed).trim();
+    return formatted || undefined;
+  } catch (error) {
+    console.warn('[reports] Failed to derive approved output:', error instanceof Error ? error.message : String(error));
+    return undefined;
+  }
+}
+
+async function persistApprovedTruth(args: {
+  approvedOutput?: string;
+  correctedFields?: ApprovedCanonicalFields;
+  duplicateDecision?: CitationReport['duplicateDecision'];
+  failureTaxonomy?: string[];
+  fieldApproval?: FieldApprovalMap;
+  forceSave?: boolean;
+  referenceType?: ReferenceType;
+  report: CitationReport;
+  resolvedByCommit?: string;
+  resolvedByVersion?: string;
+  stageBlame?: string[];
+  verifiedBy: string;
+}): Promise<PersistedTruthResult> {
+  const correctedFields = normalizeApprovedCanonicalFields(args.correctedFields);
+  const fieldApproval = normalizeFieldApprovalMap(args.fieldApproval);
+  const hasApprovedFields = approvedFieldKeys(fieldApproval).length > 0;
+  const validatedOutput = deriveApprovedOutput({
+    approvedOutput: args.approvedOutput,
+    correctedFields,
+    fieldApproval,
+    referenceType: args.referenceType,
+    report: args.report,
+  });
+
+  if (!args.forceSave && !hasApprovedFields && !validatedOutput) {
+    return {
+      correctedFields,
+      didSave: false,
+      fieldApproval,
+      truthId: args.report.truthId,
+      validatedOutput,
+    };
+  }
+
+  if (!validatedOutput) {
+    return {
+      correctedFields,
+      didSave: false,
+      fieldApproval,
+      truthId: args.report.truthId,
+    };
+  }
+
+  const truthEntry = await saveTruth({
+    fingerprint: computeFingerprint(args.report.originalText),
+    originalText: args.report.originalText,
+    outputStyle: args.report.outputStyle,
+    validatedOutput,
+    validatedBy: args.verifiedBy,
+    correctedFields,
+    fieldApproval,
+    failureTaxonomy: args.failureTaxonomy,
+    stageBlame: args.stageBlame,
+    duplicateDecision: args.duplicateDecision,
+    originalEngineOutput: args.report.originalEngineOutput ?? {
+      convertedText: args.report.convertedText,
+      parsedData: args.report.parsedData,
+      referenceType: args.report.referenceType,
+      confidence: args.report.confidence,
+    },
+    sourceReportId: args.report.id,
+    resolvedByCommit: args.resolvedByCommit,
+    resolvedByVersion: args.resolvedByVersion,
+  });
+
+  return {
+    correctedFields,
+    didSave: true,
+    fieldApproval,
+    truthId: truthEntry.truthId,
+    validatedOutput,
+  };
 }
 
 async function updateReportWithEvents(
@@ -306,7 +559,7 @@ router.patch('/:id', async (req, res) => {
     if (failureCategory && VALID_CATEGORIES.includes(failureCategory)) {
       updates.failureCategory = failureCategory;
     }
-    if (referenceType) updates.referenceType = referenceType;
+    if (referenceType) updates.referenceType = normalizeReferenceType(referenceType) ?? referenceType;
 
     const updated = await updateReport(id, updates);
     if (!updated) return res.status(404).json({ message: 'Report not found' });
@@ -359,6 +612,30 @@ router.post('/:id/accept', async (req, res) => {
     if (!report) return res.status(404).json({ message: 'Report not found' });
 
     const verifiedBy = actorName(req.body?.verifiedBy, 'admin');
+    const correctedFields = normalizeApprovedCanonicalFields(
+      (req.body?.correctedFields as ApprovedCanonicalFields | undefined) ?? report.correctedFields,
+    );
+    const fieldApproval = normalizeFieldApprovalMap(
+      (req.body?.fieldApproval as FieldApprovalMap | undefined) ?? report.fieldApproval,
+    );
+    const referenceType =
+      normalizeReferenceType(req.body?.referenceType)
+      ?? normalizeReferenceType(correctedFields?.referenceType)
+      ?? normalizeReferenceType(report.referenceType)
+      ?? normalizeReferenceType(report.originalEngineOutput?.referenceType);
+    const proposedStyleFix = textValue(req.body?.proposedStyleFix) || report.proposedStyleFix || '';
+    const finalApprovedOutput = textValue(req.body?.finalApprovedOutput) || report.finalApprovedOutput || proposedStyleFix;
+    const failureTaxonomy = Array.isArray(req.body?.failureTaxonomy)
+      ? req.body.failureTaxonomy.filter(Boolean)
+      : report.failureTaxonomy;
+    const stageBlame = Array.isArray(req.body?.stageBlame)
+      ? req.body.stageBlame.filter(Boolean)
+      : report.stageBlame;
+    const duplicateDecision = req.body?.duplicateDecision as CitationReport['duplicateDecision'] | undefined;
+    const resolvedByCommit = typeof req.body?.resolvedByCommit === 'string' ? req.body.resolvedByCommit.trim() : process.env.GIT_COMMIT_SHA;
+    const resolvedByVersion = typeof req.body?.resolvedByVersion === 'string'
+      ? req.body.resolvedByVersion.trim()
+      : (process.env.APP_VERSION ?? process.env.npm_package_version);
     const writePatternDirectly = req.body?.writePatternDirectly === true;
     let patternWritten = false;
     let patternExport = report.patternExport;
@@ -379,19 +656,47 @@ router.post('/:id/accept', async (req, res) => {
       }
     }
 
+    const truthResult = await persistApprovedTruth({
+      approvedOutput: finalApprovedOutput,
+      correctedFields,
+      duplicateDecision: duplicateDecision ?? report.duplicateDecision,
+      failureTaxonomy,
+      fieldApproval,
+      forceSave: req.body?.saveAsTruth === true,
+      referenceType,
+      report,
+      resolvedByCommit,
+      resolvedByVersion,
+      stageBlame,
+      verifiedBy,
+    });
+
     const event = createReviewEvent(
       'resolve',
       verifiedBy,
       'Accepted report',
-      { patternWritten },
+      {
+        patternWritten,
+        truthId: truthResult.truthId,
+      },
     );
     const updated = await updateReportWithEvents(report, {
       status: 'accepted',
       resolvedAt: new Date().toISOString(),
       verifiedBy,
       fixType: (req.body?.fixType || report.fixType) as FixType | undefined,
-      referenceType: req.body?.referenceType || report.referenceType,
+      referenceType: referenceType ?? report.referenceType,
+      correctedFields: truthResult.correctedFields ?? correctedFields ?? report.correctedFields,
+      fieldApproval: truthResult.fieldApproval ?? fieldApproval ?? report.fieldApproval,
+      proposedStyleFix: proposedStyleFix || report.proposedStyleFix,
+      finalApprovedOutput: truthResult.validatedOutput ?? finalApprovedOutput ?? report.convertedText,
+      failureTaxonomy: failureTaxonomy ?? report.failureTaxonomy,
+      stageBlame: stageBlame ?? report.stageBlame,
+      duplicateDecision: duplicateDecision ?? report.duplicateDecision,
+      truthId: truthResult.truthId ?? report.truthId,
       patternExport,
+      resolvedByCommit,
+      resolvedByVersion,
     }, [event]);
     if (!updated) return res.status(404).json({ message: 'Report not found' });
 
@@ -422,11 +727,10 @@ router.post('/:id/resolve', async (req, res) => {
     }
 
     const proposedPattern = req.body?.proposedPattern as ProposedPattern | undefined;
-    const proposedStyleFix = typeof req.body?.proposedStyleFix === 'string'
-      ? req.body.proposedStyleFix.trim()
-      : '';
-    const correctedFields = req.body?.correctedFields as ApprovedCanonicalFields | undefined;
-    const fieldApproval = req.body?.fieldApproval as FieldApprovalMap | undefined;
+    const proposedStyleFix = textValue(req.body?.proposedStyleFix);
+    const finalApprovedOutput = textValue(req.body?.finalApprovedOutput);
+    const correctedFields = normalizeApprovedCanonicalFields(req.body?.correctedFields as ApprovedCanonicalFields | undefined);
+    const fieldApproval = normalizeFieldApprovalMap(req.body?.fieldApproval as FieldApprovalMap | undefined);
     const failureTaxonomy = Array.isArray(req.body?.failureTaxonomy) ? req.body.failureTaxonomy.filter(Boolean) : undefined;
     const stageBlame = Array.isArray(req.body?.stageBlame) ? req.body.stageBlame.filter(Boolean) : undefined;
     const duplicateDecision = req.body?.duplicateDecision as CitationReport['duplicateDecision'] | undefined;
@@ -452,31 +756,33 @@ router.post('/:id/resolve', async (req, res) => {
       }
     }
 
-    let truthId = report.truthId;
-    if (saveAsTruth && proposedStyleFix) {
-      const truthEntry = await saveTruth({
-        fingerprint: computeFingerprint(report.originalText),
-        originalText: report.originalText,
-        outputStyle: report.outputStyle,
-        validatedOutput: proposedStyleFix,
-        validatedBy: verifiedBy,
-        correctedFields,
-        fieldApproval,
-        failureTaxonomy,
-        stageBlame,
-        duplicateDecision,
-        originalEngineOutput: report.originalEngineOutput ?? {
-          convertedText: report.convertedText,
-          parsedData: report.parsedData,
-          referenceType: report.referenceType,
-          confidence: report.confidence,
-        },
-        sourceReportId: report.id,
-        resolvedByCommit,
-        resolvedByVersion,
-      });
-      truthId = truthEntry.truthId;
-    }
+    const referenceType =
+      normalizeReferenceType(req.body?.referenceType)
+      ?? normalizeReferenceType(correctedFields?.referenceType)
+      ?? normalizeReferenceType(report.referenceType)
+      ?? normalizeReferenceType(report.originalEngineOutput?.referenceType);
+    const truthResult = await persistApprovedTruth({
+      approvedOutput: finalApprovedOutput || proposedStyleFix || report.finalApprovedOutput || report.proposedStyleFix,
+      correctedFields: correctedFields ?? report.correctedFields,
+      duplicateDecision: duplicateDecision ?? report.duplicateDecision,
+      failureTaxonomy: failureTaxonomy ?? report.failureTaxonomy,
+      fieldApproval: fieldApproval ?? report.fieldApproval,
+      forceSave: saveAsTruth,
+      referenceType,
+      report,
+      resolvedByCommit,
+      resolvedByVersion,
+      stageBlame: stageBlame ?? report.stageBlame,
+      verifiedBy,
+    });
+    const truthId = truthResult.truthId ?? report.truthId;
+    const resolvedOutput =
+      truthResult.validatedOutput
+      ?? finalApprovedOutput
+      ?? proposedStyleFix
+      ?? report.finalApprovedOutput
+      ?? report.proposedStyleFix
+      ?? report.convertedText;
 
     const baseUpdated: CitationReport = {
       ...report,
@@ -484,15 +790,15 @@ router.post('/:id/resolve', async (req, res) => {
       resolvedAt: new Date().toISOString(),
       verifiedBy,
       fixType: fixType ?? report.fixType,
-      referenceType: req.body?.referenceType || report.referenceType,
+      referenceType: referenceType ?? report.referenceType,
       proposedPattern: proposedPattern ?? report.proposedPattern,
       proposedStyleFix: proposedStyleFix || report.proposedStyleFix,
-      correctedFields: correctedFields ?? report.correctedFields,
-      fieldApproval: fieldApproval ?? report.fieldApproval,
+      correctedFields: truthResult.correctedFields ?? correctedFields ?? report.correctedFields,
+      fieldApproval: truthResult.fieldApproval ?? fieldApproval ?? report.fieldApproval,
       failureTaxonomy: failureTaxonomy ?? report.failureTaxonomy,
       stageBlame: stageBlame ?? report.stageBlame,
       duplicateDecision: duplicateDecision ?? report.duplicateDecision,
-      finalApprovedOutput: proposedStyleFix || report.finalApprovedOutput || report.proposedStyleFix || report.convertedText,
+      finalApprovedOutput: resolvedOutput,
       truthId,
       patternExport,
       resolvedByCommit,
@@ -515,7 +821,7 @@ router.post('/:id/resolve', async (req, res) => {
         regressionFixtureId: savedGeneratedRegression.id,
         patternWritten,
       }),
-      ...(truthId ? [createReviewEvent('truth_saved', verifiedBy, 'Saved approved truth', { truthId })] : []),
+      ...(truthResult.didSave && truthId ? [createReviewEvent('truth_saved', verifiedBy, 'Saved approved truth', { truthId })] : []),
       ...(patternExport ? [createReviewEvent('pattern_exported', verifiedBy, 'Generated pattern export artifact', { filePath: patternExport.filePath, patternWritten })] : []),
       createReviewEvent(
         'regression_generated',

@@ -464,7 +464,11 @@ export function parseAlternatingTokenArray(tokens: string[]): CanonicalAuthor[] 
 
 function normalizeAuthorTokens(tokens: string[]): string[] {
   return tokens
-    .map((token) => fixUnicodeText(token).replace(/^(&|and)$/i, '').replace(/^[,;]+|[,;]+$/g, '').trim())
+    .map((token) => fixUnicodeText(token)
+      .replace(/^(?:&|and)\s+/i, '')
+      .replace(/^(&|and)$/i, '')
+      .replace(/^[,;]+|[,;]+$/g, '')
+      .trim())
     .filter(Boolean);
 }
 
@@ -598,6 +602,7 @@ export function parseSurnameGivenAlternatingArray(tokens: string[]): CanonicalAu
 
 export function parseCompactVancouverAuthor(author: string): CanonicalAuthor | null {
   const normalized = fixUnicodeText(author);
+  if (normalized.includes(',')) return null;
   const match = normalized.match(/^(.+?)\s+([\p{Lu}]{1,6}(?:-[\p{Lu}]{1,6})?)$/u);
   if (!match) return null;
   const last = normalizePersonLastName(match[1]);

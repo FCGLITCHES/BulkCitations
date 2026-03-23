@@ -278,4 +278,15 @@ function ScholarPreviewInner({ confidence, authorityData, authorityStatus, isPro
     );
 }
 
+export function getReferenceReviewProps(reference: Pick<ConvertedReference, "confidence" | "authorityData" | "authorityStatus" | "healthState" | "healthReasons" | "reportEngineSnapshot" | "review" | "adminReview">) {
+    return {
+        confidence: reference.review?.confidence ?? reference.confidence,
+        authorityData: reference.authorityData,
+        authorityStatus: reference.review?.authorityStatus ?? reference.authorityStatus,
+        healthState: reference.review?.healthState ?? reference.healthState,
+        healthReasons: reference.review?.healthReasons ?? reference.healthReasons,
+        reportEngineSnapshot: reference.adminReview?.engineSnapshot ?? reference.reportEngineSnapshot,
+    };
+}
+
 export const ScholarPreview = memo(ScholarPreviewInner);

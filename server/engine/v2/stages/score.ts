@@ -149,6 +149,16 @@ function venueLooksSubstantive(citation: CanonicalCitation): boolean {
   return normalized.split(/\s+/).filter(Boolean).some((token) => token.length >= 4);
 }
 
+function hasAnyVenue(citation: CanonicalCitation): boolean {
+  return Boolean(
+    citation.journal.value
+    || citation.conferenceTitle.value
+    || citation.bookTitle.value
+    || citation.publisher.value
+    || citation.institution.value,
+  );
+}
+
 function onlyCleanUnresolvedIssues(citation: CanonicalCitation): boolean {
   return citation.validationIssues.every((issue) => CLEAN_UNRESOLVED_VALIDATION_CODES.has(issue.code));
 }
@@ -325,7 +335,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
     ? citation.duplicate?.changedFields ?? []
     : [];
 
-  overall = Math.max(0, overall - (structuralIssues.severe * 0.18) - (structuralIssues.review * 0.04));
+  overall = Math.max(0, overall - (structuralIssues.severe * 0.18));
 
   if (validationCodes.has('connector_as_author') || validationCodes.has('author_structure_unstable')) overall = Math.min(overall, 0.32);
   if (validationCodes.has('placeholder_volume') || validationCodes.has('placeholder_journal')) overall = Math.max(0, overall - 0.12);
@@ -336,7 +346,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   if (hasHardConflicts) overall = Math.min(overall, 0.52);
   if (hasInsufficientEvidence) overall = Math.min(overall, 0.45);
   if (hasAmbiguousMatch) overall = Math.min(overall, 0.84);
-  if (hasResolutionMiss && !allowsLocalReadyOnResolutionMiss(citation)) overall = Math.min(overall, 0.89);
+  if (hasResolutionMiss && !allowsLocalReadyOnResolutionMiss(citation)) overall = Math.min(overall, 0.95);
   if (hasProviderError) overall = Math.max(0, overall - 0.03);
   if (isVerifiedResolution(citation)) overall = Math.min(1, overall + 0.03);
 
@@ -379,7 +389,8 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   if (doiVerified(citation)) flags.push('doi_verified');
   else if (exactExternalTitleMatch(citation)) flags.push('exact_external_match');
   if (citation.resolution?.status === 'verified_with_year_tolerance') flags.push('year_tolerance_applied');
-  if (rawMissingRequired.includes('venue') && missingRequired.length === rawMissingRequired.length - 1) {
+  if ((rawMissingRequired.includes('venue') && missingRequired.length === rawMissingRequired.length - 1)
+    || (isVerifiedResolution(citation) && !hasAnyVenue(citation))) {
     flags.push('verified_missing_venue');
   }
 
@@ -388,9 +399,6 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   }
   if (missingRequired.length > 0) {
     overall = Math.min(overall, 0.59);
-  }
-  if (missingExpected.length > 0 && missingRequired.length === 0) {
-    overall = Math.max(0, overall - Math.min(0.08, missingExpected.length * 0.02));
   }
   if (hasConfirmedSplit) {
     overall = Math.min(overall, 0.49);
@@ -430,9 +438,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
     || hasResolutionMiss
     || hasProviderError
     || hasProviderNoCoverage
-    || missingExpected.length > 0
-    || (overall >= 0.75 && overall < 0.9)
-    || citation.validationIssues.some((issue) => issue.severity === 'warning');
+    || (overall >= 0.75 && overall < 0.9);
 
   let bucket: CitationQualityScore['bucket'] = 'worth_reviewing';
   let bucketReasons: string[] = [];
@@ -472,7 +478,6 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
       ...(hasResolutionMiss ? ['No exact external title match was accepted.'] : []),
       ...(hasProviderError ? ['External resolution encountered a provider error.'] : []),
       ...(hasProviderNoCoverage ? ['Providers may not cover this citation type well enough for verification.'] : []),
-      ...(missingExpected.length > 0 ? [`Expected fields are still missing: ${missingExpected.join(', ')}.`] : []),
       ...(overall >= 0.75 && overall < 0.9 ? ['Local quality is below the ready threshold.'] : []),
     ];
   } else {

@@ -18,8 +18,12 @@ import {
 let cslReady = false;
 const SPACE_BEFORE_PUNCT_RE = /\s+([,.;:])/g;
 const DUPLICATE_PUNCT_RE = /([,.;:])\1+/g;
+const MIXED_PUNCT_SEQUENCE_RE = /(?<!\b[A-Z])([,.;:])(?:\s*[,.;:])+/g;
 const EMPTY_PARENS_PUNCT_RE = /\(\s*[,.;:]\s*\)/g;
 const MULTI_SPACE_RE = /\s{2,}/g;
+const PROTECTED_INITIAL_DOT_COMMA_RE = /\b([A-Z])\.\s*,/g;
+const PROTECTED_INITIAL_DOT_COMMA_TOKEN = '__INITIAL_DOT_COMMA__';
+const PROTECTED_INITIAL_TRAILING_DOT_RE = new RegExp(`${PROTECTED_INITIAL_DOT_COMMA_TOKEN}\\.(?=\\s|$)`, 'g');
 
 function ensureCsl(): void {
   if (!cslReady) {
@@ -28,19 +32,29 @@ function ensureCsl(): void {
   }
 }
 
-function postCslCleanup(value: string): string {
+export function postCslCleanup(value: string): string {
   let cleaned = value;
+  if (/\b[A-Z]\.\s*,/.test(cleaned)) {
+    cleaned = cleaned.replace(PROTECTED_INITIAL_DOT_COMMA_RE, `$1${PROTECTED_INITIAL_DOT_COMMA_TOKEN}`);
+  }
   if (/[\t ]+[,.;:]/.test(cleaned)) {
     cleaned = cleaned.replace(SPACE_BEFORE_PUNCT_RE, '$1');
   }
   if (/([,.;:]){2,}/.test(cleaned)) {
     cleaned = cleaned.replace(DUPLICATE_PUNCT_RE, '$1');
   }
+  if (/[,.;:]\s*[,.;:]/.test(cleaned)) {
+    cleaned = cleaned.replace(MIXED_PUNCT_SEQUENCE_RE, '$1');
+  }
   if (cleaned.includes('(')) {
     cleaned = cleaned.replace(EMPTY_PARENS_PUNCT_RE, '');
   }
   if (cleaned.includes('  ')) {
     cleaned = cleaned.replace(MULTI_SPACE_RE, ' ');
+  }
+  if (cleaned.includes(PROTECTED_INITIAL_DOT_COMMA_TOKEN)) {
+    cleaned = cleaned.replace(PROTECTED_INITIAL_TRAILING_DOT_RE, PROTECTED_INITIAL_DOT_COMMA_TOKEN);
+    cleaned = cleaned.split(PROTECTED_INITIAL_DOT_COMMA_TOKEN).join('.,');
   }
   return cleaned.trim();
 }

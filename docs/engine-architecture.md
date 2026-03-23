@@ -8,21 +8,34 @@ There is still a legacy `/api/convert` surface for the website, but that route n
 
 ## Current Status
 
-As of `2026-03-22`, the current v2 architecture has already absorbed several important reliability changes:
+As of `2026-03-23`, the current v2 architecture has already absorbed several important reliability changes:
 
+- Phase 0 gate infrastructure now exists in `scripts/data/v2-phase-baseline.json`, and `pnpm baseline:v2:freeze` / `pnpm baseline:v2:check` now freeze and enforce the current cross-phase floors, per-type floors, per-family floors, route ceilings, and observability reports
 - `enrich` is now a strict resolution-and-repair stage, not a passive metadata check
 - `split`, `detect`, `extract`, `enrich`, `normalize`, `validate`, `truth`, `dedup`, `score`, and `render` now all use per-item isolation so one stalled or broken citation does not fail the whole batch
 - the pipeline now records wall-clock timing for every stage and exposes both `stageTimings` and a `slowestStages` view in `processingPath`, so performance tuning can target real phase costs instead of guesses
+- `ingest` now emits stronger routing signals such as `doi_heavy`, `ocr_noise_markers`, `book_tail_markers`, `conference_tail_markers`, and `mixed_style_markers` so later phases can consume stable input facts instead of re-inferring them
+- `split` now carries those ingest profile signals forward as explicit split reasons, which makes chunk-boundary debugging less ambiguous on noisy OCR-like and mixed-style input
+- `detect` now keeps the detected style label but lowers effective detection confidence when ingest has already flagged mixed-style or OCR-like uncertainty, so `extract` can degrade safely on shaky style hints without changing the style taxonomy
+- `extract` / GROBID routing now distinguish noisy profiles from deterministic-friendly ones, so OCR-like or mixed-style blobs escalate earlier while book-tail, conference-tail, and DOI-heavy profiles stay on the fast deterministic path unless the parse itself is weak
 - `dedup` does not just create a merged canonical citation anymore; duplicate-family members are also hydrated from the family canonical record and revalidated
 - `validate` is intentionally post-repair and offline in the strict-resolution path
 - `extract` now has deterministic rescue coverage for quoted-title journal tails such as `BMJ 372 (2021): n71` and `Journal ... 51, no. 6 (1986): 1173-1182`
+- `extract` now also has a book-tail recovery branch for real `Place: Publisher` endings such as `Bridgend: Seren, 1996` and `Upper Saddle River, NJ: Addison-Wesley`
 - CPU-bound bulk stages such as `detect`, `normalize`, `score`, and `render` now use lighter sequential item isolation instead of per-item async timeout wrappers, and `extract` takes the same fast path when GROBID and LLM extraction are both off
 - `score` can keep locally strong citations in `ready` even when provider verification fails, and a strongly verified citation is no longer blocked only because the venue field stayed missing
+- `score` now treats provider no-match outcomes as a soft penalty, so a strong local parse can still stay around `0.95` and remain `ready`
 - provider source-type normalization has broader coverage for labels such as `working-paper`, `dissertation`, `edited-book`, `reference-entry`, and `proceedings-article`, so query routing and verified type upgrades are less brittle
-- CSL rendering now reuses template-scoped formatter instances instead of allocating a fresh `citation-js` wrapper per citation, which materially reduced render-phase cost without changing formatted output
+- CSL rendering still uses `citation-js`, but now reuses template-scoped formatter instances instead of allocating a fresh wrapper per citation, which materially reduced render-phase cost without changing formatted output
 - `truth` now resolves against an in-memory active-truth index instead of reloading and rescanning the full store for every citation
+- admin-approved corrections now persist into the truth system from both `resolve` and `accept`, even when the admin only approved fields and did not manually type a separate final output string
+- approved-output derivation can now render a trusted final citation from field-level approvals, and admin-side reference-type labels are normalized into the engine’s internal taxonomy before truth is stored
+- stored v2 truths now keep their real `truthId` and `truthFamilyId` when reloaded instead of being remapped through the legacy truth shim
 - `extract` can now skip fallback and institutional reparsing for already-strong deterministic candidates, which cuts CPU time without changing the verification rules
+- `enrich` can now force a one-shot GROBID recovery extraction for weak local parses before strict resolution, so provider lookup gets a stronger query when deterministic extraction is thin
 - the default debug path is now compact by design: structured debug logging is off unless explicitly enabled, verbose stage payloads require `V2_DEBUG_VERBOSE=1`, and the legacy bridge strips repeated per-citation processing-path arrays and `inputProfile` in normal mode
+- the main website `/api/convert` bridge is now intentionally local-first for `v2`: it still routes into the v2 engine, but it does not allow the default site path to silently fall back into provider-bound enrichment work
+- the site now records anonymous analytics for page views, converter starts, completions, failures, country mix, and new-versus-returning visitors without storing raw citation text in analytics payloads
 - the website now defaults new sessions to `v2`, preloads the results view while a conversion is running, defers PDF code until export time, defers bulk result props into the heavy output tree, memoizes per-citation confidence and row rendering, and avoids a duplicate-selection sync render on initial results load
 
 That combination is what made the latest 500-reference enrich/validate/dedup stress run land at `487/500 ready` (`97.4%`).
@@ -37,12 +50,26 @@ These changes were added for a simple architectural reason: the engine was alrea
 - `validate` was moved into a clearly post-repair role because validating the pre-repair parse produces false positives the engine has already earned the right to remove.
 - duplicate-family hydration was added because once dedup proves multiple citations are the same work, leaving one merged citation clean and the duplicate members dirty creates an inconsistent family state and pollutes downstream scoring and review.
 - extractor venue-tail rescue was expanded because a parser that gets the title right but swallows the venue, volume, or issue still damages dedup, validation, and rendering downstream.
+- the book-tail recovery branch was added because books and monographs often end with `Place: Publisher` instead of journal metadata. Treating those endings as broken journal tails was truncating real titles and losing publisher information.
 - the newer `score` ready paths were added because provider instability is not the same thing as citation unreliability. When the local parse is strong and the only unresolved problem is external verification failure or a non-critical missing venue on an otherwise verified citation, the bucket should reflect citation quality rather than network luck.
+- the provider no-match ceiling was relaxed because Crossref missing a clean citation is not strong evidence that the citation is wrong. A provider miss should lower certainty slightly, not destroy a locally strong result.
 - stage timing telemetry was added because performance work should be driven by measured phase cost. The engine now reports which stages were actually slowest for a given job.
+- the new Phase 0 baseline manifest was added because a 12-phase optimization program needs machine-checkable floors, not hand-waved “no critical regressions.” The manifest freezes the current starting line for the controlled local corpuses while also retaining the higher policy targets separately.
+- those richer ingest signals were added because `extract` should not keep rediscovering obvious facts such as “this looks OCR-damaged” or “this blob is book-tail-heavy.” If ingest can say it once, later phases should trust and reuse that signal.
+- split now records profile-derived reasons because contamination debugging is materially easier when the system distinguishes “the chunk was structurally noisy” from “the incoming blob was already OCR-like or mixed-style before splitting began.”
+- detect confidence is now uncertainty-adjusted rather than style-label-adjusted because the safest contract is additive: keep the same style family guess, but make the confidence reflect upstream ambiguity so `extract` can decide when to stay deterministic and when to fall back.
+- extractor routing now distinguishes noisy profiles from deterministic-friendly profiles because not all non-clean inputs deserve the same fallback path. Book-tail and conference-tail inputs often benefit more from local deterministic heuristics than from escalating to GROBID too early.
 - provider source-type normalization was expanded because external authorities do not agree on one small type vocabulary. If those labels are not normalized well, we lose both recall and safe type upgrades after a verified match.
+- forced GROBID recovery was added because weak parses need repair before provider lookup, not just after provider failure. If the parse is already thin, improving the query evidence is the safest way to raise recall without relaxing strict matching.
 - the truth stage was indexed because exact alias matching should be O(1)-style lookup work during a batch, not repeated full-store scans.
+- admin-approved reports now write through to truth automatically because a correction that stays trapped inside the report queue is not architecture, it is dead knowledge. The engine has to be able to reuse approved fixes without depending on one exact button path or one exact text field being populated.
+- approved-output derivation was added because field-level truth is still truth. If an admin approves the correct title, authors, year, venue, and type, the system should be able to render a trusted output from that approved canonical state instead of refusing to learn until someone retypes the whole citation.
+- admin reference-type normalization was added because truth storage must use engine-native types. If review tooling stores UI-only labels such as `paper-conference` or `webpage`, the truth layer starts feeding taxonomy noise back into rendering, scoring, and regression fixtures.
+- truth reload now preserves persisted v2 identifiers because once a truth has been approved and linked to reports, silently reissuing it as a synthetic legacy truth breaks provenance and makes future prioritization less reliable.
 - deterministic extract short-circuiting was added because once a parse is already clean on title, authors, year, venue, locator, and type, paying for extra reparsing paths does not improve quality often enough to justify the cost.
+- anonymous analytics were added because product and funnel decisions need real traffic data, but analytics should stay out of the citation hot path and must not ingest raw citation text.
 - the default debug payload was slimmed because the stress harness and the browser were both paying to build large debug objects that normal user flows do not read.
+- the main website bridge was forced into a local-first v2 path because the default user flow must optimize for predictable throughput. Provider-backed repair still matters, but it should be an explicit architecture path, not an accidental cost attached to every normal site conversion.
 - the website bridge and results view were slimmed because the UI should not pay bundle, payload, and rerender costs for per-citation metadata or list churn it is not actively showing during normal conversion flows.
 
 The general principle is:
@@ -191,11 +218,16 @@ This changes the failure model in an important way: the pipeline still surfaces 
 - preserving field confidence and rejection reasons
 - catching author-blob failures and venue/title leakage
 - rescuing quoted-title journal tails before the generic parser can swallow locators or venue text into the wrong field
+- rescuing real book tails such as `London: Penguin` and `Reading, MA: Addison-Wesley` before they are misclassified as broken journal metadata
 
 **Current gaps**
 
 - extractor edge-case ranking is deferred for later
 - this remains the biggest source of residual misses once split is stable
+
+**Important recent change**
+
+- deterministic extraction now includes a book-tail recovery branch, and weak parses can request forced GROBID recovery before strict resolution when the local evidence is too thin
 
 ### 5. `enrich`
 
@@ -228,12 +260,17 @@ This is the engine’s “trust but verify” layer. Extraction is best-effort. 
 - reusing in-flight lookups across duplicate-style variants
 - isolating slow provider calls so a single stuck citation does not timeout the whole stage
 - broadening provider type coverage without exploding our canonical citation-type taxonomy
+- repairing weak parses with forced GROBID recovery before strict resolution when deterministic extraction is too thin to build a reliable provider query
 
 **Current gaps**
 
 - remaining misses are mostly coverage or exact-match ranking misses, not merge-conflict noise
 - provider recall still varies by citation type
 - provider instability can still reduce verification coverage, but it should no longer collapse the whole stage
+
+**Operational note**
+
+- if GROBID appears unused in runtime, verify both `ENABLE_GROBID_EXTRACTOR` and service reachability at `GROBID_URL` first; the engine will not route into a dead sidecar
 
 ## Performance Telemetry
 
@@ -246,23 +283,48 @@ That telemetry is intentionally operational rather than decorative. It exists so
 
 The first concrete win from that telemetry was the render path. Once timings showed `render` dominating the 250-case SDE batch, the engine switched from per-citation `new Cite(...)` allocation to reusable template-scoped formatter instances. On the SDE stress harness that dropped render time from roughly `1403ms` to `674ms` and reduced whole-job runtime from `2124ms` to `1455ms` while keeping the same accuracy outputs.
 
+The newest operational change is that the telemetry is now tied to a frozen gate manifest instead of living only in ad hoc benchmark output. `scripts/v2PhaseBaseline.ts` freezes:
+
+- controlled local corpus floors
+- per-type and per-family accuracy floors
+- route warm-run ceilings
+- stage timing ceilings with small headroom
+- detect-family confusion, source-type misclassification, and extractor field-loss reports
+
+That script intentionally stores both:
+
+- enforceable Phase 0 floors for the current controlled starting line
+- and higher policy targets such as the historic `0.974` ready-rate target for the enrich/validate/dedup 500-case run
+
+The split matters because phase gates must be usable today, while the program still needs to preserve the stronger target it is aiming back toward.
+
 The next optimization pass targeted `truth`, `extract`, and the website bridge:
 
 - `truth` now builds a short-lived active-truth alias index so fingerprint, DOI, and work-key matches no longer rescan the whole store for every citation
+- report approval now writes through into truth from both `resolve` and `accept`, and the server can synthesize a trusted approved output from approved canonical fields when no explicit final-output string was entered
+- persisted truth reload now preserves current v2 truth identifiers instead of remapping every stored row through the legacy fallback shape
 - `extract` now skips year-anchored and institutional candidate construction when the deterministic parse is already clearly strong for citation types where that shortcut is safe
+- `extract` now also has a dedicated book-tail recovery branch so publisher-place endings are handled as book evidence instead of being misread as broken journal tails
+- `enrich` can trigger a forced GROBID recovery extraction before strict resolution for weak parses, which improves provider query quality without forcing GROBID onto already-strong local parses
+- `score` now lets clean locally parsed citations stay near `0.95` on provider no-match outcomes instead of automatically capping them below `ready`
 - the `/api/convert` v2 bridge now keeps only non-success stage-log summaries in normal mode, which reduces response size and client-side object churn
+- the `/api/convert` v2 bridge is now also local-first by design, so the main site path cannot quietly reintroduce provider latency and turn a fast batch into a network-bound batch
 - the site defaults fresh users to `v2`, preloads the heavy results component during processing, and lazy-loads `jspdf` only when the user actually exports a PDF
+- the site also records anonymous top-level usage events and exposes an admin summary view so product traffic, country mix, and converter-funnel dropoff can be measured without storing citation payloads
 
 The latest optimization pass tightened the remaining hot loops instead of changing citation behavior:
 
 - `detect`, `normalize`, `score`, and `render` now use the lighter sequential isolation path, and deterministic-only `extract` follows that same model
 - `strictRenderer` now reuses precompiled regexes and cheap guard checks instead of rebuilding replacement patterns on every citation
+- `strictRenderer` now removes only the exact stored place-of-publication value during APA publisher cleanup, which prevents book titles with colons from being truncated by an over-broad pattern
 - `runAssertions` now computes counts in one pass instead of repeatedly filtering the same detail list
 - `extract` debug payloads reuse the parsed object directly instead of rebuilding selected-field clones for every citation
 - the legacy bridge now omits repeated processing-path arrays and repeated `inputProfile` data for each citation unless debug mode is explicitly enabled
 - the results view memoizes citation rows and confidence badges, passes per-row booleans instead of whole shared maps/sets, and no longer performs a post-render duplicate-selection synchronization pass
 
 On the 250-case SDE harness, those changes brought the debug-on batch from the earlier `1705ms` recovery point down to about `1188ms` while preserving the same summary accuracy (`style 0.508`, `reference type 0.428`, `field 0.4755`). The same harness now runs at about `1159ms` with `debug: false`, which is closer to the actual site execution path.
+
+On the actual website bridge path after the local-first change, a direct `/api/convert` benchmark returned `10` citations in about `65-73ms` on warm runs and `500` citations in about `2440ms`. That matters architecturally because it confirms the main user-facing bottleneck was not core v2 parsing; it was the accidental coupling of the default site flow to provider-bound enrichment.
 
 ### 6. `normalize`
 
@@ -330,10 +392,18 @@ Validation is not just “did extraction succeed?” It asks whether the citatio
 **What it is good at**
 
 - letting verified human corrections survive future parser changes
+- reusing admin-approved fixes without requiring a citation to be manually re-reported or reapproved through one narrow UI path
+- storing field-level approval as reusable truth even when the admin corrected structure more than formatting
 
 **Current gaps**
 
 - not the main tuning target in the current cycle
+
+**Important recent change**
+
+- report resolution and acceptance now both auto-persist approved truth when there is enough approved information to trust, and the server can derive `validatedOutput` from approved canonical fields instead of requiring a separately typed final output string
+- truth persistence now normalizes admin-side reference-type labels into the engine taxonomy before storage
+- stored v2 truths now preserve their real identifiers on reload so report links and truth-family provenance remain stable
 
 ### 9. `dedup`
 
@@ -400,6 +470,7 @@ Validation is not just “did extraction succeed?” It asks whether the citatio
 - combining local parse quality and authority evidence into one review decision
 - allowing local-ready paths for source types with poor provider coverage
 - preventing high-confidence citations from dropping out of `ready` just because a provider timed out
+- preventing clean locally parsed citations from dropping out of `ready` just because Crossref did not find an exact match
 - allowing a strongly verified citation to remain `ready` when the only unresolved gap is a missing venue field
 - treating short-but-valid report titles and acronym venues such as `BMJ`, `WHO`, or `AIHW` as substantive enough for clean local-ready paths
 
@@ -513,8 +584,11 @@ The site now has a better path for v2:
 
 - raw pasted content can be sent through the legacy bridge as `content`
 - the bridge passes that raw blob into the v2 engine
+- the default website v2 bridge is now local-first, so the main user path does not automatically pay provider-enrichment latency just because the request happened to flow through `/api/convert`
 
 This is the right architectural boundary because user input should be flexible, while canonical field constraints should still stay strict *inside* the engine.
+
+That local-first rule was added for a practical reason: the website bridge is the highest-volume path and therefore needs predictable latency more than optional repair coverage. Authority-backed repair still belongs in the architecture, but it belongs in an explicit path where slower resolution work is intentional.
 
 ## Website v2 UX Notes
 
@@ -522,6 +596,18 @@ The website now treats v2 engine output as the source of truth for confidence me
 
 - the confidence breakdown text is expected to explain what is actually limiting confidence, such as weak input evidence, unresolved required fields, or partial-result recovery, instead of showing a generic parsing-only disclaimer
 - the legacy recheck action is intentionally disabled for v2 citations because replaying the older path was making some already-good v2 outputs worse
+
+## Analytics
+
+The site now records a small anonymous event stream for product analytics.
+
+- `page_view` measures traffic and broad page usage
+- `converter_started`, `converter_completed`, and `converter_failed` measure the conversion funnel
+- visitor identity is anonymous and stable only through a generated client-side visitor ID
+- country is derived approximately from request metadata
+- raw citation text is intentionally excluded from analytics payloads
+
+This was added so product questions such as "how many visitors tried the converter?" and "which countries are using the site?" can be answered without coupling analytics to the citation engine hot path or storing citation-sensitive content.
 
 ## What Is Currently Strong
 

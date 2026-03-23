@@ -212,7 +212,7 @@ describe('legacy v2 compat health and confidence mapping', () => {
           url: 0,
         },
         flags: ['placeholder_fields', 'review'],
-        missingRequired: ['venue'],
+        missingRequired: [],
         missingOptional: ['doi', 'pages', 'url'],
       },
       validationIssues: [
@@ -280,6 +280,21 @@ describe('legacy v2 compat health and confidence mapping', () => {
       fallbacksUsed: ['split:fallback', 'extract:fallback', 'llm_cap_reached'],
       splitConfidence: 0.67,
       detectedStyle: 'unknown',
+    });
+    expect(record.uiData.review).toMatchObject({
+      healthState: record.uiData.healthState,
+      healthReasons: record.uiData.healthReasons,
+      styleDetectionFailed: true,
+      authorInitialsOnly: true,
+    });
+    expect(record.uiData.adminReview).toMatchObject({
+      debug: record.uiData.debug,
+      engineSnapshot: record.uiData.reportEngineSnapshot,
+    });
+    expect(record.uiData.analyticsPayload).toMatchObject({
+      engineVersion: 'v2',
+      warningCount: record.uiData.warnings?.length ?? 0,
+      styleDetectionFailed: true,
     });
   });
 });

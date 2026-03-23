@@ -95,6 +95,8 @@ export interface ExtractorAdapter {
     detectionConfidence?: number;
     batchSize?: number;
     executionMode?: 'sync' | 'async';
+    forceGrobid?: boolean;
+    forceGrobidReason?: string;
     splitArtifact?: V2SplitArtifact;
     llmBudget?: V2LlmBudget;
     debugEnabled?: boolean;

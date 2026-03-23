@@ -97,8 +97,8 @@ export default function Home() {
                 lineClass: "bg-primary/70"
               },
               {
-                title: "100% Private Processing",
-                desc: "Your unpublished research stays entirely yours. We don't save your data to databases or train AI on your citations.",
+                title: "Private By Default",
+                desc: "We do not store raw citation text in analytics or train AI on your references. Usage metrics stay anonymous and focused on product health.",
                 icon: Shield,
                 colorClass: "text-primary",
                 bgClass: "bg-primary/10 group-hover:bg-primary/20",

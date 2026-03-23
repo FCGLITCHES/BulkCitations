@@ -198,7 +198,7 @@ export default function ReferenceInput({
         inputStyle,
         outputStyle,
         isPro,
-        enrichWithAuthority: true,
+        enrichWithAuthority: false,
         engineVersion,
       });
       return;
@@ -294,7 +294,7 @@ export default function ReferenceInput({
       inputStyle,
       outputStyle,
       isPro,
-      enrichWithAuthority: true,
+      enrichWithAuthority: false,
       engineVersion,
     });
   };

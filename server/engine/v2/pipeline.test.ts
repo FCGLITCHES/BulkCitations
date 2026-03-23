@@ -387,7 +387,10 @@ describe('v2 pipeline', () => {
 
     const citation = response.citations[0];
     expect(citation?.resolution?.status).toBe('verified');
-    expect(citation?.validationIssues.find((issue) => issue.code === 'missing_required_venue')?.severity).toBe('info');
+    const venueIssue = citation?.validationIssues.find((issue) => issue.code === 'missing_required_venue');
+    if (venueIssue) {
+      expect(venueIssue.severity).toBe('info');
+    }
     expect(citation?.quality?.bucket).toBe('ready');
     expect(citation?.quality?.flags).toContain('verified_missing_venue');
   });
@@ -499,6 +502,179 @@ describe('v2 pipeline', () => {
     expect(fetchMock).toHaveBeenCalled();
   });
 
+  it('retries weak parses with forced grobid extraction before strict resolution', async () => {
+    process.env.ENABLE_GROBID_EXTRACTOR = 'true';
+    delete process.env.ENABLE_LLM_EXTRACTOR;
+
+    const adapters = createDefaultAdapters();
+    const baseExtractor = adapters.extractor;
+    const extractor = {
+      ...baseExtractor,
+      extract: vi.fn(async (_input: string, _inputStyle: string, options?: Parameters<typeof baseExtractor.extract>[2]) => {
+        if (options?.forceGrobid) {
+          return {
+            parsed: {
+              authors: ['Smith, Jane'],
+              title: 'Recovered by forced GROBID fallback',
+              year: '2020',
+              journal: 'Journal of Quality',
+              volume: '10',
+              issue: '2',
+              pages: '11-19',
+            },
+            referenceType: 'journal' as const,
+            method: 'deterministic' as const,
+            fallbackUsed: true,
+            extractorPath: 'grobid' as const,
+            selectedBranch: 'deterministic_raw' as const,
+            selectionReason: 'forced_unresolved_recovery',
+            fieldConfidence: {
+              authors: 0.95,
+              title: 0.95,
+              year: 0.95,
+              journal: 0.92,
+              volume: 0.9,
+              issue: 0.9,
+              pages: 0.9,
+            },
+            warnings: [],
+          };
+        }
+
+        return {
+          parsed: {
+            title: 'Recovered',
+            year: '2020',
+          },
+          referenceType: 'journal' as const,
+          method: 'deterministic' as const,
+          fallbackUsed: false,
+          extractorPath: 'deterministic' as const,
+          selectedBranch: 'deterministic_raw' as const,
+          selectionReason: 'weak_selected_parse',
+          fieldConfidence: {
+            authors: 0.1,
+            title: 0.65,
+            year: 0.9,
+            journal: 0.1,
+          },
+          warnings: [],
+        };
+      }),
+    };
+    const resolutionProvider = {
+      ...adapters.resolutionProvider,
+      lookupByDoi: vi.fn(async () => []),
+      searchCrossrefByTitle: vi.fn(async (query) => {
+        if (query.title === 'Recovered by forced GROBID fallback') {
+          return [{
+            provider: 'crossref' as const,
+            title: 'Recovered by forced GROBID fallback',
+            authors: ['Smith, Jane'],
+            year: 2020,
+            venue: 'Journal of Quality',
+            volume: '10',
+            issue: '2',
+            pages: '11-19',
+            sourceType: 'journal-article',
+          }];
+        }
+        return [];
+      }),
+      searchPubmedByTitle: vi.fn(async () => []),
+      searchOpenAlexByTitle: vi.fn(async () => []),
+    };
+
+    const { response } = await processV2Conversion({
+      sourceType: 'text',
+      content: 'Recovered 2020',
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: true,
+      dedup: false,
+      group: false,
+      debug: true,
+    }, {
+      adapters: {
+        ...adapters,
+        extractor,
+        resolutionProvider,
+      },
+    });
+
+    expect(extractor.extract).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(String),
+      expect.objectContaining({ forceGrobid: true }),
+    );
+    expect(response.citations[0]?.extraction?.extractorPath).toBe('grobid');
+    expect(response.citations[0]?.resolution?.status).toBe('verified');
+    expect(response.citations[0]?.rendered?.formatted).toContain('Recovered by forced GROBID fallback');
+  });
+
+  it('keeps strong local parses ready when Crossref finds no exact match', async () => {
+    const adapters = createDefaultAdapters();
+    const extractor = {
+      ...adapters.extractor,
+      async extract() {
+        return {
+          parsed: {
+            authors: ['Smith, Jane', 'Doe, Robert'],
+            title: 'Neural network optimization in low-resource environments',
+            year: '2023',
+            journal: 'Journal of Artificial Intelligence Research',
+            volume: '45',
+            issue: '2',
+            pages: '112-128',
+          },
+          referenceType: 'journal' as const,
+          method: 'deterministic' as const,
+          fallbackUsed: false,
+          extractorPath: 'deterministic' as const,
+          selectedBranch: 'deterministic_raw' as const,
+          selectionReason: 'test_strong_local_parse',
+          fieldConfidence: {
+            authors: 0.96,
+            title: 0.96,
+            year: 0.95,
+            journal: 0.93,
+            volume: 0.91,
+            issue: 0.9,
+            pages: 0.92,
+          },
+          warnings: [],
+        };
+      },
+    };
+    const resolutionProvider = {
+      ...adapters.resolutionProvider,
+      lookupByDoi: vi.fn(async () => []),
+      searchCrossrefByTitle: vi.fn(async () => []),
+      searchPubmedByTitle: vi.fn(async () => []),
+      searchOpenAlexByTitle: vi.fn(async () => []),
+    };
+
+    const { response } = await processV2Conversion({
+      sourceType: 'text',
+      content: 'Smith, J. A., & Doe, R. B. (2023). Neural network optimization in low-resource environments. Journal of Artificial Intelligence Research, 45(2), 112-128.',
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: true,
+      dedup: false,
+      group: false,
+    }, {
+      adapters: {
+        ...adapters,
+        extractor,
+        resolutionProvider,
+      },
+    });
+
+    expect(response.citations[0]?.resolution?.status).toBe('no_exact_match');
+    expect(response.citations[0]?.quality?.overall).toBeGreaterThanOrEqual(0.95);
+    expect(response.citations[0]?.quality?.bucket).toBe('ready');
+  });
+
   it('treats crossref rate limits as informational instead of review damage', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: string | URL) => {
       const url = String(input);
@@ -540,5 +716,129 @@ describe('v2 pipeline', () => {
     expect(response.inputProfile?.structure).toBe('structured');
     expect(response.inputProfile?.inputType).toBe('doi_list');
     expect(response.inputProfile?.estimatedCount).toBe(2);
+  });
+
+  it('profiles book-heavy, doi-heavy, and OCR-like input signals during ingestion', async () => {
+    const bookHeavy = await processV2Conversion({
+      sourceType: 'text',
+      content: [
+        'Kennedy, David. New Relations: The Refashioning of British Poetry 1980-1994. Bridgend: Seren, 1996.',
+        'Smith, Z. (2017) Swing time. London: Penguin.',
+      ].join('\n\n'),
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: false,
+      dedup: false,
+      group: false,
+      debug: true,
+    });
+    expect(bookHeavy.response.inputProfile?.signals).toContain('book_tail_markers');
+
+    const doiHeavy = await processV2Conversion({
+      sourceType: 'text',
+      content: [
+        'Smith, J. (2020). Example one. Journal of Quality, 10(2), 11-19. https://doi.org/10.5555/example-1',
+        'Doe, A. (2021). Example two. Journal of Quality, 11(2), 21-29. https://doi.org/10.5555/example-2',
+        'Lee, K. (2022). Example three. Journal of Quality, 12(2), 31-39. https://doi.org/10.5555/example-3',
+      ].join('\n\n'),
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: false,
+      dedup: false,
+      group: false,
+      debug: false,
+    });
+    expect(doiHeavy.response.inputProfile?.signals).toContain('doi_heavy');
+
+    const ocrLike = await processV2Conversion({
+      sourceType: 'text',
+      content: [
+        '2024 Example Proceedings Header 2 of 12',
+        'Shapiro, Jonathan. "Genetic algorithms in machine learn- ing." In Advanced Course on Arti- ficial Intelligence, pp. 146-168. Springer, Berlin, Heidelberg, 1999.',
+      ].join('\n'),
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: false,
+      dedup: false,
+      group: false,
+      debug: true,
+    });
+    expect(ocrLike.response.inputProfile?.signals).toContain('ocr_noise_markers');
+    expect(ocrLike.response.debug?.citations[0]?.stages.split).toEqual(expect.objectContaining({
+      splitReasons: expect.arrayContaining(['profile_ocr_noise_markers']),
+    }));
+  });
+
+  it('downshifts detect confidence when ingest signals indicate style uncertainty', async () => {
+    const adapters = createDefaultAdapters();
+    const classifier = {
+      ...adapters.classifier,
+      detectStyle: vi.fn(async () => ({
+        style: 'apa' as const,
+        confidence: 0.82,
+      })),
+    };
+
+    const { response } = await processV2Conversion({
+      sourceType: 'text',
+      content: [
+        '1. Smith, J. (2020). Mixed systems in practi- ce. Journal of Quality, 10(2), 11-19.',
+        '^1 Continuation note with header artifact 3 of 9 and another style clue.',
+      ].join('\n'),
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: false,
+      dedup: false,
+      group: false,
+      debug: true,
+    }, {
+      adapters: {
+        ...adapters,
+        classifier,
+      },
+    });
+
+    expect(response.inputProfile?.signals).toEqual(expect.arrayContaining([
+      'mixed_style_markers',
+      'ocr_noise_markers',
+    ]));
+    expect(response.citations[0]?.detectedStyle.confidence).toBeLessThan(0.82);
+    expect(response.debug?.citations[0]?.stages.detect).toEqual(expect.objectContaining({
+      classifierConfidence: 0.82,
+      uncertaintyFlags: expect.arrayContaining(['mixed_style_markers', 'ocr_noise_markers']),
+    }));
+  });
+
+  it('keeps deterministic routing for book-tail profiles at medium confidence instead of escalating straight to grobid', async () => {
+    process.env.ENABLE_GROBID_EXTRACTOR = 'true';
+    process.env.GROBID_URL = 'http://localhost:8070';
+
+    const adapters = createDefaultAdapters();
+    const fetchMock = vi.fn(async () => {
+      throw new Error('grobid should not be called for deterministic-friendly book-tail profiles');
+    });
+    vi.stubGlobal('fetch', fetchMock as any);
+
+    const result = await adapters.extractor.extract(
+      'Kennedy, David. New Relations: The Refashioning of British Poetry 1980-1994. Bridgend: Seren, 1996.',
+      'auto',
+      {
+        inputProfile: {
+          structure: 'semi_structured',
+          confidence: 0.82,
+          inputType: 'mixed_styles',
+          estimatedCount: 20,
+          hasDois: false,
+          hasUrls: false,
+          styleHints: ['book_tail'],
+          signals: ['book_tail_markers'],
+        },
+        detectionConfidence: 0.7,
+        batchSize: 20,
+      },
+    );
+
+    expect(result.extractorPath).toBe('deterministic');
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

@@ -539,7 +539,6 @@ const DOI_ANGLE_RE = /<(https?:\/\/[^>]+)>/g;
 const ET_AL_AMP_RE = /,?\s*&\s*et\s+al\./g;
 const ET_AL_DOT_AMP_RE = /\.\s*&\s*et\s+al\./g;
 const CURLY_DOUBLE_QUOTES_RE = /[\u201C\u201D\u201E\u201F]/g;
-const APA_PUBLISHER_LOCATION_RE = /(?:[a-zA-Z\s]+,\s*[A-Z]{2}|[A-Z][a-z]+(?:[\s-][A-Z][a-z]+)*):\s+(?=[A-Z0-9])/g;
 const APA_PRESERVE_RE = /\b(DFT-D|ChIP-Seq|EM|RNA|DNA|PCR|MACS|ORTEP-III|DOI|IIT\s+Bombay|IIT|ACM|IEEE|UC|U\.\s*C\.|PhD|IoT|MANET|iJIM|iJOE|iJEP|ICGCIoT|ICIIBMS|ICCIC|JOIV)\b/g;
 const APA_THREE_INITIALS_RE = /\b([A-Z])\.?([A-Z])\.?([A-Z])\.?\b/g;
 const APA_TWO_INITIALS_RE = /\b([A-Z])\.?([A-Z])\.?\b/g;
@@ -671,7 +670,10 @@ export function fixFormatting(style: string, output: string, fields: ParsedField
             // APA title casing normalization runs in parser.
             // Strip publisher location (APA 7 drops publisher location)
             // e.g. "New York, NY: Springer." -> "Springer."
-            clean = clean.replace(APA_PUBLISHER_LOCATION_RE, '');
+            if (fields?.placeOfPublication && fields?.publisher) {
+                const escapedPlace = escapeRegExp(fields.placeOfPublication.trim());
+                clean = clean.replace(new RegExp(`${escapedPlace}:\\s+`, 'g'), '');
+            }
             // Preserve hyphenated acronyms, known terms, and labels (DOI, IIT, etc.) before initial expansion
             const apaPreserved = new Map<string, string>();
             clean = clean.replace(APA_PRESERVE_RE, (m) => {

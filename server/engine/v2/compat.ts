@@ -16,6 +16,7 @@ import {
 import { canonicalToParsedReference, canonicalReferenceTypeToParsed } from './utils.js';
 import { computeWorkKey } from '../../utils/workKey.js';
 import { hasAuthorInitialsOnly } from '../../utils/authorResolution.js';
+import { attachReferencePayloads } from '../shared/referencePayloads.js';
 
 function friendlyQualityFlag(flag: string): string | null {
   switch (flag) {
@@ -226,44 +227,47 @@ export function mapV2ResponseToLegacyRecords(
         }
       : undefined;
 
+    const uiData = attachReferencePayloads({
+      id: '',
+      originalText: citation.raw,
+      convertedText: citation.rendered?.formatted ?? citation.raw,
+      referenceType,
+      parsedData,
+      inputStyle,
+      outputStyle: request.outputStyle,
+      warnings,
+      confidence: {
+        score: confidenceScore,
+        breakdown: {
+          rules: confidenceScore,
+        },
+        isSuspicious: false,
+      },
+      authorityData,
+      authorityStatus,
+      styleDetectionFailed: request.inputStyle === 'auto' && !citation.detectedStyle.value,
+      assertionSummary: citation.rendered?.assertionSummary,
+      assertionHighlights: citation.rendered?.assertionHighlights,
+      healthState: health.state,
+      healthReasons: health.reasons,
+      authorInitialsOnly: hasAuthorInitialsOnly(parsedData),
+      truthProvenance: citation.truth?.truthApplied
+        ? {
+            truthApplied: true,
+            truthId: citation.truth.truthId,
+            truthMatchType: citation.truth.truthMatchType,
+            appliedFields: citation.truth.appliedFields,
+            usedValidatedOutput: citation.truth.usedValidatedOutput,
+            staleTruth: citation.truth.staleTruth,
+          }
+        : { truthApplied: false },
+      reportEngineSnapshot: buildReportEngineSnapshot(citation, response),
+      debug,
+    });
+
     return {
       sourceId: citation.id,
-      uiData: {
-        originalText: citation.raw,
-        convertedText: citation.rendered?.formatted ?? citation.raw,
-        referenceType,
-        parsedData,
-        inputStyle,
-        outputStyle: request.outputStyle,
-        warnings,
-        confidence: {
-          score: confidenceScore,
-          breakdown: {
-            rules: confidenceScore,
-          },
-          isSuspicious: false,
-        },
-        authorityData,
-        authorityStatus,
-        styleDetectionFailed: request.inputStyle === 'auto' && !citation.detectedStyle.value,
-        assertionSummary: citation.rendered?.assertionSummary,
-        assertionHighlights: citation.rendered?.assertionHighlights,
-        healthState: health.state,
-        healthReasons: health.reasons,
-        authorInitialsOnly: hasAuthorInitialsOnly(parsedData),
-        truthProvenance: citation.truth?.truthApplied
-          ? {
-              truthApplied: true,
-              truthId: citation.truth.truthId,
-              truthMatchType: citation.truth.truthMatchType,
-              appliedFields: citation.truth.appliedFields,
-              usedValidatedOutput: citation.truth.usedValidatedOutput,
-              staleTruth: citation.truth.staleTruth,
-            }
-          : { truthApplied: false },
-        reportEngineSnapshot: buildReportEngineSnapshot(citation, response),
-        debug,
-      },
+      uiData,
       storageData: {
         originalText: citation.raw,
         inputStyle,

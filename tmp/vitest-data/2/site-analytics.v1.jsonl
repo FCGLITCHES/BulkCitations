@@ -1,0 +1,4 @@
+{"id":"evt-1","visitorId":"visitor_001","eventType":"page_view","path":"/","countryCode":"US","createdAt":"2026-03-20T10:00:00.000Z","metadata":{"surface":"home"}}
+{"id":"evt-2","visitorId":"visitor_001","eventType":"converter_started","path":"/","countryCode":"US","createdAt":"2026-03-20T10:00:02.000Z","metadata":{"engineVersion":"v2","citationCount":12}}
+{"id":"evt-3","visitorId":"visitor_001","eventType":"converter_completed","path":"/","countryCode":"US","createdAt":"2026-03-20T10:00:05.000Z","metadata":{"engineVersion":"v2","citationCount":12}}
+{"id":"evt-4","visitorId":"visitor_002","eventType":"page_view","path":"/","countryCode":"GB","createdAt":"2026-03-22T09:00:00.000Z","metadata":{"surface":"home"}}

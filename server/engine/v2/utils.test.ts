@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeParsedAuthorStrings } from './qualityRules.js';
-import { normalizeLocatorValue } from './qualityRules.js';
+import { getRequirementProfile, normalizeLocatorValue } from './qualityRules.js';
 import {
   fixUnicodeText,
   looksLikeSurnameGivenAlternatingArray,
   normalizeCanonicalAuthor,
   parseAuthorsForStyle,
 } from './utils.js';
+import { postCslCleanup } from './stages/render.js';
 
 describe('v2 author rescue utilities', () => {
   it('detects alternating surname/given token arrays before canonicalization', () => {
@@ -116,6 +117,15 @@ describe('v2 author rescue utilities', () => {
   it('strips DOI leakage from page locators before they reach downstream phases', () => {
     expect(normalizeLocatorValue('1205-14. 10.1021/acs.jcim.8b00706')).toBe('1205-14');
     expect(normalizeLocatorValue('pp. 659-668 doi:10.1080/14740338.2023.2228197')).toBe('659-668');
+  });
+
+  it('does not treat venue as a required field for journal citations', () => {
+    expect(getRequirementProfile('journal').required).toEqual(['authors', 'title', 'year']);
+    expect(getRequirementProfile('journal').expected).toContain('venue');
+  });
+
+  it('cleans repeated punctuation while preserving author initials followed by commas', () => {
+    expect(postCslCleanup('Smith, J.,. Example title.. BMJ,, 2020;;')).toBe('Smith, J., Example title. BMJ, 2020;');
   });
 
   it('reorders obviously descending page ranges while preserving common shortened ranges', () => {

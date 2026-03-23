@@ -8,6 +8,7 @@ import {
   Download,
   FileText,
   FileCode,
+  Code,
   Database,
   Copy,
   Edit,
@@ -380,6 +381,7 @@ function CitationRow({
   const [editText, setEditText] = useState("");
 
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showDebugTrace, setShowDebugTrace] = useState(false);
 
   const rowWarnings: string[] = [];
   const shouldWarnDroppedLocator =
@@ -519,6 +521,21 @@ function CitationRow({
     [refData.originalText],
   );
   const shouldShowOriginalInput = showOriginalInput && originalInputLines.length > 0;
+  const debugStageLog = refData.reportEngineSnapshot?.stageLogSummary ?? [];
+  const debugProcessingPath = refData.reportEngineSnapshot?.processingPath;
+  const debugChips = [
+    ...(refData.reportEngineSnapshot?.validationCodes ?? []).map((value) => ({ label: value, tone: "outline" as const })),
+    ...(refData.reportEngineSnapshot?.qualityFlags ?? []).map((value) => ({ label: value, tone: "secondary" as const })),
+    ...(debugProcessingPath?.fallbacksUsed ?? []).map((value) => ({ label: value, tone: "outline" as const })),
+    ...(debugProcessingPath?.partialReasons ?? []).map((value) => ({ label: value, tone: "outline" as const })),
+    ...(refData.reportEngineSnapshot?.splitContaminationFlags ?? []).map((value) => ({ label: value, tone: "outline" as const })),
+  ];
+  const canShowDebugTrace = showDebug && (
+    debugStageLog.length > 0
+    || Boolean(refData.reportEngineSnapshot?.extractorPath)
+    || Boolean(debugProcessingPath?.stagesRun?.length)
+    || debugChips.length > 0
+  );
 
   return (
     <Card
@@ -598,6 +615,100 @@ function CitationRow({
             </div>
           )}
         </div>
+
+        {canShowDebugTrace && (
+          <div className="mb-3">
+            <Button
+              type="button"
+              variant={showDebugTrace ? "default" : "outline"}
+              size="sm"
+              className="h-8 gap-2 text-xs"
+              onClick={() => setShowDebugTrace((current) => !current)}
+            >
+              <Code className="h-3.5 w-3.5" />
+              {showDebugTrace ? "Hide Debug Trace" : "Show Debug Trace"}
+            </Button>
+          </div>
+        )}
+
+        {canShowDebugTrace && showDebugTrace && (
+          <div className="mb-4 rounded-xl border border-border/60 bg-muted/20 p-3 sm:p-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-lg border border-border/60 bg-background/70 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Engine</p>
+                <p className="mt-2 text-sm font-semibold">{refData.reportEngineSnapshot?.engineVersion ?? "unknown"}</p>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-background/70 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Extractor</p>
+                <p className="mt-2 text-sm font-semibold">{refData.reportEngineSnapshot?.extractorPath ?? "unknown"}</p>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-background/70 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Partial Result</p>
+                <p className="mt-2 text-sm font-semibold">{debugProcessingPath?.partialResult ? "Yes" : "No"}</p>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-background/70 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Stages Run</p>
+                <p className="mt-2 text-sm font-semibold">{debugProcessingPath?.stagesRun?.length ?? 0}</p>
+              </div>
+            </div>
+
+            {debugChips.length > 0 && (
+              <div className="mt-3 space-y-2">
+                <Label className="text-[10px] uppercase text-muted-foreground">Flags and fallback reasons</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {debugChips.map((chip) => (
+                    <Badge key={`${chip.tone}-${chip.label}`} variant={chip.tone} className="text-[10px]">
+                      {chip.label}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {debugProcessingPath?.stagesRun?.length ? (
+              <div className="mt-3 space-y-2">
+                <Label className="text-[10px] uppercase text-muted-foreground">Pipeline path</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {debugProcessingPath.stagesRun.map((stage) => (
+                    <Badge key={stage} variant="outline" className="text-[10px] uppercase">
+                      {stage}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="mt-3 space-y-2">
+              <Label className="text-[10px] uppercase text-muted-foreground">Stage diagnostics</Label>
+              {debugStageLog.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border/60 px-3 py-4 text-xs text-muted-foreground">
+                  No stage diagnostics were captured for this citation.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {debugStageLog.map((entry) => (
+                    <div key={`${entry.stageId}-${entry.status}-${entry.message}`} className="rounded-lg border border-border/60 bg-background/70 p-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant={entry.status === "error" ? "destructive" : entry.status === "warning" ? "secondary" : "outline"} className="text-[10px] uppercase">
+                          {entry.stageId}
+                        </Badge>
+                        <Badge variant="outline" className="text-[10px] uppercase">
+                          {entry.status}
+                        </Badge>
+                        {entry.code && (
+                          <Badge variant="outline" className="text-[10px]">
+                            {entry.code}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="mt-2 text-sm leading-6">{entry.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col gap-3 pt-3 border-t border-muted">
           <Collapsible className="sm:hidden w-full">
@@ -778,7 +889,7 @@ export default function ReferenceOutput({
   const [isScrollPastThreshold, setIsScrollPastThreshold] = useState(false);
   const [selectedDuplicateOverrides, setSelectedDuplicateOverrides] = useState<Record<string, string>>({});
   const showInputFormat = showDebug;
-  const showStageDebug = false;
+  const showStageDebug = showDebug;
 
   useEffect(() => {
     const onScroll = () => setIsScrollPastThreshold(window.scrollY > SCROLL_THRESHOLD);

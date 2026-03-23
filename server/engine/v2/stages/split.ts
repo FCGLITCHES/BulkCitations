@@ -509,11 +509,15 @@ export function createSplitStage(): V2Stage {
           const citations: CanonicalCitation[] = [];
           const localWorkingChunkByCitationId: Record<string, string> = {};
           const localSplitArtifactsByCitationId: Record<string, V2SplitArtifact> = {};
+          const profileSignals = new Set(context.inputProfile?.signals ?? []);
           const isStructuredSource = context.inputProfile?.structure === 'structured'
             || !['text', 'url', 'pdf_base64'].includes(context.request.sourceType);
-          const baseReasons = context.inputProfile?.structure === 'unstructured'
-            ? ['profiled_unstructured']
-            : [];
+          const baseReasons = [
+            ...(context.inputProfile?.structure === 'unstructured' ? ['profiled_unstructured'] : []),
+            ...(['ocr_noise_markers', 'mixed_style_markers', 'book_tail_markers', 'conference_tail_markers', 'doi_heavy']
+              .filter((signal) => profileSignals.has(signal))
+              .map((signal) => `profile_${signal}`)),
+          ];
 
           let candidates = isStructuredSource
             ? [createCandidate([], 'structural', false)]

@@ -12,6 +12,7 @@ import { isPlaceholderFieldValue } from '@shared/referencePlaceholders';
 import { isGroupAuthor, normalizeGroupAuthor, normalizeKnownContainerName } from '../../shared/citationSemantics.js';
 import type {
   CacheAdapter,
+  ExtractorAdapter,
   ResolutionCandidateRecord,
   ResolutionProviderAdapter,
   ResolutionSearchQuery,
@@ -29,11 +30,13 @@ import {
   addCitationStageLog,
   attachCitationDebug,
   coerceCanonicalAuthor,
+  createFieldValue,
   createStageDiagnostic,
   logStructuredDebug,
   normalizeDoiValue,
   normalizeWhitespace,
   nowIso,
+  parseAuthorsForStyle,
 } from '../utils.js';
 import { providerSourceTypeToCanonical } from '../sourceTypes.js';
 
@@ -430,6 +433,104 @@ function strongLocalResolutionSkipReason(
   return null;
 }
 
+function shouldAttemptPreResolutionGrobidRecovery(
+  citation: CanonicalCitation,
+  batchSize: number,
+  executionMode: 'sync' | 'async',
+): boolean {
+  const grobidEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_GROBID_EXTRACTOR ?? '');
+  if (!grobidEnabled) return false;
+  if (citation.extraction?.extractorPath === 'grobid' || citation.extraction?.extractorPath === 'hybrid') return false;
+  if (executionMode === 'sync' && batchSize > 25) return false;
+  if (!['journal', 'conference', 'book', 'chapter', 'preprint', 'unknown'].includes(citation.referenceType)) return false;
+
+  const venueConfidence = Math.max(
+    citation.journal.confidence,
+    citation.conferenceTitle.confidence,
+    citation.bookTitle.confidence,
+    citation.publisher.confidence,
+  );
+  const authorRequired = citation.referenceType !== 'website';
+  const weakIdentity = citation.title.confidence < 0.9
+    || citation.year.confidence < 0.88
+    || venueConfidence < 0.78
+    || (authorRequired && citation.authors.confidence < 0.84);
+
+  return weakIdentity || citation.extraction?.fallbackUsed === true;
+}
+
+async function applyGrobidRecoveryExtraction(
+  citation: CanonicalCitation,
+  extractor: ExtractorAdapter,
+  inputStyle: string,
+  rawInput: string,
+  options: Parameters<ExtractorAdapter["extract"]>[2],
+): Promise<CanonicalCitation | null> {
+  const result = await extractor.extract(rawInput, inputStyle, {
+    ...options,
+    forceGrobid: true,
+    forceGrobidReason: 'pre_resolution_weak_parse',
+  });
+
+  if (result.extractorPath !== 'grobid' && result.extractorPath !== 'hybrid') {
+    return null;
+  }
+
+  const authorParseResult = result.canonicalAuthors
+    ? {
+      authors: result.canonicalAuthors,
+      parserMode: result.authorParserMode ?? 'none',
+      warningFlags: result.authorWarningFlags ?? [],
+      rejectedCandidates: result.rejectedCandidates ?? [],
+    }
+    : parseAuthorsForStyle(result.parsed.authors ?? [], inputStyle);
+  const yearValue = result.parsed.year ? Number.parseInt(result.parsed.year, 10) : null;
+
+  const preferStringField = (
+    current: typeof citation.title,
+    nextValue: string | null | undefined,
+    nextConfidence: number,
+  ) => nextValue
+    ? createFieldValue(nextValue, 'extracted', Math.max(current.confidence, nextConfidence), 'extract')
+    : current;
+
+  return {
+    ...citation,
+    referenceType: result.referenceType === 'unknown' ? citation.referenceType : result.referenceType,
+    authors: authorParseResult.authors.length > 0
+      ? createFieldValue(authorParseResult.authors, 'extracted', Math.max(citation.authors.confidence, result.fieldConfidence.authors ?? 0), 'extract')
+      : citation.authors,
+    title: preferStringField(citation.title, result.parsed.title ?? null, result.fieldConfidence.title ?? 0),
+    year: Number.isFinite(yearValue)
+      ? createFieldValue(Number(yearValue), 'extracted', Math.max(citation.year.confidence, result.fieldConfidence.year ?? 0), 'extract')
+      : citation.year,
+    journal: preferStringField(citation.journal, result.parsed.journal ?? null, result.fieldConfidence.journal ?? 0),
+    volume: preferStringField(citation.volume, result.parsed.volume ?? null, result.fieldConfidence.volume ?? 0),
+    issue: preferStringField(citation.issue, result.parsed.issue ?? null, result.fieldConfidence.issue ?? 0),
+    pages: preferStringField(citation.pages, result.parsed.pages ?? result.parsed['article-number'] ?? null, result.fieldConfidence.pages ?? 0),
+    doi: preferStringField(citation.doi, result.parsed.doi ?? null, result.fieldConfidence.doi ?? 0),
+    publisher: preferStringField(citation.publisher, result.parsed.publisher ?? null, result.fieldConfidence.publisher ?? 0),
+    url: preferStringField(citation.url, result.parsed.url ?? null, result.fieldConfidence.url ?? 0),
+    conferenceTitle: preferStringField(citation.conferenceTitle, result.parsed.conferenceTitle ?? null, result.fieldConfidence.journal ?? 0),
+    bookTitle: preferStringField(citation.bookTitle, result.parsed.bookTitle ?? null, result.fieldConfidence.journal ?? 0),
+    institution: preferStringField(citation.institution, result.parsed.institution ?? null, result.fieldConfidence.publisher ?? 0),
+    edition: preferStringField(citation.edition, result.parsed.edition ?? null, result.fieldConfidence.publisher ?? 0),
+    editor: preferStringField(citation.editor, result.parsed.editor ?? null, result.fieldConfidence.authors ?? 0),
+    extraction: {
+      method: result.method,
+      fallbackUsed: true,
+      extractorPath: result.extractorPath,
+      selectedBranch: result.selectedBranch,
+      selectionReason: result.selectionReason ?? 'pre_resolution_weak_parse',
+      authorParserMode: result.authorParserMode ?? authorParseResult.parserMode,
+      rejectedCandidates: [
+        ...(citation.extraction?.rejectedCandidates ?? []),
+        ...authorParseResult.rejectedCandidates,
+      ],
+    },
+  };
+}
+
 function providerOrderForCitation(citation: CanonicalCitation): ProviderKey[] {
   if (citation.doi.value) return ['doi'];
   if (isBiomedical(citation) && ['journal', 'preprint', 'unknown'].includes(citation.referenceType)) {
@@ -670,7 +771,11 @@ function buildTimedOutResolutionResult(
   };
 }
 
-export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter, cache: CacheAdapter): V2Stage {
+export function createEnrichStage(
+  resolutionProvider: ResolutionProviderAdapter,
+  cache: CacheAdapter,
+  extractor: ExtractorAdapter,
+): V2Stage {
   return {
     id: 'enrich',
     async run(context) {
@@ -860,13 +965,41 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
           };
         }
 
-        const queryEvidence = buildResolutionQueryEvidence(citation);
-        const localOnlyResolutionFallback = canUseLocalOnlyResolutionFallback(citation, queryEvidence);
+        let candidateCitation = citation;
+        if (shouldAttemptPreResolutionGrobidRecovery(candidateCitation, batchSize, context.executionMode)) {
+          try {
+            const recoveredCitation = await applyGrobidRecoveryExtraction(
+              candidateCitation,
+              extractor,
+              candidateCitation.detectedStyle.value ?? context.request.inputStyle,
+              context.workingChunkByCitationId[citation.id] ?? citation.raw,
+              {
+                inputProfile: context.inputProfile,
+                detectionConfidence: candidateCitation.detectedStyle.confidence,
+                batchSize,
+                executionMode: context.executionMode,
+                splitArtifact: context.splitArtifactsByCitationId[citation.id],
+                llmBudget: context.llmBudget,
+                debugEnabled: context.debugEnabled,
+              },
+            );
+            if (recoveredCitation) {
+              candidateCitation = recoveredCitation;
+              localFallbacks.push('enrich:grobid_recovery_extract');
+            }
+          } catch (error) {
+            localFallbacks.push('enrich:grobid_recovery_failed');
+            localPartialResult = true;
+          }
+        }
+
+        const queryEvidence = buildResolutionQueryEvidence(candidateCitation);
+        const localOnlyResolutionFallback = canUseLocalOnlyResolutionFallback(candidateCitation, queryEvidence);
         if (!queryEvidence.titlePresent || (!queryEvidence.firstAuthorSurname && !queryEvidence.groupAuthorLiteral && !localOnlyResolutionFallback)) {
           const nextCitation = attachCitationDebug({
-            ...citation,
+            ...candidateCitation,
             resolution: {
-              ...buildResolutionMetadata(citation, 'insufficient_evidence', {
+              ...buildResolutionMetadata(candidateCitation, 'insufficient_evidence', {
                 resolvedAt: nowIso(),
                 provider: resolutionProvider.id,
                 matchStrategy: 'none',
@@ -897,9 +1030,9 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
 
         if (localOnlyResolutionFallback) {
           const nextCitation = attachCitationDebug({
-            ...citation,
+            ...candidateCitation,
             resolution: {
-              ...buildResolutionMetadata(citation, 'provider_no_coverage', {
+              ...buildResolutionMetadata(candidateCitation, 'provider_no_coverage', {
                 resolvedAt: nowIso(),
                 provider: resolutionProvider.id,
                 matchStrategy: 'none',
@@ -928,7 +1061,7 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
           };
         }
 
-        const strongLocalSkipReason = strongLocalResolutionSkipReason(citation, context.executionMode, batchSize);
+        const strongLocalSkipReason = strongLocalResolutionSkipReason(candidateCitation, context.executionMode, batchSize);
         if (strongLocalSkipReason) {
           const skipMessage = strongLocalSkipReason === 'strong_local_doi_skip'
             ? 'Skipped network resolution because the citation already has a strong local DOI-backed parse.'
@@ -936,7 +1069,7 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
               ? 'Skipped network resolution because this citation type already has strong local evidence in synchronous mode.'
               : 'Skipped network resolution for a strong local parse in a large synchronous batch.';
           const nextCitation = attachCitationDebug({
-            ...citation,
+            ...candidateCitation,
             enrichment: buildEnrichmentFromResolution('skipped', resolutionProvider.id, 'skipped', undefined, {
               strongLocalSkipReason,
               batchSize,
@@ -966,9 +1099,9 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
           };
         }
 
-        const cacheKey = cacheKeyForCitation(citation);
+        const cacheKey = cacheKeyForCitation(candidateCitation);
         const resolutionQuery: ResolutionSearchQuery = {
-          title: citation.title.value ?? '',
+          title: candidateCitation.title.value ?? '',
           firstAuthorSurname: queryEvidence.firstAuthorSurname,
           groupAuthorLiteral: queryEvidence.groupAuthorLiteral,
           year: queryEvidence.year ?? null,
@@ -977,7 +1110,7 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
         };
         const cached = await cache.get<CachedResolutionPayload>(cacheKey);
         if (cached) {
-          const hydrated = applyResolutionPayload(citation, cached, resolutionProvider.id, 'cache');
+          const hydrated = applyResolutionPayload(candidateCitation, cached, resolutionProvider.id, 'cache');
           const cachedCitation = attachCitationDebug(hydrated.citation, 'enrich', {
             status: cached.status,
             providerOrder: ['cache'],
@@ -1011,7 +1144,7 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
         let execution = inFlightResolutionByKey.get(cacheKey);
         const sharedExecution = Boolean(execution);
         if (!execution) {
-          execution = executeResolutionForCitation(citation, resolutionQuery)
+          execution = executeResolutionForCitation(candidateCitation, resolutionQuery)
             .finally(() => {
               if (inFlightResolutionByKey.get(cacheKey) === execution) {
                 inFlightResolutionByKey.delete(cacheKey);
@@ -1021,13 +1154,13 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
         }
         let executionTimeoutHandle: NodeJS.Timeout | null = null;
         const resolved = await Promise.race([
-          execution,
-          new Promise<ResolutionExecutionResult>((resolve) => {
-            executionTimeoutHandle = setTimeout(() => {
-              if (inFlightResolutionByKey.get(cacheKey) === execution) {
-                inFlightResolutionByKey.delete(cacheKey);
-              }
-              const timedOutResult = buildTimedOutResolutionResult(citation, resolutionProvider.id);
+            execution,
+            new Promise<ResolutionExecutionResult>((resolve) => {
+              executionTimeoutHandle = setTimeout(() => {
+                if (inFlightResolutionByKey.get(cacheKey) === execution) {
+                  inFlightResolutionByKey.delete(cacheKey);
+                }
+              const timedOutResult = buildTimedOutResolutionResult(candidateCitation, resolutionProvider.id);
               void cache.set(cacheKey, timedOutResult.payload);
               resolve(timedOutResult);
             }, citationTimeoutMs);
@@ -1041,7 +1174,7 @@ export function createEnrichStage(resolutionProvider: ResolutionProviderAdapter,
         localPartialResult = localPartialResult || resolved.partialResult;
 
         const hydrated = applyResolutionPayload(
-          citation,
+          candidateCitation,
           resolved.payload,
           resolutionProvider.id,
           sharedExecution ? 'shared' : 'direct',

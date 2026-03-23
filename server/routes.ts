@@ -1,5 +1,6 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
+import { randomUUID } from "node:crypto";
 import multer from "multer";
 import * as mammoth from "mammoth";
 import * as pdfParseModule from "pdf-parse-new";
@@ -14,16 +15,19 @@ import { runAssertions } from "./engine/strictRenderer.js";
 import { processV2Conversion } from "./engine/v2/index.js";
 import { mapV2ResponseToLegacyRecords } from "./engine/v2/compat.js";
 import { applyTruthToLegacyReference } from "./engine/shared/truthResolver.js";
+import { attachReferencePayloads } from "./engine/shared/referencePayloads.js";
 import { runSanityCheck } from "./engine/stages/sanityCheck.js";
 import { getAuthorityData } from "../shared/authorityLookup";
 import { calculateConfidence } from "../shared/confidence";
 import { sendContactAutoReply, sendContactNotification, sendWaitlistAutoReply, sendWaitlistNotification } from "./utils/email";
+import { getAnalyticsSummary, trackAnalyticsEvent, type AnalyticsEventType, type AnalyticsMetadataValue } from "./store/analyticsStore.js";
 import {
   checkAdminLoginRateLimit,
   clearAdminLoginFailures,
   clearAdminSessionCookie,
   getAdminSessionStatus,
   isAdminAuthConfigured,
+  requireAdmin,
   recordFailedAdminLogin,
   setAdminSessionCookie,
   verifyAdminPassword,
@@ -105,6 +109,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return [rawContent];
   }
 
+  function normalizeAnalyticsCountryCode(value: unknown): string {
+    if (typeof value !== "string") return "unknown";
+    const normalized = value.trim().toUpperCase();
+    return /^[A-Z]{2}$/.test(normalized) ? normalized : "unknown";
+  }
+
+  function getAnalyticsCountryContext(req: Request) {
+    const candidates: Array<{ header: string; value: unknown; source: string }> = [
+      { header: "x-vercel-ip-country", value: req.headers["x-vercel-ip-country"], source: "vercel" },
+      { header: "cf-ipcountry", value: req.headers["cf-ipcountry"], source: "cloudflare" },
+      { header: "cloudfront-viewer-country", value: req.headers["cloudfront-viewer-country"], source: "cloudfront" },
+      { header: "x-country-code", value: req.headers["x-country-code"], source: "custom" },
+      { header: "x-appengine-country", value: req.headers["x-appengine-country"], source: "appengine" },
+    ];
+
+    for (const candidate of candidates) {
+      const countryCode = normalizeAnalyticsCountryCode(candidate.value);
+      if (countryCode !== "unknown") {
+        return {
+          countryCode,
+          countryHeaderSource: candidate.source,
+          countryHeaderName: candidate.header,
+        };
+      }
+    }
+
+    return {
+      countryCode: "unknown",
+      countryHeaderSource: "none",
+      countryHeaderName: "none",
+    };
+  }
+
+  function normalizeVisitorId(value: unknown): string | null {
+    if (typeof value !== "string") return null;
+    const normalized = value.trim();
+    if (!/^[A-Za-z0-9_-]{8,80}$/.test(normalized)) return null;
+    return normalized;
+  }
+
+  function normalizeAnalyticsPath(value: unknown): string {
+    if (typeof value !== "string") return "/";
+    const normalized = value.trim();
+    if (!normalized.startsWith("/")) return "/";
+    return normalized.slice(0, 120) || "/";
+  }
+
+  function normalizeRouteName(path: string, value: unknown): string {
+    if (typeof value === "string") {
+      const normalized = value.trim().slice(0, 80);
+      if (normalized.length > 0) return normalized;
+    }
+    return path === "/" ? "home" : path.replace(/^\/+|\/+$/g, "").replace(/\//g, ":").slice(0, 80) || "home";
+  }
+
+  function sanitizeAnalyticsMetadata(value: unknown): Record<string, AnalyticsMetadataValue> | undefined {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+
+    const entries: Array<[string, AnalyticsMetadataValue]> = [];
+    for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+      if (!/^[a-zA-Z][a-zA-Z0-9_]{0,39}$/.test(key)) continue;
+      if (raw == null) {
+        entries.push([key, null]);
+        continue;
+      }
+      if (typeof raw === "boolean") {
+        entries.push([key, raw]);
+        continue;
+      }
+      if (typeof raw === "number" && Number.isFinite(raw)) {
+        entries.push([key, Number(raw.toFixed(2))]);
+        continue;
+      }
+      if (typeof raw === "string") {
+        entries.push([key, raw.trim().slice(0, 120)]);
+      }
+    }
+
+    return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+  }
+
+  async function recordSiteAnalyticsEvent(args: {
+    req: Request;
+    eventType: AnalyticsEventType;
+    visitorId: string;
+    path: string;
+    metadata?: Record<string, AnalyticsMetadataValue>;
+  }) {
+    const country = getAnalyticsCountryContext(args.req);
+    await trackAnalyticsEvent({
+      id: randomUUID(),
+      visitorId: args.visitorId,
+      eventType: args.eventType,
+      path: args.path,
+      countryCode: country.countryCode,
+      createdAt: new Date().toISOString(),
+      metadata: {
+        ...args.metadata,
+        routeName: normalizeRouteName(args.path, args.metadata?.routeName),
+        countryHeaderSource: country.countryHeaderSource,
+        countryHeaderName: country.countryHeaderName,
+      },
+    });
+  }
+
+  app.post("/api/analytics/track", async (req, res) => {
+    try {
+      const eventType = req.body?.event;
+      const visitorId = normalizeVisitorId(req.body?.visitorId);
+      if (!visitorId) {
+        return res.status(400).json({ message: "visitorId is required." });
+      }
+      if (!["page_view", "converter_started", "converter_completed", "converter_failed"].includes(String(eventType))) {
+        return res.status(400).json({ message: "Unsupported analytics event." });
+      }
+
+      await recordSiteAnalyticsEvent({
+        req,
+        eventType: eventType as AnalyticsEventType,
+        visitorId,
+        path: normalizeAnalyticsPath(req.body?.path),
+        metadata: sanitizeAnalyticsMetadata(req.body?.metadata),
+      });
+
+      return res.status(204).end();
+    } catch (error) {
+      console.error("[analytics] Tracking failed:", error instanceof Error ? error.message : String(error));
+      return res.status(202).end();
+    }
+  });
+
+  app.get("/api/admin/analytics/summary", requireAdmin, async (req, res) => {
+    try {
+      const requestedDays = Number.parseInt(String(req.query.days ?? "30"), 10);
+      const windowDays = Number.isFinite(requestedDays) && requestedDays > 0
+        ? Math.min(requestedDays, 365)
+        : 30;
+      const summary = await getAnalyticsSummary(windowDays);
+      return res.json(summary);
+    } catch (error) {
+      console.error("[analytics] Summary failed:", error instanceof Error ? error.message : String(error));
+      return res.status(500).json({ message: "Failed to load analytics summary." });
+    }
+  });
+
   app.get("/api/admin/session", (req, res) => {
     res.setHeader("Cache-Control", "no-store");
     res.json(getAdminSessionStatus(req));
@@ -173,7 +322,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const truthAdjustedStorageData = await Promise.all(
           pipelineResult.storageData.map(async (record) => {
-            const adjustedUiData = await applyTruthToLegacyReference(record._uiData, validatedData.outputStyle);
+            const adjustedUiData = attachReferencePayloads(
+              await applyTruthToLegacyReference(record._uiData, validatedData.outputStyle),
+            );
             return {
               ...record,
               parsedData: adjustedUiData.parsedData,
@@ -190,7 +341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           truthAdjustedStorageData.map(({ _uiData, ...record }) => record)
         );
 
-        const convertResults: ConvertedReference[] = truthAdjustedStorageData.map((record, idx) => ({
+        const convertResults: ConvertedReference[] = truthAdjustedStorageData.map((record, idx) => attachReferencePayloads({
           ...record._uiData,
           id: storedRefs[idx].id.toString(),
         }));
@@ -229,7 +380,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         legacyRecords.map((record) => record.storageData)
       );
 
-      const convertResults: ConvertedReference[] = legacyRecords.map((record, idx) => ({
+      const convertResults: ConvertedReference[] = legacyRecords.map((record, idx) => attachReferencePayloads({
         ...record.uiData,
         id: storedRefs[idx].id.toString(),
       }));

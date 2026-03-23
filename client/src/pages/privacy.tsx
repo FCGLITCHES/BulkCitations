@@ -15,6 +15,9 @@ export default function Privacy() {
               <strong className="text-foreground">Data processing.</strong> References you paste are processed in memory to convert citation styles. They are not permanently stored on our servers.
             </p>
             <p>
+              <strong className="text-foreground">Anonymous analytics.</strong> We may store lightweight usage events such as page views, converter attempts, completion counts, and approximate country from standard hosting headers. These analytics do not include your raw citation text.
+            </p>
+            <p>
               <strong className="text-foreground">No account required.</strong> The core conversion workflow does not require sign-up. If you use optional features that involve storage (e.g. saved projects), that data will be handled according to this policy.
             </p>
             <p>

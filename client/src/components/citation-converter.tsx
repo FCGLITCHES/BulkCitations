@@ -1,4 +1,4 @@
-import { Suspense, lazy, startTransition, useDeferredValue, useEffect, useState } from "react";
+import { Suspense, lazy, startTransition, useDeferredValue, useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,6 +7,7 @@ import ProcessingStatus from "./processing-status";
 import ErrorToast from "./error-toast";
 import { ConvertedReference, ConversionResponse, DuplicateGroup } from "@/lib/types";
 import { apiRequest } from "@/lib/queryClient";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { FileText } from "lucide-react";
@@ -48,6 +49,8 @@ export default function CitationConverter() {
   const [processingStatus, setProcessingStatus] = useState({ visible: false, title: "", message: "" });
   const [errorToast, setErrorToast] = useState({ visible: false, title: "", message: "", variant: "error" as "error" | "warning" });
   const [initialCaptureText, setInitialCaptureText] = useState(readCaptureBatch);
+  const lastRequestedBatchSizeRef = useRef(0);
+  const conversionStartedAtRef = useRef<number | null>(null);
   const { toast } = useToast();
   const deferredConvertedReferences = useDeferredValue(convertedReferences);
   const deferredClusters = useDeferredValue(clusters);
@@ -89,6 +92,32 @@ export default function CitationConverter() {
   }, [convertedReferences.length, isProcessing]);
 
   const handleConversionResult = (response: ConversionResponse) => {
+    const durationMs = conversionStartedAtRef.current != null
+      ? Math.max(0, Date.now() - conversionStartedAtRef.current)
+      : null;
+    const reviewCount = response.convertedReferences.filter((reference) => (reference.analyticsPayload?.healthState ?? reference.healthState) === "review").length;
+    const actionNeededCount = response.convertedReferences.filter((reference) => (reference.analyticsPayload?.healthState ?? reference.healthState) === "action_needed").length;
+    const cleanCount = response.convertedReferences.filter((reference) => (reference.analyticsPayload?.healthState ?? reference.healthState) === "clean").length;
+    const warningCount = response.convertedReferences.reduce(
+      (total, reference) => total + (reference.analyticsPayload?.warningCount ?? reference.warnings?.length ?? 0),
+      0,
+    );
+    const styleDetectionFailedCount = response.convertedReferences.filter(
+      (reference) => reference.analyticsPayload?.styleDetectionFailed ?? reference.styleDetectionFailed,
+    ).length;
+
+    trackAnalyticsEvent("converter_completed", {
+      citationCount: lastRequestedBatchSizeRef.current || response.convertedReferences.length,
+      convertedCount: response.convertedReferences.length,
+      duplicateGroups: response.duplicateGroups?.length ?? 0,
+      engineVersion: response.engineVersion ?? engineVersion,
+      conversionDurationMs: durationMs,
+      cleanCount,
+      reviewCount,
+      actionNeededCount,
+      warningCount,
+      styleDetectionFailedCount,
+    });
     startTransition(() => {
       setConvertedReferences(response.convertedReferences);
       setClusters(response.clusters ?? undefined);
@@ -215,6 +244,12 @@ export default function CitationConverter() {
 
 
   const handleProcessingStart = (totalRefs: number) => {
+    lastRequestedBatchSizeRef.current = totalRefs;
+    conversionStartedAtRef.current = Date.now();
+    trackAnalyticsEvent("converter_started", {
+      citationCount: totalRefs,
+      engineVersion,
+    });
     setIsProcessing(true);
     setProcessingStatus({
       visible: true,
@@ -225,10 +260,20 @@ export default function CitationConverter() {
 
   const handleProcessingEnd = () => {
     setIsProcessing(false);
+    conversionStartedAtRef.current = null;
     setProcessingStatus({ visible: false, title: '', message: '' });
   };
 
   const handleError = (error: string) => {
+    const durationMs = conversionStartedAtRef.current != null
+      ? Math.max(0, Date.now() - conversionStartedAtRef.current)
+      : null;
+    trackAnalyticsEvent("converter_failed", {
+      citationCount: lastRequestedBatchSizeRef.current,
+      engineVersion,
+      reason: error.slice(0, 120),
+      conversionDurationMs: durationMs,
+    });
     setErrorToast({
       visible: true,
       title: 'Conversion Error',

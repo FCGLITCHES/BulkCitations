@@ -11,6 +11,29 @@ import {
   logStructuredDebug,
 } from '../utils.js';
 
+function deriveDetectUncertainty(inputSignals: string[] | undefined) {
+  const signals = new Set(inputSignals ?? []);
+  const uncertaintyFlags = ['mixed_style_markers', 'ocr_noise_markers', 'long_prose_lines', 'footnote_markers']
+    .filter((signal) => signals.has(signal));
+  const penalty = uncertaintyFlags.reduce((sum, signal) => {
+    switch (signal) {
+      case 'mixed_style_markers':
+      case 'ocr_noise_markers':
+        return sum + 0.12;
+      case 'long_prose_lines':
+      case 'footnote_markers':
+        return sum + 0.06;
+      default:
+        return sum;
+    }
+  }, 0);
+
+  return {
+    uncertaintyFlags,
+    penalty,
+  };
+}
+
 export function createDetectStage(classifier: ClassifierAdapter): V2Stage {
   return {
     id: 'detect',
@@ -40,33 +63,53 @@ export function createDetectStage(classifier: ClassifierAdapter): V2Stage {
           }
 
           const result = await classifier.detectStyle(citation.raw);
+          const detectUncertainty = deriveDetectUncertainty(context.inputProfile?.signals);
+          const effectiveConfidence = Math.max(0, Number((result.confidence - detectUncertainty.penalty).toFixed(3)));
+          const lowConfidenceHint = effectiveConfidence < 0.55;
           const nextCitationBase = {
             ...citation,
-            detectedStyle: createFieldValue(result.style, 'extracted', result.confidence, 'detect'),
+            detectedStyle: createFieldValue(result.style, 'extracted', effectiveConfidence, 'detect'),
           };
-          const nextCitation = context.debugEnabled && verboseDebug
+          const nextCitation = context.debugEnabled
             ? attachCitationDebug(nextCitationBase, 'detect', {
               detectorId: classifier.id,
               style: result.style,
-              confidence: result.confidence,
+              classifierConfidence: result.confidence,
+              effectiveConfidence,
+              uncertaintyFlags: detectUncertainty.uncertaintyFlags,
+              lowConfidenceHint,
+              ...(verboseDebug ? { confidencePenalty: detectUncertainty.penalty } : {}),
             }, true)
             : nextCitationBase;
           logStructuredDebug(context, 'detect', index, nextCitation, {
             selectedBranch: undefined,
             selectionReason: undefined,
             authorParserMode: undefined,
-            warningFlags: result.style ? [] : ['style_detection_failed'],
+            warningFlags: result.style
+              ? (lowConfidenceHint ? ['style_detection_low_confidence'] : [])
+              : ['style_detection_failed'],
             detectorId: classifier.id,
             style: result.style,
-            confidence: result.confidence,
+            confidence: effectiveConfidence,
           });
           return addCitationStageLog(
             nextCitation,
             createStageDiagnostic(
               'detect',
-              result.style ? 'success' : 'warning',
-              result.style ? `Detected citation style as ${result.style}.` : 'Could not confidently detect citation style.',
-              result.style ? { style: result.style, confidence: result.confidence } : undefined,
+              result.style && !lowConfidenceHint ? 'success' : 'warning',
+              result.style
+                ? lowConfidenceHint
+                  ? `Detected citation style as ${result.style}, but the style hint is low confidence.`
+                  : `Detected citation style as ${result.style}.`
+                : 'Could not confidently detect citation style.',
+              result.style
+                ? {
+                  style: result.style,
+                  classifierConfidence: result.confidence,
+                  confidence: effectiveConfidence,
+                  uncertaintyFlags: detectUncertainty.uncertaintyFlags,
+                }
+                : undefined,
             ),
           );
         },

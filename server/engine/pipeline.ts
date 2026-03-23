@@ -17,6 +17,7 @@ import { clusterCitations } from '../../shared/clustering.js';
 import { computeWorkKey } from '../utils/workKey.js';
 import { toRawReferenceText } from '@shared/types/textBrands';
 import { autoQueueFailures } from '../store/autoQueue.js';
+import { attachReferencePayloads } from './shared/referencePayloads.js';
 import pLimit from 'p-limit';
 
 import type {
@@ -203,7 +204,7 @@ export async function processReferences(
                 authorityStatus,
             };
 
-            const uiData: ConvertedReference = {
+            const uiData: ConvertedReference = attachReferencePayloads({
                 id: '', // will be assigned after storage
                 originalText: rawRef,
                 convertedText,
@@ -221,7 +222,7 @@ export async function processReferences(
                 assertionSummary: assertionResult.assertionSummary,
                 assertionHighlights: assertionResult.assertionHighlights,
                 authorInitialsOnly: hasAuthorInitialsOnly(parsedData),
-            };
+            });
 
             return { refData, uiData };
         } catch (error) {
@@ -293,7 +294,7 @@ export function reformatReferences(
 
             const confidence = calculateConfidence(ref.parsedData, baseRulesScore);
 
-            reformatted.push({
+            reformatted.push(attachReferencePayloads({
                 id: ref.id,
                 originalText: ref.originalText,
                 convertedText,
@@ -306,7 +307,7 @@ export function reformatReferences(
                 assertionSummary: assertionResult.assertionSummary,
                 assertionHighlights: assertionResult.assertionHighlights,
                 authorInitialsOnly: hasAuthorInitialsOnly(ref.parsedData),
-            });
+            }));
         } catch (error) {
             console.error(`Reformat error for ref ${ref.id}:`, error);
         }

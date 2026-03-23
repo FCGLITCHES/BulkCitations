@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
 import { Navbar } from "@/components/navbar";
+import { AdminSectionTabs } from "@/components/AdminSectionTabs";
 import { 
   ArrowLeft, 
   CheckCircle2, 
@@ -127,6 +128,7 @@ export default function AdminReportDetail() {
   const [newComment, setNewComment] = useState("");
   const [resolvedByCommit, setResolvedByCommit] = useState("");
   const [resolvedByVersion, setResolvedByVersion] = useState("");
+  const [showDebugTrace, setShowDebugTrace] = useState(false);
 
   const { data: report, isLoading } = useQuery<CitationReport>({
     queryKey: reportQueryKey,
@@ -302,13 +304,13 @@ export default function AdminReportDetail() {
   if (!report) return <div className="p-8 text-center">Report not found. <Link href="/admin/reports" className="text-blue-500">Go back</Link></div>;
 
   const referenceTypes = [
-    "journal-article",
-    "book",
-    "chapter",
-    "paper-conference",
-    "thesis",
-    "report",
-    "webpage",
+    { value: "journal", label: "journal" },
+    { value: "book", label: "book" },
+    { value: "bookChapter", label: "book chapter" },
+    { value: "conference", label: "conference" },
+    { value: "thesis", label: "thesis" },
+    { value: "report", label: "report" },
+    { value: "website", label: "website" },
   ];
   const confidenceScore =
     typeof report.confidence === "number"
@@ -316,6 +318,15 @@ export default function AdminReportDetail() {
       : typeof (report.confidence as unknown as { score?: unknown } | undefined)?.score === "number"
         ? (report.confidence as unknown as { score: number }).score
         : 0;
+  const debugStageLog = report.engineSnapshot?.stageLogSummary ?? [];
+  const debugProcessingPath = report.engineSnapshot?.processingPath;
+  const debugChips = [
+    ...(report.engineSnapshot?.validationCodes ?? []).map((value) => ({ label: value, tone: "outline" as const })),
+    ...(report.engineSnapshot?.qualityFlags ?? []).map((value) => ({ label: value, tone: "secondary" as const })),
+    ...(debugProcessingPath?.fallbacksUsed ?? []).map((value) => ({ label: value, tone: "outline" as const })),
+    ...(debugProcessingPath?.partialReasons ?? []).map((value) => ({ label: value, tone: "outline" as const })),
+    ...(report.engineSnapshot?.splitContaminationFlags ?? []).map((value) => ({ label: value, tone: "outline" as const })),
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -342,6 +353,19 @@ export default function AdminReportDetail() {
               USER-REPORTED
             </Badge>
           )}
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <AdminSectionTabs />
+          <Button
+            type="button"
+            variant={showDebugTrace ? "default" : "outline"}
+            size="sm"
+            className="gap-2"
+            onClick={() => setShowDebugTrace((current) => !current)}
+          >
+            <Code className="h-4 w-4" />
+            {showDebugTrace ? "Hide Debug Trace" : "Show Debug Trace"}
+          </Button>
         </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
@@ -414,6 +438,96 @@ export default function AdminReportDetail() {
               </div>
             </CardContent>
           </Card>
+
+          {showDebugTrace && (
+            <Card className="border-border/60">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Code className="h-4 w-4 text-sky-500" />
+                  Debug Trace
+                </CardTitle>
+                <CardDescription>
+                  Stage-by-stage diagnostics from the engine snapshot so we can see where the failure likely started.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-3 md:grid-cols-4">
+                  <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Engine</p>
+                    <p className="mt-2 text-sm font-semibold">{report.engineSnapshot?.engineVersion ?? "unknown"}</p>
+                  </div>
+                  <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Extractor</p>
+                    <p className="mt-2 text-sm font-semibold">{report.engineSnapshot?.extractorPath ?? "unknown"}</p>
+                  </div>
+                  <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Partial Result</p>
+                    <p className="mt-2 text-sm font-semibold">{debugProcessingPath?.partialResult ? "Yes" : "No"}</p>
+                  </div>
+                  <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Stages Run</p>
+                    <p className="mt-2 text-sm font-semibold">{debugProcessingPath?.stagesRun?.length ?? 0}</p>
+                  </div>
+                </div>
+
+                {debugChips.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase text-muted-foreground">Flags and fallback reasons</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {debugChips.map((chip) => (
+                        <Badge key={`${chip.tone}-${chip.label}`} variant={chip.tone} className="text-[10px]">
+                          {chip.label}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {debugProcessingPath?.stagesRun?.length ? (
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase text-muted-foreground">Pipeline path</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {debugProcessingPath.stagesRun.map((stage) => (
+                        <Badge key={stage} variant="outline" className="text-[10px] uppercase">
+                          {stage}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase text-muted-foreground">Stage diagnostics</Label>
+                  {debugStageLog.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-border/60 px-4 py-6 text-sm text-muted-foreground">
+                      No stage diagnostics were captured for this report snapshot.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {debugStageLog.map((entry) => (
+                        <div key={`${entry.stageId}-${entry.status}-${entry.message}`} className="rounded-lg border border-border/60 bg-muted/10 p-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant={entry.status === "error" ? "destructive" : entry.status === "warning" ? "secondary" : "outline"} className="text-[10px] uppercase">
+                              {entry.stageId}
+                            </Badge>
+                            <Badge variant="outline" className="text-[10px] uppercase">
+                              {entry.status}
+                            </Badge>
+                            {entry.code && (
+                              <Badge variant="outline" className="text-[10px]">
+                                {entry.code}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="mt-2 text-sm leading-6">{entry.message}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -812,8 +926,8 @@ export default function AdminReportDetail() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {referenceTypes.map(t => (
-                            <SelectItem key={t} value={t}>{t}</SelectItem>
+                          {referenceTypes.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>

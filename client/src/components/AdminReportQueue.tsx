@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Navbar } from "@/components/navbar";
+import { AdminSectionTabs } from "@/components/AdminSectionTabs";
 import { 
   ChevronRight, 
   Users, 
@@ -106,7 +107,6 @@ export default function AdminReportQueue() {
       return adminFetch<GroupedReport[]>(`/api/reports/grouped?status=${statusFilter}`);
     },
   });
-
   const stats = groups?.reduce((acc, g) => {
     acc.total += g.totalCount;
     acc.groups += 1;
@@ -260,6 +260,9 @@ export default function AdminReportQueue() {
           <p className="text-muted-foreground mt-1">
             Review and resolve citation parsing failures. Grouped by similarity.
           </p>
+          <div className="mt-4">
+            <AdminSectionTabs />
+          </div>
           <div className="mt-4">
             <Button
               type="button"

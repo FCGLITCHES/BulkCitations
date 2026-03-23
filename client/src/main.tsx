@@ -8,12 +8,14 @@ import About from './pages/about';
 import Contact from './pages/contact';
 import AdminReportQueue from './components/AdminReportQueue';
 import AdminReportDetail from './components/AdminReportDetail';
+import AdminAnalytics from './components/AdminAnalytics';
 import Login from './pages/login';
 import HistoryPage from './pages/history';
 import ScrollToTop from './components/scroll-to-top';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
 import { useAuth } from './hooks/use-auth';
+import { trackAnalyticsEvent } from './lib/analytics';
 import './index.css';
 
 function RequireAdmin({ children }: { children: React.ReactNode }) {
@@ -61,11 +63,36 @@ function AdminDetailRoute() {
   );
 }
 
+function AdminAnalyticsRoute() {
+  return (
+    <RequireAdmin>
+      <AdminAnalytics />
+    </RequireAdmin>
+  );
+}
+
+function AnalyticsRouteTracker() {
+  const [location] = useLocation();
+
+  React.useEffect(() => {
+    if (location.startsWith("/admin")) return;
+    if (location === "/login") return;
+
+    trackAnalyticsEvent("page_view", {
+      surface: location === "/" ? "home" : "site",
+      route: location,
+    });
+  }, [location]);
+
+  return null;
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <Router>
         <ScrollToTop />
+        <AnalyticsRouteTracker />
         <Route path="/" component={Home} />
         <Route path="/faq" component={FAQ} />
         <Route path="/privacy" component={Privacy} />
@@ -74,6 +101,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/login" component={Login} />
         <Route path="/history" component={HistoryPage} />
         <Route path="/admin/reports" component={AdminQueueRoute} />
+        <Route path="/admin/analytics" component={AdminAnalyticsRoute} />
         <Route path="/admin/reports/:id" component={AdminDetailRoute} />
       </Router>
     </QueryClientProvider>

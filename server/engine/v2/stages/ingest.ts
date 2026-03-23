@@ -84,6 +84,26 @@ function estimateCount(text: string): number {
   );
 }
 
+function looksLikeBookTailLine(line: string): boolean {
+  const normalized = line.trim();
+  if (!normalized || /^https?:\/\//i.test(normalized)) return false;
+  return /(?:^|[.]\s+)[A-Z][A-Za-z'’.\- ]+(?:,\s*[A-Z]{2,})?(?:\s+[A-Z][A-Za-z'’.\-]+){0,4}\s*:\s*[A-Z][^.;]{2,}(?:[;,]\s*(?:19|20)\d{2})?\.?$/i.test(normalized);
+}
+
+function looksLikeConferenceTailLine(line: string): boolean {
+  const normalized = line.trim();
+  if (!normalized) return false;
+  return /\b(?:conference|symposium|workshop|congress|meeting|proceedings|forum|summit|colloquium)\b/i.test(normalized)
+    || (/\bIEEE\b/.test(normalized) && /\bpp?\.?\s*\d+/i.test(normalized));
+}
+
+function countOcrNoiseMarkers(text: string, lines: string[]): number {
+  const hyphenatedBreaks = (text.match(/\b\p{L}{3,}-\s+\p{L}{2,}\b/gu) ?? []).length;
+  const pageArtifacts = (text.match(/\b\d+\s+of\s+\d+\b/g) ?? []).length;
+  const raggedCaps = lines.filter((line) => /^(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3}\s+)?\d+\s+of\s+\d+$/i.test(line)).length;
+  return hyphenatedBreaks + pageArtifacts + raggedCaps;
+}
+
 function classifyInputProfile(text: string): InputProfile {
   const explicit = detectExplicitSchema(text);
   if (explicit) return explicit;
@@ -98,6 +118,16 @@ function classifyInputProfile(text: string): InputProfile {
   const authorStarts = (text.match(/^[A-Z][A-Za-z'’-]+,\s+[A-Z]/gm) ?? []).length;
   const footnoteMarkers = (text.match(/[¹²³⁴⁵⁶⁷⁸⁹]|\^\d+/g) ?? []).length;
   const doiHits = (text.match(/10\.\d{4,}\/\S+/g) ?? []).length;
+  const bookTailMarkers = lines.filter(looksLikeBookTailLine).length;
+  const conferenceTailMarkers = lines.filter(looksLikeConferenceTailLine).length;
+  const ocrNoiseMarkers = countOcrNoiseMarkers(text, lines);
+  const mixedStyleMarkers = Number(
+    (numberedStarts > 0 && authorStarts > 0)
+    || (conferenceTailMarkers > 0 && bookTailMarkers > 0)
+    || (footnoteMarkers > 0 && numberedStarts > 0),
+  );
+  const estimatedCount = estimateCount(text);
+  const doiHeavy = doiHits >= Math.max(2, Math.ceil(estimatedCount * 0.5));
 
   if (numberedStarts >= 2) {
     semiScore += 1;
@@ -111,6 +141,22 @@ function classifyInputProfile(text: string): InputProfile {
     semiScore += 1;
     signals.push('doi_density');
   }
+  if (doiHeavy) {
+    semiScore += 1;
+    signals.push('doi_heavy');
+  }
+  if (bookTailMarkers > 0) {
+    semiScore += 1;
+    signals.push('book_tail_markers');
+  }
+  if (conferenceTailMarkers > 0) {
+    semiScore += 1;
+    signals.push('conference_tail_markers');
+  }
+  if (mixedStyleMarkers > 0) {
+    semiScore += 1;
+    signals.push('mixed_style_markers');
+  }
   if (avgLineLen > 200) {
     unstructuredScore += 2;
     signals.push('long_prose_lines');
@@ -118,6 +164,10 @@ function classifyInputProfile(text: string): InputProfile {
   if (footnoteMarkers >= 2) {
     unstructuredScore += 2;
     signals.push('footnote_markers');
+  }
+  if (ocrNoiseMarkers > 0) {
+    unstructuredScore += 2;
+    signals.push('ocr_noise_markers');
   }
   if (lines.length < 3 && text.length > 500) {
     unstructuredScore += 2;
@@ -129,10 +179,14 @@ function classifyInputProfile(text: string): InputProfile {
       structure: 'semi_structured',
       confidence: Math.min(0.9, semiScore / Math.max(semiScore + unstructuredScore, 1)),
       inputType: 'mixed_styles',
-      estimatedCount: estimateCount(text),
+      estimatedCount,
       hasDois: doiHits > 0,
       hasUrls: /https?:\/\//i.test(text),
-      styleHints: numberedStarts > 0 ? ['numbered_list'] : [],
+      styleHints: [
+        ...(numberedStarts > 0 ? ['numbered_list'] : []),
+        ...(bookTailMarkers > 0 ? ['book_tail'] : []),
+        ...(conferenceTailMarkers > 0 ? ['conference_tail'] : []),
+      ],
       signals,
     };
   }
@@ -142,10 +196,13 @@ function classifyInputProfile(text: string): InputProfile {
       structure: 'unstructured',
       confidence: Math.min(0.85, unstructuredScore / Math.max(semiScore + unstructuredScore, 1)),
       inputType: footnoteMarkers >= 2 ? 'prose_footnotes' : 'plain_blob',
-      estimatedCount: estimateCount(text),
+      estimatedCount,
       hasDois: doiHits > 0,
       hasUrls: /https?:\/\//i.test(text),
-      styleHints: [],
+      styleHints: [
+        ...(bookTailMarkers > 0 ? ['book_tail'] : []),
+        ...(conferenceTailMarkers > 0 ? ['conference_tail'] : []),
+      ],
       signals,
     };
   }
@@ -154,10 +211,13 @@ function classifyInputProfile(text: string): InputProfile {
     structure: 'unknown',
     confidence: 0.4,
     inputType: 'unknown',
-    estimatedCount: estimateCount(text),
+    estimatedCount,
     hasDois: doiHits > 0,
     hasUrls: /https?:\/\//i.test(text),
-    styleHints: [],
+    styleHints: [
+      ...(bookTailMarkers > 0 ? ['book_tail'] : []),
+      ...(conferenceTailMarkers > 0 ? ['conference_tail'] : []),
+    ],
     signals,
   };
 }

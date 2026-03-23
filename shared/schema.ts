@@ -76,6 +76,16 @@ export interface AssertionHighlight {
   severity: 'error' | 'warning';
 }
 
+export type HealthState = 'clean' | 'review' | 'action_needed';
+
+export interface ReferenceDebugEnvelope {
+  extractionPath: 'deterministic' | 'grobid' | 'llm' | 'hybrid';
+  splitMethod: 'structural' | 'llm' | 'hybrid';
+  fallbacksUsed: string[];
+  splitConfidence: number;
+  detectedStyle: string;
+}
+
 // Citation Cluster
 export interface Cluster {
   clusterId: string;
@@ -146,7 +156,7 @@ export interface ConvertedReference {
   styleDetectionFailed?: boolean;
   assertionSummary?: AssertionSummary;
   assertionHighlights?: AssertionHighlight[];
-  healthState?: 'clean' | 'review' | 'action_needed';
+  healthState?: HealthState;
   healthReasons?: string[];
   /** True when authors are initials-only (e.g. "Smith, J."); keep initials unless we have high-confidence metadata. */
   authorInitialsOnly?: boolean;
@@ -154,13 +164,11 @@ export interface ConvertedReference {
   authorsExpandedFromMetadata?: boolean;
   truthProvenance?: TruthProvenance;
   reportEngineSnapshot?: ReportEngineSnapshot;
-  debug?: {
-    extractionPath: 'deterministic' | 'grobid' | 'llm' | 'hybrid';
-    splitMethod: 'structural' | 'llm' | 'hybrid';
-    fallbacksUsed: string[];
-    splitConfidence: number;
-    detectedStyle: string;
-  };
+  debug?: ReferenceDebugEnvelope;
+  review?: ReferenceReviewPayload;
+  adminReview?: ReferenceAdminReviewPayload;
+  exportPayload?: ReferenceExportPayload;
+  analyticsPayload?: ReferenceAnalyticsPayload;
 }
 
 // Authority lookup status (trust + analytics)
@@ -307,6 +315,44 @@ export interface ReportEngineSnapshot {
   splitContaminationFlags?: string[];
   inputProfile?: InputProfile;
   truthProvenance?: TruthProvenance;
+}
+
+export interface ReferenceReviewPayload {
+  healthState: HealthState;
+  healthReasons: string[];
+  confidence?: ConfidenceResult;
+  authorityStatus?: AuthorityStatus;
+  assertionSummary?: AssertionSummary;
+  assertionHighlights?: AssertionHighlight[];
+  styleDetectionFailed: boolean;
+  authorInitialsOnly: boolean;
+  truthProvenance?: TruthProvenance;
+}
+
+export interface ReferenceAdminReviewPayload {
+  warnings: string[];
+  engineSnapshot?: ReportEngineSnapshot;
+  debug?: ReferenceDebugEnvelope;
+}
+
+export interface ReferenceExportPayload {
+  workKey?: string;
+  outputStyle: string;
+  referenceType: ReferenceType;
+  convertedText: string;
+  parsedData: ParsedReference;
+}
+
+export interface ReferenceAnalyticsPayload {
+  engineVersion?: 'v1' | 'v2';
+  healthState?: HealthState;
+  confidenceScore?: number;
+  warningCount: number;
+  styleDetectionFailed: boolean;
+  authorityStatus?: AuthorityStatus;
+  partialResult: boolean;
+  extractorPath?: 'deterministic' | 'grobid' | 'llm' | 'hybrid' | 'hybrid-v1';
+  truthApplied: boolean;
 }
 
 export interface ReviewEvent {

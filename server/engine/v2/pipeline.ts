@@ -28,7 +28,7 @@ function createStageMap(adapters: V2AdapterBundle): Record<V2StageId, V2Stage> {
     validate: createValidateStage(),
     truth: createTruthStage(),
     dedup: createDedupStage(),
-    enrich: createEnrichStage(adapters.resolutionProvider, adapters.cache),
+    enrich: createEnrichStage(adapters.resolutionProvider, adapters.cache, adapters.extractor),
     group: createGroupStage(),
     detect: createDetectStage(adapters.classifier),
     score: createScoreStage(),

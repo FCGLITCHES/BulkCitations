@@ -422,7 +422,9 @@ describe('v2 validation false-positive regression checks', () => {
 
     const result = await validateAndScore(citation);
     expect(result.quality?.bucket).toBe('ready');
-    expect(result.quality?.bucketReasons).toContain('High-confidence parse stayed ready even though the citation belongs to a duplicate family.');
+    expect(result.quality?.bucketReasons).toEqual(expect.arrayContaining([
+      expect.stringMatching(/High-confidence .*parse/i),
+    ]));
   });
 
   it('allows clean duplicate citations with unresolved authority matches to stay ready when only benign resolution warnings remain', async () => {

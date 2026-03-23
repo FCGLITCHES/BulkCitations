@@ -50,8 +50,8 @@ export function getRequirementProfile(referenceType: string): RequirementProfile
       };
     case 'conference':
       return {
-        required: ['authors', 'title', 'year', 'venue'],
-        expected: ['locator'],
+        required: ['authors', 'title', 'year'],
+        expected: ['venue', 'locator'],
         optional: ['doi', 'url', 'publisher'],
       };
     case 'chapter':
@@ -82,8 +82,8 @@ export function getRequirementProfile(referenceType: string): RequirementProfile
     case 'journal':
     default:
       return {
-        required: ['authors', 'title', 'year', 'venue'],
-        expected: ['volume', 'issue', 'locator'],
+        required: ['authors', 'title', 'year'],
+        expected: ['venue', 'volume', 'issue', 'locator'],
         optional: ['doi', 'url', 'publisher'],
       };
   }

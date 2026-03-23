@@ -22,7 +22,7 @@ export function FAQSection() {
     },
     {
       q: "Are my references stored?",
-      a: "References are processed in memory and not permanently stored. See our Privacy page for details.",
+      a: "Raw references are processed in memory and are not permanently stored. We may collect anonymous usage analytics such as page views, country, and converter attempts so we can improve reliability and speed.",
     },
     {
       q: "Can I export to reference managers?",
