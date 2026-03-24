@@ -417,7 +417,7 @@ function CitationRow({
   const otherBadges = (
     <>
       {refData.referenceType && (
-        <Badge variant="outline" className="text-xs">
+        <Badge variant="outline" className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border-transparent">
           {referenceTypeLabel}
         </Badge>
       )}
@@ -462,12 +462,12 @@ function CitationRow({
                 ? "outline"
                 : "outline"
             }
-            className={`text-xs cursor-help flex items-center gap-1 ${
+            className={`text-xs cursor-help flex items-center gap-1 border-transparent ${
               health.state === "clean"
-                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+                ? "bg-secondary-fixed text-on-secondary-fixed dark:bg-emerald-900/40 dark:text-emerald-400"
                 : health.state === "review"
-                  ? "border-amber-500/40 text-amber-100"
-                  : "border-red-500/40 bg-red-500/15 text-red-100"
+                  ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400"
+                  : "bg-error-container text-on-error-container dark:bg-red-900/40 dark:text-red-400"
             }`}
           >
             {health.state === "clean" && <ShieldCheck className="w-3 h-3" />}
@@ -538,306 +538,228 @@ function CitationRow({
   );
 
   return (
-    <Card
-      className={`border-l-4 mb-4 ${
-        health?.state === "action_needed"
-          ? "border-l-destructive bg-destructive/5"
-          : health?.state === "review"
-            ? "border-l-amber-400"
-            : "border-l-primary"
-      }`}
-    >
-      <CardContent className="p-3 sm:p-4">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3 min-w-0">
-          {isEditing ? (
-            <div className="w-full space-y-2">
-              <Textarea
-                value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-                className="w-full min-h-[5rem] text-sm leading-relaxed font-sans mt-2"
-              />
-              <div className="flex gap-2">
-                <Button size="sm" onClick={() => { onSaveEdit?.(refData.id, editText); setIsEditing(false); }}>Save</Button>
-                <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
-              </div>
+    <div className={`bg-surface-container-lowest dark:bg-slate-800 p-5 sm:p-6 rounded-xl border border-outline-variant/30 dark:border-slate-700/50 shadow-sm citation-card ${health?.state === "clean" ? "ready" : health?.state === "review" ? "review" : "error"} relative group mb-4 transition-colors`}>
+      
+      {/* Primary Content Area */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-4 min-w-0">
+        {isEditing ? (
+          <div className="w-full space-y-2">
+            <Textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              className="w-full min-h-[5rem] text-sm leading-relaxed font-sans mt-2"
+            />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => { onSaveEdit?.(refData.id, editText); setIsEditing(false); }}>Save</Button>
+              <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
             </div>
-          ) : (
-            <div className="w-full">
-              <div
-                className={`${isExpanded ? "" : "line-clamp-3 sm:line-clamp-none transition-all duration-300"} cursor-pointer sm:cursor-auto`}
-                onClick={() => setIsExpanded(!isExpanded)}
-              >
-                {duplicateDiffMarkup && duplicateDiffMarkup.differenceCount > 0 ? (
-                  <p
-                    className="text-foreground leading-relaxed flex-1 min-w-0 font-medium text-sm sm:text-base break-words"
-                    dangerouslySetInnerHTML={{ __html: duplicateDiffMarkup.html }}
-                  />
-                ) : (
-                  <HighlightedCitationText
-                    text={citationText}
-                    highlights={refData.assertionHighlights}
-                  />
-                )}
-              </div>
-              {duplicateDiffMarkup && duplicateDiffMarkup.differenceCount > 0 && (
-                <p className="mt-2 text-xs text-amber-300">
-                  Highlighted text shows what differs from the selected version.
-                </p>
-              )}
-              {shouldShowOriginalInput && (
-                <div className="mt-3 rounded-lg border border-dashed border-border/70 bg-background/70 p-3">
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Original Input
-                    </span>
-                    <span className="text-[11px] text-muted-foreground">
-                      Compare against the converted citation above
-                    </span>
-                  </div>
-                  <div className="space-y-1 font-mono text-xs text-muted-foreground">
-                    {originalInputLines.map((line, index) => (
-                      <div key={`${refData.id}-original-${index}`} className="break-words">
-                        {line}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {!isExpanded && isLongCitation && (
-                <button
-                  onClick={() => setIsExpanded(true)}
-                  className="text-xs text-muted-foreground mt-1 hover:text-primary sm:hidden inline-flex items-center"
-                >
-                  <ChevronDown className="w-3 h-3 mr-1" />
-                  Read more
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-
-        {canShowDebugTrace && (
-          <div className="mb-3">
-            <Button
-              type="button"
-              variant={showDebugTrace ? "default" : "outline"}
-              size="sm"
-              className="h-8 gap-2 text-xs"
-              onClick={() => setShowDebugTrace((current) => !current)}
+          </div>
+        ) : (
+          <div className="w-full">
+            <div
+              className={`font-bold text-sm sm:text-base text-primary-container dark:text-slate-100 leading-relaxed ${isExpanded ? "" : "line-clamp-3 sm:line-clamp-none transition-all duration-300"} cursor-pointer sm:cursor-auto`}
+              onClick={() => setIsExpanded(!isExpanded)}
             >
-              <Code className="h-3.5 w-3.5" />
-              {showDebugTrace ? "Hide Debug Trace" : "Show Debug Trace"}
-            </Button>
+              {duplicateDiffMarkup && duplicateDiffMarkup.differenceCount > 0 ? (
+                <p
+                  className="text-primary-container dark:text-slate-100 leading-relaxed flex-1 min-w-0 font-bold text-sm sm:text-base break-words"
+                  dangerouslySetInnerHTML={{ __html: duplicateDiffMarkup.html }}
+                />
+              ) : (
+                <HighlightedCitationText
+                  text={citationText}
+                  highlights={refData.assertionHighlights}
+                />
+              )}
+            </div>
+            {duplicateDiffMarkup && duplicateDiffMarkup.differenceCount > 0 && (
+              <p className="mt-2 text-xs text-brand-amber text-opacity-80">
+                Highlighted text shows what differs from the selected version.
+              </p>
+            )}
+            {!isExpanded && isLongCitation && (
+              <button
+                onClick={() => setIsExpanded(true)}
+                className="text-xs text-muted-foreground mt-1 hover:text-primary-container sm:hidden inline-flex items-center"
+              >
+                <ChevronDown className="w-3 h-3 mr-1" />
+                Read more
+              </button>
+            )}
           </div>
         )}
+      </div>
 
-        {canShowDebugTrace && showDebugTrace && (
-          <div className="mb-4 rounded-xl border border-border/60 bg-muted/20 p-3 sm:p-4">
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-lg border border-border/60 bg-background/70 p-3">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Engine</p>
-                <p className="mt-2 text-sm font-semibold">{refData.reportEngineSnapshot?.engineVersion ?? "unknown"}</p>
-              </div>
-              <div className="rounded-lg border border-border/60 bg-background/70 p-3">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Extractor</p>
-                <p className="mt-2 text-sm font-semibold">{refData.reportEngineSnapshot?.extractorPath ?? "unknown"}</p>
-              </div>
-              <div className="rounded-lg border border-border/60 bg-background/70 p-3">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Partial Result</p>
-                <p className="mt-2 text-sm font-semibold">{debugProcessingPath?.partialResult ? "Yes" : "No"}</p>
-              </div>
-              <div className="rounded-lg border border-border/60 bg-background/70 p-3">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Stages Run</p>
-                <p className="mt-2 text-sm font-semibold">{debugProcessingPath?.stagesRun?.length ?? 0}</p>
+      {/* Original Input Expandable */}
+      {shouldShowOriginalInput && (
+        <div className="bg-surface-container-low dark:bg-slate-700/30 rounded p-3 mb-4 border border-outline-variant/20 dark:border-slate-700/50">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-[10px] font-bold text-outline uppercase tracking-widest">Original Input</span>
+            <span className="text-[10px] text-outline/60 hidden sm:inline">Compare against converted citation above</span>
+          </div>
+          <div className="text-xs font-mono text-on-surface-variant dark:text-slate-300 break-words space-y-1">
+            {originalInputLines.map((line, index) => (
+              <p key={`${refData.id}-original-${index}`}>{line}</p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Debug Trace Toggle */}
+      {canShowDebugTrace && (
+        <div className="mb-4">
+          <button 
+            type="button"
+            className="flex items-center gap-2 bg-surface-container dark:bg-slate-700/50 px-3 py-1.5 rounded-lg border border-outline-variant/30 dark:border-slate-700/50 text-xs font-bold text-primary-container dark:text-blue-300 hover:bg-surface-container-high dark:hover:bg-slate-700 transition-colors"
+            onClick={() => setShowDebugTrace((current) => !current)}
+          >
+            <span className="material-symbols-outlined text-sm">code</span>
+            {showDebugTrace ? "Hide Debug Trace" : "Show Debug Trace"}
+          </button>
+        </div>
+      )}
+
+      {/* Expanded Debug Trace */}
+      {canShowDebugTrace && showDebugTrace && (
+        <div className="mb-4 rounded-xl border border-outline-variant/20 dark:border-slate-700/50 bg-surface-container-low dark:bg-slate-700/30 p-3 sm:p-4 text-on-surface dark:text-slate-200">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-lg border border-outline-variant/20 bg-surface-container-lowest p-3">
+              <p className="text-[10px] uppercase tracking-widest font-bold text-outline">Engine</p>
+              <p className="mt-2 text-sm font-semibold">{refData.reportEngineSnapshot?.engineVersion ?? "unknown"}</p>
+            </div>
+            <div className="rounded-lg border border-outline-variant/20 bg-surface-container-lowest p-3">
+              <p className="text-[10px] uppercase tracking-widest font-bold text-outline">Extractor</p>
+              <p className="mt-2 text-sm font-semibold">{refData.reportEngineSnapshot?.extractorPath ?? "unknown"}</p>
+            </div>
+            <div className="rounded-lg border border-outline-variant/20 bg-surface-container-lowest p-3">
+              <p className="text-[10px] uppercase tracking-widest font-bold text-outline">Partial Result</p>
+              <p className="mt-2 text-sm font-semibold">{debugProcessingPath?.partialResult ? "Yes" : "No"}</p>
+            </div>
+            <div className="rounded-lg border border-outline-variant/20 bg-surface-container-lowest p-3">
+              <p className="text-[10px] uppercase tracking-widest font-bold text-outline">Stages Run</p>
+              <p className="mt-2 text-sm font-semibold">{debugProcessingPath?.stagesRun?.length ?? 0}</p>
+            </div>
+          </div>
+
+          {debugChips.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <Label className="text-[10px] uppercase font-bold tracking-widest text-outline">Flags and fallback reasons</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {debugChips.map((chip) => (
+                  <span key={`${chip.tone}-${chip.label}`} className="text-[10px] font-bold text-on-surface-variant border border-outline-variant/30 bg-surface-container px-2 py-1 rounded-full uppercase">
+                    {chip.label}
+                  </span>
+                ))}
               </div>
             </div>
+          )}
 
-            {debugChips.length > 0 && (
-              <div className="mt-3 space-y-2">
-                <Label className="text-[10px] uppercase text-muted-foreground">Flags and fallback reasons</Label>
-                <div className="flex flex-wrap gap-1.5">
-                  {debugChips.map((chip) => (
-                    <Badge key={`${chip.tone}-${chip.label}`} variant={chip.tone} className="text-[10px]">
-                      {chip.label}
-                    </Badge>
-                  ))}
-                </div>
+          {debugProcessingPath?.stagesRun?.length ? (
+            <div className="mt-4 space-y-2">
+              <Label className="text-[10px] uppercase font-bold tracking-widest text-outline">Pipeline path</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {debugProcessingPath.stagesRun.map((stage) => (
+                  <span key={stage} className="text-[10px] font-bold text-on-surface-variant border border-outline-variant/30 bg-surface-container px-2 py-1 rounded-full uppercase">
+                    {stage}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="mt-4 space-y-2">
+            <Label className="text-[10px] uppercase font-bold tracking-widest text-outline">Stage diagnostics</Label>
+            {debugStageLog.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-outline-variant/40 px-3 py-4 text-xs text-outline italic">
+                No stage diagnostics were captured for this citation.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {debugStageLog.map((entry) => (
+                  <div key={`${entry.stageId}-${entry.status}-${entry.message}`} className="rounded-lg border border-outline-variant/20 bg-surface-container-lowest p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${entry.status === "error" ? "text-brand-red bg-brand-red/10 border border-brand-red/30" : entry.status === "warning" ? "text-brand-amber bg-brand-amber/10 border border-brand-amber/30" : "text-on-surface-variant bg-surface-container border border-outline-variant/30"}`}>
+                        {entry.stageId}
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase text-on-surface-variant bg-surface-container border border-outline-variant/30`}>
+                        {entry.status}
+                      </span>
+                      {entry.code && (
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full text-on-surface-variant bg-surface-container border border-outline-variant/30`}>
+                          {entry.code}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-on-surface-variant">{entry.message}</p>
+                  </div>
+                ))}
               </div>
             )}
-
-            {debugProcessingPath?.stagesRun?.length ? (
-              <div className="mt-3 space-y-2">
-                <Label className="text-[10px] uppercase text-muted-foreground">Pipeline path</Label>
-                <div className="flex flex-wrap gap-1.5">
-                  {debugProcessingPath.stagesRun.map((stage) => (
-                    <Badge key={stage} variant="outline" className="text-[10px] uppercase">
-                      {stage}
-                    </Badge>
-                  ))}
-                </div>
+          </div>
+          
+          <div className="mt-4 pt-4 border-t border-outline-variant/20 text-xs font-mono bg-surface-container rounded p-3">
+            <div><strong className="text-primary-container">authorityStatus:</strong> {refData.authorityStatus ?? "—"}</div>
+            {refData.debug && (
+              <>
+                <div className="mt-1"><strong className="text-primary-container">extractionPath:</strong> {refData.debug.extractionPath}</div>
+                <div className="mt-1"><strong className="text-primary-container">splitMethod:</strong> {refData.debug.splitMethod}</div>
+                <div className="mt-1"><strong className="text-primary-container">splitConfidence:</strong> {refData.debug.splitConfidence}</div>
+                <div className="mt-1"><strong className="text-primary-container">detectedStyle:</strong> {refData.debug.detectedStyle}</div>
+                <div className="mt-1"><strong className="text-primary-container">fallbacksUsed:</strong> {refData.debug.fallbacksUsed.length > 0 ? refData.debug.fallbacksUsed.join(", ") : "—"}</div>
+              </>
+            )}
+            {refData.patternHits && refData.patternHits.length > 0 && (
+              <div className="mt-1">
+                <strong className="text-primary-container">patternHits:</strong> {refData.patternHits.map((h) => `${h.id}(${h.fields.join(",")})`).join(", ")}
               </div>
-            ) : null}
-
-            <div className="mt-3 space-y-2">
-              <Label className="text-[10px] uppercase text-muted-foreground">Stage diagnostics</Label>
-              {debugStageLog.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border/60 px-3 py-4 text-xs text-muted-foreground">
-                  No stage diagnostics were captured for this citation.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {debugStageLog.map((entry) => (
-                    <div key={`${entry.stageId}-${entry.status}-${entry.message}`} className="rounded-lg border border-border/60 bg-background/70 p-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant={entry.status === "error" ? "destructive" : entry.status === "warning" ? "secondary" : "outline"} className="text-[10px] uppercase">
-                          {entry.stageId}
-                        </Badge>
-                        <Badge variant="outline" className="text-[10px] uppercase">
-                          {entry.status}
-                        </Badge>
-                        {entry.code && (
-                          <Badge variant="outline" className="text-[10px]">
-                            {entry.code}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="mt-2 text-sm leading-6">{entry.message}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
           </div>
-        )}
-
-        <div className="flex flex-col gap-3 pt-3 border-t border-muted">
-          <Collapsible className="sm:hidden w-full">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground font-medium">Citation Details</span>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-muted/50">
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </CollapsibleTrigger>
-            </div>
-            <CollapsibleContent className="mt-2 text-left">
-              <div className="flex flex-wrap items-center gap-2">
-                {citationBadges}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-
-          <div className="hidden sm:flex flex-col gap-3 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 min-w-0">{citationBadges}</div>
-
-            <div className="flex items-center gap-2 flex-shrink-0 w-full justify-end border-t border-muted/50 pt-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  if (!isEditing) {
-                    setEditText(citationText);
-                    setIsEditing(true);
-                  }
-                }}
-                className="text-xs text-foreground hover:bg-muted hover:text-foreground"
-                title="Edit citation"
-              >
-                <Edit className="h-3 w-3 mr-1" />
-                Edit
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleCopyReference(refData.id, userEditedText ?? refData.convertedText)}
-                className="text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                {isCopied ? (
-                  <Check className="h-3 w-3 text-primary" />
-                ) : (
-                  <Copy className="h-3 w-3" />
-                )}
-              </Button>
-              {extraActions}
-              <ReportButton
-                rawInput={refData.originalText}
-                detectedInputStyle={refData.inputStyle}
-                targetStyle={refData.outputStyle}
-                convertedOutput={citationText}
-                parsedData={refData.parsedData}
-                referenceType={refData.referenceType}
-                confidence={refData.confidence?.score}
-                reportEngineSnapshot={refData.reportEngineSnapshot as any}
-                reported={isReported}
-                onReported={onReported ? () => onReported(refData.id) : undefined}
-              />
-            </div>
-          </div>
-
-          <div className="sm:hidden flex items-center gap-2 w-full justify-end border-t border-muted/50 pt-3 mt-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                if (!isEditing) {
-                  setEditText(citationText);
-                  setIsEditing(true);
-                }
-              }}
-              className="text-muted-foreground hover:bg-muted hover:text-foreground h-8 w-8"
-              title="Edit citation"
-            >
-              <Edit className="h-4 w-4" />
-              <span className="sr-only">Edit</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleCopyReference(refData.id, userEditedText ?? refData.convertedText)}
-              className="text-muted-foreground hover:bg-muted hover:text-foreground h-8 w-8"
-              title="Copy citation"
-            >
-              {isCopied ? (
-                <Check className="h-3 w-3 text-primary" />
-              ) : (
-                <Copy className="h-3 w-3" />
-              )}
-            </Button>
-            {extraActions}
-            <ReportButton
-              rawInput={refData.originalText}
-              detectedInputStyle={refData.inputStyle}
-              targetStyle={refData.outputStyle}
-              convertedOutput={citationText}
-              parsedData={refData.parsedData}
-              referenceType={refData.referenceType}
-              confidence={refData.confidence?.score}
-              reportEngineSnapshot={refData.reportEngineSnapshot as any}
-              reported={isReported}
-              onReported={onReported ? () => onReported(refData.id) : undefined}
-            />
-          </div>
-
-          {showDebug && (
-            <div className="mt-3 pt-3 border-t border-muted text-xs font-mono bg-muted/50 rounded p-2">
-              <div><strong>authorityStatus:</strong> {refData.authorityStatus ?? "—"}</div>
-              {refData.debug && (
-                <>
-                  <div><strong>extractionPath:</strong> {refData.debug.extractionPath}</div>
-                  <div><strong>splitMethod:</strong> {refData.debug.splitMethod}</div>
-                  <div><strong>splitConfidence:</strong> {refData.debug.splitConfidence}</div>
-                  <div><strong>detectedStyle:</strong> {refData.debug.detectedStyle}</div>
-                  <div><strong>fallbacksUsed:</strong> {refData.debug.fallbacksUsed.length > 0 ? refData.debug.fallbacksUsed.join(", ") : "—"}</div>
-                </>
-              )}
-              {refData.patternHits && refData.patternHits.length > 0 && (
-                <div className="mt-1"><strong>patternHits:</strong> {refData.patternHits.map((h) => `${h.id}(${h.fields.join(",")})`).join(", ")}</div>
-              )}
-            </div>
-          )}
         </div>
-      </CardContent>
-    </Card>
+      )}
+
+      {/* Badges mapped loosely to old tags */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {citationBadges}
+      </div>
+
+      {/* Action Bar */}
+      <div className="flex flex-wrap items-center justify-end gap-2 pt-4 border-t border-outline-variant/10">
+        {extraActions}
+        <button 
+          onClick={() => {
+            if (!isEditing) {
+              setEditText(citationText);
+              setIsEditing(true);
+            }
+          }}
+          className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors px-2 py-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700/50"
+        >
+          <span className="material-symbols-outlined text-[16px]">edit</span> Edit
+        </button>
+        
+        <button 
+          onClick={() => handleCopyReference(refData.id, userEditedText ?? refData.convertedText)}
+          className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors px-2 py-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700/50"
+        >
+          <span className="material-symbols-outlined text-[16px]">content_copy</span> {isCopied ? "Copied" : "Copy"}
+        </button>
+        
+        <div className="inline-flex">
+          <ReportButton
+            rawInput={refData.originalText}
+            detectedInputStyle={refData.inputStyle}
+            targetStyle={refData.outputStyle}
+            convertedOutput={citationText}
+            parsedData={refData.parsedData}
+            referenceType={refData.referenceType}
+            confidence={refData.confidence?.score}
+            reportEngineSnapshot={refData.reportEngineSnapshot as any}
+            reported={isReported}
+            onReported={onReported ? () => onReported(refData.id) : undefined}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1257,104 +1179,66 @@ export default function ReferenceOutput({
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Reference Health Bar */}
-      <div className="bg-card border border-border/60 rounded-xl overflow-hidden shadow-sm">
-        <div className="p-3 sm:p-4 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-foreground">Reference Health</h4>
-            <span className="text-xs font-medium text-muted-foreground">
-              {healthStats.total} total
-            </span>
-          </div>
+      {/* Reference Health Dashboard */}
+      <div className="bg-surface-container-lowest rounded border border-outline-variant p-5 sm:p-6 mb-2">
+        <div className="flex justify-between items-center mb-4">
+          <h4 className="text-sm font-bold text-primary-container">Reference Health</h4>
+          <span className="text-xs text-on-surface-variant">{healthStats.total} total references</span>
+        </div>
+        
+        {/* Progress Bar */}
+        <div className="w-full h-2 bg-brand-red rounded-full overflow-hidden flex mb-4">
+          {cleanPct > 0 && <div className="h-full bg-brand-green" style={{ width: `${cleanPct}%` }}></div>}
+          {reviewPct > 0 && <div className="h-full bg-brand-amber" style={{ width: `${reviewPct}%` }}></div>}
+        </div>
 
-          <div className="h-2 w-full flex rounded-full overflow-hidden flex-nowrap bg-muted">
-            {cleanPct > 0 && <div style={{ width: `${cleanPct}%` }} className="bg-emerald-500" />}
-            {reviewPct > 0 && <div style={{ width: `${reviewPct}%` }} className="bg-amber-400" />}
-            {actionPct > 0 && <div style={{ width: `${actionPct}%` }} className="bg-red-500" />}
+        {/* Status Indicators */}
+        <div className="flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-2">
+          <div 
+            className={`flex items-center gap-1.5 sm:gap-2 cursor-pointer ${healthFilter === 'clean' ? 'underline' : 'hover:underline'}`}
+            onClick={() => setHealthFilter(prev => prev === "clean" ? "all" : "clean")}
+          >
+            <span className="w-2 h-2 rounded-full bg-brand-green"></span>
+            <span className="text-xs font-bold text-on-surface-variant"><span className="text-brand-green">{healthStats.clean}</span> ready</span>
           </div>
-
-          <div className="flex flex-col gap-1 mt-1 text-[13px] text-muted-foreground">
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                className={`flex items-center gap-1.5 underline-offset-2 ${healthFilter === "clean"
-                  ? "font-bold text-foreground underline"
-                  : "font-bold text-emerald-700 dark:text-emerald-400 hover:underline"
-                  }`}
-                onClick={() =>
-                  setHealthFilter(prev => (prev === "clean" ? "all" : "clean"))
-                }
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span>
-                  {healthStats.clean} ready
-                </span>
-              </button>
-              <span className="text-muted-foreground/40 font-bold">&middot;</span>
-              <button
-                type="button"
-                className={`flex items-center gap-1.5 underline-offset-2 ${healthFilter === "review"
-                  ? "font-bold text-foreground underline"
-                  : "font-bold text-amber-700 dark:text-amber-400 hover:underline"
-                  }`}
-                onClick={() =>
-                  setHealthFilter(prev => (prev === "review" ? "all" : "review"))
-                }
-              >
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <span>
-                  {healthStats.review} worth reviewing
-                </span>
-              </button>
-              <span className="text-muted-foreground/40 font-bold">&middot;</span>
-              <button
-                type="button"
-                className={`flex items-center gap-1.5 underline-offset-2 ${healthFilter === "action_needed"
-                  ? "font-bold text-foreground underline"
-                  : "font-bold text-red-700 dark:text-red-400 hover:underline"
-                  }`}
-                onClick={() =>
-                  setHealthFilter(prev =>
-                    prev === "action_needed" ? "all" : "action_needed"
-                  )
-                }
-              >
-                <span className="w-2 h-2 rounded-full bg-red-500" />
-                <span>
-                  {healthStats.actionNeeded} action needed
-                  {healthFilter === "action_needed" ? " (showing only these)" : ""}
-                </span>
-              </button>
-            </div>
-            {(healthStats.duplicates > 0 || SHOW_ZERO_DUPLICATES_IN_UI) && (
-              <div className="text-[11px] text-muted-foreground">
-                Includes {healthStats.duplicates} likely duplicate
-                {healthStats.duplicates === 1 ? "" : "s"}.
-              </div>
-            )}
+          <div 
+            className={`flex items-center gap-1.5 sm:gap-2 cursor-pointer ${healthFilter === 'review' ? 'underline' : 'hover:underline'}`}
+            onClick={() => setHealthFilter(prev => prev === "review" ? "all" : "review")}
+          >
+            <span className="w-2 h-2 rounded-full bg-brand-amber"></span>
+            <span className="text-xs font-bold text-on-surface-variant"><span className="text-brand-amber">{healthStats.review}</span> review</span>
+          </div>
+          <div 
+            className={`flex items-center gap-1.5 sm:gap-2 cursor-pointer ${healthFilter === 'action_needed' ? 'underline' : 'hover:underline'}`}
+            onClick={() => setHealthFilter(prev => prev === "action_needed" ? "all" : "action_needed")}
+          >
+            <span className="w-2 h-2 rounded-full bg-brand-red"></span>
+            <span className="text-xs font-bold text-on-surface-variant"><span className="text-brand-red">{healthStats.actionNeeded}</span> action needed</span>
+            {healthFilter === 'action_needed' && <span className="text-[10px] text-outline italic ml-1 underline cursor-pointer hover:text-primary-container transition-colors hidden sm:inline">showing only these</span>}
           </div>
         </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-            <input
-              type="checkbox"
+        
+        {(healthStats.duplicates > 0 || SHOW_ZERO_DUPLICATES_IN_UI) && (
+          <p className="mt-4 text-[10px] text-outline">Includes {healthStats.duplicates} likely duplicate{healthStats.duplicates === 1 ? "" : "s"}.</p>
+        )}
+        
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-6 pt-4 border-t border-outline-variant/10">
+          <label className="flex items-center gap-2 cursor-pointer text-xs text-on-surface-variant font-bold uppercase tracking-tight">
+            <input 
+              type="checkbox" 
               checked={showDebug}
-            onChange={(e) => setShowDebug(e.target.checked)}
-              className="rounded"
+              onChange={(e) => setShowDebug(e.target.checked)}
+              className="rounded border-outline-variant text-primary-container focus:ring-primary-container h-3.5 w-3.5" 
             />
-            Advanced details
+            <span>Advanced details</span>
           </label>
-          <Button
-            variant={showOriginalInput ? "default" : "outline"}
-            size="sm"
-            className="text-xs sm:text-sm"
+          <button 
+            type="button"
             onClick={() => setShowOriginalInput((prev) => !prev)}
+            className="bg-brand-green/10 text-brand-green px-3 py-1.5 rounded-full text-[10px] font-bold border border-brand-green/20 hover:bg-brand-green hover:text-white transition-all w-full sm:w-auto"
           >
-            {showOriginalInput ? "Hide original input" : "Show original input for all"}
-          </Button>
+            {showOriginalInput ? "Hide original input" : "Show original input"}
+          </button>
         </div>
       </div>
 
@@ -1477,9 +1361,8 @@ export default function ReferenceOutput({
                                 <Button
                                   type="button"
                                   variant={isSelected ? "default" : "ghost"}
-                                  size="sm"
                                   onClick={() => setSelectedDuplicateOverrides((prev) => ({ ...prev, [group.groupId]: dup.id }))}
-                                  className="text-xs"
+                                  className={`text-xs h-auto px-3 py-1.5 font-bold ${isSelected ? "bg-primary-container text-white dark:bg-blue-600" : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"}`}
                                 >
                                   {isSelected ? "Selected version" : "Select this version"}
                                 </Button>

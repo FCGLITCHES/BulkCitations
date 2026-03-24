@@ -4,7 +4,7 @@ import {
   classifyLocatorToken,
   normalizeKnownContainerName,
 } from '../shared/citationSemantics.js';
-import { normalizeWhitespace } from './utils.js';
+import { normalizeDoiValue, normalizeWhitespace } from './utils.js';
 
 const RAW_LOCATOR_PATTERN = /\bpp?\.?\s*[A-Z]?\d|\bArt(?:icle)?\.?\s*(?:no\.?\s*)?[A-Z]?\d|\b\d+\(\d+\)\s*:\s*[A-Z]?\d|\bS\d+(?:[-–]S?\d+)?\b|(?:^|[\s(,;:])[A-Za-z]\d{2,}(?=$|[\s),.;:])|(?:^|[\s(,;:])\d{6,}(?=$|[\s),.;:])/i;
 const STRONG_LOCATOR_PATTERN = /\b(?:pp?\.?\s*[A-Z]?\d+(?:\s*[-–]\s*[A-Z]?\d+)?|pages?\s+[A-Z]?\d+(?:\s*[-–]\s*[A-Z]?\d+)?|Art(?:icle)?\.?\s*(?:no\.?\s*)?[A-Z]?\d+|(?:^|[\s(,;:])[A-Za-z]\d{2,}(?=$|[\s),.;:])|(?:^|[\s(,;:])\d{6,}(?=$|[\s),.;:])|\bS\d+(?:[-–]S?\d+)?)\b/i;
@@ -14,6 +14,7 @@ const AUTHOR_CONTENT_LEAK_YEAR_LOCATOR_PATTERN = /\b(?:19|20)\d{2}\b\s*[,;]\s*\d
 const AUTHOR_CONTENT_LEAK_SOURCE_TAIL_PATTERN = /\.\s+[A-Z][^.]{2,}\.\s+(?:19|20)\d{2}\b/;
 const AUTHOR_CONTENT_LEAK_COLON_TITLE_PATTERN = /:\s+[^\d.]+(?:\s+[^\d.]+){3,}/;
 const PARSED_YEAR_PATTERN = /\b(?:19|20)\d{2}\b/g;
+const TITLE_URL_OR_DOI_PATTERN = /\b(?:https?:\/\/\S+|(?:dx\.)?doi\.org\/\S+|10\.\d{4,9}\/\S+)\b/gi;
 
 export function looksLikeCompactVancouverAuthorString(value: string | null | undefined): boolean {
   const normalized = normalizeWhitespace(value ?? '');
@@ -335,10 +336,16 @@ export function sanitizeParsedReference(
     const matches = [...rawYear.matchAll(PARSED_YEAR_PATTERN)];
     return matches.length > 0 ? matches[matches.length - 1]?.[0] : rawYear;
   })();
+  const normalizedUrlValue = normalizeLinkValue(parsed.url);
+  const normalizedDoiValue = normalizeParsedDoi(parsed.doi)
+    ?? (normalizedUrlValue && /^https?:\/\/(?:dx\.)?doi\.org\//i.test(normalizedUrlValue)
+      ? normalizeDoiValue(normalizedUrlValue)
+      : undefined);
+  const sanitizedTitle = stripLinkArtifactsFromTitle(parsed.title, normalizedUrlValue, normalizedDoiValue);
 
   const sanitized: ParsedReference = {
     ...parsed,
-    title: normalizeWhitespace(parsed.title ?? '') || undefined,
+    title: sanitizedTitle,
     year: normalizedYearValue,
     journal: normalizeKnownContainerName(normalizeWhitespace(parsed.journal ?? '')) || undefined,
     volume: normalizeWhitespace(parsed.volume ?? '') || undefined,
@@ -346,13 +353,13 @@ export function sanitizeParsedReference(
     pages,
     'article-number': articleNumber,
     publisher: normalizeWhitespace(parsed.publisher ?? '') || undefined,
-    url: normalizeWhitespace(parsed.url ?? '') || undefined,
+    url: urlDuplicatesDoi(normalizedUrlValue, normalizedDoiValue) ? undefined : normalizedUrlValue,
     conferenceTitle: normalizeKnownContainerName(normalizeWhitespace(parsed.conferenceTitle ?? '')) || undefined,
     bookTitle: normalizeKnownContainerName(normalizeWhitespace(parsed.bookTitle ?? '')) || undefined,
     institution: normalizeWhitespace(parsed.institution ?? '') || undefined,
     edition: normalizeWhitespace(parsed.edition ?? '') || undefined,
     editor: normalizeWhitespace(parsed.editor ?? '') || undefined,
-    doi: normalizeWhitespace(parsed.doi ?? '') || undefined,
+    doi: normalizedDoiValue,
     authors: parsed.authors?.map((author) => normalizeWhitespace(author)).filter(Boolean),
   };
 
@@ -372,6 +379,46 @@ export function sanitizeParsedReference(
     parsed: sanitized,
     referenceType: nextReferenceType,
   };
+}
+
+function normalizeLinkValue(value: string | null | undefined): string | undefined {
+  const normalized = normalizeWhitespace(value ?? '');
+  return normalized ? normalized.replace(/[)\],.;:]+$/g, '') : undefined;
+}
+
+function normalizeParsedDoi(value: string | null | undefined): string | undefined {
+  const normalized = normalizeLinkValue(value);
+  return normalized ? normalizeDoiValue(normalized) : undefined;
+}
+
+function stripLinkArtifactsFromTitle(
+  value: string | null | undefined,
+  url: string | undefined,
+  doi: string | undefined,
+): string | undefined {
+  let normalized = normalizeWhitespace(value ?? '');
+  if (!normalized) return undefined;
+
+  for (const artifact of [url, doi, doi ? `https://doi.org/${doi}` : undefined]) {
+    if (!artifact) continue;
+    const escaped = artifact.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    normalized = normalizeWhitespace(normalized.replace(new RegExp(escaped, 'ig'), ' '));
+  }
+
+  normalized = normalizeWhitespace(
+    normalized
+      .replace(TITLE_URL_OR_DOI_PATTERN, ' ')
+      .replace(/\(\s*\)/g, ' ')
+      .replace(/\[\s*\]/g, ' '),
+  ).replace(/^[\s,.;:()[\]{}"'-]+|[\s,.;:()[\]{}"'-]+$/g, '');
+
+  return normalized || undefined;
+}
+
+function urlDuplicatesDoi(url: string | undefined, doi: string | undefined): boolean {
+  if (!url || !doi) return false;
+  if (!/^https?:\/\/(?:dx\.)?doi\.org\//i.test(url)) return false;
+  return normalizeDoiValue(url).toLowerCase() === doi.toLowerCase();
 }
 
 function hasCitationField(citation: CanonicalCitation, field: string): boolean {

@@ -363,6 +363,7 @@ function cacheKeyForCitation(citation: CanonicalCitation): string {
     citation.year.value ?? '',
     resolutionCacheBucket(citation.referenceType),
     resolutionVenueKey(citation),
+    resolutionUrlKey(evidence.url),
   ].join('|');
 }
 
@@ -381,13 +382,77 @@ function isCorporateHeavy(citation: CanonicalCitation): boolean {
   return false;
 }
 
+function normalizeResolutionUrlValue(value: string | null | undefined): string {
+  return normalizeWhitespace(value ?? '').replace(/[)\],.;:]+$/g, '');
+}
+
+function resolutionUrlKey(value: string | null | undefined): string {
+  const normalized = normalizeResolutionUrlValue(value).toLowerCase();
+  if (!normalized) return '';
+  try {
+    const parsed = new URL(normalized);
+    return `${parsed.hostname}${parsed.pathname}`.replace(/\/+$/g, '');
+  } catch {
+    return normalized;
+  }
+}
+
+function deriveDoiHintFromUrl(value: string | null | undefined): string | null {
+  const normalized = normalizeResolutionUrlValue(value);
+  if (!normalized) return null;
+
+  const embeddedDoi = normalized.match(/10\.\d{4,9}\/[-._;()/:A-Za-z0-9]+/i)?.[0];
+  if (embeddedDoi) {
+    return normalizeDoiValue(embeddedDoi);
+  }
+
+  try {
+    const parsed = new URL(normalized);
+    if (/^(?:dx\.)?doi\.org$/i.test(parsed.hostname) && parsed.pathname.length > 1) {
+      return normalizeDoiValue(parsed.href);
+    }
+
+    if (/(^|\.)nature\.com$/i.test(parsed.hostname)) {
+      const natureArticleId = parsed.pathname.match(/\/articles\/([^/?#]+)/i)?.[1];
+      if (natureArticleId) {
+        return normalizeDoiValue(`10.1038/${natureArticleId}`);
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function isScholarlyLandingUrl(value: string | null | undefined): boolean {
+  const normalized = normalizeResolutionUrlValue(value).toLowerCase();
+  if (!normalized) return false;
+  if (deriveDoiHintFromUrl(normalized)) return true;
+
+  try {
+    const parsed = new URL(normalized);
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.toLowerCase();
+    const scholarlyHost = /(^|\.)(nature\.com|sciencedirect\.com|ieeexplore\.ieee\.org|link\.springer\.com|onlinelibrary\.wiley\.com|bmj\.com|jamanetwork\.com|nejm\.org|thelancet\.com|cell\.com|academic\.oup\.com|oup\.com|cambridge\.org|frontiersin\.org|mdpi\.com|plos\.org|pubmed\.ncbi\.nlm\.nih\.gov|ncbi\.nlm\.nih\.gov)$/i.test(host);
+    if (!scholarlyHost) return false;
+    return /\/(articles?|article|doi|full|record|paper|content|news|news-features?)\//.test(path);
+  } catch {
+    return false;
+  }
+}
+
+function scholarlyWebsiteNeedsAuthority(citation: CanonicalCitation): boolean {
+  return citation.referenceType === 'website' && isScholarlyLandingUrl(citation.url.value);
+}
+
 function canUseLocalOnlyResolutionFallback(citation: CanonicalCitation, queryEvidence: ReturnType<typeof buildResolutionQueryEvidence>): boolean {
   if (!queryEvidence.titlePresent) return false;
   if (queryEvidence.firstAuthorSurname || queryEvidence.groupAuthorLiteral) return false;
   if (!['website', 'report', 'book'].includes(citation.referenceType)) return false;
 
   if (citation.referenceType === 'website') {
-    return Boolean(citation.url.value);
+    return Boolean(citation.url.value) && !scholarlyWebsiteNeedsAuthority(citation);
   }
 
   return Boolean(citation.publisher.value || citation.institution.value || citation.bookTitle.value);
@@ -399,6 +464,7 @@ function strongLocalResolutionSkipReason(
   batchSize: number,
 ): 'strong_local_doi_skip' | 'strong_local_sync_skip' | 'strong_local_batch_skip' | null {
   if (executionMode !== 'sync') return null;
+  if (scholarlyWebsiteNeedsAuthority(citation)) return null;
 
   const venueConfidence = Math.max(
     citation.journal.confidence,
@@ -532,9 +598,17 @@ async function applyGrobidRecoveryExtraction(
 }
 
 function providerOrderForCitation(citation: CanonicalCitation): ProviderKey[] {
-  if (citation.doi.value) return ['doi'];
+  const doiHint = citation.doi.value ?? deriveDoiHintFromUrl(citation.url.value);
+  if (doiHint) {
+    return isBiomedical(citation) && ['journal', 'preprint', 'unknown', 'website'].includes(citation.referenceType)
+      ? ['doi', 'crossref', 'pubmed', 'openalex']
+      : ['doi', 'crossref', 'openalex'];
+  }
   if (isBiomedical(citation) && ['journal', 'preprint', 'unknown'].includes(citation.referenceType)) {
     return ['crossref', 'pubmed', 'openalex'];
+  }
+  if (scholarlyWebsiteNeedsAuthority(citation)) {
+    return ['crossref', 'openalex'];
   }
   if (['report', 'book', 'website', 'chapter'].includes(citation.referenceType) || isCorporateHeavy(citation)) {
     return ['openalex', 'crossref'];
@@ -545,12 +619,12 @@ function providerOrderForCitation(citation: CanonicalCitation): ProviderKey[] {
 async function fetchProviderCandidates(
   provider: ResolutionProviderAdapter,
   query: ResolutionSearchQuery,
-  doi: string | null,
+  doiHint: string | null,
   providerKey: ProviderKey,
 ): Promise<ResolutionCandidateRecord[]> {
   switch (providerKey) {
     case 'doi':
-      return doi ? provider.lookupByDoi(doi) : [];
+      return doiHint ? provider.lookupByDoi(doiHint) : [];
     case 'crossref':
       return query.title ? provider.searchCrossrefByTitle(query, PROVIDER_LIMIT) : [];
     case 'pubmed':
@@ -838,6 +912,7 @@ export function createEnrichStage(
         const localFallbacks: string[] = [];
         let localPartialResult = false;
         const providerOrder = providerOrderForCitation(citation);
+        const resolutionDoiHint = citation.doi.value ?? deriveDoiHintFromUrl(citation.url.value);
         const allCandidates: ResolutionCandidateRecord[] = [];
         const rejectedReasons: string[] = [];
         let providerError = false;
@@ -853,7 +928,7 @@ export function createEnrichStage(
             const candidates = await fetchProviderCandidates(
               resolutionProvider,
               resolutionQuery,
-              citation.doi.value,
+              resolutionDoiHint,
               providerKey,
             );
             successfulProviderCount += 1;
@@ -994,8 +1069,9 @@ export function createEnrichStage(
         }
 
         const queryEvidence = buildResolutionQueryEvidence(candidateCitation);
+        const urlBackedWebsiteEvidence = candidateCitation.referenceType === 'website' && Boolean(queryEvidence.url);
         const localOnlyResolutionFallback = canUseLocalOnlyResolutionFallback(candidateCitation, queryEvidence);
-        if (!queryEvidence.titlePresent || (!queryEvidence.firstAuthorSurname && !queryEvidence.groupAuthorLiteral && !localOnlyResolutionFallback)) {
+        if (!queryEvidence.titlePresent || (!queryEvidence.firstAuthorSurname && !queryEvidence.groupAuthorLiteral && !localOnlyResolutionFallback && !urlBackedWebsiteEvidence)) {
           const nextCitation = attachCitationDebug({
             ...candidateCitation,
             resolution: {
@@ -1106,6 +1182,7 @@ export function createEnrichStage(
           groupAuthorLiteral: queryEvidence.groupAuthorLiteral,
           year: queryEvidence.year ?? null,
           venue: queryEvidence.venue ?? null,
+          url: queryEvidence.url ?? null,
           sourceType: queryEvidence.sourceType,
         };
         const cached = await cache.get<CachedResolutionPayload>(cacheKey);

@@ -127,12 +127,11 @@ export default function ReportButton({
         <TooltipTrigger asChild>
           <Button
             variant="ghost"
-            size="sm"
-            className="text-xs sm:text-sm h-8 px-3 sm:h-9 sm:px-4 text-red-600 hover:bg-red-100 hover:text-red-800 dark:text-red-400 dark:hover:bg-red-950/50 dark:hover:text-red-200"
+            className="flex items-center gap-1.5 text-xs font-bold text-red-500 hover:text-red-600 hover:bg-slate-100 dark:text-red-400 dark:hover:bg-slate-700/50 px-2 py-1.5 h-auto transition-colors focus:ring-0"
             onClick={() => setOpen(true)}
             aria-label="Report an issue"
           >
-            <Flag className="h-4 w-4 mr-1.5" />
+            <Flag className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Report bad citation</span>
             <span className="sm:hidden">Wrong?</span>
           </Button>

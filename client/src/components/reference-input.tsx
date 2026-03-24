@@ -306,162 +306,139 @@ export default function ReferenceInput({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Input Style Detection */}
-      <div>
-        <Label className="text-sm font-medium text-foreground mb-2">Input Citation Style</Label>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-          <Select value={inputStyle} onValueChange={setInputStyle}>
-            <SelectTrigger className="w-full sm:flex-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {INPUT_STYLES.map((style) => (
-                <SelectItem key={style.value} value={style.value}>
-                  {style.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="flex items-center text-sm text-muted-foreground shrink-0">
-            <Sparkles className="mr-2 h-4 w-4 text-accent flex-shrink-0" />
-            <span className="truncate">{detectionStatus}</span>
-          </div>
+    <section className="flex flex-col gap-6 w-full">
+      <div className="flex justify-between items-end px-1">
+        <h3 className="font-headline text-2xl font-bold text-primary-container dark:text-blue-50">Original Citations</h3>
+        <div className="flex items-center gap-4">
+          <span className="text-xs font-semibold text-brand-green bg-brand-green/10 px-2 py-1 rounded">
+            {referenceCount} reference{referenceCount !== 1 ? 's' : ''} detected
+          </span>
+          {referenceCount > 0 && (
+            <button 
+              onClick={handleClear}
+              className="text-xs font-bold uppercase tracking-widest text-on-surface-variant dark:text-slate-400 hover:text-primary-container dark:hover:text-blue-200 transition-all"
+            >
+              Clear All
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Try Sample Button */}
-      <Button
-        variant="outline"
-        size="sm"
-        className="mb-3 text-primary border-primary/50 hover:bg-primary/5"
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-end px-1 -mt-2">
+        <div className="flex flex-col gap-2 w-full sm:w-1/2">
+          <label className="text-xs font-bold text-primary-container dark:text-slate-400 uppercase tracking-widest">Input Citation Style</label>
+          <select 
+            value={inputStyle}
+            onChange={(e) => setInputStyle(e.target.value)}
+            className="w-full bg-surface-container-lowest dark:bg-slate-800 border border-outline-variant dark:border-slate-700/50 rounded p-3 text-sm focus:ring-2 focus:ring-primary-container dark:text-slate-200 outline-none transition-all cursor-pointer"
+          >
+            {INPUT_STYLES.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
+        <button 
+          onClick={() => {
+            setInputText(SAMPLE_MIXED_REFERENCES);
+            handleInputChange(SAMPLE_MIXED_REFERENCES);
+          }}
+          className="text-xs font-bold uppercase tracking-widest text-brand-green border border-brand-green/20 hover:bg-brand-green bg-brand-green/5 hover:text-white px-6 py-3 rounded transition-all sm:w-auto w-full text-center"
+        >
+          Load Sample
+        </button>
+      </div>
+
+      {/* Upload Zone Card */}
+      <div 
+        className={`bg-surface-container-lowest dark:bg-slate-800 rounded p-6 sm:p-8 border-2 border-dashed border-outline-variant dark:border-slate-700/50 hover:border-primary-container dark:hover:border-blue-400 transition-colors group flex flex-col min-h-[300px] sm:min-h-[400px] relative overflow-hidden ${!inputText.trim() ? "cursor-pointer" : ""}`}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          const file = e.dataTransfer.files?.[0];
+          if (file) {
+            handleFileUpload({ target: { files: [file], value: '' } } as any);
+          }
+        }}
         onClick={() => {
-          setInputText(SAMPLE_MIXED_REFERENCES);
-          handleInputChange(SAMPLE_MIXED_REFERENCES);
-          toast({
-            title: "Sample loaded",
-            description: "Click Convert to see output",
-          });
+          if (!inputText.trim()) document.getElementById('file-upload-new')?.click();
         }}
       >
-        <Beaker className="mr-2 h-4 w-4" />
-        Try sample mixed references
-      </Button>
+        <input
+          id="file-upload-new"
+          type="file"
+          accept=".txt,.pdf,.docx"
+          onChange={handleFileUpload}
+          className="hidden"
+        />
 
-      {/* Reference Input Area */}
-      <div>
-        <Label className="text-sm font-medium text-foreground mb-2 block">
-          Paste Your References
-          <span className="text-muted-foreground font-normal ml-1 text-xs sm:text-sm">(blank lines and numbering help, but raw reference blobs are accepted in v2)</span>
-        </Label>
-        <Textarea
-          className="min-h-[180px] sm:min-h-[200px] resize-none font-mono text-sm w-full max-w-full"
-          placeholder={`Examples - Separate with blank lines:
-
-Smith, J. (2023). The future of academic writing. Journal of Education, 45(2), 123-145.
-
-Johnson, M., & Brown, L. (2022). Research methodologies in digital humanities. Academic Press.
-
-Or use numbered format:
-1. Thompson, K. (2023). Citation management tools. Education Today.
-2. Davis, P. (2022). Modern research methods. Academic Publishers.`}
+        {!inputText.trim() ? (
+          <div className="flex flex-col items-center justify-center flex-grow pointer-events-none">
+            <div className="w-16 h-16 bg-surface-container dark:bg-slate-800 rounded-full flex items-center justify-center mb-6 group-hover:bg-primary-container group-hover:text-white dark:group-hover:bg-blue-600 transition-all duration-300">
+              {isFileUploading ? (
+                <RotateCw className="animate-spin text-3xl dark:text-slate-400" />
+              ) : (
+                <span className="material-symbols-outlined text-3xl dark:text-slate-400">upload_file</span>
+              )}
+            </div>
+            <h4 className="text-xl font-bold text-primary-container dark:text-blue-50 mb-2 text-center">Drag & drop files here</h4>
+            <p className="text-on-surface-variant dark:text-slate-400 text-center mb-8 text-sm sm:text-base">
+              Accepting PDF, DOCX, or plain TXT bibliographies
+            </p>
+            <div className="w-full h-px bg-surface-container dark:bg-slate-800 mb-8"></div>
+          </div>
+        ) : null}
+        
+        <textarea 
+          className={`w-full bg-transparent border-none focus:ring-0 text-on-surface dark:text-slate-200 placeholder:text-outline/50 dark:placeholder:text-slate-500 font-mono text-xs sm:text-sm leading-relaxed z-10 outline-none pr-4 sm:pr-6 custom-scrollbar ${inputText.trim() ? 'min-h-[400px] sm:min-h-[500px] flex-grow resize-y' : 'h-48 mt-auto resize-none'}`}
+          placeholder={!inputText.trim() ? "Or paste your raw citations here...\n\ne.g. Smith, J. (2023). Future of Archiving. Oxford Journal..." : ""}
           value={inputText}
           onChange={(e) => handleInputChange(e.target.value)}
+          onClick={(e) => e.stopPropagation()}
         />
       </div>
 
-      {/* Upload Option */}
-      <Card className="border-2 border-dashed border-muted-foreground/25">
-        <CardContent className="flex flex-col items-center justify-center py-6">
-          <Upload className="h-8 w-8 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground mb-2">Or upload a file with your references</p>
-          <Button
-            variant="ghost"
-            className="text-primary hover:bg-primary/5"
-            onClick={() => document.getElementById('file-upload')?.click()}
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            Choose File
-          </Button>
-          <input
-            id="file-upload"
-            type="file"
-            accept=".txt,.pdf,.docx"
-            onChange={handleFileUpload}
-            className="hidden"
+      {/* Citation Style Selection */}
+      <div className="flex flex-col gap-2">
+        <label className="text-xs font-bold text-primary-container dark:text-slate-400 uppercase tracking-widest px-1">Target Citation Style</label>
+        <select 
+          value={outputStyle}
+          onChange={(e) => { setOutputStyle(e.target.value); onOutputStyleChange?.(e.target.value); }}
+          className="w-full bg-surface-container-lowest dark:bg-slate-800 border border-outline-variant dark:border-slate-700/50 rounded p-3 text-sm focus:ring-2 focus:ring-primary-container dark:text-slate-200 outline-none transition-all cursor-pointer"
+        >
+          <option value="apa">APA (7th Edition)</option>
+          <option value="mla">MLA (9th Edition)</option>
+          <option value="chicago">Chicago Manual of Style (17th Ed.)</option>
+          <option value="harvard">Harvard Referencing</option>
+          <option value="vancouver">Vancouver System</option>
+          <option value="ieee">IEEE</option>
+        </select>
+      </div>
+
+      <button 
+        onClick={() => handleConvert()}
+        disabled={isProcessing || !inputText.trim()}
+        className="w-full bg-brand-green py-4 rounded text-white font-bold tracking-wide flex items-center justify-center gap-3 shadow-lg shadow-brand-green/20 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isProcessing ? (
+          <RotateCw className="w-5 h-5 animate-spin" />
+        ) : (
+          <span className="material-symbols-outlined text-xl">auto_fix_high</span>
+        )}
+        {isProcessing ? "CONVERTING..." : "CONVERT REFERENCES"}
+      </button>
+
+      {/* Legacy toggle mapped to new UI style */}
+      <div className="flex items-center justify-between sm:justify-end gap-4 mt-2 px-1">
+        <label className="flex items-center gap-2 cursor-pointer text-xs text-on-surface-variant dark:text-slate-400 uppercase font-bold tracking-widest group">
+          <input 
+            type="checkbox" 
+            checked={groupDuplicates} 
+            onChange={(e) => onGroupDuplicatesChange?.(e.target.checked)}
+            className="rounded border-outline-variant dark:border-slate-700 dark:bg-slate-800 text-primary-container focus:ring-primary-container dark:checked:bg-blue-600 h-3.5 w-3.5"
           />
-          <p className="text-xs text-muted-foreground mt-2">Supports .txt, .pdf, and .docx files with references</p>
-        </CardContent>
-      </Card>
-
-      {/* Reference Count Display */}
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>{referenceCount} references detected</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleClear}
-          className="text-primary hover:underline"
-        >
-          <Trash2 className="mr-1 h-3 w-3" />
-          Clear All
-        </Button>
+          <span className="group-hover:text-primary-container dark:group-hover:text-blue-200 transition-colors">Group Duplicates</span>
+        </label>
       </div>
-
-      <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
-        <div>
-          <p className="text-sm font-medium text-foreground">Duplicate grouping</p>
-          <p className="text-xs text-muted-foreground">
-            {groupDuplicates
-              ? "Likely duplicates will be collapsed under one citation in the output."
-              : "Likely duplicates will stay separate in the output."}
-          </p>
-        </div>
-        <Button
-          type="button"
-          variant={groupDuplicates ? "default" : "outline"}
-          size="sm"
-          onClick={() => onGroupDuplicatesChange?.(!groupDuplicates)}
-        >
-          {groupDuplicates ? "Disable duplicates" : "Enable duplicates"}
-        </Button>
-      </div>
-
-      {/* Convert Button */}
-      <div className="pt-4 border-t">
-        <Label className="text-sm font-medium text-foreground mb-2">Convert to Style</Label>
-        <Select value={outputStyle} onValueChange={(v) => { setOutputStyle(v); onOutputStyleChange?.(v); }}>
-          <SelectTrigger className="mb-4">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="apa">APA (7th Edition)</SelectItem>
-            <SelectItem value="mla">MLA (9th Edition)</SelectItem>
-            <SelectItem value="harvard">Harvard</SelectItem>
-            <SelectItem value="chicago">Chicago (17th Edition)</SelectItem>
-            <SelectItem value="ieee">IEEE</SelectItem>
-            <SelectItem value="vancouver">Vancouver</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Button
-          onClick={() => handleConvert()}
-          disabled={isProcessing || !inputText.trim()}
-          className="w-full"
-        >
-          {isProcessing ? (
-            <>
-              <RotateCw className="mr-2 h-4 w-4 animate-spin" />
-              Converting...
-            </>
-          ) : (
-            <>
-              <RotateCw className="mr-2 h-4 w-4" />
-              Convert References
-            </>
-          )}
-        </Button>
-      </div>
-    </div>
+    </section>
   );
 }

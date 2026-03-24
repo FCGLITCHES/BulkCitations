@@ -72,6 +72,106 @@ describe('default extractor institutional heuristics', () => {
     expect(result.parsed.authors ?? []).toHaveLength(0);
   });
 
+  it('keeps wrapped scholarly website references as website records with a clean title, full URL, and derived DOI hint', async () => {
+    const result = await extractor.extract(
+      'Tapping into the drug discovery potential of AI . (2021). https://www.nature.com/articles/d43747-021-\n00045-7.',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('website');
+    expect(result.selectedBranch).toBe('institutional_heuristic_raw');
+    expect(result.parsed.title).toBe('Tapping into the drug discovery potential of AI');
+    expect(result.parsed.year).toBe('2021');
+    expect(result.parsed.url).toBe('https://www.nature.com/articles/d43747-021-00045-7');
+    expect(result.parsed.doi).toBe('10.1038/d43747-021-00045-7');
+    expect(result.parsed.authors ?? []).toHaveLength(0);
+    expect(result.fieldConfidence.authors).toBeLessThanOrEqual(0.2);
+  });
+
+  it('extracts harvard website references with viewed dates as websites without leaking the access tail into the title', async () => {
+    const result = await extractor.extract(
+      "Therapeutic Signals Lab 2023, 'Dose response ranking for translational pharmacology: case SDE-HVW-001', Pharmacology Standards Network, viewed 22 Mar 2026. Available at: https://stress.example.org/hvw/071.",
+      'auto',
+      {},
+    );
+
+    expect(result.selectedBranch).toBe('institutional_heuristic_raw');
+    expect(result.referenceType).toBe('website');
+    expect(result.parsed.authors).toEqual(['Therapeutic Signals Lab']);
+    expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-HVW-001');
+    expect(result.parsed.year).toBe('2023');
+    expect(result.parsed.url).toBe('https://stress.example.org/hvw/071');
+    expect(result.parsed.institution).toBe('Pharmacology Standards Network');
+  });
+
+  it('extracts chicago notes website references with quoted titles as websites instead of journals', async () => {
+    const result = await extractor.extract(
+      'Center for Translational Therapeutics. "Dose response ranking for translational pharmacology: case SDE-CNW-001." Drug Evidence Hub. Accessed 22 Mar 2026. https://stress.example.org/cnw/121.',
+      'auto',
+      {},
+    );
+
+    expect(result.selectedBranch).toBe('institutional_heuristic_raw');
+    expect(result.referenceType).toBe('website');
+    expect(result.parsed.authors).toEqual(['Center for Translational Therapeutics']);
+    expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-CNW-001');
+    expect(result.parsed.year).toBeUndefined();
+    expect(result.parsed.url).toBe('https://stress.example.org/cnw/121');
+    expect(result.parsed.journal).toBeUndefined();
+    expect(result.parsed.institution).toBe('Drug Evidence Hub');
+  });
+
+  it('extracts IEEE manual-style website references as websites and keeps the version separate from the title', async () => {
+    const result = await extractor.extract(
+      '[181] National Dosing Review Office, "Dose response ranking for translational pharmacology: case SDE-IEW-001," Drug Evidence Hub, ver. 2.0, 2013. [Online]. Available: https://stress.example.org/iew/181',
+      'auto',
+      {},
+    );
+
+    expect(result.selectedBranch).toBe('institutional_heuristic_raw');
+    expect(result.referenceType).toBe('website');
+    expect(result.parsed.authors).toEqual(['National Dosing Review Office']);
+    expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-IEW-001');
+    expect(result.parsed.year).toBe('2013');
+    expect(result.parsed.url).toBe('https://stress.example.org/iew/181');
+    expect(result.parsed.institution).toBe('Drug Evidence Hub');
+    expect(result.parsed.edition).toBe('ver. 2.0');
+  });
+
+  it('extracts APA corporate report author-year references into report metadata instead of collapsing them into website fields', async () => {
+    const result = await extractor.extract(
+      'Clinical Design Observatory (2021). Dose response ranking for translational pharmacology: case SDE-APAR-001 (Report No. APAR-RPT-001). Toronto: Blue Harbor Research. https://stress.example.org/apar/021',
+      'auto',
+      {},
+    );
+
+    expect(result.selectedBranch).toBe('institutional_heuristic_raw');
+    expect(result.referenceType).toBe('report');
+    expect(result.parsed.authors).toEqual(['Clinical Design Observatory']);
+    expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-APAR-001');
+    expect(result.parsed.year).toBe('2021');
+    expect(result.parsed.publisher).toBe('Blue Harbor Research');
+    expect(result.parsed.placeOfPublication).toBe('Toronto');
+    expect(result.parsed.url).toBe('https://stress.example.org/apar/021');
+    expect(result.parsed.edition).toBe('Report No. APAR-RPT-001');
+  });
+
+  it('extracts simple MLA book tails without a place of publication', async () => {
+    const result = await extractor.extract(
+      'Novak, Pavel. Dose response ranking for translational pharmacology: case SDE-MLB-001. Blue Harbor Research, 2021.',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('book');
+    expect(result.parsed.authors).toEqual(['Novak, P.']);
+    expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-MLB-001');
+    expect(result.parsed.year).toBe('2021');
+    expect(result.parsed.publisher).toBe('Blue Harbor Research');
+    expect(result.parsed.placeOfPublication).toBeUndefined();
+  });
+
   it('extracts two-word institutional report authors instead of collapsing them into the title', async () => {
     const result = await extractor.extract(
       'United Nations. The sustainable development goals report 2023. New York: United Nations; 2023.',

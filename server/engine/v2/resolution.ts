@@ -290,8 +290,74 @@ export function buildResolutionQueryEvidence(citation: CanonicalCitation): Resol
     groupAuthorLiteral: primaryAuthor.groupAuthorLiteral,
     year: citation.year.value,
     venue,
+    url: citation.url.value ?? null,
     sourceType: citation.referenceType,
   };
+}
+
+function normalizeResolutionUrlValue(value: string | null | undefined): string {
+  return normalizeWhitespace(value ?? '').replace(/[)\],.;:]+$/g, '').toLowerCase();
+}
+
+function deriveDoiFromResolutionUrl(value: string | null | undefined): string {
+  const normalized = normalizeResolutionUrlValue(value);
+  if (!normalized) return '';
+
+  const embeddedDoi = normalized.match(/10\.\d{4,9}\/[-._;()/:a-z0-9]+/i)?.[0];
+  if (embeddedDoi) {
+    return normalizeDoiValue(embeddedDoi).toLowerCase();
+  }
+
+  try {
+    const parsed = new URL(normalized);
+    if (/^(?:dx\.)?doi\.org$/i.test(parsed.hostname) && parsed.pathname.length > 1) {
+      return normalizeDoiValue(parsed.href).toLowerCase();
+    }
+
+    if (/(^|\.)nature\.com$/i.test(parsed.hostname)) {
+      const natureArticleId = parsed.pathname.match(/\/articles\/([^/?#]+)/i)?.[1];
+      if (natureArticleId) {
+        return normalizeDoiValue(`10.1038/${natureArticleId}`).toLowerCase();
+      }
+    }
+  } catch {
+    return '';
+  }
+
+  return '';
+}
+
+function resolutionUrlTailKey(value: string | null | undefined): string {
+  const normalized = normalizeResolutionUrlValue(value);
+  if (!normalized) return '';
+
+  try {
+    const parsed = new URL(normalized);
+    const tail = parsed.pathname.split('/').filter(Boolean).pop() ?? '';
+    return `${parsed.hostname}${tail ? `/${tail}` : ''}`;
+  } catch {
+    return normalized;
+  }
+}
+
+function candidateMatchesUrlEvidence(citation: CanonicalCitation, candidate: ResolutionCandidateRecord): boolean {
+  const localUrl = normalizeResolutionUrlValue(citation.url.value);
+  if (!localUrl) return false;
+
+  const localTail = resolutionUrlTailKey(localUrl);
+  const localDoiHint = deriveDoiFromResolutionUrl(localUrl);
+  const candidateUrl = normalizeResolutionUrlValue(candidate.url);
+  const candidateTail = resolutionUrlTailKey(candidateUrl);
+  const candidateDoi = candidate.doi ? normalizeDoiValue(candidate.doi).toLowerCase() : '';
+  const candidateUrlDoi = deriveDoiFromResolutionUrl(candidateUrl);
+
+  if (candidateUrl && candidateUrl === localUrl) return true;
+  if (localTail && candidateTail && localTail === candidateTail) return true;
+  if (localDoiHint && candidateDoi && localDoiHint === candidateDoi) return true;
+  if (localDoiHint && candidateUrlDoi && localDoiHint === candidateUrlDoi) return true;
+  if (candidateDoi && localUrl.includes(candidateDoi)) return true;
+
+  return false;
 }
 
 function countAdditionalAuthorMatches(citationAuthors: CanonicalAuthor[], candidateAuthors: string[]): number {
@@ -438,7 +504,7 @@ export function evaluateResolutionCandidate(
     };
   }
 
-  const queryEvidence = getPrimaryAuthorEvidence(citation);
+  const queryEvidence = buildResolutionQueryEvidence(citation);
   const candidateAuthors = candidate.authors ?? [];
   let authorGatePassed = false;
   let extraAuthorMatches = 0;
@@ -457,6 +523,9 @@ export function evaluateResolutionCandidate(
       authorGatePassed = false;
       reasons.push('coauthor_overlap_missing');
     }
+  } else if (queryEvidence.url && citation.referenceType === 'website') {
+    authorGatePassed = candidateMatchesUrlEvidence(citation, candidate);
+    if (!authorGatePassed) reasons.push('url_evidence_mismatch');
   }
 
   if (!authorGatePassed) {

@@ -80,3 +80,39 @@
 .text-gradient-brand {
   color: var(--primary);
 }
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.glass-header {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #eceef0;
+  border-radius: 10px;
+}
+
+.citation-card {
+  border-left: 4px solid transparent;
+}
+
+.citation-card.ready { border-left-color: #10b981; }
+.citation-card.review { border-left-color: #f59e0b; }
+.citation-card.error { border-left-color: #ef4444; }
+
+.dark .citation-card.ready,
+.dark .citation-card.review,
+.dark .citation-card.error {
+  border-left-color: transparent;
+}

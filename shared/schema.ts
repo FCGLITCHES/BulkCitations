@@ -629,6 +629,7 @@ export interface ResolutionQueryEvidence {
   groupAuthorLiteral?: string;
   year?: number | null;
   venue?: string | null;
+  url?: string | null;
   sourceType?: CanonicalReferenceType;
 }
 

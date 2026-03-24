@@ -18,6 +18,9 @@ As of `2026-03-23`, the current v2 architecture has already absorbed several imp
 - `split` now carries those ingest profile signals forward as explicit split reasons, which makes chunk-boundary debugging less ambiguous on noisy OCR-like and mixed-style input
 - `detect` now keeps the detected style label but lowers effective detection confidence when ingest has already flagged mixed-style or OCR-like uncertainty, so `extract` can degrade safely on shaky style hints without changing the style taxonomy
 - `extract` / GROBID routing now distinguish noisy profiles from deterministic-friendly ones, so OCR-like or mixed-style blobs escalate earlier while book-tail, conference-tail, and DOI-heavy profiles stay on the fast deterministic path unless the parse itself is weak
+- `extract` now treats URL-backed, venue-less website parses as author-optional evidence: wrapped URLs are reconstructed, DOI hints are derived from landing-page URLs such as `nature.com/articles/...`, duplicate title-as-author states are stripped, and title-led website candidates are allowed to win cleanly over pseudo-author deterministic parses
+- historical-year extraction is no longer effectively capped at `1900-2099`; the deterministic heuristics now recognize older four-digit publication years in the `1500-2099` range, which prevents classic books from losing their year during book-tail parsing
+- deterministic book-tail recovery now classifies institutional `Place: Publisher` tails as `report` when the title/publisher pattern is report-like, instead of forcing those references into `book`
 - `dedup` does not just create a merged canonical citation anymore; duplicate-family members are also hydrated from the family canonical record and revalidated
 - `validate` is intentionally post-repair and offline in the strict-resolution path
 - `extract` now has deterministic rescue coverage for quoted-title journal tails such as `BMJ 372 (2021): n71` and `Journal ... 51, no. 6 (1986): 1173-1182`
@@ -36,6 +39,7 @@ As of `2026-03-23`, the current v2 architecture has already absorbed several imp
 - the default debug path is now compact by design: structured debug logging is off unless explicitly enabled, verbose stage payloads require `V2_DEBUG_VERBOSE=1`, and the legacy bridge strips repeated per-citation processing-path arrays and `inputProfile` in normal mode
 - the main website `/api/convert` bridge is now intentionally local-first for `v2`: it still routes into the v2 engine, but it does not allow the default site path to silently fall back into provider-bound enrichment work
 - the site now records anonymous analytics for page views, converter starts, completions, failures, country mix, and new-versus-returning visitors without storing raw citation text in analytics payloads
+- the test harness now includes chunked `1000`-citation real-world corpuses for `structured`, `semi_structured`, and `raw_unstructured` inputs, with explicit ready-rate floors (`100%`, `95%`, and `95%` respectively) so the engine is measured on realistic throughput scenarios instead of only adversarial corpuses
 - the website now defaults new sessions to `v2`, preloads the results view while a conversion is running, defers PDF code until export time, defers bulk result props into the heavy output tree, memoizes per-citation confidence and row rendering, and avoids a duplicate-selection sync render on initial results load
 
 That combination is what made the latest 500-reference enrich/validate/dedup stress run land at `487/500 ready` (`97.4%`).
@@ -51,6 +55,11 @@ These changes were added for a simple architectural reason: the engine was alrea
 - duplicate-family hydration was added because once dedup proves multiple citations are the same work, leaving one merged citation clean and the duplicate members dirty creates an inconsistent family state and pollutes downstream scoring and review.
 - extractor venue-tail rescue was expanded because a parser that gets the title right but swallows the venue, volume, or issue still damages dedup, validation, and rendering downstream.
 - the book-tail recovery branch was added because books and monographs often end with `Place: Publisher` instead of journal metadata. Treating those endings as broken journal tails was truncating real titles and losing publisher information.
+- URL-backed website normalization was tightened because website landing pages often arrive without trustworthy local author fields. In those cases the URL and any DOI it implies are stronger identity evidence than a parser-invented author blob, so the extractor now prefers clean `title/year/url[/doi]` output over fabricated authors.
+- wrapped URL reconstruction and DOI hint derivation were added because scholarly website references frequently line-wrap inside the URL itself. If the engine truncates the URL before enrichment sees it, both local rendering and provider resolution lose the strongest available evidence.
+- historical-year support was widened because older canonical works such as Darwin, Turing-era books, and classic monographs are normal bibliography input, not edge cases. A year regex that silently rejects `1859` is an architectural bug, not a harmless simplification.
+- institutional book-tail references now upgrade to `report` when the organization/title/publisher pattern clearly looks report-like because otherwise the engine can produce structurally clean but semantically wrong output, which drags reference-type accuracy down without surfacing as a parse error.
+- the new chunked real-world ready-rate corpuses were added because the adversarial SDE baseline is useful for regression detection but too harsh to answer the product question "does the engine reliably keep good real-world citations ready at scale?" The separate corpuses now measure that directly for clean structured input and messier but still realistic variants.
 - the newer `score` ready paths were added because provider instability is not the same thing as citation unreliability. When the local parse is strong and the only unresolved problem is external verification failure or a non-critical missing venue on an otherwise verified citation, the bucket should reflect citation quality rather than network luck.
 - the provider no-match ceiling was relaxed because Crossref missing a clean citation is not strong evidence that the citation is wrong. A provider miss should lower certainty slightly, not destroy a locally strong result.
 - stage timing telemetry was added because performance work should be driven by measured phase cost. The engine now reports which stages were actually slowest for a given job.
@@ -228,6 +237,7 @@ This changes the failure model in an important way: the pipeline still surfaces 
 **Important recent change**
 
 - deterministic extraction now includes a book-tail recovery branch, and weak parses can request forced GROBID recovery before strict resolution when the local evidence is too thin
+- deterministic extraction now also reconstructs wrapped URLs, derives DOI hints from scholarly landing-page URLs, strips pseudo-author website states, and supports historical four-digit years so classical books and article landing pages do not fall out of the structured path unnecessarily
 
 ### 5. `enrich`
 
@@ -325,6 +335,14 @@ The latest optimization pass tightened the remaining hot loops instead of changi
 On the 250-case SDE harness, those changes brought the debug-on batch from the earlier `1705ms` recovery point down to about `1188ms` while preserving the same summary accuracy (`style 0.508`, `reference type 0.428`, `field 0.4755`). The same harness now runs at about `1159ms` with `debug: false`, which is closer to the actual site execution path.
 
 On the actual website bridge path after the local-first change, a direct `/api/convert` benchmark returned `10` citations in about `65-73ms` on warm runs and `500` citations in about `2440ms`. That matters architecturally because it confirms the main user-facing bottleneck was not core v2 parsing; it was the accidental coupling of the default site flow to provider-bound enrichment.
+
+The newest scale-oriented gate is now the chunked real-world ready corpus:
+
+- `structured`: `1000/1000 ready`
+- `semi_structured`: `>= 95% ready`
+- `raw_unstructured`: `>= 95% ready`
+
+Those corpuses deliberately run with enrichment off and in chunks, because they are intended to measure the local engine path the website depends on for predictable throughput.
 
 ### 6. `normalize`
 

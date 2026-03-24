@@ -137,10 +137,11 @@ export default function CitationConverter() {
             convertedText: r.convertedText,
             inputStyle: r.inputStyle,
             outputStyle: r.outputStyle,
+            healthState: r.analyticsPayload?.healthState ?? r.healthState ?? 'clean',
             timestamp: new Date().toISOString()
           }));
 
-        const combined = [...newHistoryItems, ...existingHistory].slice(0, 50); // Keep last 50
+        const combined = [...newHistoryItems, ...existingHistory].slice(0, 2000); // Keep last 2000 to preserve full large batches
         localStorage.setItem('bulkcitations_history', JSON.stringify(combined));
       } catch (e) {
         console.warn("Could not save to local history", e);
@@ -288,59 +289,45 @@ export default function CitationConverter() {
   };
 
   return (
-    <div className="w-full max-w-[1700px] mx-auto overflow-x-hidden">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-10">
+    <div className="w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
         {/* Input Section */}
         <motion.div
           initial={{ opacity: 0, scale: 0.98, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full max-w-2xl sm:max-w-none"
         >
-          <Card className="shadow-lg border-border/50 hover:shadow-xl overflow-hidden bg-card h-full">
-            <CardContent className="pt-6 sm:pt-8 px-4 sm:px-8">
-              <div className="flex items-center justify-between mb-6 sm:mb-8 flex-wrap gap-3">
-                <h3 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Input References</h3>
-                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /> Step 1
-                </div>
-              </div>
+          <ReferenceInput
+            onConversionResult={handleConversionResult}
+            onProcessingStart={handleProcessingStart}
+            onProcessingEnd={handleProcessingEnd}
+            onError={handleError}
+            isProcessing={isProcessing}
+            isPro={isPro}
+            onOutputStyleChange={handleOutputStyleChange}
+            initialCaptureText={initialCaptureText || undefined}
+            engineVersion={engineVersion}
+            groupDuplicates={groupDuplicates}
+            onGroupDuplicatesChange={setGroupDuplicates}
+          />
 
-              <ReferenceInput
-                onConversionResult={handleConversionResult}
-                onProcessingStart={handleProcessingStart}
-                onProcessingEnd={handleProcessingEnd}
-                onError={handleError}
-                isProcessing={isProcessing}
-                isPro={isPro}
-                onOutputStyleChange={handleOutputStyleChange}
-                initialCaptureText={initialCaptureText || undefined}
-                engineVersion={engineVersion}
-                groupDuplicates={groupDuplicates}
-                onGroupDuplicatesChange={setGroupDuplicates}
-              />
-
-              <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-                <div className="space-y-1">
-                  <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Engine
-                  </Label>
-                  <Select value={engineVersion} onValueChange={(value: "v1" | "v2") => setEngineVersion(value)}>
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="v2">v2 recommended</SelectItem>
-                      <SelectItem value="v1">v1 legacy</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="text-xs sm:text-sm text-muted-foreground sm:text-right">
-                  <span className="font-semibold">Last run:</span>
-                  <span className="ml-1">{lastEngineUsed.toUpperCase()}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="mt-8 pt-4 border-t border-outline-variant/30 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end w-full">
+            <div className="space-y-1">
+              <Label className="text-xs font-bold uppercase tracking-widest text-outline dark:text-slate-400">
+                Engine Version
+              </Label>
+              <Select value={engineVersion} onValueChange={(value: "v1" | "v2") => setEngineVersion(value)}>
+                <SelectTrigger className="w-full sm:w-[180px] bg-surface-container-lowest dark:bg-slate-800 border-outline-variant dark:border-slate-700/50 dark:text-slate-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="v2">v2 recommended</SelectItem>
+                  <SelectItem value="v1">v1 legacy</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </motion.div>
 
         {/* Output Section */}
@@ -348,52 +335,48 @@ export default function CitationConverter() {
           initial={{ opacity: 0, scale: 0.98, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-          className="relative h-full"
+          className="flex flex-col gap-6"
         >
-          <Card className="shadow-lg border-border/50 hover:shadow-xl overflow-hidden bg-card h-full">
-            <CardContent className="pt-6 sm:pt-8 px-4 sm:px-8">
-              <div className="flex items-center justify-between mb-6 sm:mb-8 flex-wrap gap-3">
-                <h3 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Converted References</h3>
-                <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all duration-500 shadow-sm ${convertedReferences.length > 0 ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-muted/50 border-border/50 text-muted-foreground/60'}`}>
-                  {convertedReferences.length > 0 ? (
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                  ) : (
-                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-                  )}
-                  Step 2
-                </div>
+          <div className="flex justify-between items-end px-1">
+            <h3 className="font-headline text-2xl font-bold text-primary-container dark:text-blue-50">Converted Citations</h3>
+            {convertedReferences.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-on-surface-variant dark:text-slate-400 uppercase tracking-widest hidden sm:inline">Target Style:</span>
+                <span className="bg-primary-container dark:bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold shadow-sm uppercase">{convertedReferences[0]?.outputStyle}</span>
               </div>
+            )}
+          </div>
 
-              {deferredConvertedReferences.length > 0 ? (
-                <Suspense
-                  fallback={(
-                    <div className="text-center py-12 text-muted-foreground">
-                      <p className="text-sm">Loading results view...</p>
-                    </div>
-                  )}
-                >
-                  <ReferenceOutput
-                    convertedReferences={deferredConvertedReferences}
-                    clusters={deferredClusters}
-                    duplicateGroups={deferredDuplicateGroups}
-                    engineVersion={lastEngineUsed}
-                    groupDuplicates={groupDuplicates}
-                    onError={handleError}
-                    isPro={isPro}
-                    onRecheck={handleRecheck}
-                  />
-                </Suspense>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="text-muted-foreground mb-4">
-                    <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>No converted references yet</p>
-                    <p className="text-sm">Convert some references to see them here</p>
-                  </div>
+          {deferredConvertedReferences.length > 0 ? (
+            <Suspense
+              fallback={(
+                <div className="text-center py-12 text-on-surface-variant dark:text-slate-400">
+                  <p className="text-sm">Loading results view...</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            >
+              <ReferenceOutput
+                convertedReferences={deferredConvertedReferences}
+                clusters={deferredClusters}
+                duplicateGroups={deferredDuplicateGroups}
+                engineVersion={lastEngineUsed}
+                groupDuplicates={groupDuplicates}
+                onError={handleError}
+                isPro={isPro}
+                onRecheck={handleRecheck}
+              />
+            </Suspense>
+          ) : (
+            <div className="flex flex-col gap-4 overflow-y-auto custom-scrollbar max-h-[800px] pr-2">
+              <div className="flex flex-col items-center justify-center min-h-[500px] bg-surface-container-low dark:bg-slate-800/50 border-2 border-dashed border-outline-variant/30 dark:border-slate-700/50 rounded-lg p-12 text-center">
+                <div className="w-20 h-20 bg-surface-container-high dark:bg-slate-800 rounded-full flex items-center justify-center mb-6 text-outline/40 dark:text-slate-500">
+                  <span className="material-symbols-outlined text-4xl">folder_off</span>
+                </div>
+                <h4 className="font-headline text-xl font-bold text-primary-container dark:text-blue-50 mb-2">No converted references yet</h4>
+                <p className="text-on-surface-variant dark:text-slate-400 max-w-xs">Convert some references to see them here.</p>
+              </div>
+            </div>
+          )}
         </motion.div>
       </div>
 

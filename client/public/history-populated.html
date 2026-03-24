@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>History - BulkReferences</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Noto+Serif:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-on-surface": "#eff1f3",
+              "on-surface": "#191c1e",
+              "on-error-container": "#93000a",
+              "secondary-container": "#c2e9c9",
+              "on-error": "#ffffff",
+              "primary": "#000a1e",
+              "on-secondary-fixed-variant": "#2c4e36",
+              "on-primary-fixed-variant": "#2d476f",
+              "on-tertiary-fixed": "#40000a",
+              "on-tertiary": "#ffffff",
+              "surface": "#f8f9fb",
+              "on-secondary": "#ffffff",
+              "error": "#ba1a1a",
+              "on-primary": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "surface-container": "#eceef0",
+              "secondary-fixed": "#c5eccc",
+              "inverse-surface": "#2d3133",
+              "on-tertiary-fixed-variant": "#920022",
+              "on-primary-container": "#708ab5",
+              "error-container": "#ffdad6",
+              "tertiary-container": "#4b000d",
+              "tertiary-fixed": "#ffdad9",
+              "surface-variant": "#e0e3e5",
+              "secondary-fixed-dim": "#aad0b1",
+              "primary-fixed-dim": "#aec7f6",
+              "surface-bright": "#f8f9fb",
+              "surface-tint": "#465f88",
+              "surface-dim": "#d8dadc",
+              "surface-container-highest": "#e0e3e5",
+              "on-tertiary-container": "#ff3953",
+              "surface-container-low": "#f2f4f6",
+              "outline": "#74777f",
+              "on-surface-variant": "#44474e",
+              "surface-container-high": "#e6e8ea",
+              "secondary": "#43664d",
+              "primary-container": "#002147",
+              "on-secondary-fixed": "#00210e",
+              "outline-variant": "#c4c6cf",
+              "primary-fixed": "#d6e3ff",
+              "tertiary": "#200003",
+              "background": "#f8f9fb",
+              "tertiary-fixed-dim": "#ffb3b3",
+              "on-secondary-container": "#486a51",
+              "on-background": "#191c1e",
+              "inverse-primary": "#aec7f6",
+              "on-primary-fixed": "#001b3d"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .serif { font-family: 'Noto Serif', serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen">
+<!-- TopNavBar -->
+<nav class="bg-white/80 backdrop-blur-md docked full-width top-0 sticky z-50 shadow-sm transition-all duration-200">
+<div class="flex justify-between items-center w-full px-8 py-4 max-w-7xl mx-auto">
+<div class="text-2xl font-serif font-bold text-[#002147]">BulkReferences</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-slate-500 font-medium hover:text-[#002147] transition-colors" href="#">Home</a>
+<a class="text-[#002147] font-bold border-b-2 border-[#002147] pb-1" href="#">History</a>
+<a class="text-slate-500 font-medium hover:text-[#002147] transition-colors" href="#">Prices</a>
+<a class="text-slate-500 font-medium hover:text-[#002147] transition-colors" href="#">Resources</a>
+<a class="text-slate-500 font-medium hover:text-[#002147] transition-colors" href="#">API</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-slate-50/50 rounded-full transition-all duration-200">
+<span class="material-symbols-outlined text-slate-600">notifications</span>
+</button>
+<button class="p-2 hover:bg-slate-50/50 rounded-full transition-all duration-200">
+<span class="material-symbols-outlined text-slate-600">settings</span>
+</button>
+<img alt="User profile avatar" class="w-8 h-8 rounded-full border border-outline-variant" data-alt="Professional portrait of a male researcher in a scholarly setting, soft lighting, neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDB0bcdKZYr_-PxbstFoKGYXWKfPmDEVjBJpPzYVM_4qVbnzh_VCTZo_JtAg7754n5nlml0SkxLQUOK0Q8KWwsTekIf0DFQQSxMjGfAoQDsJK0WkZ3_6hXz1634ipXfgBc-0bOL-zt6QClnay4tYcto9zD3eCXN5URldqfL8_6S1JPVA-FpYj79IarkVJVHRUvAMXEEWbUG732TLNcQyYT7-9LxKTq8jumiphGhon-pzSXOacPRajqcr09kCQdSrD_HQcoPZ4tEJIJ0"/>
+</div>
+</div>
+</nav>
+<main class="max-w-7xl mx-auto px-8 py-12">
+<!-- Header Section -->
+<header class="mb-12">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<h1 class="text-4xl md:text-5xl font-bold text-primary-container leading-tight tracking-tight mb-2">Conversion History</h1>
+<p class="text-on-surface-variant font-body max-w-xl">Review and manage your scholarly archives. Track citation health and re-export processed batches with clinical precision.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-5 py-2.5 bg-secondary-container text-on-secondary-container rounded-lg font-semibold hover:bg-secondary-fixed transition-colors">
+<span class="material-symbols-outlined text-lg">download</span>
+                        Bulk Export
+                    </button>
+<button class="flex items-center gap-2 px-5 py-2.5 bg-error-container text-on-error-container rounded-lg font-semibold hover:opacity-90 transition-colors">
+<span class="material-symbols-outlined text-lg">delete</span>
+                        Bulk Delete
+                    </button>
+</div>
+</div>
+</header>
+<!-- Search & Filter Bar -->
+<section class="mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
+<div class="relative w-full md:max-w-md">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-12 pr-4 py-3 bg-surface-container-lowest border-none rounded-xl shadow-sm focus:ring-2 focus:ring-primary-container transition-all placeholder:text-outline-variant" placeholder="Find past jobs by name or DOI..." type="text"/>
+</div>
+<div class="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+<span class="px-4 py-2 bg-primary-container text-white rounded-full text-sm font-medium whitespace-nowrap">All Jobs</span>
+<span class="px-4 py-2 bg-surface-container text-on-surface-variant rounded-full text-sm font-medium whitespace-nowrap hover:bg-surface-variant cursor-pointer">Last 30 Days</span>
+<span class="px-4 py-2 bg-surface-container text-on-surface-variant rounded-full text-sm font-medium whitespace-nowrap hover:bg-surface-variant cursor-pointer">Needs Action</span>
+<span class="px-4 py-2 bg-surface-container text-on-surface-variant rounded-full text-sm font-medium whitespace-nowrap hover:bg-surface-variant cursor-pointer">Completed</span>
+</div>
+</section>
+<!-- History Dashboard -->
+<section class="space-y-6">
+<!-- Job Card 1 -->
+<div class="bg-surface-container-lowest p-6 rounded-xl flex flex-col md:flex-row items-center gap-6 shadow-sm border border-outline-variant/10 hover:shadow-md transition-shadow group">
+<div class="flex items-center gap-6 w-full md:w-auto">
+<input class="w-5 h-5 rounded border-outline-variant text-primary-container focus:ring-primary-container" type="checkbox"/>
+<div class="min-w-[240px]">
+<h3 class="text-xl font-headline font-bold text-primary-container">Oxford Academic Upload</h3>
+<p class="text-sm text-on-surface-variant">Oct 24, 2023 • 14:32 PM</p>
+</div>
+</div>
+<div class="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-8 w-full">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold mb-1">References</span>
+<span class="text-on-surface font-semibold">145 refs</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold mb-1">Target Style</span>
+<span class="text-on-surface font-semibold">APA 7th Edition</span>
+</div>
+<div class="col-span-2 flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold mb-1">Reference Health</span>
+<div class="flex gap-2">
+<span class="flex items-center gap-1 px-3 py-1 bg-secondary-fixed text-on-secondary-fixed-variant text-xs font-bold rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> 131 Ready
+                            </span>
+<span class="flex items-center gap-1 px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed-variant text-xs font-bold rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-on-tertiary-container"></span> 14 Issues
+                            </span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 w-full md:w-auto">
+<button class="flex-1 md:flex-none px-4 py-2 text-primary-container font-semibold hover:bg-surface-container rounded-lg transition-colors">Details</button>
+<button class="flex-1 md:flex-none px-4 py-2 bg-primary-container text-white font-semibold rounded-lg hover:opacity-90 transition-opacity">Re-Export</button>
+</div>
+</div>
+<!-- Job Card 2 -->
+<div class="bg-surface-container-lowest p-6 rounded-xl flex flex-col md:flex-row items-center gap-6 shadow-sm border border-outline-variant/10 hover:shadow-md transition-shadow group">
+<div class="flex items-center gap-6 w-full md:w-auto">
+<input class="w-5 h-5 rounded border-outline-variant text-primary-container focus:ring-primary-container" type="checkbox"/>
+<div class="min-w-[240px]">
+<h3 class="text-xl font-headline font-bold text-primary-container">Systematic Review B</h3>
+<p class="text-sm text-on-surface-variant">Oct 21, 2023 • 09:15 AM</p>
+</div>
+</div>
+<div class="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-8 w-full">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold mb-1">References</span>
+<span class="text-on-surface font-semibold">42 refs</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold mb-1">Target Style</span>
+<span class="text-on-surface font-semibold">Nature (NLM)</span>
+</div>
+<div class="col-span-2 flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold mb-1">Reference Health</span>
+<div class="flex gap-2">
+<span class="flex items-center gap-1 px-3 py-1 bg-secondary-fixed text-on-secondary-fixed-variant text-xs font-bold rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> 42 Ready
+                            </span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 w-full md:w-auto">
+<button class="flex-1 md:flex-none px-4 py-2 text-primary-container font-semibold hover:bg-surface-container rounded-lg transition-colors">Details</button>
+<button class="flex-1 md:flex-none px-4 py-2 bg-primary-container text-white font-semibold rounded-lg hover:opacity-90 transition-opacity">Re-Export</button>
+</div>
+</div>
+<!-- Job Card 3 (Action Required) -->
+<div class="bg-surface-container-lowest p-6 rounded-xl flex flex-col md:flex-row items-center gap-6 shadow-sm border-l-4 border-l-error border-y border-r border-outline-variant/10 hover:shadow-md transition-shadow group">
+<div class="flex items-center gap-6 w-full md:w-auto">
+<input class="w-5 h-5 rounded border-outline-variant text-primary-container focus:ring-primary-container" type="checkbox"/>
+<div class="min-w-[240px]">
+<h3 class="text-xl font-headline font-bold text-primary-container">Meta-Analysis v2</h3>
+<p class="text-sm text-on-surface-variant">Oct 18, 2023 • 18:50 PM</p>
+</div>
+</div>
+<div class="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-8 w-full">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold mb-1">References</span>
+<span class="text-on-surface font-semibold">289 refs</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold mb-1">Target Style</span>
+<span class="text-on-surface font-semibold">Harvard Style</span>
+</div>
+<div class="col-span-2 flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold mb-1">Reference Health</span>
+<div class="flex gap-2">
+<span class="flex items-center gap-1 px-3 py-1 bg-secondary-fixed text-on-secondary-fixed-variant text-xs font-bold rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> 210 Ready
+                            </span>
+<span class="flex items-center gap-1 px-3 py-1 bg-error-container text-on-error-container text-xs font-bold rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span> 79 Critical
+                            </span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 w-full md:w-auto">
+<button class="flex-1 md:flex-none px-4 py-2 text-primary-container font-semibold hover:bg-surface-container rounded-lg transition-colors">Details</button>
+<button class="flex-1 md:flex-none px-4 py-2 bg-primary-container text-white font-semibold rounded-lg hover:opacity-90 transition-opacity">Re-Export</button>
+</div>
+</div>
+<!-- Job Card 4 -->
+<div class="bg-surface-container-lowest p-6 rounded-xl flex flex-col md:flex-row items-center gap-6 shadow-sm border border-outline-variant/10 hover:shadow-md transition-shadow group">
+<div class="flex items-center gap-6 w-full md:w-auto">
+<input class="w-5 h-5 rounded border-outline-variant text-primary-container focus:ring-primary-container" type="checkbox"/>
+<div class="min-w-[240px]">
+<h3 class="text-xl font-headline font-bold text-primary-container">Draft Dissertation Ref</h3>
+<p class="text-sm text-on-surface-variant">Oct 15, 2023 • 11:20 AM</p>
+</div>
+</div>
+<div class="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-8 w-full">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold mb-1">References</span>
+<span class="text-on-surface font-semibold">12 refs</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold mb-1">Target Style</span>
+<span class="text-on-surface font-semibold">Chicago 17th Ed.</span>
+</div>
+<div class="col-span-2 flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold mb-1">Reference Health</span>
+<div class="flex gap-2">
+<span class="flex items-center gap-1 px-3 py-1 bg-secondary-fixed text-on-secondary-fixed-variant text-xs font-bold rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> 12 Ready
+                            </span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 w-full md:w-auto">
+<button class="flex-1 md:flex-none px-4 py-2 text-primary-container font-semibold hover:bg-surface-container rounded-lg transition-colors">Details</button>
+<button class="flex-1 md:flex-none px-4 py-2 bg-primary-container text-white font-semibold rounded-lg hover:opacity-90 transition-opacity">Re-Export</button>
+</div>
+</div>
+</section>
+<!-- Pagination / Load More -->
+<footer class="mt-12 flex justify-center">
+<button class="px-8 py-3 bg-white text-primary-container font-bold border border-outline-variant/20 rounded-xl shadow-sm hover:bg-surface-container transition-colors">
+                Load Archive History
+            </button>
+</footer>
+</main>
+<!-- Sidebar Mini Panel (The Vellum Detail View Concept) - hidden by default but shown for structural context -->
+<div class="fixed top-0 right-0 h-full w-[400px] bg-surface-container-lowest shadow-2xl translate-x-full transition-transform duration-300 z-[60] border-l border-outline-variant/20" id="detail-panel">
+<div class="p-8">
+<div class="flex justify-between items-center mb-8">
+<h2 class="text-2xl font-headline font-bold text-primary-container">Job Details</h2>
+<button class="material-symbols-outlined text-outline hover:text-on-surface">close</button>
+</div>
+<div class="space-y-8">
+<div>
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold block mb-2">Summary Statistics</span>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container p-4 rounded-lg">
+<span class="text-2xl font-bold text-primary-container">145</span>
+<span class="text-xs text-on-surface-variant block">Total Citations</span>
+</div>
+<div class="bg-secondary-container p-4 rounded-lg">
+<span class="text-2xl font-bold text-on-secondary-container">91%</span>
+<span class="text-xs text-on-secondary-container block">Health Score</span>
+</div>
+</div>
+</div>
+<div>
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold block mb-4">Resolved Issues</span>
+<ul class="space-y-4">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-secondary text-sm mt-0.5" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div>
+<p class="text-sm font-semibold">Missing DOI for "Miller et al."</p>
+<p class="text-xs text-on-surface-variant italic">Automatically matched via Crossref API</p>
+</div>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-secondary text-sm mt-0.5" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div>
+<p class="text-sm font-semibold">Invalid Journal Title Case</p>
+<p class="text-xs text-on-surface-variant italic">Corrected to Editorial Sentence Case</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="pt-8 border-t border-outline-variant/20">
+<button class="w-full py-3 bg-primary-container text-white font-bold rounded-lg mb-3">Download APA Export</button>
+<button class="w-full py-3 bg-surface-container text-primary-container font-bold rounded-lg">View Full Reference List</button>
+</div>
+</div>
+</div>
+</div>
+</body></html>

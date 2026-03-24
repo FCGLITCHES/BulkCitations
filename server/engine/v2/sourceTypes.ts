@@ -76,6 +76,10 @@ export function providerSourceTypeMatchesReferenceType(
     return ['journal', 'conference', 'book', 'chapter', 'report'].includes(canonical);
   }
 
+  if (referenceType === 'website' && allowPlaceholderFlex) {
+    return ['website', 'journal', 'conference', 'book', 'chapter', 'report'].includes(canonical);
+  }
+
   return false;
 }
 

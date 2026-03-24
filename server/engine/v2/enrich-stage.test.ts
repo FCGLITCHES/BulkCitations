@@ -121,6 +121,45 @@ describe('strict enrich stage', () => {
     expect(result.citations[0]?.resolution?.rejectedReasons).toContain('local_only_author_optional_reference');
   });
 
+  it('routes scholarly website landing pages through DOI-backed authority recovery instead of keeping them local-only', async () => {
+    const citation = {
+      ...createEmptyCitation('Tapping into the drug discovery potential of AI. (2021). https://www.nature.com/articles/d43747-021-00045-7.'),
+      referenceType: 'website',
+      authors: createFieldValue([], 'extracted', 0.08, 'extract'),
+      title: createFieldValue('Tapping into the drug discovery potential of AI', 'extracted', 0.94, 'extract'),
+      year: createFieldValue(2021, 'extracted', 0.95, 'extract'),
+      url: createFieldValue('https://www.nature.com/articles/d43747-021-00045-7', 'extracted', 0.96, 'extract'),
+      doi: createFieldValue(null, 'extracted', 0.05, 'extract'),
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    } as any;
+    const provider = makeProvider({
+      lookupByDoi: vi.fn(async () => [{
+        provider: 'crossref',
+        title: 'Tapping into the drug-discovery potential of AI',
+        authors: ['Savage, Neil'],
+        year: 2021,
+        venue: 'Nature Reviews Drug Discovery',
+        doi: '10.1038/d43747-021-00045-7',
+        url: 'https://www.nature.com/articles/d43747-021-00045-7',
+        sourceType: 'journal-article',
+      }]),
+    });
+
+    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const enriched = result.citations[0];
+
+    expect(provider.lookupByDoi).toHaveBeenCalledWith('10.1038/d43747-021-00045-7');
+    expect(provider.searchCrossrefByTitle).not.toHaveBeenCalled();
+    expect(enriched?.resolution?.status).toBe('verified');
+    expect(enriched?.title.value).toBe('Tapping into the drug-discovery potential of AI');
+    expect(enriched?.authors.value[0]?.last).toBe('Savage');
+    expect(enriched?.doi.value).toBe('10.1038/d43747-021-00045-7');
+    expect(enriched?.referenceType).toBe('website');
+  });
+
   it('skips provider calls for strong DOI-backed local parses in larger synchronous batches', async () => {
     const baseCitation = makeCitation({
       volume: createFieldValue('40', 'extracted', 0.93, 'extract'),

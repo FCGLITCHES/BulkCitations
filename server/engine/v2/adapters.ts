@@ -46,17 +46,18 @@ import type {
 } from './contracts.js';
 
 const DOI_PATTERN = /\b10\.\d{4,}\/\S+\b/i;
-const YEAR_PATTERN = /\b(?:19|20)\d{2}\b/g;
+const YEAR_PATTERN = /\b(?:1[5-9]\d{2}|20\d{2})\b/g;
 const URL_PATTERN = /https?:\/\/\S+/i;
 const URL_PATTERN_GLOBAL = /https?:\/\/\S+/gi;
 const REQUIRED_EXTRACTION_FIELDS: Array<keyof ParsedReference> = ['title', 'year'];
 const DEFAULT_GROBID_TIMEOUT_MS = 3000;
 const DEFAULT_GROBID_COOLDOWN_MS = 30000;
-const PLACE_PUBLISHER_YEAR_PATTERN = /([^.;]+?):\s*([^.;]+?)\s*;\s*((?:19|20)\d{2})$/i;
-const PLACE_YEAR_PATTERN = /([A-Za-z][^.;\d]*?)\s*;\s*((?:19|20)\d{2})$/i;
-const METADATA_YEAR_PATTERN = /(.+?)\s*;\s*((?:19|20)\d{2})$/i;
-const UPDATED_YEAR_PATTERN = /^(?:updated|revised)\s+[A-Za-z]+\s+((?:19|20)\d{2})$/i;
-const YEAR_ONLY_SEGMENT_PATTERN = /^((?:19|20)\d{2})$/;
+const PLACE_PUBLISHER_YEAR_PATTERN = /([^.;]+?):\s*([^.;]+?)\s*;\s*((?:1[5-9]\d{2}|20\d{2}))$/i;
+const PLACE_PUBLISHER_PATTERN = /([^.;]+?):\s*([^.;]+?)$/i;
+const PLACE_YEAR_PATTERN = /([A-Za-z][^.;\d]*?)\s*;\s*((?:1[5-9]\d{2}|20\d{2}))$/i;
+const METADATA_YEAR_PATTERN = /(.+?)\s*;\s*((?:1[5-9]\d{2}|20\d{2}))$/i;
+const UPDATED_YEAR_PATTERN = /^(?:updated|revised)\s+[A-Za-z]+\s+((?:1[5-9]\d{2}|20\d{2}))$/i;
+const YEAR_ONLY_SEGMENT_PATTERN = /^((?:1[5-9]\d{2}|20\d{2}))$/;
 const ARXIV_SEGMENT_PATTERN = /\barxiv(?:\s+preprint)?\b/i;
 const ARXIV_ID_PATTERN = /(arXiv:\d{4}\.\d{4,5}(?:v\d+)?)/i;
 const EDITION_SEGMENT_PATTERN = /^(?:\d+(?:st|nd|rd|th)\s+ed(?:ition)?\.?|version\b.+)$/i;
@@ -64,16 +65,17 @@ const IDENTIFIER_SEGMENT_PATTERN = /^(?:[A-Z][A-Za-z0-9&/-]+(?:\s+[A-Z][A-Za-z0-
 const INSTITUTIONAL_KEYWORD_PATTERN = /\b(?:organization|agency|administration|department|ministry|office|commission|council|library|bank|foundation|programme|program|centre|center|college|university|hospital|publisher|press|authority|academ(?:y|ies)|team|group|committee|collaboration|network|initiative|institute|society|association|union|research)\b/i;
 const PERSONAL_AUTHOR_LEAD_PATTERN = /(?:^|,\s*)[A-Z][A-Za-z'’.-]+(?:\s+[A-Z][A-Za-z'’.-]+){0,2}\s+[A-Z](?:[.-]?[A-Z]){0,5}\.?/;
 const BRACKETED_IDENTIFIER_PATTERN = /\[[A-Z]{1,12}[A-Z0-9-]*\d+[A-Z0-9-]*\]/;
-const INSTITUTIONAL_TAIL_PATTERN = /(?:available from:|:\s*[^.;]+;\s*(?:19|20)\d{2}$|;\s*(?:19|20)\d{2}$|(?:^|[.]\s+)version\b|\[[A-Z]{1,12}[A-Z0-9-]*\d+[A-Z0-9-]*\])/i;
-const QUOTED_JOURNAL_LOCATOR_PATTERN = /^(?<authors>.+?)\s+"(?<title>[^"]+?)"\.?\s+(?<journal>.+?)\s+(?:vol\.?\s*)?(?<volume>\d+)(?:\s*,\s*no\.?\s*(?<issue>[A-Za-z0-9-]+))?\s*\((?<year>(?:19|20)\d{2})\)\s*:\s*(?<locator>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?)\.?(?:\s+(?<tail>.+))?$/i;
-const COMPACT_JOURNAL_TAIL_PATTERN = /^(?<lead>.+?),\s*(?<year>(?:19|20)\d{2}(?:\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\s+\d{1,2})?)\s*,\s*(?<volume>\d+)(?:\((?<issue>[A-Za-z0-9-]+)\))?\s*,\s*(?<pages>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?)\.?(?:\s+(?<tail>.+))?$/i;
+const INSTITUTIONAL_TAIL_PATTERN = /(?:available from:|:\s*[^.;]+;\s*(?:1[5-9]\d{2}|20\d{2})$|;\s*(?:1[5-9]\d{2}|20\d{2})$|(?:^|[.]\s+)version\b|\[[A-Z]{1,12}[A-Z0-9-]*\d+[A-Z0-9-]*\])/i;
+const QUOTED_JOURNAL_LOCATOR_PATTERN = /^(?<authors>.+?)\s+"(?<title>[^"]+?)"\.?\s+(?<journal>.+?)\s+(?:vol\.?\s*)?(?<volume>\d+)(?:\s*,\s*no\.?\s*(?<issue>[A-Za-z0-9-]+))?\s*\((?<year>(?:1[5-9]\d{2}|20\d{2}))\)\s*:\s*(?<locator>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?)\.?(?:\s+(?<tail>.+))?$/i;
+const COMPACT_JOURNAL_TAIL_PATTERN = /^(?<lead>.+?),\s*(?<year>(?:1[5-9]\d{2}|20\d{2})(?:\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\s+\d{1,2})?)\s*,\s*(?<volume>\d+)(?:\((?<issue>[A-Za-z0-9-]+)\))?\s*,\s*(?<pages>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?)\.?(?:\s+(?<tail>.+))?$/i;
 const IN_SOURCE_QUOTED_PATTERN = /^(?<authors>.+?)\.\s+"(?<title>[^"]+?)"\.?\s+In\s+(?<tail>.+)$/i;
 const IN_SOURCE_PLAIN_PATTERN = /^(?<authors>.+?)\.\s+(?<title>[^.]+?)\.\s+In\s+(?<tail>.+)$/i;
 const IN_SOURCE_LOCATOR_PATTERN = /\bpp?\.?\s*(?<pages>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?)\b/i;
 const CONFERENCE_SIGNAL_PATTERN = /\b(?:conference|symposium|workshop|congress|meeting|proceedings|forum|summit|colloquium)\b/i;
 const PUBLISHER_SEGMENT_PATTERN = /\b(?:IEEE|ACM|Springer|Elsevier|Wiley|Routledge|Sage|Taylor\s*&\s*Francis|Oxford University Press|Cambridge University Press|CRC Press|MDPI|Pearson|McGraw-Hill|Palgrave)\b/i;
 const PLACE_SEGMENT_PATTERN = /^(?:[A-Z][A-Za-z'’.-]+(?:,\s*[A-Z][A-Za-z'’.-]+){0,3})$/;
-const BOOK_TAIL_PATTERN = /(?<place>[A-Z][^.:]{1,80}?)\s*:\s*(?<publisher>[^.;]+?)(?:[;,]\s*(?<year>(?:19|20)\d{2}))?\.?$/i;
+const BOOK_TAIL_PATTERN = /(?<place>[A-Z][^.:]{1,80}?)\s*:\s*(?<publisher>[^.;]+?)(?:[;,]\s*(?<year>(?:1[5-9]\d{2}|20\d{2})))?\.?$/i;
+const BOOK_PUBLISHER_YEAR_PATTERN = /(?<publisher>[^.;]+?)\s*,\s*(?<year>(?:1[5-9]\d{2}|20\d{2}))\.?$/i;
 const BOOK_NOTE_PATTERN = /^(?<title>.+?)\.\s*(?<note>(?:translated|edited|with\s+a\s+foreword|foreword|preface|introduction)\b.+)$/i;
 
 let grobidCooldownUntil = 0;
@@ -156,6 +158,7 @@ function preNormalizeExtractorInput(parser: CitationParser, input: string): stri
 function buildDeterministicCandidate(input: string, inputStyle: string) {
   const parser = getParser();
   const normalized = preNormalizeExtractorInput(parser, input);
+  const rawUrl = extractUrlSpan(normalized)?.url;
   const quotedTitleJournalLocator = buildQuotedTitleJournalLocatorCandidate(normalized);
   if (quotedTitleJournalLocator) {
     return quotedTitleJournalLocator;
@@ -174,15 +177,62 @@ function buildDeterministicCandidate(input: string, inputStyle: string) {
       ? 'vancouver'
       : parser.detectStyle(normalized) ?? 'apa';
   const { parsed } = parser.parseReference(normalized, detectedStyle as CitationStyle);
+  const normalizedParsedUrl = cleanTrailingUrl(parsed.url);
+  if (rawUrl && (!normalizedParsedUrl || rawUrl.length > normalizedParsedUrl.length)) {
+    parsed.url = rawUrl;
+  } else if (normalizedParsedUrl) {
+    parsed.url = normalizedParsedUrl;
+  }
+
   const doiMatch = normalized.match(DOI_PATTERN);
   if (!parsed.doi && doiMatch) {
     parsed.doi = normalizeDoiValue(doiMatch[0]);
+  }
+  if (!parsed.doi) {
+    parsed.doi = deriveDoiHintFromUrl(parsed.url ?? rawUrl);
+  }
+
+  const looksAuthorOptionalWebsite = Boolean(parsed.url)
+    && !hasParsedVenue(parsed)
+    && !parsed.publisher
+    && !parsed.institution
+    && !isLocatorLike(parsed.pages ?? parsed['article-number'])
+    && !parsed.volume
+    && !parsed.issue;
+  const primaryAuthor = normalizeWhitespace(parsed.authors?.[0] ?? '');
+  if (looksAuthorOptionalWebsite && (parsed.authors?.length ?? 0) === 1) {
+    if (!parsed.title && primaryAuthor && !looksLikeInstitutionalLead(primaryAuthor)) {
+      parsed.title = primaryAuthor;
+      parsed.authors = undefined;
+    } else if (
+      parsed.title
+      && primaryAuthor
+      && normalizeWhitespace(parsed.title.toLowerCase()) === normalizeWhitespace(primaryAuthor.toLowerCase())
+    ) {
+      parsed.authors = undefined;
+    }
+  }
+
+  let referenceType = parsedReferenceTypeToCanonical(parser.determineReferenceType(parsed));
+  if (
+    parsed.url
+    && !hasParsedVenue(parsed)
+    && !parsed.publisher
+    && !parsed.institution
+    && !isLocatorLike(parsed.pages ?? parsed['article-number'])
+    && (!parsed.volume && !parsed.issue)
+    && ((parsed.authors?.length ?? 0) <= 1 || referenceType === 'unknown')
+  ) {
+    referenceType = 'website';
+  }
+  if (referenceType === 'website' && looksLikeUrlLedWebsitePseudoAuthorParse(parsed, referenceType)) {
+    parsed.authors = undefined;
   }
 
   return {
     normalized,
     parsed,
-    referenceType: parsedReferenceTypeToCanonical(parser.determineReferenceType(parsed)),
+    referenceType,
     warnings: parsed.parseWarnings ?? [],
   };
 }
@@ -215,8 +265,105 @@ type ParsedSelectionCandidate = {
 };
 
 function cleanTrailingUrl(url: string | undefined): string | undefined {
-  const normalized = normalizeWhitespace(url ?? '');
+  const normalized = normalizeWhitespace(url ?? '').replace(/\s+/g, '');
   return normalized ? normalized.replace(/[).,;]+$/g, '') : undefined;
+}
+
+type ExtractedUrlSpan = {
+  url: string;
+  start: number;
+  end: number;
+};
+
+const URL_CHAR_PATTERN = /[A-Za-z0-9\-._~:/?#\[\]@!$&'()*+,;=%]/;
+
+function extractUrlSpan(value: string): ExtractedUrlSpan | null {
+  const startMatch = value.match(/https?:\/\//i);
+  const start = startMatch?.index ?? -1;
+  if (start < 0) return null;
+
+  let cursor = start;
+  let raw = '';
+  while (cursor < value.length) {
+    const char = value[cursor] ?? '';
+    if (/\s/.test(char)) {
+      let lookahead = cursor;
+      while (lookahead < value.length && /\s/.test(value[lookahead] ?? '')) {
+        lookahead += 1;
+      }
+      if (lookahead >= value.length) break;
+      const nextChar = value[lookahead] ?? '';
+      if (!URL_CHAR_PATTERN.test(nextChar)) break;
+      raw += value.slice(cursor, lookahead);
+      cursor = lookahead;
+      continue;
+    }
+
+    if (!URL_CHAR_PATTERN.test(char)) break;
+    raw += char;
+    cursor += 1;
+  }
+
+  const url = cleanTrailingUrl(raw);
+  return url ? { url, start, end: cursor } : null;
+}
+
+function removeUrlSpan(value: string, span: ExtractedUrlSpan | null): string {
+  if (!span) return value;
+  return normalizeWhitespace(`${value.slice(0, span.start)} ${value.slice(span.end)}`);
+}
+
+function deriveDoiHintFromUrl(value: string | undefined): string | undefined {
+  const url = cleanTrailingUrl(value);
+  if (!url) return undefined;
+
+  const embeddedDoi = url.match(/10\.\d{4,9}\/[-._;()/:A-Za-z0-9]+/i)?.[0];
+  if (embeddedDoi) {
+    return normalizeDoiValue(embeddedDoi);
+  }
+
+  try {
+    const parsed = new URL(url);
+    if (/^(?:dx\.)?doi\.org$/i.test(parsed.hostname) && parsed.pathname.length > 1) {
+      return normalizeDoiValue(parsed.href);
+    }
+
+    if (/(^|\.)nature\.com$/i.test(parsed.hostname)) {
+      const articleId = parsed.pathname.match(/\/articles\/([^/?#]+)/i)?.[1];
+      if (articleId) {
+        return normalizeDoiValue(`10.1038/${articleId}`);
+      }
+    }
+  } catch {
+    return undefined;
+  }
+
+  return undefined;
+}
+
+function looksInitialOnlyAuthorValue(value: string | null | undefined): boolean {
+  const normalized = normalizeWhitespace(value ?? '').replace(/\s+/g, '');
+  if (!normalized) return false;
+  return /^[A-Z](?:\.?[A-Z]){0,5}\.?$/i.test(normalized);
+}
+
+function titleEndsWithWeakTail(value: string | null | undefined): boolean {
+  const normalized = normalizeWhitespace(value ?? '');
+  if (!normalized) return false;
+  return /\b(?:a|an|and|as|at|by|for|from|in|into|of|on|or|the|through|to|using|via|with)$/i.test(normalized);
+}
+
+function looksLikeUrlLedWebsitePseudoAuthorParse(parsed: ParsedReference, referenceType?: string): boolean {
+  if ((referenceType ?? 'unknown') !== 'website' || !parsed.url) return false;
+  if (!parsed.authors?.length) return false;
+  if (hasParsedVenue(parsed) || parsed.publisher || parsed.institution || parsed.volume || parsed.issue) return false;
+  if (isLocatorLike(parsed.pages ?? parsed['article-number'])) return false;
+
+  const initialsOnlyCount = (parsed.authors ?? []).filter((author) => looksInitialOnlyAuthorValue(author)).length;
+  if (initialsOnlyCount === 0) return false;
+
+  return initialsOnlyCount === (parsed.authors?.length ?? 0)
+    || ((parsed.authors?.length ?? 0) === 1 && titleEndsWithWeakTail(parsed.title));
 }
 
 function extractLastYear(value: string): string | undefined {
@@ -326,6 +473,14 @@ function looksLikeInstitutionalMetadataSegment(value: string): boolean {
   return EDITION_SEGMENT_PATTERN.test(normalized)
     || IDENTIFIER_SEGMENT_PATTERN.test(normalized)
     || BRACKETED_IDENTIFIER_PATTERN.test(normalized);
+}
+
+function looksLikeInstitutionalVenueLeak(value: string | undefined): boolean {
+  const normalized = normalizeWhitespace(value ?? '');
+  if (!normalized) return false;
+  return /\b(?:report\s+no\.?|available(?:\s+at|\s+from)?|accessed|viewed|\[online\]|version|ver\.?)\b/i.test(normalized)
+    || PLACE_PUBLISHER_PATTERN.test(stripTrailingPeriod(normalized))
+    || PLACE_PUBLISHER_YEAR_PATTERN.test(stripTrailingPeriod(normalized));
 }
 
 function looksLikeAuthorEchoTitle(parsed: ParsedReference): boolean {
@@ -469,6 +624,23 @@ function extractBookTitleLead(value: string): { title: string | undefined; editi
   };
 }
 
+function inferBookTailReferenceType(authors: string[], title: string, publisher: string): ReturnType<typeof parsedReferenceTypeToCanonical> {
+  const primaryAuthor = normalizeWhitespace(authors[0] ?? '');
+  const institutionalLead = primaryAuthor && looksLikeInstitutionalLead(primaryAuthor);
+  if (!institutionalLead) return 'book';
+
+  const normalizedTitle = normalizeWhitespace(title.toLowerCase());
+  const normalizedAuthor = normalizeInstitutionalAuthor(primaryAuthor).toLowerCase();
+  const normalizedPublisher = normalizeInstitutionalAuthor(publisher).toLowerCase();
+  const reportLikeTitle = /\b(report|guideline|guidance|brief|bulletin|white\s+paper|policy|framework|roadmap|recommendation|statement|fact\s+sheet|statistics?)\b/i.test(normalizedTitle);
+  const stronglyBookLikeTitle = /\b(handbook|manual|textbook|book|volume|edition|theory|history|poetry|patterns|programming|process)\b/i.test(normalizedTitle);
+  const institutionalPublisherMatch = Boolean(normalizedAuthor && normalizedPublisher && normalizedAuthor === normalizedPublisher);
+
+  if (reportLikeTitle) return 'report';
+  if (institutionalPublisherMatch && !stronglyBookLikeTitle) return 'report';
+  return 'book';
+}
+
 function buildBookTailCandidate(normalized: string, inputStyle: string): {
   normalized: string;
   parsed: ParsedReference;
@@ -478,22 +650,31 @@ function buildBookTailCandidate(normalized: string, inputStyle: string): {
   if (/\bIn\s+.+\bpp?\.?\s*[A-Za-z]?\d+/i.test(normalized)) return null;
   if (/\b(?:conference|proceedings|symposium|workshop)\b/i.test(normalized)) return null;
   if (/\b(?:vol\.?|no\.?|issue|journal)\b/i.test(normalized)) return null;
+  let placeOfPublication: string | undefined;
+  let publisher: string | undefined;
+  let beforeTail = '';
+  let year: string | undefined;
 
-  const tailMatch = normalized.match(BOOK_TAIL_PATTERN);
-  if (!tailMatch?.groups || tailMatch.index == null) return null;
-
-  const placeOfPublication = cleanContainerTitle(tailMatch.groups.place ?? '');
-  const publisher = cleanContainerTitle(tailMatch.groups.publisher ?? '');
-  if (!placeOfPublication || !publisher) return null;
-
-  const beforeTail = stripTrailingPeriod(normalized.slice(0, tailMatch.index).trim());
-  if (!beforeTail) return null;
+  const placeTailMatch = normalized.match(BOOK_TAIL_PATTERN);
+  if (placeTailMatch?.groups && placeTailMatch.index != null) {
+    placeOfPublication = cleanContainerTitle(placeTailMatch.groups.place ?? '') || undefined;
+    publisher = cleanContainerTitle(placeTailMatch.groups.publisher ?? '') || undefined;
+    beforeTail = stripTrailingPeriod(normalized.slice(0, placeTailMatch.index).trim());
+    year = normalizeParsedYear(placeTailMatch.groups.year);
+    if (!placeOfPublication || !publisher || !beforeTail) return null;
+  } else {
+    const publisherTailMatch = normalized.match(BOOK_PUBLISHER_YEAR_PATTERN);
+    if (!publisherTailMatch?.groups || publisherTailMatch.index == null) return null;
+    publisher = cleanContainerTitle(publisherTailMatch.groups.publisher ?? '') || undefined;
+    beforeTail = stripTrailingPeriod(normalized.slice(0, publisherTailMatch.index).trim());
+    year = normalizeParsedYear(publisherTailMatch.groups.year);
+    if (!publisher || !beforeTail) return null;
+  }
 
   let authorLead = '';
   let titleLead = '';
-  let year = normalizeParsedYear(tailMatch.groups.year);
 
-  const parentheticalYear = beforeTail.match(/\((?<year>(?:19|20)\d{2})\)/);
+  const parentheticalYear = beforeTail.match(/\((?<year>(?:1[5-9]\d{2}|20\d{2}))\)/);
   if (parentheticalYear?.index != null) {
     authorLead = stripTrailingPeriod(beforeTail.slice(0, parentheticalYear.index));
     titleLead = stripLeadingPunctuation(
@@ -529,7 +710,7 @@ function buildBookTailCandidate(normalized: string, inputStyle: string): {
   return {
     normalized,
     parsed,
-    referenceType: 'book',
+    referenceType: inferBookTailReferenceType(authors, title, publisher),
     warnings: [...(parsed.parseWarnings ?? []), ...authorParse.warningFlags],
   };
 }
@@ -539,18 +720,18 @@ function buildTitleLedWebsiteCandidate(
   leadingSegment: string,
   remainder: string,
 ): ParsedSelectionCandidate | null {
-  const url = cleanTrailingUrl(remainder.match(/\bAvailable from:\s*(https?:\/\/\S+)/i)?.[1])
-    ?? cleanTrailingUrl(remainder.match(URL_PATTERN)?.[0]);
+  const urlSpan = extractUrlSpan(remainder);
+  const url = urlSpan?.url;
   if (!url) return null;
 
   const tailWithoutUrl = stripTrailingPeriod(normalizeWhitespace(
-    remainder
-      .replace(/\bAvailable from:\s*https?:\/\/\S+/i, '')
-      .replace(URL_PATTERN, ''),
+    removeUrlSpan(remainder, urlSpan)
+      .replace(/\bAvailable from:\s*/i, ''),
   ));
   const normalizedTail = normalizeWhitespace(tailWithoutUrl).replace(/[()]/g, '');
   const year = extractLastYear(remainder) ?? extractLastYear(leadingSegment);
   const title = stripTrailingPeriod(leadingSegment);
+  const doi = deriveDoiHintFromUrl(url);
 
   if (!title || !year) return null;
   if (normalizedTail && normalizedTail !== year) return null;
@@ -559,6 +740,7 @@ function buildTitleLedWebsiteCandidate(
     title,
     year,
     url,
+    doi,
     parseWarnings: ['title-led-website-heuristic'],
   };
 
@@ -569,6 +751,201 @@ function buildTitleLedWebsiteCandidate(
     referenceType: 'website',
     warnings: parsed.parseWarnings ?? [],
   };
+}
+
+function hasWebsiteAccessSignals(value: string): boolean {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) return false;
+  return /\b(?:viewed|accessed)\b/i.test(normalized)
+    || /\[(?:online)\]/i.test(normalized)
+    || /\bavailable(?:\s+at|\s+from)?\b/i.test(normalized);
+}
+
+function extractWebsiteContainerSegment(value: string): string | undefined {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) return undefined;
+
+  const withoutUrl = normalizeWhitespace(removeUrlSpan(normalized, extractUrlSpan(normalized)));
+  const trimmed = withoutUrl
+    .replace(/\[(?:online)\]/ig, ' ')
+    .replace(/\b(?:viewed|accessed)\b[\s\S]*$/i, ' ')
+    .replace(/\bavailable(?:\s+at|\s+from)?\b[\s\S]*$/i, ' ')
+    .replace(/\bver(?:sion)?\.?\s*[A-Za-z0-9.-]+/i, ' ')
+    .replace(/\b(?:1[5-9]\d{2}|20\d{2})\b/g, ' ')
+    .replace(/[.,;:]+\s*[.,;:]+/g, ' ')
+    .replace(/\s+[.,;:]+/g, ' ')
+    .replace(/^[,;:\s]+|[,;:\s]+$/g, ' ');
+
+  const cleaned = cleanContainerTitle(trimmed);
+  return cleaned || undefined;
+}
+
+function extractWebsiteEdition(value: string): string | undefined {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) return undefined;
+  const versionMatch = normalized.match(/\bver(?:sion)?\.?\s*[A-Za-z0-9.-]+/i);
+  return versionMatch ? normalizeWhitespace(versionMatch[0]) : undefined;
+}
+
+function extractWebsitePublicationYear(value: string): string | undefined {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) return undefined;
+  const withoutAccessDates = normalized
+    .replace(/\b(?:viewed|accessed)\b[\s\S]*$/i, ' ')
+    .replace(/\bavailable(?:\s+at|\s+from)?\b[\s\S]*$/i, ' ');
+  return extractLastYear(withoutAccessDates);
+}
+
+function extractInstitutionalTitleNote(value: string): { title: string | undefined; edition: string | undefined } {
+  const cleaned = stripTrailingPeriod(normalizeWhitespace(value));
+  if (!cleaned) {
+    return { title: undefined, edition: undefined };
+  }
+
+  const noteMatch = cleaned.match(/^(?<title>.+?)\s*\((?<note>[^)]+)\)$/);
+  const rawTitle = noteMatch?.groups?.title ?? cleaned;
+  const rawNote = noteMatch?.groups?.note;
+  const title = cleanContainerTitle(rawTitle);
+  const edition = rawNote && /\b(?:report\s+no\.?|guideline|statement|manual|handbook|version|ver\.?)\b/i.test(rawNote)
+    ? normalizeWhitespace(rawNote)
+    : undefined;
+
+  return {
+    title: title || undefined,
+    edition,
+  };
+}
+
+function buildInstitutionalWebsiteCandidate(
+  normalized: string,
+  author: string,
+  title: string,
+  remainder: string,
+  year: string | undefined,
+): ParsedSelectionCandidate | null {
+  const url = extractUrlSpan(remainder)?.url;
+  if (!url) return null;
+  if (!hasWebsiteAccessSignals(remainder) && !/\b(?:nature\.com|doi\.org)\b/i.test(url)) return null;
+
+  const normalizedAuthor = normalizeInstitutionalAuthor(author);
+  const cleanedTitle = cleanContainerTitle(title);
+  const inferredYear = year ?? extractWebsitePublicationYear(remainder);
+  if (!normalizedAuthor || !cleanedTitle) return null;
+
+  const container = extractWebsiteContainerSegment(remainder);
+  const edition = extractWebsiteEdition(remainder);
+  const parsed: ParsedReference = {
+    authors: [normalizedAuthor],
+    title: cleanedTitle,
+    year: inferredYear,
+    url,
+    doi: deriveDoiHintFromUrl(url),
+    institution: container && normalizeWhitespace(container.toLowerCase()) !== normalizeWhitespace(normalizedAuthor.toLowerCase())
+      ? container
+      : undefined,
+    edition,
+    parseWarnings: ['institutional-access-website-heuristic'],
+  };
+
+  return {
+    branch: 'institutional_heuristic_raw',
+    normalized,
+    parsed,
+    referenceType: 'website',
+    warnings: parsed.parseWarnings ?? [],
+  };
+}
+
+function buildInstitutionalAuthorYearCandidate(normalized: string): ParsedSelectionCandidate | null {
+  const apaAuthorYearMatch = normalized.match(/^(?<author>.+?)\s*\((?<year>(?:1[5-9]\d{2}|20\d{2}))\)\.\s*(?<remainder>.+)$/);
+  if (apaAuthorYearMatch?.groups && looksLikeInstitutionalLead(apaAuthorYearMatch.groups.author ?? '')) {
+    const normalizedAuthor = normalizeInstitutionalAuthor(apaAuthorYearMatch.groups.author ?? '');
+    const fixedYear = normalizeParsedYear(apaAuthorYearMatch.groups.year);
+    let remainder = normalizeWhitespace(apaAuthorYearMatch.groups.remainder ?? '');
+    if (!normalizedAuthor || !remainder || !fixedYear) return null;
+
+    const directWebsite = buildInstitutionalWebsiteCandidate(
+      normalized,
+      normalizedAuthor,
+      remainder,
+      remainder,
+      fixedYear,
+    );
+    if (directWebsite) return directWebsite;
+
+    const doi = normalized.match(DOI_PATTERN)?.[0];
+    const urlSpan = extractUrlSpan(remainder);
+    const url = urlSpan?.url;
+    remainder = normalizeWhitespace(removeUrlSpan(remainder, urlSpan));
+
+    let publisher: string | undefined;
+    let placeOfPublication: string | undefined;
+    const placePublisherMatch = stripTrailingPeriod(remainder).match(PLACE_PUBLISHER_PATTERN);
+    if (placePublisherMatch) {
+      placeOfPublication = normalizeWhitespace(placePublisherMatch[1] ?? '') || undefined;
+      publisher = normalizeWhitespace(placePublisherMatch[2] ?? '') || undefined;
+      remainder = normalizeWhitespace(stripTrailingPeriod(remainder).replace(PLACE_PUBLISHER_PATTERN, ''));
+    }
+
+    const { title, edition } = extractInstitutionalTitleNote(remainder);
+    if (!title) return null;
+
+    let referenceType: ParsedSelectionCandidate['referenceType'] = 'report';
+    if (edition && /\b(?:manual|handbook|style|guide)\b/i.test(`${title} ${edition}`)) {
+      referenceType = 'book';
+    } else if (url && !publisher) {
+      referenceType = 'website';
+    }
+
+    const parsed: ParsedReference = {
+      authors: [normalizedAuthor],
+      title,
+      year: fixedYear,
+      doi: doi ? normalizeDoiValue(doi) : deriveDoiHintFromUrl(url),
+      publisher,
+      url,
+      institution: referenceType === 'report' || referenceType === 'preprint'
+        ? normalizedAuthor
+        : publisher ?? normalizedAuthor,
+      edition,
+      placeOfPublication,
+      parseWarnings: ['institutional-author-year-heuristic'],
+    };
+
+    return {
+      branch: 'institutional_heuristic_raw',
+      normalized,
+      parsed,
+      referenceType,
+      warnings: parsed.parseWarnings ?? [],
+    };
+  }
+
+  const harvardWebsiteMatch = normalized.match(/^(?<author>.+?)\s+(?<year>(?:1[5-9]\d{2}|20\d{2}))\s*,\s*['"](?<title>[^'"]+)['"]\s*,?\s*(?<remainder>.+)$/);
+  if (harvardWebsiteMatch?.groups && looksLikeInstitutionalLead(harvardWebsiteMatch.groups.author ?? '')) {
+    const candidate = buildInstitutionalWebsiteCandidate(
+      normalized,
+      harvardWebsiteMatch.groups.author ?? '',
+      harvardWebsiteMatch.groups.title ?? '',
+      harvardWebsiteMatch.groups.remainder ?? '',
+      harvardWebsiteMatch.groups.year,
+    );
+    if (candidate) return candidate;
+  }
+
+  const quotedWebsiteMatch = normalized.match(/^(?:\[\d+\]\s*)?(?<author>.+?)(?:,|\.)\s*"(?<title>[^"]+?)"[,.]?\s*(?<remainder>.+)$/);
+  if (quotedWebsiteMatch?.groups && looksLikeInstitutionalLead(quotedWebsiteMatch.groups.author ?? '')) {
+    const candidate = buildInstitutionalWebsiteCandidate(
+      normalized,
+      quotedWebsiteMatch.groups.author ?? '',
+      quotedWebsiteMatch.groups.title ?? '',
+      quotedWebsiteMatch.groups.remainder ?? '',
+      undefined,
+    );
+    if (candidate) return candidate;
+  }
+
+  return null;
 }
 
 function looksLikePublisherSegment(value: string): boolean {
@@ -756,6 +1133,8 @@ function buildInSourceCandidate(input: string, inputStyle: string): ParsedSelect
 function buildInstitutionalCandidate(input: string): ParsedSelectionCandidate | null {
   const parser = getParser();
   const normalized = preNormalizeExtractorInput(parser, input);
+  const authorYearCandidate = buildInstitutionalAuthorYearCandidate(normalized);
+  if (authorYearCandidate) return authorYearCandidate;
   const authorMatch = normalized.match(/^(.+?)\.\s+(.+)$/);
   if (!authorMatch) return null;
 
@@ -1047,16 +1426,23 @@ function isPlaceholderVenue(value: string | undefined): boolean {
 
 function scoreCandidate(parsed: ParsedReference | null | undefined, referenceType?: string): number {
   if (!parsed) return -999;
-  const requirements = getRequirementProfile(referenceType ?? 'journal');
+  const normalizedReferenceType = referenceType ?? 'journal';
+  const requirements = getRequirementProfile(normalizedReferenceType);
   const authorSignals = analyzeParsedAuthorStrings(parsed.authors);
   const locatorValue = parsed.pages ?? parsed['article-number'];
   const titleLooksLikeLocator = looksLikeLocatorOnlyTitle(parsed.title);
+  const suspiciousWebsiteAuthorState = looksLikeUrlLedWebsitePseudoAuthorParse(parsed, normalizedReferenceType);
   let score = 0;
   if (parsed.title && !titleLooksLikeLocator && parsed.title.split(/\s+/).length >= 4 && !looksLikeDateFragment(parsed.title) && !looksLikeSourceTailFragment(parsed.title)) score += 4;
   else if (parsed.title && !titleLooksLikeLocator && !looksLikeSourceTailFragment(parsed.title)) score += 1.5;
   if (parsed.year) score += 2.5;
   if (hasParsedVenue(parsed)) score += 3;
   if (parsed.publisher || parsed.institution) score += 1.5;
+  if (normalizedReferenceType === 'book' && parsed.publisher && !hasParsedVenue(parsed)) score += 2;
+  if (normalizedReferenceType === 'report' && (parsed.publisher || parsed.institution) && (parsed.edition || parsed.url)) score += 2.2;
+  if (normalizedReferenceType === 'website' && parsed.institution) score += 0.8;
+  if (parsed.url) score += normalizedReferenceType === 'website' ? 3.5 : 0.45;
+  if (parsed.doi) score += normalizedReferenceType === 'website' ? 1.4 : 0.75;
   if (parsed.authors?.length) score += 3.5;
   if (parsed.volume) score += requirements.expected.includes('volume') ? 1 : 0.3;
   if (parsed.issue) score += requirements.expected.includes('issue') ? 1 : 0.3;
@@ -1073,11 +1459,59 @@ function scoreCandidate(parsed: ParsedReference | null | undefined, referenceTyp
   if (looksLikeInstitutionalAuthorList(parsed.authors)) score += 0.8;
   if (titleLooksLikeLocator) score -= 6;
   if (parsed.title && looksLikeSourceTailFragment(parsed.title)) score -= 3.5;
+  if (parsed.journal && looksLikeInstitutionalVenueLeak(parsed.journal)) score -= 5.5;
+  if (parsed.title && /\breport\s+no\.?/i.test(parsed.title) && normalizedReferenceType === 'journal') score -= 4;
+  if (
+    normalizedReferenceType === 'journal'
+    && Boolean(parsed.url)
+    && Boolean(parsed.publisher || parsed.institution)
+    && !parsed.volume
+    && !parsed.issue
+    && !isLocatorLike(locatorValue)
+  ) {
+    score -= 5.5;
+  }
   if (looksLikeAuthorEchoTitle(parsed)) score -= 5;
+  if (suspiciousWebsiteAuthorState) score -= 6;
+  if (suspiciousWebsiteAuthorState && titleEndsWithWeakTail(parsed.title)) score -= 2.5;
   if (isPlaceholderVenue(parsed.journal) || isPlaceholderVenue(parsed.volume) || isPlaceholderVenue(parsed.issue)) score -= 3;
   if (proceedingsSignal(parsed.conferenceTitle ?? parsed.bookTitle ?? parsed.journal) && (parsed.conferenceTitle || parsed.bookTitle || parsed.journal)) score += 1;
-  if (referenceType && referenceType !== 'unknown') score += 1;
+  if (normalizedReferenceType !== 'unknown') score += 1;
   return score;
+}
+
+function normalizeAuthorOptionalWebsiteParse(parsed: ParsedReference, referenceType: string): ParsedReference {
+  if (referenceType !== 'website') return parsed;
+
+  const normalized: ParsedReference = { ...parsed };
+  const looksAuthorOptionalWebsite = Boolean(normalized.url)
+    && !hasParsedVenue(normalized)
+    && !normalized.publisher
+    && !normalized.institution
+    && !isLocatorLike(normalized.pages ?? normalized['article-number'])
+    && !normalized.volume
+    && !normalized.issue;
+  if (!looksAuthorOptionalWebsite) return normalized;
+
+  const primaryAuthor = normalizeWhitespace(normalized.authors?.[0] ?? '');
+  if ((normalized.authors?.length ?? 0) === 1) {
+    if (!normalized.title && primaryAuthor && !looksLikeInstitutionalLead(primaryAuthor)) {
+      normalized.title = primaryAuthor;
+      normalized.authors = undefined;
+    } else if (
+      normalized.title
+      && primaryAuthor
+      && normalizeWhitespace(normalized.title.toLowerCase()) === normalizeWhitespace(primaryAuthor.toLowerCase())
+    ) {
+      normalized.authors = undefined;
+    }
+  }
+
+  if (looksLikeUrlLedWebsitePseudoAuthorParse(normalized, referenceType)) {
+    normalized.authors = undefined;
+  }
+
+  return normalized;
 }
 
 function shouldShortCircuitDeterministicSelection(
@@ -1152,10 +1586,25 @@ function selectionReason(
   return 'year_anchored_scored_higher';
 }
 
-function fillMissingFromFallback(selected: ParsedReference, fallback: ParsedReference | null): ParsedReference {
+function fillMissingFromFallback(
+  selected: ParsedReference,
+  fallback: ParsedReference | null,
+  targetReferenceType: string = 'unknown',
+): ParsedReference {
   if (!fallback) return selected;
   const merged: ParsedReference = { ...selected };
-  for (const field of ['title', 'year', 'journal', 'conferenceTitle', 'bookTitle', 'volume', 'issue', 'pages', 'article-number', 'publisher', 'url', 'doi', 'institution', 'edition', 'editor'] as const) {
+  const mergeableFields = targetReferenceType === 'website'
+    ? ['title', 'url', 'doi', 'institution', 'edition'] as const
+    : targetReferenceType === 'report'
+      ? ['title', 'year', 'publisher', 'url', 'doi', 'institution', 'edition', 'editor'] as const
+      : targetReferenceType === 'book'
+        ? ['title', 'year', 'publisher', 'url', 'doi', 'institution', 'edition', 'editor'] as const
+        : targetReferenceType === 'chapter'
+          ? ['title', 'year', 'bookTitle', 'pages', 'publisher', 'url', 'doi', 'institution', 'edition', 'editor'] as const
+          : targetReferenceType === 'conference'
+            ? ['title', 'year', 'conferenceTitle', 'pages', 'publisher', 'url', 'doi', 'institution', 'edition', 'editor'] as const
+            : ['title', 'year', 'journal', 'conferenceTitle', 'bookTitle', 'volume', 'issue', 'pages', 'article-number', 'publisher', 'url', 'doi', 'institution', 'edition', 'editor'] as const;
+  for (const field of mergeableFields) {
     if (!merged[field] && fallback[field]) {
       merged[field] = fallback[field];
     }
@@ -1166,7 +1615,13 @@ function fillMissingFromFallback(selected: ParsedReference, fallback: ParsedRefe
     && merged.title
     && normalizeWhitespace((fallback.authors[0] ?? '').toLowerCase()) === normalizeWhitespace(merged.title.toLowerCase()),
   );
-  if ((!merged.authors || merged.authors.length === 0) && fallback.authors?.length && !fallbackAuthorEchoesSelectedTitle) {
+  const avoidWebsiteAuthorBackfill = targetReferenceType === 'website';
+  if (
+    (!merged.authors || merged.authors.length === 0)
+    && fallback.authors?.length
+    && !fallbackAuthorEchoesSelectedTitle
+    && !avoidWebsiteAuthorBackfill
+  ) {
     merged.authors = fallback.authors;
   }
   return merged;
@@ -1180,6 +1635,8 @@ function buildFieldConfidence(parsed: ParsedReference, referenceType: string) {
   const institutionalPublisher = Boolean(institutionalVenue) && isGroupAuthor(institutionalVenue);
   const titleEchoesAuthor = looksLikeAuthorEchoTitle(parsed);
   const titleLooksLikeLocator = looksLikeLocatorOnlyTitle(parsed.title);
+  const suspiciousWebsiteAuthorState = looksLikeUrlLedWebsitePseudoAuthorParse(parsed, referenceType);
+  const titleLooksWeakWebsiteTail = suspiciousWebsiteAuthorState && titleEndsWithWeakTail(parsed.title);
   const mostlyCompactVancouver = (parsed.authors?.length ?? 0) >= 2
     && authorSignals.compactVancouverCount >= Math.ceil((parsed.authors?.length ?? 0) * 0.7);
   const authorConfidenceFloor = authorSignals.contaminatedBlobCount > 0 ? 0.05 : 0.25;
@@ -1200,11 +1657,11 @@ function buildFieldConfidence(parsed: ParsedReference, referenceType: string) {
     )
     : 0.2;
   const publisherConfidence = parsed.publisher || parsed.institution
-    ? (institutionalPublisher ? 0.9 : 0.74)
+    ? (institutionalPublisher ? 0.9 : (referenceType === 'book' ? 0.82 : 0.74))
     : 0.1;
   return {
-    authors: institutionalAuthors ? Math.max(authorConfidence, 0.9) : authorConfidence,
-    title: parsed.title ? ((titleLooksLikeLocator || looksLikeDateFragment(parsed.title) || looksLikeSourceTailFragment(parsed.title) || titleEchoesAuthor) ? 0.08 : 0.9) : 0.2,
+    authors: suspiciousWebsiteAuthorState ? 0.08 : (institutionalAuthors ? Math.max(authorConfidence, 0.9) : authorConfidence),
+    title: parsed.title ? ((titleLooksLikeLocator || looksLikeDateFragment(parsed.title) || looksLikeSourceTailFragment(parsed.title) || titleEchoesAuthor || titleLooksWeakWebsiteTail) ? 0.08 : 0.9) : 0.2,
     year: parsed.year ? 0.92 : 0.1,
     journal: hasParsedVenue(parsed) ? 0.82 : (referenceType === 'journal' ? 0.18 : 0.12),
     volume: parsed.volume ? 0.82 : 0.1,
@@ -1212,13 +1669,19 @@ function buildFieldConfidence(parsed: ParsedReference, referenceType: string) {
     pages: isLocatorLike(locatorValue) ? 0.82 : 0.1,
     doi: parsed.doi ? 0.96 : 0.05,
     publisher: publisherConfidence,
-    url: parsed.url ? 0.9 : 0.05,
+    url: parsed.url ? (referenceType === 'website' ? 0.96 : 0.9) : 0.05,
   } as const;
 }
 
-function needsLlmFallback(parsed: ParsedReference, fieldConfidence: Record<string, number>): boolean {
-  const missingRequired = REQUIRED_EXTRACTION_FIELDS.some((field) => !parsed[field]);
-  const lowConfidenceCritical = ['authors', 'title', 'year']
+function needsLlmFallback(parsed: ParsedReference, fieldConfidence: Record<string, number>, referenceType: string): boolean {
+  const requiredFields = referenceType === 'website'
+    ? ['title', 'year', 'url']
+    : REQUIRED_EXTRACTION_FIELDS;
+  const criticalFields = referenceType === 'website'
+    ? ['title', 'year', 'url']
+    : ['authors', 'title', 'year'];
+  const missingRequired = requiredFields.some((field) => !parsed[field as keyof ParsedReference]);
+  const lowConfidenceCritical = criticalFields
     .map((field) => fieldConfidence[field] ?? 0)
     .some((value) => value < 0.45);
   return missingRequired || lowConfidenceCritical;
@@ -1459,7 +1922,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     const deterministicSanitized = sanitizeParsedReference(deterministicBase.parsed, deterministicBase.referenceType);
     const deterministic = {
       ...deterministicBase,
-      parsed: deterministicSanitized.parsed,
+      parsed: normalizeAuthorOptionalWebsiteParse(deterministicSanitized.parsed, deterministicSanitized.referenceType),
       referenceType: deterministicSanitized.referenceType,
     };
     const deterministicAuthorParse = parseAuthorsForStyle(deterministic.parsed.authors ?? [], inputStyle);
@@ -1485,33 +1948,33 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
 
     const fallbackBase = skipCompetingCandidates ? null : buildYearAnchoredCandidate(input);
     const fallback = fallbackBase
-      ? (() => {
+        ? (() => {
           const sanitized = sanitizeParsedReference(fallbackBase.parsed, fallbackBase.referenceType);
           return {
             ...fallbackBase,
-            parsed: sanitized.parsed,
+            parsed: normalizeAuthorOptionalWebsiteParse(sanitized.parsed, sanitized.referenceType),
             referenceType: sanitized.referenceType,
           };
         })()
       : null;
     const institutionalBase = skipCompetingCandidates ? null : buildInstitutionalCandidate(input);
     const institutional = institutionalBase
-      ? (() => {
+        ? (() => {
           const sanitized = sanitizeParsedReference(institutionalBase.parsed, institutionalBase.referenceType);
           return {
             ...institutionalBase,
-            parsed: sanitized.parsed,
+            parsed: normalizeAuthorOptionalWebsiteParse(sanitized.parsed, sanitized.referenceType),
             referenceType: sanitized.referenceType,
           };
         })()
       : null;
     const inSourceBase = skipCompetingCandidates ? null : buildInSourceCandidate(input, inputStyle);
     const inSource = inSourceBase
-      ? (() => {
+        ? (() => {
           const sanitized = sanitizeParsedReference(inSourceBase.parsed, inSourceBase.referenceType);
           return {
             ...inSourceBase,
-            parsed: sanitized.parsed,
+            parsed: normalizeAuthorOptionalWebsiteParse(sanitized.parsed, sanitized.referenceType),
             referenceType: sanitized.referenceType,
           };
         })()
@@ -1567,7 +2030,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     const selectedBase = selectedCandidate.candidate;
     let mergedSelection = selectedBase.parsed;
     for (const alternate of scoredCandidates.slice(1)) {
-      mergedSelection = fillMissingFromFallback(mergedSelection, alternate.candidate.parsed);
+      mergedSelection = fillMissingFromFallback(mergedSelection, alternate.candidate.parsed, selectedBase.referenceType);
     }
     let selectedReferenceType = selectedBase.referenceType;
     if (selectedReferenceType === 'unknown') {
@@ -1629,7 +2092,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     const llmWarnings: string[] = [];
 
     const weakSelection =
-      needsLlmFallback(mergedSelection, selectedFieldConfidence)
+      needsLlmFallback(mergedSelection, selectedFieldConfidence, selectedReferenceType)
       || (selectedCandidate.score - contaminationScorePenalty) < 8
       || selectedAuthorParse.warningFlags.length > 0
       || selectedAuthorParse.rejectedCandidates.length > 0
@@ -1654,7 +2117,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
           if (llm) {
             const merged = mergeLlmWithDeterministic({ parsed: mergedSelection, referenceType: selectedReferenceType }, llm);
             const sanitizedHybrid = sanitizeParsedReference(merged.parsed, merged.referenceType);
-            mergedSelection = sanitizedHybrid.parsed;
+            mergedSelection = normalizeAuthorOptionalWebsiteParse(sanitizedHybrid.parsed, sanitizedHybrid.referenceType);
             selectedReferenceType = sanitizedHybrid.referenceType;
             selectedFieldConfidence = {
               ...merged.fieldConfidence,
@@ -1681,7 +2144,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     const grobidRouteReason = forceGrobid
       ? options?.forceGrobidReason ?? 'forced_unresolved_recovery'
       : (
-        needsLlmFallback(mergedSelection, selectedFieldConfidence)
+        needsLlmFallback(mergedSelection, selectedFieldConfidence, selectedReferenceType)
         || (currentSelectionScore - contaminationScorePenalty) < 8
         || splitContaminationFlags.length > 0
       )
@@ -1733,7 +2196,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             || grobidScore > currentBestScore + 0.5
             || (grobidPreferredProfile && grobidLooksUsable && grobidScore >= currentBestScore - 0.25)
           ) {
-            mergedSelection = fillMissingFromFallback(grobidCandidate.parsed, mergedSelection);
+            mergedSelection = fillMissingFromFallback(grobidCandidate.parsed, mergedSelection, grobidCandidate.referenceType);
             selectedReferenceType = grobidCandidate.referenceType;
             selectedFieldConfidence = applySplitPenaltyToFieldConfidence(
               buildFieldConfidence(mergedSelection, selectedReferenceType),
