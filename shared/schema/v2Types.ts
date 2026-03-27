@@ -223,11 +223,40 @@ export interface InputProfile {
   signals: string[];
 }
 
+export type FieldRepairConfidence = 'high' | 'medium' | 'low';
+
+export interface AppliedRepairMetadata {
+  field: string;
+  source: string;
+  before?: string;
+  after?: string;
+  confidence?: FieldRepairConfidence;
+}
+
+export interface RepairMissMetadata {
+  field: string;
+  brokenSpan: string;
+  sourceSpan?: string;
+  code?: string;
+}
+
+export interface ResidualArtifactMetadata {
+  field: string;
+  severity: 'high' | 'medium' | 'low';
+  code: string;
+  value: string;
+}
+
 export interface NormalizationMetadata {
   doiNormalized: boolean;
   unicodeRepairedFields: string[];
   titleCaseApplied: boolean;
   journalNormalizationHookAvailable: boolean;
+  appliedRepairs?: AppliedRepairMetadata[];
+  repairMisses?: RepairMissMetadata[];
+  fieldRepairConfidence?: Record<string, FieldRepairConfidence>;
+  citationRepairConfidence?: FieldRepairConfidence;
+  residualArtifacts?: ResidualArtifactMetadata[];
 }
 
 export interface CitationRenderedOutput {

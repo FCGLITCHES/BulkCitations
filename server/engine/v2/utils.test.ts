@@ -145,6 +145,17 @@ describe('v2 author rescue utilities', () => {
     expect(fixUnicodeText('ADME￾Tox prediction')).toBe('ADMETox prediction');
   });
 
+  it('keeps global unicode cleanup conservative while still fixing low-risk PDF-copy spacing artifacts', () => {
+    expect(fixUnicodeText('Journal of Applied P sychology, 35(5), 307–311.')).toBe('Journal of Applied P sychology, 35(5), 307-311.');
+    expect(fixUnicodeText('S pringer.')).toBe('S pringer.');
+    expect(fixUnicodeText('h ttps://doi.org/10.1080/02678373.2010.50680')).toBe('https://doi.org/10.1080/02678373.2010.50680');
+    expect(fixUnicodeText('The Lancet Psychiatry, 7, 8 40–841.')).toBe('The Lancet Psychiatry, 7, 840-841.');
+    expect(fixUnicodeText('Cross- sectional and longitudinal predictions')).toBe('Cross-sectional and longitudinal predictions');
+    expect(fixUnicodeText('Research methods for applied psychology (2nd e d., pp. 164–177).')).toBe('Research methods for applied psychology (2nd ed., pp. 164-177).');
+    expect(fixUnicodeText('A guide to research practice')).toBe('A guide to research practice');
+    expect(fixUnicodeText('T cells in adaptive immunity')).toBe('T cells in adaptive immunity');
+  });
+
   it('collapses split acronym-led group authors back into a literal institutional author', () => {
     const author = normalizeCanonicalAuthor({
       first: 'IBM',

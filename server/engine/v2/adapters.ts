@@ -49,7 +49,6 @@ const DOI_PATTERN = /\b10\.\d{4,}\/\S+\b/i;
 const YEAR_PATTERN = /\b(?:1[5-9]\d{2}|20\d{2})\b/g;
 const URL_PATTERN = /https?:\/\/\S+/i;
 const URL_PATTERN_GLOBAL = /https?:\/\/\S+/gi;
-const REQUIRED_EXTRACTION_FIELDS: Array<keyof ParsedReference> = ['title', 'year'];
 const DEFAULT_GROBID_TIMEOUT_MS = 3000;
 const DEFAULT_GROBID_COOLDOWN_MS = 30000;
 const PLACE_PUBLISHER_YEAR_PATTERN = /([^.;]+?):\s*([^.;]+?)\s*;\s*((?:1[5-9]\d{2}|20\d{2}))$/i;
@@ -2438,6 +2437,15 @@ function looksLikeMergedAuthorBlob(author: string): boolean {
   return !isGroupAuthor(normalized) && (commaCount >= 2 || /\b(?:and|&)\b/.test(normalized));
 }
 
+function looksLikeCleanInvertedAuthor(author: string): boolean {
+  return /^[^,]+,\s*(?:[\p{Lu}]\.?\s*){1,6}$/u.test(normalizeWhitespace(author));
+}
+
+function shouldIgnoreSingleCharacterTailPenalty(authors: string[] | undefined): boolean {
+  return Boolean(authors?.length)
+    && authors!.every((author) => looksLikeCleanInvertedAuthor(author) && !looksLikeMergedAuthorBlob(author));
+}
+
 function isPlaceholderVenue(value: string | undefined): boolean {
   if (!value) return false;
   const normalized = normalizeWhitespace(value).toLowerCase();
@@ -2449,6 +2457,7 @@ function scoreCandidate(parsed: ParsedReference | null | undefined, referenceTyp
   const normalizedReferenceType = referenceType ?? 'journal';
   const requirements = getRequirementProfile(normalizedReferenceType);
   const authorSignals = analyzeParsedAuthorStrings(parsed.authors);
+  const singleCharacterTailCount = shouldIgnoreSingleCharacterTailPenalty(parsed.authors) ? 0 : authorSignals.singleCharacterTailCount;
   const locatorValue = parsed.pages ?? parsed['article-number'];
   const titleLooksLikeLocator = looksLikeLocatorOnlyTitle(parsed.title);
   const suspiciousWebsiteAuthorState = looksLikeUrlLedWebsitePseudoAuthorParse(parsed, normalizedReferenceType);
@@ -2472,7 +2481,7 @@ function scoreCandidate(parsed: ParsedReference | null | undefined, referenceTyp
   if (authorSignals.mergedBlobCount > 0) score -= authorSignals.mergedBlobCount * 2.5;
   if (authorSignals.contaminatedBlobCount > 0) score -= authorSignals.contaminatedBlobCount * 6;
   if (authorSignals.initialsOnlyCount > Math.ceil((parsed.authors?.length ?? 0) / 2)) score -= 2;
-  if (authorSignals.singleCharacterTailCount > 0) score -= authorSignals.singleCharacterTailCount * 0.35;
+  if (singleCharacterTailCount > 0) score -= singleCharacterTailCount * 0.35;
   score += authorSignals.richness * 1.5;
   if ((parsed.authors?.length ?? 0) >= 2 && authorSignals.compactVancouverCount === (parsed.authors?.length ?? 0)) score += 1.4;
   if (parsed.authors?.some((author) => author.length > 120 || /\. .+\./.test(author))) score -= 3;
@@ -2657,6 +2666,7 @@ function fillMissingFromFallback(
 
 function buildFieldConfidence(parsed: ParsedReference, referenceType: string) {
   const authorSignals = analyzeParsedAuthorStrings(parsed.authors);
+  const singleCharacterTailCount = shouldIgnoreSingleCharacterTailPenalty(parsed.authors) ? 0 : authorSignals.singleCharacterTailCount;
   const locatorValue = parsed.pages ?? parsed['article-number'];
   const institutionalAuthors = looksLikeInstitutionalAuthorList(parsed.authors);
   const institutionalVenue = normalizeWhitespace(parsed.institution ?? parsed.publisher ?? '');
@@ -2677,7 +2687,7 @@ function buildFieldConfidence(parsed: ParsedReference, referenceType: string) {
           + (authorSignals.richness * 0.05)
           - (authorSignals.mergedBlobCount * 0.18)
           - (authorSignals.contaminatedBlobCount * 0.5)
-          - (authorSignals.singleCharacterTailCount * 0.03)
+          - (singleCharacterTailCount * 0.03)
           - (authorSignals.initialsOnlyCount > Math.ceil((parsed.authors?.length ?? 0) / 2) ? 0.08 : 0)
           + (mostlyCompactVancouver ? 0.08 : 0)
           + (institutionalAuthors ? 0.06 : 0),
@@ -2701,15 +2711,75 @@ function buildFieldConfidence(parsed: ParsedReference, referenceType: string) {
   } as const;
 }
 
+function hasParsedFallbackField(parsed: ParsedReference, field: string): boolean {
+  switch (field) {
+    case 'authors':
+      return (parsed.authors?.length ?? 0) > 0;
+    case 'title':
+      return Boolean(parsed.title)
+        && !looksLikeLocatorOnlyTitle(parsed.title)
+        && !looksLikeDateFragment(parsed.title)
+        && !looksLikeSourceTailFragment(parsed.title);
+    case 'year':
+      return Boolean(parsed.year);
+    case 'venue':
+      return hasParsedVenue(parsed);
+    case 'bookTitle':
+      return Boolean(parsed.bookTitle);
+    case 'publisher':
+      return Boolean(parsed.publisher);
+    case 'institution':
+      return Boolean(parsed.institution ?? parsed.publisher);
+    case 'locator':
+      return isLocatorLike(parsed.pages ?? parsed['article-number']);
+    default:
+      return Boolean(parsed[field as keyof ParsedReference]);
+  }
+}
+
+function fieldConfidenceKeyForFallbackField(field: string): keyof ReturnType<typeof buildFieldConfidence> | null {
+  switch (field) {
+    case 'authors':
+      return 'authors';
+    case 'title':
+      return 'title';
+    case 'year':
+      return 'year';
+    case 'venue':
+    case 'bookTitle':
+      return 'journal';
+    case 'publisher':
+    case 'institution':
+      return 'publisher';
+    case 'locator':
+      return 'pages';
+    case 'volume':
+      return 'volume';
+    case 'issue':
+      return 'issue';
+    case 'doi':
+      return 'doi';
+    case 'url':
+      return 'url';
+    default:
+      return null;
+  }
+}
+
+function getFallbackCriticalFields(referenceType: string): string[] {
+  return [...new Set(getRequirementProfile(referenceType).required)];
+}
+
+function countMissingFallbackFields(parsed: ParsedReference, fields: string[]): number {
+  return fields.reduce((count, field) => count + (hasParsedFallbackField(parsed, field) ? 0 : 1), 0);
+}
+
 function needsLlmFallback(parsed: ParsedReference, fieldConfidence: Record<string, number>, referenceType: string): boolean {
-  const requiredFields = referenceType === 'website'
-    ? ['title', 'year', 'url']
-    : REQUIRED_EXTRACTION_FIELDS;
-  const criticalFields = referenceType === 'website'
-    ? ['title', 'year', 'url']
-    : ['authors', 'title', 'year'];
-  const missingRequired = requiredFields.some((field) => !parsed[field as keyof ParsedReference]);
+  const criticalFields = getFallbackCriticalFields(referenceType);
+  const missingRequired = countMissingFallbackFields(parsed, criticalFields) > 0;
   const lowConfidenceCritical = criticalFields
+    .map((field) => fieldConfidenceKeyForFallbackField(field))
+    .filter((field): field is keyof typeof fieldConfidence => field !== null)
     .map((field) => fieldConfidence[field] ?? 0)
     .some((value) => value < 0.45);
   return missingRequired || lowConfidenceCritical;
@@ -2723,27 +2793,13 @@ function shouldAllowLlmFallback(
   executionMode: 'sync' | 'async' | undefined,
 ): boolean {
   const requirements = getRequirementProfile(referenceType);
-  const missingRequiredCount = requirements.required.reduce((count, field) => {
-    if (field === 'venue') {
-      return count + (hasParsedVenue(parsed) ? 0 : 1);
-    }
-    if (field === 'bookTitle') {
-      return count + (parsed.bookTitle ? 0 : 1);
-    }
-    if (field === 'publisher') {
-      return count + (parsed.publisher ? 0 : 1);
-    }
-    if (field === 'institution') {
-      return count + ((parsed.institution ?? parsed.publisher) ? 0 : 1);
-    }
-    return count + (parsed[field as keyof ParsedReference] ? 0 : 1);
-  }, 0);
+  const criticalFields = getFallbackCriticalFields(referenceType);
+  const missingRequiredCount = countMissingFallbackFields(parsed, requirements.required);
+  const missingCriticalCount = countMissingFallbackFields(parsed, criticalFields);
   const catastrophic =
-    !parsed.title
-    || !parsed.year
+    missingCriticalCount > 0
     || missingRequiredCount >= 2
-    || selectionScore < 5
-    || ((parsed.authors?.length ?? 0) === 0 && !['website'].includes(referenceType));
+    || selectionScore < 5;
 
   if (executionMode === 'sync') {
     if (batchSize >= 50) return catastrophic;

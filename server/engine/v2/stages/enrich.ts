@@ -1047,7 +1047,7 @@ export function createEnrichStage(
               candidateCitation,
               extractor,
               candidateCitation.detectedStyle.value ?? context.request.inputStyle,
-              context.workingChunkByCitationId[citation.id] ?? citation.raw,
+              context.workingChunkByCitationId[citation.id]?.joinedText ?? citation.raw,
               {
                 inputProfile: context.inputProfile,
                 detectionConfidence: candidateCitation.detectedStyle.confidence,

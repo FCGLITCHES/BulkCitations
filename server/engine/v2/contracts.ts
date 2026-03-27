@@ -1,9 +1,13 @@
 import type {
+  AppliedRepairMetadata,
   CanonicalAuthor,
   CanonicalCitation,
   CanonicalReferenceType,
   CitationStyle,
+  FieldRepairConfidence,
   InputProfile,
+  RepairMissMetadata,
+  ResidualArtifactMetadata,
   StageDiagnostic,
   V2StageTiming,
   V2ConversionRequest,
@@ -18,7 +22,49 @@ export type SplitContaminationFlag =
   | 'doi_orphan'
   | 'multiline_truncation_suspected'
   | 'page_artifact_present'
-  | 'oversized_chunk';
+  | 'oversized_chunk'
+  | 'dangling_uri_tail';
+
+export type V2ContentLineRole = 'content' | 'artifact' | 'uri_tail';
+
+export type V2WorkingChunkFieldHintType =
+  | 'doi_url'
+  | 'locator'
+  | 'container'
+  | 'publisher_place'
+  | 'journal_tail'
+  | 'title';
+
+export interface V2ContentLine {
+  lineIndex: number;
+  sourceLineNumber: number;
+  text: string;
+  role: V2ContentLineRole;
+  excluded: boolean;
+  rawOpenerScore: number;
+  openerConfidence: number;
+  continuationSignals: string[];
+  rule?: string;
+}
+
+export interface V2WorkingChunkFieldHint {
+  fieldType: V2WorkingChunkFieldHintType;
+  start: number;
+  end: number;
+  text: string;
+  anchor: string;
+  prefixAnchor?: string;
+}
+
+export interface V2PreparedWorkingChunk {
+  includedLineIndices: number[];
+  joinedText: string;
+  fieldHints: V2WorkingChunkFieldHint[];
+  appliedRepairs: AppliedRepairMetadata[];
+  repairMisses: RepairMissMetadata[];
+  residualArtifacts: ResidualArtifactMetadata[];
+  citationRepairConfidence: FieldRepairConfidence;
+}
 
 export interface StrippedRegion {
   rule: string;
@@ -47,6 +93,8 @@ export interface V2SplitArtifact {
   repairActions: SplitRepairAction[];
   chunkLength: number;
   lineCount: number;
+  contentLines: V2ContentLine[];
+  includedLineIndices: number[];
 }
 
 export interface V2LlmBudget {
@@ -76,7 +124,7 @@ export interface V2PipelineContext {
   partialResult: boolean;
   partialReasons: string[];
   jobDebug: Record<string, Record<string, unknown>>;
-  workingChunkByCitationId: Record<string, string>;
+  workingChunkByCitationId: Record<string, V2PreparedWorkingChunk>;
   splitArtifactsByCitationId: Record<string, V2SplitArtifact>;
   llmBudget: V2LlmBudget;
   response?: V2ConversionResponse;

@@ -296,6 +296,38 @@ function buildProtectedTokenIssues(citation: CanonicalCitation): ValidationIssue
   return issues;
 }
 
+function buildResidualArtifactIssues(citation: CanonicalCitation): ValidationIssue[] {
+  const residuals = citation.normalization?.residualArtifacts ?? [];
+  const repairMisses = citation.normalization?.repairMisses ?? [];
+  const issues: ValidationIssue[] = [];
+
+  for (const artifact of residuals) {
+    issues.push({
+      field: artifact.field,
+      severity: artifact.severity === 'high' ? 'error' : artifact.severity === 'medium' ? 'warning' : 'info',
+      code: artifact.code,
+      message: `Residual PDF-copy artifact remained in ${artifact.field}.`,
+      extracted: artifact.value,
+    });
+  }
+
+  for (const miss of repairMisses) {
+    issues.push({
+      field: miss.field,
+      severity: 'info',
+      code: 'repair_miss',
+      message: 'A bounded repair opportunity was detected but not fully resolved.',
+      extracted: {
+        brokenSpan: miss.brokenSpan,
+        sourceSpan: miss.sourceSpan,
+        code: miss.code,
+      },
+    });
+  }
+
+  return issues;
+}
+
 function buildReferenceSignatureIssues(citation: CanonicalCitation): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const title = citation.title.value ?? '';
@@ -582,6 +614,7 @@ export async function validateCitationOffline(
     ...buildSplitContaminationIssues(citation, splitArtifact),
     ...buildReferenceSignatureIssues(citation),
     ...buildProtectedTokenIssues(citation),
+    ...buildResidualArtifactIssues(citation),
     ...buildPlausibilityIssues(citation),
     ...buildResolutionIssues(citation),
   ]);

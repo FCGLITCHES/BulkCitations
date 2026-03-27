@@ -267,7 +267,7 @@ export function analyzeParsedAuthorStrings(authors: string[] | undefined): {
     const normalized = normalizeWhitespace(author);
     if (!normalized) continue;
     const isCompactVancouver = looksLikeCompactVancouverAuthorString(normalized);
-    const looksLikeInvertedInitialsAuthor = /^[^,]+,\s*(?:[\p{Lu}]\.\s*){1,6}$/u.test(normalized);
+    const looksLikeInvertedInitialsAuthor = /^[^,]+,\s*(?:[\p{Lu}]\.?\s*){2,6}$/u.test(normalized);
     const hasContentLeak = looksLikeAuthorContentLeak(normalized);
 
     if (isCompactVancouver) compactVancouverCount += 1;

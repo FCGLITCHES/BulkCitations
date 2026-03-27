@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createDefaultAdapters } from './adapters.js';
+import { pdfCopyNegativeFixtures, pdfCopySingleFixtures } from './fixtures/pdfCopyFixtures.js';
 import { processV2Conversion } from './pipeline.js';
 
 const processV2 = (req: any, opt?: any) => processV2Conversion(req, opt);
@@ -51,6 +52,7 @@ describe('v2 pipeline', () => {
       enrich: false,
       dedup: false,
       group: false,
+      debug: true,
     });
 
     const stageTimings = response.processingPath.stageTimings ?? [];
@@ -739,6 +741,62 @@ describe('v2 pipeline', () => {
     expect(response.citations[0]?.quality?.bucket).toBe('ready');
   });
 
+  it('sanitizes embedded locator tails from polluted venue fields before rendering', async () => {
+    const adapters = createDefaultAdapters();
+    const extractor = {
+      ...adapters.extractor,
+      async extract() {
+        return {
+          parsed: {
+            authors: ['Cox, D. R.'],
+            title: 'Regression models and life-tables',
+            year: '1972',
+            journal: 'Journal of the Royal Statistical Society, Series B 34(2):187-220',
+            volume: '34',
+            issue: '2',
+            pages: '187-220',
+          },
+          referenceType: 'journal' as const,
+          method: 'deterministic' as const,
+          fallbackUsed: false,
+          extractorPath: 'deterministic' as const,
+          selectedBranch: 'deterministic_raw' as const,
+          selectionReason: 'test_embedded_locator_tail',
+          fieldConfidence: {
+            authors: 0.95,
+            title: 0.95,
+            year: 0.95,
+            journal: 0.92,
+            volume: 0.92,
+            issue: 0.9,
+            pages: 0.92,
+          },
+          warnings: [],
+        };
+      },
+    };
+
+    const { response } = await processV2({
+      sourceType: 'text',
+      content: 'Cox, D. R. (1972). Regression models and life-tables. Journal of the Royal Statistical Society, Series B 34(2):187-220.',
+      inputStyle: 'auto',
+      outputStyle: 'chicago-ad',
+      enrich: false,
+      dedup: false,
+      group: false,
+    }, {
+      adapters: {
+        ...adapters,
+        extractor,
+      },
+    });
+
+    const formatted = response.citations[0]?.rendered?.formatted ?? '';
+    expect(formatted).toContain('Journal of the Royal Statistical Society, Series B');
+    expect(formatted).not.toContain('Series B 34(2):187-220');
+    expect(formatted.match(/187[-\u2013]220/g)).toHaveLength(1);
+  });
+
   it('treats crossref rate limits as informational instead of review damage', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: string | URL) => {
       const url = String(input);
@@ -831,6 +889,68 @@ describe('v2 pipeline', () => {
     expect(ocrLike.response.debug?.citations[0]?.stages.split).toEqual(expect.objectContaining({
       splitReasons: expect.arrayContaining(['profile_ocr_noise_markers']),
     }));
+  });
+
+  it('repairs exact PDF-copy raw references into clean canonical fields without changing the user input first', async () => {
+    const { response } = await processV2({
+      sourceType: 'text',
+      content: [
+        pdfCopySingleFixtures.springerChapter,
+        pdfCopySingleFixtures.appliedPsychologyArticle,
+        pdfCopySingleFixtures.workStressDoiArticle,
+      ].join('\n\n'),
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: false,
+      dedup: false,
+      group: false,
+    });
+
+    expect(response.citations).toHaveLength(3);
+
+    const [chapter, article, doiArticle] = response.citations;
+    expect(chapter.referenceType).toBe('chapter');
+    expect(chapter.publisher.value).toBe('Springer');
+    expect(chapter.bookTitle.value).toContain('Derailed organizational stress and well-being interventions');
+    expect(chapter.raw).toContain('S pringer.');
+    expect(chapter.normalization?.appliedRepairs).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: 'publisher_place' }),
+    ]));
+    expect(['high', 'medium']).toContain(chapter.normalization?.citationRepairConfidence);
+
+    expect(article.referenceType).toBe('journal');
+    expect(article.journal.value).toBe('Journal of Applied Psychology');
+    expect(article.pages.value).toBe('307-311');
+    expect(article.raw).toContain('P sychology');
+
+    expect(doiArticle.referenceType).toBe('journal');
+    expect(doiArticle.journal.value).toBe('Work & Stress');
+    expect(doiArticle.doi.value).toBe('10.1080/02678373.2010.50680');
+    expect(doiArticle.title.value).toBe('Organizational interventions for balancing work and home demands: An overview');
+    expect(doiArticle.raw).toContain('h ttps://doi.org');
+    expect(doiArticle.normalization?.citationRepairConfidence).toBe('high');
+  });
+
+  it('does not apply raw PDF-copy repairs to already-valid title-start tokens like A guide or T cells', async () => {
+    const { response } = await processV2({
+      sourceType: 'text',
+      content: [
+        pdfCopyNegativeFixtures.titleStart,
+        pdfCopyNegativeFixtures.tCellsTitle,
+      ].join('\n\n'),
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: false,
+      dedup: false,
+      group: false,
+      debug: true,
+    });
+
+    expect(response.citations).toHaveLength(2);
+    expect(response.citations[0]?.title.value).toBe('A guide to research practice');
+    expect(response.citations[1]?.title.value).toBe('T cells in adaptive immunity');
+    expect(response.citations[0]?.normalization?.appliedRepairs ?? []).toEqual([]);
+    expect(response.citations[1]?.normalization?.appliedRepairs ?? []).toEqual([]);
   });
 
   it('downshifts detect confidence when ingest signals indicate style uncertainty', async () => {

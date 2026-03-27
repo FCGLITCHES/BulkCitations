@@ -254,16 +254,127 @@ function repairMojibake(value: string): string {
   return current;
 }
 
+const OCR_JOINABLE_SHORT_WORDS = new Set([
+  'an',
+  'as',
+  'at',
+  'be',
+  'by',
+  'do',
+  'ed',
+  'if',
+  'in',
+  'is',
+  'it',
+  'no',
+  'of',
+  'on',
+  'or',
+  'pp',
+  'to',
+  'up',
+  'we',
+]);
+
+export function normalizeUnicodeText(value: string): string {
+  return repairMojibake(value)
+    .replace(/â€(?=[\d,.;:)\]-])/g, '')
+    .normalize('NFKC')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/[\uFFF9-\uFFFF]/g, '')
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[–—]/g, '-');
+}
+
+export function compactUriDoiSpacing(value: string): string {
+  return value
+    .replace(/\bhttps?\s*:\s*\/\s*\//gi, (match) => match.replace(/\s+/g, ''))
+    .replace(/\bwww\s*\.\s*/gi, 'www.')
+    .replace(/\bdoi\s*:\s*10\.\s*(\d{4,})\s*\/\s*/gi, 'doi:10.$1/')
+    .replace(/\b10\s*\.\s*(\d{4,})\s*\/\s*/g, '10.$1/')
+    .replace(/\s+([,.;:)\]])/g, '$1')
+    .replace(/([([])\s+/g, '$1');
+}
+
+function stripTokenEdgeNoise(token: string): string {
+  return token.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}/:.-]+$/gu, '');
+}
+
+function shouldMergeOcrSplitTokens(current: string, next: string): boolean {
+  const currentCore = stripTokenEdgeNoise(current);
+  const nextCore = stripTokenEdgeNoise(next);
+  if (!currentCore || !nextCore) return false;
+
+  if (current.endsWith('-') && /^[\p{L}]{2,}/u.test(nextCore)) {
+    return true;
+  }
+
+  if (
+    /^\d$/u.test(currentCore)
+    && /^\d{2,}(?:[A-Za-z]?\d*|\([^)]*\)|[-–].+)?$/u.test(nextCore)
+    && !/[,:;]$/.test(current)
+  ) {
+    return true;
+  }
+
+  if (/^[\p{L}]$/u.test(currentCore) && /^[\p{L}]$/u.test(nextCore)) {
+    return OCR_JOINABLE_SHORT_WORDS.has(`${currentCore}${nextCore}`.toLowerCase());
+  }
+
+  if (/^[\p{L}]$/u.test(currentCore) && /^[\p{Ll}][\p{L}\p{N}/:.-]{1,}$/u.test(nextCore)) {
+    if (/^[A-Z]$/u.test(currentCore)) {
+      return false;
+    }
+    if (/^[ai]$/u.test(currentCore)) {
+      return OCR_JOINABLE_SHORT_WORDS.has(`${currentCore}${nextCore}`.toLowerCase());
+    }
+    return true;
+  }
+
+  if (/^[\p{Lu}]$/u.test(currentCore) && /^[\p{Lu}]{2,}$/u.test(nextCore)) {
+    return true;
+  }
+
+  return false;
+}
+
+export function repairPdfCopyArtifacts(value: string): string {
+  const normalized = compactUriDoiSpacing(
+    normalizeWhitespace(value)
+      .replace(/\b([A-Z])\s+\.(?=\s|[,;:)\]])/g, '$1.')
+      .replace(/\b([A-Z])\s+\.(?=\()/g, '$1.'),
+  );
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  if (tokens.length <= 1) return normalized;
+
+  let working = [...tokens];
+  for (let iteration = 0; iteration < 3; iteration += 1) {
+    const nextTokens: string[] = [];
+    let changed = false;
+
+    for (let index = 0; index < working.length; index += 1) {
+      const current = working[index]!;
+      const next = working[index + 1];
+      if (next && shouldMergeOcrSplitTokens(current, next)) {
+        nextTokens.push(`${current}${next}`);
+        index += 1;
+        changed = true;
+        continue;
+      }
+      nextTokens.push(current);
+    }
+
+    working = nextTokens;
+    if (!changed) break;
+  }
+
+  return working.join(' ');
+}
+
 export function fixUnicodeText(value: string): string {
-  return normalizeWhitespace(
-    repairMojibake(value)
-      .replace(/â€(?=[\d,.;:)\]-])/g, '')
-      .normalize('NFKC')
-      .replace(/[\u200B-\u200D\uFEFF]/g, '')
-      .replace(/[\uFFF9-\uFFFF]/g, '')
-      .replace(/[“”]/g, '"')
-      .replace(/[‘’]/g, "'")
-      .replace(/[–—]/g, '-'),
+  return repairPdfCopyArtifacts(
+    normalizeUnicodeText(value),
   );
 }
 

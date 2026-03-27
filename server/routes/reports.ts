@@ -28,6 +28,7 @@ import {
 import { saveGeneratedRegressionFixture } from '../store/generatedRegressionStore.js';
 import { saveTruth } from '../store/truthStore.js';
 import { formatCSLData, initCSLStyles, parsedReferenceToCSL } from '../engine/cslConverter.js';
+import { sanitizeStructuredLocatorContainers } from '../engine/shared/structuredLocatorCleanup.js';
 import { fixFormatting } from '../engine/strictRenderer.js';
 import { requireAdmin } from '../utils/adminAuth.js';
 import { readPatterns, validatePattern, writePattern } from '../utils/patternWriter.js';
@@ -224,7 +225,7 @@ function hasStructuredParsedContent(parsed?: ParsedReference): boolean {
   });
 }
 
-function deriveApprovedOutput(args: {
+export function deriveApprovedOutput(args: {
   approvedOutput?: string;
   correctedFields?: ApprovedCanonicalFields;
   fieldApproval?: FieldApprovalMap;
@@ -237,6 +238,7 @@ function deriveApprovedOutput(args: {
   const baseParsed = args.report.originalEngineOutput?.parsedData ?? args.report.parsedData;
   const mergedParsed = mergeApprovedFieldsIntoParsed(baseParsed, args.correctedFields, args.fieldApproval);
   if (!mergedParsed || !hasStructuredParsedContent(mergedParsed)) return undefined;
+  const renderParsed = sanitizeStructuredLocatorContainers(mergedParsed);
 
   const renderedReferenceType =
     (args.fieldApproval?.referenceType?.approved
@@ -251,12 +253,12 @@ function deriveApprovedOutput(args: {
     initCSLStyles();
     const normalizedStyle = normalizeCitationStyle(args.report.outputStyle);
     const cslData = parsedReferenceToCSL(
-      mergedParsed,
+      renderParsed,
       renderedReferenceType,
       `truth-${computeFingerprint(args.report.originalText)}`,
     );
     const rawOutput = formatCSLData(cslData, normalizedStyle, { includeDoi: false });
-    const formatted = fixFormatting(normalizedStyle, rawOutput, mergedParsed).trim();
+    const formatted = fixFormatting(normalizedStyle, rawOutput, renderParsed).trim();
     return formatted || undefined;
   } catch (error) {
     console.warn('[reports] Failed to derive approved output:', error instanceof Error ? error.message : String(error));

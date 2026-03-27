@@ -1,71 +1,28 @@
 import { z } from 'zod';
 import type { CanonicalCitation } from '@shared/schema';
-import type {
-  SplitContaminationFlag,
-  SplitRepairAction,
-  StrippedRegion,
-  V2SplitArtifact,
-  V2Stage,
-} from '../contracts.js';
+import type { V2ContentLine, V2SplitArtifact, V2Stage } from '../contracts.js';
+import { getOpenAiSplitTimeoutMs, recordLlmCapReached, tryConsumeLlmCall } from '../llmConfig.js';
 import {
   addCitationStageLog,
   attachCitationDebug,
   createEmptyCitation,
   createStageDiagnostic,
-  logStructuredDebug,
-  normalizeDoiValue,
   normalizeWhitespace,
 } from '../utils.js';
-import { getOpenAiSplitTimeoutMs, recordLlmCapReached, tryConsumeLlmCall } from '../llmConfig.js';
 import { getStageRuntimeTimeoutMs, runStageTasksWithIsolation } from '../stageIsolation.js';
+import {
+  OPENER_THRESHOLD,
+  OVERSIZED_WORKING_CHUNK_CHARS,
+  OVERSIZED_WORKING_CHUNK_LINES,
+  splitRawReferenceBlock,
+} from '../rawPdfCopy.js';
 
-export const OVERSIZED_CHUNK_CHARS = 800;
-export const OVERSIZED_CHUNK_LINES = 12;
+export const OVERSIZED_CHUNK_CHARS = OVERSIZED_WORKING_CHUNK_CHARS;
+export const OVERSIZED_CHUNK_LINES = OVERSIZED_WORKING_CHUNK_LINES;
 export const SUSPECTED_MULTI_CITATION_CHARS = 2000;
 
 const splitArraySchema = z.array(z.string().trim().min(1));
-const CITATION_NUMBERING_PATTERN = /^(?:\[\d+\]|\d+[.)-])\s+/;
-const DOI_ONLY_PATTERN = /^(?:https?:\/\/(?:dx\.)?doi\.org\/)?10\.\d{4,}\/\S+$/i;
-const URL_ONLY_PATTERN = /^https?:\/\/\S+$/i;
-const CONNECTOR_START_PATTERN = /^(?:and|&|et\s+al\.?)/i;
-const LOWERCASE_START_PATTERN = /^[a-z]/;
-const BARE_INITIAL_START_PATTERN = /^(?:[A-Z]\.?)(?:\s+[A-Z]\.?){0,5}(?:\s*,)?$/;
-const TRUNCATED_END_PATTERN = /(?:[,;:]\s*|\b(?:and|&|et al\.?)\s*)$/i;
-const HEADER_BLEED_PATTERN = /\bdoi\b.*\b\d+\s+of\s+\d+\b/i;
-const PAGE_ARTIFACT_PATTERN = /\b\d+\s+of\s+\d+\b/i;
-const REFERENCE_HEADING_PATTERN = /^references?$/i;
-const PAGE_NUMBER_PATTERN = /^(?:page\s+)?\d+(?:\s+(?:of|\/)\s+\d+)?$/i;
 const SECONDARY_BOUNDARY_PATTERN = /(?<=\.)\s+(?=[A-Z][A-Za-z'’.-]+,\s+[A-Z][^()]{0,40}\(\d{4}\))/g;
-
-type SourceLine = {
-  text: string;
-  lineNumber: number;
-  startOffset: number;
-  endOffset: number;
-};
-
-type ChunkEntry = {
-  kind: 'kept' | 'stripped';
-  line: SourceLine;
-  rule?: string;
-};
-
-type SplitCandidate = {
-  entries: ChunkEntry[];
-  splitReasons: string[];
-  splitMethod: 'structural' | 'llm' | 'hybrid';
-  fallbackUsed: boolean;
-};
-
-type PreparedCandidate = SplitCandidate & {
-  cleanedChunk: string;
-  strippedRegions: StrippedRegion[];
-  repairActions: SplitRepairAction[];
-  contaminationFlags: SplitContaminationFlag[];
-  lineCount: number;
-  chunkLength: number;
-  confidence: number;
-};
 
 function extractJsonContent(value: string): string {
   const trimmed = value.trim();
@@ -73,291 +30,45 @@ function extractJsonContent(value: string): string {
   return fenced?.[1]?.trim() ?? trimmed;
 }
 
-function toSourceLines(rawItem: string): SourceLine[] {
-  const lines: SourceLine[] = [];
-  const linePattern = /.*?(?:\r\n|\n|$)/g;
-  let match: RegExpExecArray | null;
-  let lineNumber = 1;
-
-  while ((match = linePattern.exec(rawItem)) !== null) {
-    if (match[0] === '') break;
-    const text = match[0].replace(/\r?\n$/, '');
-    lines.push({
-      text,
-      lineNumber,
-      startOffset: match.index,
-      endOffset: match.index + text.length,
-    });
-    lineNumber += 1;
-    if (linePattern.lastIndex >= rawItem.length) break;
-  }
-
-  return lines;
+function toSourceLines(rawItem: string): string[] {
+  return rawItem.split(/\r?\n/);
 }
 
-function stripLeadingCitationNumbering(value: string): string {
-  return value.replace(CITATION_NUMBERING_PATTERN, '').trim();
-}
-
-function isLikelyRunningTitle(value: string): boolean {
-  const normalized = normalizeWhitespace(value);
-  if (!normalized || normalized.includes('.')) return false;
-  const words = normalized.split(/\s+/);
-  if (words.length < 3 || words.length > 12) return false;
-  const letters = normalized.replace(/[^A-Za-z]/g, '');
-  if (letters.length < 8) return false;
-  const uppercaseLetters = letters.split('').filter((char) => char === char.toUpperCase()).length;
-  return uppercaseLetters / Math.max(letters.length, 1) > 0.8;
-}
-
-function stripRuleForLine(line: SourceLine): string | null {
-  const trimmed = line.text.trim();
-  if (!trimmed) return null;
-  if (REFERENCE_HEADING_PATTERN.test(trimmed)) return 'reference_heading';
-  if (PAGE_NUMBER_PATTERN.test(trimmed) && !CITATION_NUMBERING_PATTERN.test(trimmed)) return 'page_number';
-  if (HEADER_BLEED_PATTERN.test(trimmed)) return 'header_bleed';
-  if (isLikelyRunningTitle(trimmed)) return 'running_title';
-  return null;
-}
-
-function createCandidate(splitReasons: string[] = [], splitMethod: 'structural' | 'llm' | 'hybrid' = 'structural', fallbackUsed = false): SplitCandidate {
+function createStructuredArtifact(rawItem: string, baseReasons: string[]): { rawChunk: string; splitArtifact: V2SplitArtifact } {
+  const sourceLines = toSourceLines(rawItem);
+  const contentLines: V2ContentLine[] = sourceLines.map((line, index) => ({
+    lineIndex: index,
+    sourceLineNumber: index + 1,
+    text: line.replace(/\r$/, ''),
+    role: line.trim() ? 'content' : 'artifact',
+    excluded: !line.trim(),
+    rawOpenerScore: index === 0 && line.trim() ? 1 : 0,
+    openerConfidence: index === 0 && line.trim() ? 1 : 0,
+    continuationSignals: [],
+    rule: !line.trim() ? 'blank_equivalent' : undefined,
+  }));
+  const includedLineIndices = contentLines.filter((line) => !line.excluded).map((line) => line.lineIndex);
+  const cleanedChunk = includedLineIndices.map((lineIndex) => contentLines[lineIndex]?.text.trim() ?? '').filter(Boolean).join('\n');
   return {
-    entries: [],
-    splitReasons: [...splitReasons],
-    splitMethod,
-    fallbackUsed,
+    rawChunk: rawItem.trim(),
+    splitArtifact: {
+      cleanedChunk,
+      confidence: 0.96,
+      splitReasons: baseReasons,
+      splitMethod: 'structural',
+      fallbackUsed: false,
+      contaminationFlags: [],
+      strippedRegions: [],
+      repairActions: [],
+      chunkLength: cleanedChunk.length,
+      lineCount: includedLineIndices.length,
+      contentLines,
+      includedLineIndices,
+    },
   };
 }
 
-function buildInitialCandidates(rawItem: string, baseReasons: string[]): SplitCandidate[] {
-  const lines = toSourceLines(rawItem);
-  const candidates: SplitCandidate[] = [];
-  let current: SplitCandidate | null = null;
-  let pendingLeadingEntries: ChunkEntry[] = [];
-
-  const flushCurrent = () => {
-    if (!current) return;
-    if (current.entries.some((entry) => entry.kind === 'kept' && Boolean(entry.line.text.trim()))) {
-      candidates.push(current);
-    }
-    current = null;
-  };
-
-  for (const line of lines) {
-    const trimmed = line.text.trim();
-    if (!trimmed) {
-      flushCurrent();
-      continue;
-    }
-
-    const stripRule = stripRuleForLine(line);
-    if (stripRule) {
-      const strippedEntry: ChunkEntry = { kind: 'stripped', line, rule: stripRule };
-      if (current && current.entries.some((entry) => entry.kind === 'kept')) {
-        current.entries.push(strippedEntry);
-      } else {
-        pendingLeadingEntries = [...pendingLeadingEntries, strippedEntry];
-      }
-      continue;
-    }
-
-    const startsNewCitation = CITATION_NUMBERING_PATTERN.test(trimmed);
-    if (!current || startsNewCitation) {
-      flushCurrent();
-      current = createCandidate(baseReasons, 'structural', false);
-      if (pendingLeadingEntries.length > 0) {
-        current.entries.push(...pendingLeadingEntries);
-        pendingLeadingEntries = [];
-      }
-      if (startsNewCitation && !current.splitReasons.includes('structural_numbering')) {
-        current.splitReasons.push('structural_numbering');
-      }
-    }
-
-    current.entries.push({ kind: 'kept', line });
-  }
-
-  flushCurrent();
-
-  if (candidates.length === 0) {
-    const fallback = createCandidate(baseReasons, 'structural', false);
-    for (const line of lines) {
-      if (line.text.trim()) {
-        fallback.entries.push({ kind: 'kept', line });
-      }
-    }
-    if (fallback.entries.length > 0) candidates.push(fallback);
-  }
-
-  return candidates;
-}
-
-function auditRaw(candidate: SplitCandidate): string {
-  return candidate.entries
-    .map((entry) => entry.line.text)
-    .filter(Boolean)
-    .join('\n')
-    .trim();
-}
-
-function keptEntries(candidate: SplitCandidate): ChunkEntry[] {
-  return candidate.entries.filter((entry) => entry.kind === 'kept' && Boolean(entry.line.text.trim()));
-}
-
-function strippedRegions(candidate: SplitCandidate): StrippedRegion[] {
-  return candidate.entries
-    .filter((entry): entry is ChunkEntry & { kind: 'stripped'; rule: string } => entry.kind === 'stripped' && Boolean(entry.rule))
-    .map((entry) => ({
-      rule: entry.rule!,
-      rawText: entry.line.text,
-      startOffset: entry.line.startOffset,
-      endOffset: entry.line.endOffset,
-      startLine: entry.line.lineNumber,
-      endLine: entry.line.lineNumber,
-    }));
-}
-
-function continuationRepairAction(previous: string, current: string): string | null {
-  if (DOI_ONLY_PATTERN.test(current) || URL_ONLY_PATTERN.test(current)) return 'doi_reattached';
-  if (LOWERCASE_START_PATTERN.test(current)) return 'lowercase_continuation_joined';
-  if (CONNECTOR_START_PATTERN.test(current)) return 'connector_continuation_joined';
-  if (BARE_INITIAL_START_PATTERN.test(current)) return 'bare_initial_continuation_joined';
-  if (/[,:;]\s*$/.test(previous) && /^\d{4}$/.test(current)) return 'bare_initial_continuation_joined';
-  return null;
-}
-
-function hasResidualTruncation(cleanedChunk: string, kept: ChunkEntry[]): boolean {
-  if (!cleanedChunk) return false;
-  const keptLines = kept.map((entry, index) => (
-    index === 0 ? stripLeadingCitationNumbering(entry.line.text.trim()) : entry.line.text.trim()
-  )).filter(Boolean);
-  if (keptLines.length === 0) return false;
-  if (TRUNCATED_END_PATTERN.test(cleanedChunk)) return true;
-  if (keptLines.length >= 2) {
-    const previous = keptLines[keptLines.length - 2];
-    const last = keptLines[keptLines.length - 1];
-    if (/[,:;]\s*$/.test(previous) && /^\d{4}$/.test(last)) return true;
-  }
-  return false;
-}
-
-function containsDoi(value: string): boolean {
-  return /\b10\.\d{4,}\/\S+\b/i.test(value);
-}
-
-function hasOnlyDoiOrUrl(value: string): boolean {
-  const normalized = normalizeWhitespace(value);
-  return DOI_ONLY_PATTERN.test(normalized) || URL_ONLY_PATTERN.test(normalized);
-}
-
-function computeConfidence(candidate: SplitCandidate, contaminationFlags: SplitContaminationFlag[], stripped: StrippedRegion[], repairActions: SplitRepairAction[], chunkLength: number, lineCount: number): number {
-  let confidence = candidate.fallbackUsed ? 0.76 : 0.88;
-  if (candidate.splitMethod === 'hybrid') confidence = Math.min(confidence, 0.8);
-  if (candidate.splitReasons.includes('secondary_boundary_recovery')) confidence -= 0.08;
-  if (candidate.splitReasons.includes('llm_multi_citation_resplit')) confidence -= 0.1;
-  if (stripped.length > 0) confidence -= 0.05;
-  if (repairActions.length > 0) confidence -= Math.min(0.12, repairActions.length * 0.03);
-  if (contaminationFlags.length > 0) confidence -= Math.min(0.22, contaminationFlags.length * 0.07);
-  if (chunkLength > OVERSIZED_CHUNK_CHARS || lineCount > OVERSIZED_CHUNK_LINES) {
-    confidence = Math.min(confidence, 0.58);
-  }
-  return Number(Math.max(0.3, confidence).toFixed(2));
-}
-
-function prepareCandidate(candidate: SplitCandidate): PreparedCandidate {
-  const kept = keptEntries(candidate);
-  const stripped = strippedRegions(candidate);
-  const repairActions: SplitRepairAction[] = [];
-  const cleanedSegments: string[] = [];
-
-  kept.forEach((entry, index) => {
-    const currentLine = index === 0
-      ? stripLeadingCitationNumbering(entry.line.text.trim())
-      : entry.line.text.trim();
-    if (!currentLine) return;
-
-    if (cleanedSegments.length > 0) {
-      const previous = cleanedSegments[cleanedSegments.length - 1];
-      const action = continuationRepairAction(previous, currentLine);
-      if (action) {
-        repairActions.push({
-          action,
-          rawText: entry.line.text,
-          sourceLineNumbers: [entry.line.lineNumber],
-        });
-      }
-    }
-
-    cleanedSegments.push(currentLine);
-  });
-
-  const cleanedChunk = normalizeWhitespace(cleanedSegments.join(' '));
-  const chunkLength = cleanedChunk.length;
-  const lineCount = kept.length;
-  const contaminationFlags: SplitContaminationFlag[] = [];
-
-  if (stripped.some((region) => ['header_bleed', 'running_title'].includes(region.rule))) {
-    contaminationFlags.push('header_bleed_suspected');
-  }
-  if (stripped.some((region) => region.rule === 'page_number' || PAGE_ARTIFACT_PATTERN.test(region.rawText))) {
-    contaminationFlags.push('page_artifact_present');
-  }
-  if (hasResidualTruncation(cleanedChunk, kept)) {
-    contaminationFlags.push('multiline_truncation_suspected');
-  }
-  if (hasOnlyDoiOrUrl(cleanedChunk)) {
-    contaminationFlags.push('doi_orphan');
-  }
-  if (chunkLength > OVERSIZED_CHUNK_CHARS || lineCount > OVERSIZED_CHUNK_LINES) {
-    contaminationFlags.push('oversized_chunk');
-  }
-
-  return {
-    ...candidate,
-    cleanedChunk,
-    strippedRegions: stripped,
-    repairActions,
-    contaminationFlags,
-    lineCount,
-    chunkLength,
-    confidence: computeConfidence(candidate, contaminationFlags, stripped, repairActions, chunkLength, lineCount),
-  };
-}
-
-function lineNumbersForCandidate(candidate: PreparedCandidate): number[] {
-  return keptEntries(candidate).map((entry) => entry.line.lineNumber);
-}
-
-function reattachOrphans(candidates: PreparedCandidate[]): PreparedCandidate[] {
-  const nextCandidates = [...candidates];
-
-  for (let index = 0; index < nextCandidates.length; index += 1) {
-    const candidate = nextCandidates[index];
-    if (!candidate.contaminationFlags.includes('doi_orphan')) continue;
-
-    const previous = nextCandidates[index - 1];
-    if (!previous || containsDoi(previous.cleanedChunk)) continue;
-
-    const orphanRaw = auditRaw(candidate);
-    previous.entries = [...previous.entries, ...candidate.entries];
-    previous.repairActions = [
-      ...previous.repairActions,
-      {
-        action: 'doi_reattached',
-        rawText: orphanRaw,
-        sourceLineNumbers: lineNumbersForCandidate(candidate),
-      },
-    ];
-    nextCandidates[index - 1] = prepareCandidate(previous);
-    nextCandidates.splice(index, 1);
-    index -= 1;
-  }
-
-  return nextCandidates.map((candidate) => prepareCandidate(candidate));
-}
-
-function secondaryBoundaryRecovery(candidate: SplitCandidate): SplitCandidate[] | null {
-  const raw = auditRaw(candidate);
+function secondaryBoundaryRecovery(raw: string): string[] | null {
   if (normalizeWhitespace(raw).length <= SUSPECTED_MULTI_CITATION_CHARS) return null;
 
   const matches = [...raw.matchAll(SECONDARY_BOUNDARY_PATTERN)];
@@ -373,15 +84,7 @@ function secondaryBoundaryRecovery(candidate: SplitCandidate): SplitCandidate[] 
   parts.push(raw.slice(lastIndex).trim());
 
   const filtered = parts.filter(Boolean);
-  if (filtered.length <= 1) return null;
-
-  return filtered.map((part) => {
-    const derived = createCandidate([...candidate.splitReasons, 'secondary_boundary_recovery'], candidate.splitMethod, candidate.fallbackUsed);
-    derived.entries = toSourceLines(part)
-      .filter((line) => Boolean(line.text.trim()))
-      .map((line) => ({ kind: 'kept' as const, line }));
-    return derived;
-  });
+  return filtered.length > 1 ? filtered : null;
 }
 
 async function splitWithLlm(rawItem: string): Promise<string[] | null> {
@@ -425,63 +128,72 @@ async function splitWithLlm(rawItem: string): Promise<string[] | null> {
   return splitArraySchema.parse(JSON.parse(extractJsonContent(content)));
 }
 
-async function maybeResplitCandidate(
-  candidate: SplitCandidate,
-  fallbacksUsed: string[],
-  context: { partialResult: boolean; partialReasons: string[]; llmBudget: { maxCalls: number; totalCalls: number; splitCalls: number; extractCalls: number; capReached: boolean } },
-): Promise<SplitCandidate[]> {
-  const raw = auditRaw(candidate);
-  if (normalizeWhitespace(raw).length <= SUSPECTED_MULTI_CITATION_CHARS) {
-    return [candidate];
+async function maybeResplitRawBlock(
+  rawBlock: string,
+  baseReasons: string[],
+  context: {
+    llmBudget: { maxCalls: number; totalCalls: number; splitCalls: number; extractCalls: number; capReached: boolean };
+    partialReasons: string[];
+    fallbacksUsed: string[];
+    partialResult: boolean;
+  },
+): Promise<Array<{ raw: string; reasons: string[]; method: 'structural' | 'llm'; fallbackUsed: boolean }>> {
+  if (normalizeWhitespace(rawBlock).length <= SUSPECTED_MULTI_CITATION_CHARS) {
+    return [{ raw: rawBlock, reasons: baseReasons, method: 'structural', fallbackUsed: false }];
   }
 
-  const recovered = secondaryBoundaryRecovery(candidate);
+  const recovered = secondaryBoundaryRecovery(rawBlock);
   if (recovered && recovered.length > 1) {
-    return recovered;
+    return recovered.map((part) => ({
+      raw: part,
+      reasons: [...baseReasons, 'secondary_boundary_recovery'],
+      method: 'structural',
+      fallbackUsed: false,
+    }));
   }
 
   if (!tryConsumeLlmCall(context.llmBudget, 'split')) {
-    candidate.splitReasons = [...candidate.splitReasons, 'llm_cap_reached'];
     context.partialResult = true;
-    recordLlmCapReached({ fallbacksUsed, partialReasons: context.partialReasons }, 'split');
-    return [candidate];
+    recordLlmCapReached({ fallbacksUsed: context.fallbacksUsed, partialReasons: context.partialReasons }, 'split');
+    return [{ raw: rawBlock, reasons: [...baseReasons, 'llm_cap_reached'], method: 'structural', fallbackUsed: true }];
   }
 
   try {
-    const llmParts = await splitWithLlm(raw);
+    const llmParts = await splitWithLlm(rawBlock);
     if (llmParts && llmParts.length > 1) {
-      fallbacksUsed.push('split:llm');
       context.partialResult = true;
-      return llmParts.map((part) => {
-        const llmCandidate = createCandidate([...candidate.splitReasons, 'llm_multi_citation_resplit'], candidate.splitMethod === 'structural' ? 'llm' : 'hybrid', true);
-        llmCandidate.entries = toSourceLines(part)
-          .filter((line) => Boolean(line.text.trim()))
-          .map((line) => ({ kind: 'kept' as const, line }));
-        return llmCandidate;
-      });
+      context.fallbacksUsed.push('split:llm');
+      return llmParts.map((part) => ({
+        raw: part,
+        reasons: [...baseReasons, 'llm_multi_citation_resplit'],
+        method: 'llm',
+        fallbackUsed: true,
+      }));
     }
-    candidate.splitReasons = [...candidate.splitReasons, 'llm_unavailable'];
   } catch (error) {
-    candidate.splitReasons = [...candidate.splitReasons, `llm_failed:${error instanceof Error ? error.message : String(error)}`];
     context.partialResult = true;
+    context.partialReasons.push(`split:llm_failed:${error instanceof Error ? error.message : String(error)}`);
   }
 
-  return [candidate];
+  return [{ raw: rawBlock, reasons: [...baseReasons, 'llm_unavailable'], method: 'structural', fallbackUsed: true }];
 }
 
-function splitArtifact(candidate: PreparedCandidate): V2SplitArtifact {
-  return {
-    cleanedChunk: candidate.cleanedChunk,
-    confidence: candidate.confidence,
-    splitReasons: candidate.splitReasons,
-    splitMethod: candidate.splitMethod,
-    fallbackUsed: candidate.fallbackUsed,
-    contaminationFlags: candidate.contaminationFlags,
-    strippedRegions: candidate.strippedRegions,
-    repairActions: candidate.repairActions,
-    chunkLength: candidate.chunkLength,
-    lineCount: candidate.lineCount,
-  };
+function attachSplitDebug(citation: CanonicalCitation, artifact: V2SplitArtifact, debugEnabled: boolean): CanonicalCitation {
+  return attachCitationDebug(citation, 'split', {
+    cleanedChunk: artifact.cleanedChunk,
+    splitConfidence: artifact.confidence,
+    splitReasons: artifact.splitReasons,
+    splitMethod: artifact.splitMethod,
+    fallbackUsed: artifact.fallbackUsed,
+    contaminationFlags: artifact.contaminationFlags,
+    strippedRegions: artifact.strippedRegions,
+    repairActions: artifact.repairActions,
+    chunkLength: artifact.chunkLength,
+    lineCount: artifact.lineCount,
+    contentLines: artifact.contentLines,
+    includedLineIndices: artifact.includedLineIndices,
+    openerThreshold: OPENER_THRESHOLD,
+  }, debugEnabled);
 }
 
 export function createSplitStage(): V2Stage {
@@ -492,26 +204,20 @@ export function createSplitStage(): V2Stage {
       const fallbacksUsed = [...context.fallbacksUsed];
       let partialResult = context.partialResult;
       const partialReasons = [...context.partialReasons];
-      const workingChunkByCitationId = { ...context.workingChunkByCitationId };
       const splitArtifactsByCitationId = { ...context.splitArtifactsByCitationId };
-      const llmEnabled = /^(1|true|yes|on)$/i.test(process.env.ENABLE_LLM_EXTRACTOR ?? '1') && Boolean(process.env.OPENAI_API_KEY);
       const splitTimeoutMs = getStageRuntimeTimeoutMs('split', context.stageConfig);
-      const itemTimeoutMs = Math.max(
-        splitTimeoutMs,
-        llmEnabled ? getOpenAiSplitTimeoutMs() + 1_000 : splitTimeoutMs,
-      );
+
       const isolation = await runStageTasksWithIsolation({
         stageId: 'split',
         items: context.rawItems,
         concurrency: 1,
-        timeoutMs: itemTimeoutMs,
+        timeoutMs: splitTimeoutMs,
         run: async (rawItem) => {
           const citations: CanonicalCitation[] = [];
-          const localWorkingChunkByCitationId: Record<string, string> = {};
-          const localSplitArtifactsByCitationId: Record<string, V2SplitArtifact> = {};
-          const profileSignals = new Set(context.inputProfile?.signals ?? []);
+          const localArtifacts: Record<string, V2SplitArtifact> = {};
           const isStructuredSource = context.inputProfile?.structure === 'structured'
             || !['text', 'url', 'pdf_base64'].includes(context.request.sourceType);
+          const profileSignals = new Set(context.inputProfile?.signals ?? []);
           const baseReasons = [
             ...(context.inputProfile?.structure === 'unstructured' ? ['profiled_unstructured'] : []),
             ...(['ocr_noise_markers', 'mixed_style_markers', 'book_tail_markers', 'conference_tail_markers', 'doi_heavy']
@@ -519,112 +225,88 @@ export function createSplitStage(): V2Stage {
               .map((signal) => `profile_${signal}`)),
           ];
 
-          let candidates = isStructuredSource
-            ? [createCandidate([], 'structural', false)]
-            : buildInitialCandidates(rawItem, baseReasons);
-
-          if (isStructuredSource) {
-            candidates[0].entries = toSourceLines(rawItem.trim())
-              .filter((line) => Boolean(line.text.trim()))
-              .map((line) => ({ kind: 'kept' as const, line }));
-          }
-
-          const expandedCandidates: SplitCandidate[] = [];
-          const resplitState = {
-            partialResult,
-            partialReasons,
+          const resplitContext = {
             llmBudget: context.llmBudget,
+            partialReasons,
+            fallbacksUsed,
+            partialResult,
           };
-          for (const candidate of candidates) {
-            const resplit = await maybeResplitCandidate(candidate, fallbacksUsed, resplitState);
-            expandedCandidates.push(...resplit);
-          }
-          partialResult = resplitState.partialResult;
 
-          const preparedCandidates = reattachOrphans(expandedCandidates.map((candidate) => prepareCandidate(candidate)));
+          const initialBlocks = [{ raw: rawItem, reasons: baseReasons, method: 'structural' as const, fallbackUsed: false }];
 
-          for (const candidate of preparedCandidates) {
-            const rawChunk = auditRaw(candidate);
-            let citation = createEmptyCitation(rawChunk);
-            citation.split = {
-              confidence: candidate.confidence,
-              reasons: candidate.splitReasons,
-              method: candidate.splitMethod,
-              fallbackUsed: candidate.fallbackUsed,
-            };
+          for (const block of initialBlocks) {
+            let prepared = isStructuredSource
+              ? [createStructuredArtifact(block.raw, block.reasons)]
+              : splitRawReferenceBlock(block.raw, block.reasons).map((candidate) => ({
+                rawChunk: candidate.rawChunk,
+                splitArtifact: {
+                  ...candidate.splitArtifact,
+                  splitMethod: block.method,
+                  fallbackUsed: block.fallbackUsed,
+                },
+              }));
 
-            const artifact = splitArtifact(candidate);
-            localWorkingChunkByCitationId[citation.id] = artifact.cleanedChunk;
-            localSplitArtifactsByCitationId[citation.id] = artifact;
+            if (!isStructuredSource && prepared.length === 1 && normalizeWhitespace(block.raw).length > SUSPECTED_MULTI_CITATION_CHARS) {
+              const resplitBlocks = await maybeResplitRawBlock(block.raw, block.reasons, resplitContext);
+              partialResult = resplitContext.partialResult;
+              if (resplitBlocks.length > 1 || resplitBlocks[0]?.fallbackUsed) {
+                prepared = resplitBlocks.flatMap((resplitBlock) => splitRawReferenceBlock(resplitBlock.raw, resplitBlock.reasons).map((candidate) => ({
+                  rawChunk: candidate.rawChunk,
+                  splitArtifact: {
+                    ...candidate.splitArtifact,
+                    splitMethod: resplitBlock.method,
+                    fallbackUsed: resplitBlock.fallbackUsed,
+                  },
+                })));
+              }
+            }
 
-            citation = attachCitationDebug(citation, 'split', {
-              cleanedChunk: artifact.cleanedChunk,
-              splitConfidence: artifact.confidence,
-              splitReasons: artifact.splitReasons,
-              splitMethod: artifact.splitMethod,
-              fallbackUsed: artifact.fallbackUsed,
-              contaminationFlags: artifact.contaminationFlags,
-              strippedRegions: artifact.strippedRegions,
-              repairActions: artifact.repairActions,
-              chunkLength: artifact.chunkLength,
-              lineCount: artifact.lineCount,
-            }, context.debugEnabled);
+            for (const candidate of prepared) {
+              let citation = createEmptyCitation(candidate.rawChunk);
+              citation.split = {
+                confidence: candidate.splitArtifact.confidence,
+                reasons: candidate.splitArtifact.splitReasons,
+                method: candidate.splitArtifact.splitMethod,
+                fallbackUsed: candidate.splitArtifact.fallbackUsed,
+              };
+              citation = attachSplitDebug(citation, candidate.splitArtifact, context.debugEnabled);
 
-            logStructuredDebug(context, 'split', citations.length, citation, {
-              warningFlags: [...artifact.splitReasons, ...artifact.contaminationFlags],
-              splitConfidence: artifact.confidence,
-              method: artifact.splitMethod,
-              contaminationFlags: artifact.contaminationFlags,
-              strippedRegionCount: artifact.strippedRegions.length,
-              repairActionCount: artifact.repairActions.length,
-            });
-
-            citations.push(addCitationStageLog(
-              citation,
-              createStageDiagnostic('split', artifact.contaminationFlags.length > 0 ? 'warning' : 'success', 'Prepared raw citation block for extraction.', {
-                splitConfidence: artifact.confidence,
-                splitReasons: artifact.splitReasons,
-                splitMethod: artifact.splitMethod,
-                contaminationFlags: artifact.contaminationFlags,
-                strippedRegionCount: artifact.strippedRegions.length,
-                repairActionCount: artifact.repairActions.length,
-              }),
-            ));
+              localArtifacts[citation.id] = candidate.splitArtifact;
+              citations.push(addCitationStageLog(
+                citation,
+                createStageDiagnostic(
+                  'split',
+                  candidate.splitArtifact.contaminationFlags.length > 0 ? 'warning' : 'success',
+                  'Prepared structural citation candidate for extraction.',
+                  {
+                    splitConfidence: candidate.splitArtifact.confidence,
+                    splitReasons: candidate.splitArtifact.splitReasons,
+                    splitMethod: candidate.splitArtifact.splitMethod,
+                    contaminationFlags: candidate.splitArtifact.contaminationFlags,
+                    lineCount: candidate.splitArtifact.lineCount,
+                  },
+                ),
+              ));
+            }
           }
 
           return {
             citations,
-            workingChunkByCitationId: localWorkingChunkByCitationId,
-            splitArtifactsByCitationId: localSplitArtifactsByCitationId,
+            splitArtifactsByCitationId: localArtifacts,
           };
         },
         recover: ({ item: rawItem, message, timedOut }) => {
-          const cleanedChunk = normalizeWhitespace(rawItem);
-          let citation = createEmptyCitation(cleanedChunk || rawItem);
-          const artifact: V2SplitArtifact = {
-            cleanedChunk: cleanedChunk || rawItem,
-            confidence: 0.3,
-            splitReasons: ['stage_isolation_recovery'],
-            splitMethod: 'structural',
-            fallbackUsed: true,
-            contaminationFlags: [],
-            strippedRegions: [],
-            repairActions: [],
-            chunkLength: (cleanedChunk || rawItem).length,
-            lineCount: toSourceLines(rawItem).filter((line) => Boolean(line.text.trim())).length,
-          };
+          const fallback = createStructuredArtifact(rawItem, ['stage_isolation_recovery']);
+          fallback.splitArtifact.confidence = 0.3;
+          fallback.splitArtifact.fallbackUsed = true;
+          let citation = createEmptyCitation(fallback.rawChunk || rawItem);
           citation.split = {
-            confidence: artifact.confidence,
-            reasons: artifact.splitReasons,
-            method: artifact.splitMethod,
-            fallbackUsed: artifact.fallbackUsed,
+            confidence: fallback.splitArtifact.confidence,
+            reasons: fallback.splitArtifact.splitReasons,
+            method: fallback.splitArtifact.splitMethod,
+            fallbackUsed: fallback.splitArtifact.fallbackUsed,
           };
-          citation = attachCitationDebug(citation, 'split', {
-            ...artifact,
-            isolationRecovered: true,
-            timedOut,
-            errorMessage: message,
-          }, context.debugEnabled);
+          citation = attachSplitDebug(citation, fallback.splitArtifact, context.debugEnabled);
 
           return {
             citations: [addCitationStageLog(
@@ -633,40 +315,33 @@ export function createSplitStage(): V2Stage {
                 'split',
                 'warning',
                 timedOut
-                  ? 'Split timed out for this input block; continuing with the raw block as a single citation.'
-                  : 'Split failed for this input block; continuing with the raw block as a single citation.',
+                  ? 'Split timed out for this input block; continuing with a single structural candidate.'
+                  : 'Split failed for this input block; continuing with a single structural candidate.',
                 { timedOut, message },
               ),
             )],
-            workingChunkByCitationId: {
-              [citation.id]: artifact.cleanedChunk,
-            },
             splitArtifactsByCitationId: {
-              [citation.id]: artifact,
+              [citation.id]: fallback.splitArtifact,
             },
           };
         },
       });
+
       const citations = isolation.outcomes.flatMap((outcome) => outcome.result.citations);
       for (const outcome of isolation.outcomes) {
-        Object.assign(workingChunkByCitationId, outcome.result.workingChunkByCitationId);
         Object.assign(splitArtifactsByCitationId, outcome.result.splitArtifactsByCitationId);
       }
+
       const recoveredFallbacks = isolation.outcomes
         .filter((outcome) => outcome.recovered)
         .map((outcome) => outcome.timedOut ? 'split:item-timeout' : 'split:item-error');
-      fallbacksUsed.push(...recoveredFallbacks);
 
       return {
         ...context,
         citations,
-        fallbacksUsed,
-        partialResult,
-        partialReasons: [...new Set([
-          ...partialReasons,
-          ...recoveredFallbacks,
-        ])],
-        workingChunkByCitationId,
+        fallbacksUsed: [...fallbacksUsed, ...recoveredFallbacks],
+        partialResult: partialResult || isolation.recoveredCount > 0,
+        partialReasons: [...new Set([...partialReasons, ...recoveredFallbacks])],
         splitArtifactsByCitationId,
         jobDebug: context.debugEnabled
           ? {
@@ -677,6 +352,7 @@ export function createSplitStage(): V2Stage {
               contaminationCount: citations.filter((citation) => splitArtifactsByCitationId[citation.id]?.contaminationFlags.length > 0).length,
               recoveredCount: isolation.recoveredCount,
               timeoutCount: isolation.timeoutCount,
+              openerThreshold: OPENER_THRESHOLD,
               llmBudget: context.llmBudget,
             },
           }

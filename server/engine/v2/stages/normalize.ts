@@ -1,5 +1,12 @@
-import type { CanonicalAuthor, CanonicalCitation, FieldValue, NormalizationMetadata } from '@shared/schema';
+import type {
+  CanonicalAuthor,
+  CanonicalCitation,
+  FieldRepairConfidence,
+  FieldValue,
+  NormalizationMetadata,
+} from '@shared/schema';
 import { isGroupAuthor, normalizeGroupAuthor, normalizeKnownContainerName } from '../../shared/citationSemantics.js';
+import { detectResidualArtifactsByField } from '../rawPdfCopy.js';
 import type { V2Stage } from '../contracts.js';
 import { normalizeLocatorValue } from '../qualityRules.js';
 import {
@@ -61,12 +68,22 @@ function buildNormalizationMetadata(
   doiNormalized: boolean,
   unicodeRepairedFields: string[],
   titleCaseApplied: boolean,
+  fieldRepairConfidence: Record<string, FieldRepairConfidence>,
+  citationRepairConfidence: FieldRepairConfidence,
+  appliedRepairs: NonNullable<NormalizationMetadata['appliedRepairs']>,
+  repairMisses: NonNullable<NormalizationMetadata['repairMisses']>,
+  residualArtifacts: NonNullable<NormalizationMetadata['residualArtifacts']>,
 ): NormalizationMetadata {
   return {
     doiNormalized,
     unicodeRepairedFields,
     titleCaseApplied,
     journalNormalizationHookAvailable: true,
+    appliedRepairs,
+    repairMisses,
+    fieldRepairConfidence,
+    citationRepairConfidence,
+    residualArtifacts,
   };
 }
 
@@ -96,6 +113,7 @@ export function createNormalizeStage(): V2Stage {
         items: context.citations,
         run: (citation, index) => {
           const unicodeRepairedFields: string[] = [];
+          const preparedWorkingChunk = context.workingChunkByCitationId[citation.id];
 
           const normalizedTitleBase = citation.title.value ? fixUnicodeText(citation.title.value).replace(/\.$/, '') : null;
           const titleCaseApplied = Boolean(normalizedTitleBase && isLikelyAllCaps(normalizedTitleBase));
@@ -150,7 +168,16 @@ export function createNormalizeStage(): V2Stage {
             institution: institutionResult.field,
             edition: editionResult.field,
             editor: editorResult.field,
-            normalization: buildNormalizationMetadata(doiNormalized, unicodeRepairedFields, titleCaseApplied),
+            normalization: buildNormalizationMetadata(
+              doiNormalized,
+              unicodeRepairedFields,
+              titleCaseApplied,
+              {},
+              preparedWorkingChunk?.citationRepairConfidence ?? 'high',
+              preparedWorkingChunk?.appliedRepairs ?? [],
+              preparedWorkingChunk?.repairMisses ?? [],
+              preparedWorkingChunk?.residualArtifacts ?? [],
+            ),
           };
 
           if (publisherResult.field.value && isGroupAuthor(publisherResult.field.value)) {
@@ -213,6 +240,47 @@ export function createNormalizeStage(): V2Stage {
               institution: createFieldValue(normalizeGroupAuthor(normalizedCitation.journal.value), 'normalized', normalizedCitation.journal.confidence, 'normalize'),
             };
           }
+
+          const fieldRepairConfidence = (preparedWorkingChunk?.appliedRepairs ?? []).reduce<Record<string, FieldRepairConfidence>>((accumulator, repair) => {
+            if (!repair.field || !repair.confidence) return accumulator;
+            const current = accumulator[repair.field];
+            if (!current) {
+              accumulator[repair.field] = repair.confidence;
+              return accumulator;
+            }
+            const rank = { high: 2, medium: 1, low: 0 } satisfies Record<FieldRepairConfidence, number>;
+            accumulator[repair.field] = rank[repair.confidence] < rank[current] ? repair.confidence : current;
+            return accumulator;
+          }, {});
+          const residualArtifacts = [
+            ...(preparedWorkingChunk?.residualArtifacts ?? []),
+            ...detectResidualArtifactsByField({
+              title: normalizedCitation.title.value,
+              journal: normalizedCitation.journal.value,
+              publisher: normalizedCitation.publisher.value,
+              conferenceTitle: normalizedCitation.conferenceTitle.value,
+              bookTitle: normalizedCitation.bookTitle.value,
+              institution: normalizedCitation.institution.value,
+              doi: normalizedCitation.doi.value,
+              url: normalizedCitation.url.value,
+              pages: normalizedCitation.pages.value,
+              volume: normalizedCitation.volume.value,
+              issue: normalizedCitation.issue.value,
+            }),
+          ];
+          normalizedCitation = {
+            ...normalizedCitation,
+            normalization: buildNormalizationMetadata(
+              doiNormalized,
+              unicodeRepairedFields,
+              titleCaseApplied,
+              fieldRepairConfidence,
+              preparedWorkingChunk?.citationRepairConfidence ?? 'high',
+              preparedWorkingChunk?.appliedRepairs ?? [],
+              preparedWorkingChunk?.repairMisses ?? [],
+              residualArtifacts,
+            ),
+          };
 
           const changed = [
             titleResult.changed,

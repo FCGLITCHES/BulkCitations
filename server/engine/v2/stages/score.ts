@@ -48,6 +48,12 @@ const CLEAN_UNRESOLVED_VALIDATION_CODES = new Set([
   'resolution_year_tolerance_applied',
 ]);
 
+const BUCKET_PRIORITY: Record<CitationQualityScore['bucket'], number> = {
+  ready: 0,
+  worth_reviewing: 1,
+  action_needed: 2,
+};
+
 function grade(overall: number): 'A' | 'B' | 'C' | 'F' {
   if (overall >= 0.9) return 'A';
   if (overall >= 0.75) return 'B';
@@ -270,6 +276,36 @@ function hasAnySplitContamination(validationCodes: Set<string>): boolean {
   return [...SUSPECTED_SPLIT_CODES, ...CONFIRMED_SPLIT_CODES].some((code) => validationCodes.has(code));
 }
 
+function artifactBucketForCitation(citation: CanonicalCitation): {
+  bucket: CitationQualityScore['bucket'];
+  reasons: string[];
+} {
+  const residuals = citation.normalization?.residualArtifacts ?? [];
+  if (residuals.length === 0) {
+    return { bucket: 'ready', reasons: [] };
+  }
+
+  const highSeverity = residuals.some((artifact) => artifact.severity === 'high');
+  const mediumFields = new Set(residuals.filter((artifact) => artifact.severity === 'medium').map((artifact) => artifact.field));
+  const onlyLow = residuals.every((artifact) => artifact.severity === 'low');
+
+  if (highSeverity || mediumFields.size >= 2) {
+    return {
+      bucket: 'action_needed',
+      reasons: ['Residual PDF-copy artifacts remained in identity-critical fields.'],
+    };
+  }
+
+  if (onlyLow || mediumFields.size === 1) {
+    return {
+      bucket: 'worth_reviewing',
+      reasons: ['Residual PDF-copy artifacts remained after bounded repair.'],
+    };
+  }
+
+  return { bucket: 'ready', reasons: [] };
+}
+
 function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   const fieldScores = buildFieldScores(citation);
   const rawMissingRequired = getMissingRequiredFields(citation);
@@ -488,6 +524,12 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
         ? ['Citation remains structurally plausible but below the ready threshold.']
         : ['Citation failed quality thresholds and needs correction.'];
   }
+
+  const artifactBucket = artifactBucketForCitation(citation);
+  if (BUCKET_PRIORITY[artifactBucket.bucket] > BUCKET_PRIORITY[bucket]) {
+    bucket = artifactBucket.bucket;
+  }
+  bucketReasons = [...bucketReasons, ...artifactBucket.reasons];
 
   bucketReasons = [...new Set(bucketReasons.filter(Boolean))];
 

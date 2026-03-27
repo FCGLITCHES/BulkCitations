@@ -118,6 +118,22 @@ describe('default extractor institutional heuristics', () => {
     expect(result.parsed.institution).toBe('Drug Evidence Hub');
   });
 
+  it('keeps chicago author-date institutional report tails out of website false positives', async () => {
+    const result = await extractor.extract(
+      'Precision Molecule Institute. 2017. Dose response ranking for translational pharmacology: case SDE-CDR-001. Toronto: Open Metrics Press. https://stress.example.org/cdr/101',
+      'chicago',
+      { detectionConfidence: 0.93 },
+    );
+
+    expect(result.referenceType).toBe('report');
+    expect(result.parsed.authors).toEqual(['Precision Molecule Institute']);
+    expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-CDR-001');
+    expect(result.parsed.year).toBe('2017');
+    expect(result.parsed.publisher).toBe('Open Metrics Press');
+    expect(result.parsed.placeOfPublication).toBe('Toronto');
+    expect(result.parsed.url).toBe('https://stress.example.org/cdr/101');
+  });
+
   it('extracts IEEE manual-style website references as websites and keeps the version separate from the title', async () => {
     const result = await extractor.extract(
       '[181] National Dosing Review Office, "Dose response ranking for translational pharmacology: case SDE-IEW-001," Drug Evidence Hub, ver. 2.0, 2013. [Online]. Available: https://stress.example.org/iew/181',

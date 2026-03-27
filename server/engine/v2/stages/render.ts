@@ -1,4 +1,5 @@
 import { formatCSLData, initCSLStyles, parsedReferenceToCSL } from '../../cslConverter.js';
+import { sanitizeStructuredLocatorContainers } from '../../shared/structuredLocatorCleanup.js';
 import { fixFormatting, runAssertions } from '../../strictRenderer.js';
 import type { V2Stage } from '../contracts.js';
 import {
@@ -122,7 +123,7 @@ export function createRenderStage(): V2Stage {
             );
           }
 
-          const parsed = canonicalToParsedReference(citation);
+          const parsed = sanitizeStructuredLocatorContainers(canonicalToParsedReference(citation));
           const referenceType = canonicalReferenceTypeToParsed(citation.referenceType);
           const cslData = parsedReferenceToCSL(parsed, referenceType, citation.id || `v2-ref-${index + 1}`);
           const rawConvertedText = formatCSLData(cslData, context.request.outputStyle as any, { includeDoi: false });

@@ -1,6 +1,7 @@
 import type { CanonicalCitation } from '@shared/schema';
 import type { ExtractorAdapter, V2Stage } from '../contracts.js';
 import { getOpenAiExtractTimeoutMs } from '../llmConfig.js';
+import { prepareWorkingChunk } from '../rawPdfCopy.js';
 import {
   getStageRuntimeTimeoutMs,
   runStageTasksWithIsolation,
@@ -42,11 +43,24 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
         grobidEnabled ? 4_000 : extractTimeoutMs,
         llmEnabled ? getOpenAiExtractTimeoutMs() + 1_000 : extractTimeoutMs,
       );
+      const workingChunkByCitationId = { ...context.workingChunkByCitationId };
       const runCitation = async (citation: CanonicalCitation, citationIndex: number) => {
         const effectiveStyle = citation.detectedStyle.value ?? context.request.inputStyle;
-        const workingChunk = context.workingChunkByCitationId[citation.id] ?? citation.raw;
         const splitArtifact = context.splitArtifactsByCitationId[citation.id];
-        const result = await extractor.extract(workingChunk, effectiveStyle ?? context.request.inputStyle, {
+        const preparedWorkingChunk = splitArtifact
+          ? prepareWorkingChunk(splitArtifact)
+          : {
+            includedLineIndices: [],
+            joinedText: citation.raw,
+            fieldHints: [],
+            appliedRepairs: [],
+            repairMisses: [],
+            residualArtifacts: [],
+            citationRepairConfidence: 'high' as const,
+          };
+        workingChunkByCitationId[citation.id] = preparedWorkingChunk;
+
+        const result = await extractor.extract(preparedWorkingChunk.joinedText, effectiveStyle ?? context.request.inputStyle, {
           inputProfile: context.inputProfile,
           detectionConfidence: citation.detectedStyle.confidence,
           batchSize: context.inputProfile?.estimatedCount ?? context.citations.length,
@@ -71,6 +85,17 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           fallbacksUsed.push('extract:llm_cap_reached');
         }
 
+        const mergedDetectedStyleConfidence = result.detectedStyle
+          ? (
+            citation.detectedStyle.value != null
+              ? Math.min(
+                citation.detectedStyle.confidence,
+                result.detectedStyleConfidence ?? citation.detectedStyle.confidence,
+              )
+              : (result.detectedStyleConfidence ?? citation.detectedStyle.confidence)
+          )
+          : citation.detectedStyle.confidence;
+
         let nextCitation: CanonicalCitation = {
           ...citation,
           referenceType: result.referenceType,
@@ -78,7 +103,7 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
             ? createFieldValue(
               result.detectedStyle,
               'extracted',
-              Math.max(citation.detectedStyle.confidence, result.detectedStyleConfidence ?? 0),
+              mergedDetectedStyleConfidence,
               'extract',
             )
             : citation.detectedStyle,
@@ -116,6 +141,14 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           selectionReason: result.selectionReason,
           extractorPath: result.extractorPath,
           authorParserMode: result.authorParserMode ?? authorParseResult.parserMode,
+          preparedWorkingChunk: {
+            joinedText: preparedWorkingChunk.joinedText,
+            fieldHints: preparedWorkingChunk.fieldHints,
+            appliedRepairs: preparedWorkingChunk.appliedRepairs,
+            repairMisses: preparedWorkingChunk.repairMisses,
+            residualArtifacts: preparedWorkingChunk.residualArtifacts,
+            citationRepairConfidence: preparedWorkingChunk.citationRepairConfidence,
+          },
           splitContaminationFlags: splitArtifact?.contaminationFlags ?? [],
           splitContaminationPenalty: result.debug?.split_contamination_penalty ?? 0,
           warningFlags: authorParseResult.warningFlags,
@@ -209,6 +242,7 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
       return {
         ...context,
         citations,
+        workingChunkByCitationId,
         fallbacksUsed,
         partialResult: context.partialResult || fallbacksUsed.length > context.fallbacksUsed.length,
         partialReasons: [...new Set([

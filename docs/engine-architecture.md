@@ -42,6 +42,10 @@ As of `2026-03-27`, the current v2 architecture has already absorbed several imp
 - the test harness now includes chunked `1000`-citation real-reference corpuses for `structured`, `semi_structured`, and `raw_unstructured` inputs; those corpuses are seeded from real published journal articles, conference proceedings, books, and institutional reports rather than synthetic placeholder citations, so the ready-rate gates measure production-like bibliography behavior instead of only parser-friendly mock data
 - the deterministic extractor now has an APA long-author journal heuristic for real references with dense inverted author lists and ellipsis markers, which prevents those references from collapsing title and venue parsing into author spillover
 - author-quality scoring no longer penalizes normal inverted APA names such as `Surname, M. J.` as if they were one-character tail fragments, which means long real author lists can stay `ready` when the parse itself is structurally clean
+- pasted `sourceType: "text"` inputs now have a dedicated raw PDF-copy recovery path: `split` preserves index-stable `contentLines` with `content` / `artifact` / `uri_tail` roles, `extract` builds a prepared `workingChunk`, and bounded field repair happens before parser extraction rather than as a late global cleanup pass
+- the raw PDF-copy path now explicitly separates pasted-text normalization from PDF-ingest extraction quality: pasted text is repaired locally with line evidence and bounded field hints, while future `pdfplumber` work remains deferred to the `pdf_base64` ingest path
+- `extract` now rebuilds parser input from a prepared `workingChunk` after anchor-safe normalization, URI/DOI spacing compaction, and bounded allowlist or field-pattern repair, so the parser sees repaired working text while the stored `raw` input stays verbatim
+- repair metadata (`appliedRepairs`, `repairMisses`, field-level confidence, citation-level confidence, and residual artifacts) now flows from extract-prep into normalize / validate / score, so unresolved pasted-PDF artifacts can be downgraded deterministically instead of silently treated as clean
 - `pnpm report:real-ready` now produces a reproducible local report at `output/real-ready-corpus-report.md` and `output/real-ready-corpus-report.json`, including the real seed set, per-mode readiness totals, sample outputs, and non-ready examples
 - the website now defaults new sessions to `v2`, preloads the results view while a conversion is running, defers PDF code until export time, defers bulk result props into the heavy output tree, memoizes per-citation confidence and row rendering, and avoids a duplicate-selection sync render on initial results load
 
@@ -155,6 +159,18 @@ That order matters. The main architectural idea is:
 - then validate the repaired citation
 - then deduplicate and score the final canonical form
 
+## Pasted Text vs PDF Uploads
+
+The engine now treats two failure classes as different architectural problems:
+
+- pasted `sourceType: "text"` reference blocks
+  - this is where copied PDF references with broken spacing, `h ttps://...`, `S pringer`, wrapped DOI lines, page artifacts, and mid-reference line breaks are handled today
+- uploaded `sourceType: "pdf_base64"` documents
+  - this is still primarily an ingest / extraction-quality problem, not the same thing as pasted-text repair
+  - `pdfplumber` is intentionally deferred here as a later text-layer extraction improvement
+
+That distinction matters because layout-aware PDF extraction does not fix already-pasted OCR/PDF-copy artifacts. The pasted-text path therefore uses structural line evidence and bounded repair even when the original PDF file is no longer available.
+
 ## Stage Reliability Model
 
 The v2 engine now treats most bulk-stage work as **item-isolated** rather than batch-atomic.
@@ -196,11 +212,17 @@ This changes the failure model in an important way: the pipeline still surfaces 
 
 - producing a working chunk even when the raw input is imperfect
 - surfacing contamination diagnostics instead of silently pretending the chunk is clean
+- preserving index-stable `contentLines` with explicit line roles (`content`, `artifact`, `uri_tail`) instead of flattening pasted text into one cleaned string too early
 
 **Current gaps**
 
 - still vulnerable to highly pathological OCR or document extraction noise
 - works best when the input preserves some structure, even if that structure is weak
+- mixed APA / Vancouver / IEEE blocks are still handled conservatively in phase 1; the splitter prefers not to invent a style switch mid-block unless the line evidence is strong
+
+**Important recent change**
+
+- pasted-text splitting now records both `rawOpenerScore` and post-veto `openerConfidence`, keeps artifact lines in-place for debug/index stability, and treats DOI/URL-only `uri_tail` lines as attachable citation tails instead of dropping them as noise
 
 ### 3. `detect`
 
@@ -217,6 +239,27 @@ This changes the failure model in an important way: the pipeline still surfaces 
 - detect-family confusion analysis is intentionally deferred right now
 - detection is helpful, but extraction quality still matters more than label purity
 
+### 3a. Extract-Prep Working Chunk
+
+Before parser extraction runs, pasted text now goes through an internal working-chunk preparation step:
+
+- start from split-stage `contentLines` plus `includedLineIndices`
+- apply low-risk, anchor-safe normalization first:
+  - mojibake repair
+  - Unicode / ligature normalization
+  - URI/DOI spacing compaction
+  - wrapped-word cleanup
+- rebuild `joinedText`
+- derive bounded field hints (`doi_url`, `locator`, `container`, `publisher_place`, `journal_tail`, `title`)
+- apply allowlist or last-resort field-pattern repair only inside those hinted spans
+- rebuild `joinedText` again and pass that prepared text to the parser
+
+This is the key contract for pasted PDF-copy text:
+
+- `raw` stays verbatim for audit/debug
+- the parser reads repaired `workingChunk.joinedText`
+- late normalization does not redo the primary pasted-text repair pass
+
 ### 4. `extract`
 
 **Purpose**
@@ -231,6 +274,7 @@ This changes the failure model in an important way: the pipeline still surfaces 
 - catching author-blob failures and venue/title leakage
 - rescuing quoted-title journal tails before the generic parser can swallow locators or venue text into the wrong field
 - rescuing real book tails such as `London: Penguin` and `Reading, MA: Addison-Wesley` before they are misclassified as broken journal metadata
+- consuming prepared working chunks for pasted PDF-copy text, so the parser sees repaired DOI/url tokens, bounded container fixes, and `uri_tail` attachments without mutating the stored raw input
 
 **Current gaps**
 
@@ -241,6 +285,7 @@ This changes the failure model in an important way: the pipeline still surfaces 
 
 - deterministic extraction now includes a book-tail recovery branch, and weak parses can request forced GROBID recovery before strict resolution when the local evidence is too thin
 - deterministic extraction now also reconstructs wrapped URLs, derives DOI hints from scholarly landing-page URLs, strips pseudo-author website states, and supports historical four-digit years so classical books and article landing pages do not fall out of the structured path unnecessarily
+- extract-prep now preserves detect-stage uncertainty instead of overwriting it with a higher parser confidence, so ingest-side `mixed_style_markers` / `ocr_noise_markers` still lower downstream style certainty even when the parser has a strong local preference
 
 ### 5. `enrich`
 
@@ -353,6 +398,7 @@ Those corpuses deliberately run with enrichment off and in chunks, because they 
 **Purpose**
 
 - clean and standardize already-extracted and already-enriched fields
+- mirror prepared-working-chunk repair metadata into citation normalization state
 
 **Examples**
 
@@ -372,11 +418,16 @@ Those corpuses deliberately run with enrichment off and in chunks, because they 
 
 - normalization is additive and conservative by design, so some ugly source strings still survive if the engine cannot safely rewrite them
 
+**Important recent change**
+
+- normalize now carries forward `appliedRepairs`, `repairMisses`, residual artifact findings, field repair confidence, and citation repair confidence so later stages can distinguish “clean parse” from “parse was locally repaired and still has residue”
+
 ### 7. `validate`
 
 **Purpose**
 
 - run offline plausibility checks on the post-normalization, post-enrich citation
+- surface surviving raw PDF-copy artifact issues and `REPAIR_MISS` diagnostics
 
 **What it checks**
 
@@ -495,11 +546,19 @@ Validation is not just “did extraction succeed?” It asks whether the citatio
 - preventing clean locally parsed citations from dropping out of `ready` just because Crossref did not find an exact match
 - allowing a strongly verified citation to remain `ready` when the only unresolved gap is a missing venue field
 - treating short-but-valid report titles and acronym venues such as `BMJ`, `WHO`, or `AIHW` as substantive enough for clean local-ready paths
+- merging pasted-text artifact downgrades with the normal quality model, so unresolved DOI/url corruption or repeated medium-severity PDF-copy residue can worsen the final bucket without inventing a separate review system
 
 **Current gaps**
 
 - score is only as honest as the phases before it
 - if extraction lies cleanly, scoring can still look confident unless validate catches it
+
+**Important recent change**
+
+- residual pasted-text artifacts now feed a deterministic downgrade path:
+  - low-severity residue caps at `worth_reviewing`
+  - high-severity DOI/URL residue, or residue in multiple medium-severity identity fields, forces `action_needed`
+  - artifact-derived downgrades can worsen a bucket but never upgrade a worse existing bucket
 
 ### 12. `render`
 
@@ -525,6 +584,12 @@ Validation is not just “did extraction succeed?” It asks whether the citatio
 - package the final v2 response
 - build exports and stats
 - emit the citation list, duplicates, groups, debug payload, and processing path
+
+## Known Limitations
+
+- mixed-style reference blocks are still handled conservatively in phase 1; the splitter does not try to infer arbitrary style switches mid-block
+- the local DOI structural check is a heuristic for obvious breakage, not an authoritative DOI verifier; future Crossref verification is expected to be the authority layer
+- ligature expansion is treated as an acceptable normalization tradeoff even though decorative ligature glyphs could be flattened in rare cases
 
 ## Why The Recent `enrich`, `validate`, And `dedup` Changes Matter
 
