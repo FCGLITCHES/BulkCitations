@@ -58,7 +58,7 @@ export function SiteFooter() {
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-xl">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 bg-gradient-brand rounded-xl flex items-center justify-center shadow-md shadow-primary/15">
+                <div className="w-9 h-9 bg-primary-container rounded-xl flex items-center justify-center shadow-md shadow-primary/15">
                   <Quote className="text-white" />
                 </div>
                 <div className="flex items-center gap-2">

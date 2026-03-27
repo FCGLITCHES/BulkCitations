@@ -41,9 +41,16 @@ Researchers and publishers waste thousands of hours manually fixing broken citat
 3. **Research Organization**: Input a large unsorted list → Engine clusters citations by research topic for easier review.
 4. **Publisher Verification**: API check of a manuscript's references → Flags retracted papers and verifies metadata against Crossref/PubMed.
 
+## Core Pages
+- **Home**: Workspace and conversion interface.
+- **History**: Conversion archive and job management.
+- **Prices**: Tiered plans for individuals and enterprise.
+- **Resources**: High-velocity archiving insights.
+- **API**: Integration guides and waitlist.
+- **About**: Mission and solo-developer story.
+
 ## Roadmap (Next 3–5 Items)
 1. **Intelligence Engine v2**: Implementation of SciBERT NER and BART-NLI format detection.
 2. **Retraction Watch Integration**: Real-time safety flags for every processed citation.
 3. **B2B API Storefront**: Comprehensive developer portal and usage dashboard.
 4. **Async Job System**: Handling massive batches (5,000+ citations) for enterprise customers.
-

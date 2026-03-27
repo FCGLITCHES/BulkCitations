@@ -130,6 +130,13 @@ function hydrateTruth(entry: TruthEntry): TruthEntry {
   };
 }
 
+function normalizeStoredTruth(entry: any): TruthEntry {
+  if (entry?.truthId && entry?.truthFamilyId) {
+    return hydrateTruth(entry as TruthEntry);
+  }
+  return mapLegacyTruth(entry);
+}
+
 function mapLegacyTruth(entry: any): TruthEntry {
   const fingerprint = entry.fingerprint ?? computeReportFingerprint(entry.originalText ?? '');
   const truthId = `legacy-${crypto.createHash('sha256').update(`${fingerprint}:${entry.outputStyle ?? 'apa'}`).digest('hex').slice(0, 16)}`;
@@ -221,7 +228,7 @@ class FileTruthStore implements TruthStorage {
 
   async listTruths(): Promise<TruthEntry[]> {
     this.ensureLegacyMigration();
-    return readJsonlFile<TruthEntry>(TRUTH_FILE).map(mapLegacyTruth);
+    return readJsonlFile<TruthEntry>(TRUTH_FILE).map(normalizeStoredTruth);
   }
 }
 
@@ -363,7 +370,7 @@ class PostgresTruthStore implements TruthStorage {
   async listTruths(): Promise<TruthEntry[]> {
     await this.ensureReady();
     const rows = await this.db.select().from(truthRows);
-    return rows.map((row) => mapLegacyTruth(row.payload)).sort((left, right) => (
+    return rows.map((row) => normalizeStoredTruth(row.payload)).sort((left, right) => (
       right.validatedAt.localeCompare(left.validatedAt)
     ));
   }

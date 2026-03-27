@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { createHash, createHmac, timingSafeEqual } from "crypto";
+import { getAdminAccountById } from "../store/adminAuthStore.js";
 
 const ADMIN_SESSION_COOKIE = "bulkreferences_admin_session";
 const ADMIN_SESSION_TTL_SECONDS = 60 * 60 * 12;
@@ -11,14 +12,15 @@ type LoginAttemptState = {
   resetAt: number;
 };
 
+type AdminSessionPayload = {
+  exp: number;
+  sub: string;
+};
+
 const failedLoginAttempts = new Map<string, LoginAttemptState>();
 
 function hashValue(value: string) {
   return createHash("sha256").update(value).digest();
-}
-
-function getAdminPassword() {
-  return process.env.ADMIN_PASSWORD?.trim() ?? "";
 }
 
 function getAdminSessionSecret() {
@@ -93,36 +95,47 @@ function signSessionPayload(encodedPayload: string) {
     .digest("base64url");
 }
 
-function buildSessionToken() {
+function buildSessionToken(accountId: string) {
   const encodedPayload = Buffer.from(JSON.stringify({
     exp: Date.now() + (ADMIN_SESSION_TTL_SECONDS * 1000),
-  })).toString("base64url");
+    sub: accountId,
+  } satisfies AdminSessionPayload)).toString("base64url");
 
   return `${encodedPayload}.${signSessionPayload(encodedPayload)}`;
 }
 
-function verifySessionToken(token: string | null) {
+function decodeSessionToken(token: string | null): AdminSessionPayload | null {
   if (!token || !isAdminAuthConfigured()) {
-    return false;
+    return null;
   }
 
   const [encodedPayload, signature] = token.split(".");
   if (!encodedPayload || !signature) {
-    return false;
+    return null;
   }
 
   const actualSignatureHash = hashValue(signature);
   const expectedSignatureHash = hashValue(signSessionPayload(encodedPayload));
 
+  if (actualSignatureHash.length !== expectedSignatureHash.length) {
+    return null;
+  }
+
   if (!timingSafeEqual(actualSignatureHash, expectedSignatureHash)) {
-    return false;
+    return null;
   }
 
   try {
-    const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8")) as { exp?: number };
-    return typeof payload.exp === "number" && payload.exp > Date.now();
+    const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8")) as Partial<AdminSessionPayload>;
+    if (typeof payload.exp !== "number" || payload.exp <= Date.now() || typeof payload.sub !== "string") {
+      return null;
+    }
+    return {
+      exp: payload.exp,
+      sub: payload.sub,
+    };
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -139,23 +152,22 @@ function getLoginAttemptState(ip: string) {
 }
 
 export function isAdminAuthConfigured() {
-  return Boolean(getAdminPassword() && getAdminSessionSecret());
+  return Boolean(getAdminSessionSecret());
+}
+
+export function getAuthenticatedAdminFromRequest(req: Request) {
+  const payload = decodeSessionToken(parseCookie(req, ADMIN_SESSION_COOKIE));
+  if (!payload) return null;
+  return getAdminAccountById(payload.sub);
 }
 
 export function getAdminSessionStatus(req: Request) {
+  const account = getAuthenticatedAdminFromRequest(req);
   return {
-    authenticated: verifySessionToken(parseCookie(req, ADMIN_SESSION_COOKIE)),
+    authenticated: Boolean(account),
     configured: isAdminAuthConfigured(),
+    account,
   };
-}
-
-export function verifyAdminPassword(password: string) {
-  const configuredPassword = getAdminPassword();
-  if (!configuredPassword) {
-    return false;
-  }
-
-  return timingSafeEqual(hashValue(password), hashValue(configuredPassword));
 }
 
 export function checkAdminLoginRateLimit(req: Request) {
@@ -183,8 +195,8 @@ export function clearAdminLoginFailures(req: Request) {
   failedLoginAttempts.delete(getForwardedIP(req));
 }
 
-export function setAdminSessionCookie(req: Request, res: Response) {
-  res.setHeader("Set-Cookie", serializeCookie(ADMIN_SESSION_COOKIE, buildSessionToken(), {
+export function setAdminSessionCookie(req: Request, res: Response, accountId: string) {
+  res.setHeader("Set-Cookie", serializeCookie(ADMIN_SESSION_COOKIE, buildSessionToken(accountId), {
     httpOnly: true,
     maxAge: ADMIN_SESSION_TTL_SECONDS,
     path: "/",
@@ -208,11 +220,12 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
 
   if (!isAdminAuthConfigured()) {
     return res.status(503).json({
-      message: "Admin access is not configured. Set ADMIN_PASSWORD and ADMIN_SESSION_SECRET.",
+      message: "Admin access is not configured. Set ADMIN_SESSION_SECRET.",
     });
   }
 
-  if (!verifySessionToken(parseCookie(req, ADMIN_SESSION_COOKIE))) {
+  const account = getAuthenticatedAdminFromRequest(req);
+  if (!account) {
     return res.status(401).json({ message: "Admin authentication required." });
   }
 

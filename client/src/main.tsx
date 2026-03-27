@@ -10,7 +10,13 @@ import AdminReportQueue from './components/AdminReportQueue';
 import AdminReportDetail from './components/AdminReportDetail';
 import AdminAnalytics from './components/AdminAnalytics';
 import Login from './pages/login';
+import AdminLogin from './pages/admin-login';
+import AdminApprove from './pages/admin-approve';
 import HistoryPage from './pages/history';
+import Prices from './pages/prices';
+import Resources from './pages/resources';
+import ApiDocs from './pages/api-docs';
+import InstitutionalLogin from './pages/institutional-login';
 import ScrollToTop from './components/scroll-to-top';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
@@ -24,7 +30,7 @@ function RequireAdmin({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     if (isInitialized && !isAdmin) {
-      setLocation('/login');
+      setLocation('/adm1n');
     }
   }, [isAdmin, isInitialized, setLocation]);
 
@@ -77,6 +83,7 @@ function AnalyticsRouteTracker() {
   React.useEffect(() => {
     if (location.startsWith("/admin")) return;
     if (location === "/login") return;
+    if (location.startsWith("/adm1n")) return;
 
     trackAnalyticsEvent("page_view", {
       surface: location === "/" ? "home" : "site",
@@ -85,6 +92,20 @@ function AnalyticsRouteTracker() {
   }, [location]);
 
   return null;
+}
+
+function AdminDashboardRoute() {
+  const [, setLocation] = useLocation();
+
+  React.useEffect(() => {
+    setLocation("/admin/reports");
+  }, [setLocation]);
+
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 text-sm text-muted-foreground">
+      Opening admin dashboard...
+    </div>
+  );
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -99,7 +120,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/about" component={About} />
         <Route path="/contact" component={Contact} />
         <Route path="/login" component={Login} />
+        <Route path="/adm1n" component={AdminLogin} />
+        <Route path="/adm1n/approve" component={AdminApprove} />
         <Route path="/history" component={HistoryPage} />
+        <Route path="/prices" component={Prices} />
+        <Route path="/resources" component={Resources} />
+        <Route path="/api-docs" component={ApiDocs} />
+        <Route path="/institutional-login" component={InstitutionalLogin} />
+        <Route path="/admin" component={AdminDashboardRoute} />
+        <Route path="/admin/dashboard" component={AdminDashboardRoute} />
         <Route path="/admin/reports" component={AdminQueueRoute} />
         <Route path="/admin/analytics" component={AdminAnalyticsRoute} />
         <Route path="/admin/reports/:id" component={AdminDetailRoute} />

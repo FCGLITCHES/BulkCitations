@@ -50,6 +50,18 @@ describe('v2 regression pack', () => {
         expect(activeCitation?.rendered?.formatted).toBe(fixture.expectedOutputText);
       }
 
+      if (fixture.expectedOutputIncludes?.length) {
+        const activeCitation = response.citations.find((citation) => citation.status === 'active');
+        for (const snippet of fixture.expectedOutputIncludes) {
+          expect(activeCitation?.rendered?.formatted ?? '').toContain(snippet);
+        }
+      }
+
+      if (fixture.expectedDetectedStyle) {
+        const activeCitation = response.citations.find((citation) => citation.status === 'active');
+        expect(activeCitation?.detectedStyle.value).toBe(fixture.expectedDetectedStyle);
+      }
+
       if (fixture.expectedReferenceType) {
         const activeCitation = response.citations.find((citation) => citation.status === 'active');
         expect(activeCitation?.referenceType).toBe(fixture.expectedReferenceType);

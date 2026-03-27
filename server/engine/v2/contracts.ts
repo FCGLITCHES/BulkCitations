@@ -112,6 +112,7 @@ export interface ExtractorAdapter {
       'article-number'?: string;
       doi?: string;
       publisher?: string;
+      placeOfPublication?: string;
       url?: string;
       conferenceTitle?: string;
       bookTitle?: string;
@@ -125,6 +126,8 @@ export interface ExtractorAdapter {
     extractorPath?: 'deterministic' | 'grobid' | 'llm' | 'hybrid';
     selectedBranch?: 'deterministic_raw' | 'year_anchored_fallback_raw' | 'institutional_heuristic_raw' | 'in_source_heuristic_raw' | 'hybrid';
     selectionReason?: string;
+    detectedStyle?: CitationStyle | null;
+    detectedStyleConfidence?: number;
     canonicalAuthors?: CanonicalAuthor[];
     authorParserMode?: string;
     authorWarningFlags?: string[];

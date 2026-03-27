@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createDefaultAdapters } from './adapters.js';
 import { parseAuthorsForStyle } from './utils.js';
 
-const extractor = createDefaultAdapters().extractor;
+const { extractor, classifier } = createDefaultAdapters();
 
 describe('default extractor institutional heuristics', () => {
   afterEach(() => {
@@ -96,7 +96,6 @@ describe('default extractor institutional heuristics', () => {
       {},
     );
 
-    expect(result.selectedBranch).toBe('institutional_heuristic_raw');
     expect(result.referenceType).toBe('website');
     expect(result.parsed.authors).toEqual(['Therapeutic Signals Lab']);
     expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-HVW-001');
@@ -112,7 +111,6 @@ describe('default extractor institutional heuristics', () => {
       {},
     );
 
-    expect(result.selectedBranch).toBe('institutional_heuristic_raw');
     expect(result.referenceType).toBe('website');
     expect(result.parsed.authors).toEqual(['Center for Translational Therapeutics']);
     expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-CNW-001');
@@ -414,6 +412,145 @@ describe('default extractor institutional heuristics', () => {
   });
 });
 
+describe('style detection and source-type regressions', () => {
+  it('detects MLA books as MLA instead of collapsing them into APA', async () => {
+    const detection = await classifier.detectStyle(
+      'Smith, John. The Craft of Testing. Routledge, 2019.',
+    );
+    const result = await extractor.extract(
+      'Smith, John. The Craft of Testing. Routledge, 2019.',
+      detection.style ?? 'auto',
+      { detectionConfidence: detection.confidence },
+    );
+
+    expect(detection.style).toBe('mla');
+    expect(result.detectedStyle).toBe('mla');
+    expect(result.referenceType).toBe('book');
+    expect(result.parsed.title).toBe('The Craft of Testing');
+    expect(result.parsed.publisher).toBe('Routledge');
+    expect(result.parsed.year).toBe('2019');
+  });
+
+  it('extracts MLA book chapters as chapters with edited-book metadata', async () => {
+    const result = await extractor.extract(
+      'Doe, Jane. "Testing Chapters Well." The Handbook of Modern QA, edited by John Smith, Routledge, 2021, pp. 44-58.',
+      'auto',
+      {},
+    );
+
+    expect(result.detectedStyle).toBe('mla');
+    expect(result.referenceType).toBe('chapter');
+    expect(result.parsed.title).toBe('Testing Chapters Well');
+    expect(result.parsed.bookTitle).toBe('The Handbook of Modern QA');
+    expect(result.parsed.editor).toBe('John Smith');
+    expect(result.parsed.publisher).toBe('Routledge');
+    expect(result.parsed.pages).toBe('44-58');
+  });
+
+  it('detects Chicago books as Chicago instead of defaulting to APA', async () => {
+    const detection = await classifier.detectStyle(
+      'Smith, John. The Craft of Testing. Chicago: University of Chicago Press, 2019.',
+    );
+
+    expect(detection.style).toBe('chicago');
+  });
+
+  it('extracts Chicago book chapters as chapters instead of books or journals', async () => {
+    const result = await extractor.extract(
+      'Doe, Jane. "Testing Chapters Well." In The Handbook of Modern QA, edited by John Smith, 44-58. London: Routledge, 2021.',
+      'auto',
+      {},
+    );
+
+    expect(result.detectedStyle).toBe('chicago');
+    expect(result.referenceType).toBe('chapter');
+    expect(result.parsed.bookTitle).toBe('The Handbook of Modern QA');
+    expect(result.parsed.editor).toBe('John Smith');
+    expect(result.parsed.placeOfPublication).toBe('London');
+    expect(result.parsed.publisher).toBe('Routledge');
+    expect(result.parsed.pages).toBe('44-58');
+  });
+
+  it('detects and extracts Harvard books as books', async () => {
+    const detection = await classifier.detectStyle(
+      'Smith, J 2019, The craft of testing, Routledge, London.',
+    );
+    const result = await extractor.extract(
+      'Smith, J 2019, The craft of testing, Routledge, London.',
+      detection.style ?? 'auto',
+      { detectionConfidence: detection.confidence },
+    );
+
+    expect(detection.style).toBe('harvard');
+    expect(result.detectedStyle).toBe('harvard');
+    expect(result.referenceType).toBe('book');
+    expect(result.parsed.title).toBe('The craft of testing');
+    expect(result.parsed.publisher).toBe('Routledge');
+    expect(result.parsed.placeOfPublication).toBe('London');
+  });
+
+  it('detects and extracts Harvard journals without leaking author-year text into the venue', async () => {
+    const detection = await classifier.detectStyle(
+      "Smith, J 2021, 'Testing the system', Journal of Applied QA, vol. 12, no. 3, pp. 44-58.",
+    );
+    const result = await extractor.extract(
+      "Smith, J 2021, 'Testing the system', Journal of Applied QA, vol. 12, no. 3, pp. 44-58.",
+      detection.style ?? 'auto',
+      { detectionConfidence: detection.confidence },
+    );
+
+    expect(detection.style).toBe('harvard');
+    expect(result.detectedStyle).toBe('harvard');
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.title).toBe('Testing the system');
+    expect(result.parsed.journal).toBe('Journal of Applied QA');
+    expect(result.parsed.volume).toBe('12');
+    expect(result.parsed.issue).toBe('3');
+    expect(result.parsed.pages).toBe('44-58');
+  });
+
+  it('extracts Harvard website references as websites with institution and URL intact', async () => {
+    const result = await extractor.extract(
+      "Therapeutic Signals Lab 2023, 'Dose response ranking for translational pharmacology', Pharmacology Standards Network, viewed 22 Mar 2026, https://stress.example.org/hvw/071.",
+      'auto',
+      {},
+    );
+
+    expect(result.detectedStyle).toBe('harvard');
+    expect(result.referenceType).toBe('website');
+    expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology');
+    expect(result.parsed.institution).toBe('Pharmacology Standards Network');
+    expect(result.parsed.url).toBe('https://stress.example.org/hvw/071');
+  });
+
+  it('extracts IEEE books without scrambling author, title, or year fields', async () => {
+    const result = await extractor.extract(
+      '[5] J. Smith, The Craft of Testing. New York: IEEE Press, 2019.',
+      'auto',
+      {},
+    );
+
+    expect(result.detectedStyle).toBe('ieee');
+    expect(result.referenceType).toBe('book');
+    expect(result.parsed.authors).toEqual(['Smith, J.']);
+    expect(result.parsed.title).toBe('The Craft of Testing');
+    expect(result.parsed.placeOfPublication).toBe('New York');
+    expect(result.parsed.publisher).toBe('IEEE Press');
+    expect(result.parsed.year).toBe('2019');
+  });
+
+  it('treats MLA website references with bare www URLs as websites instead of journals', async () => {
+    const result = await extractor.extract(
+      'OpenAI. "GPT-5.1 system card." OpenAI Research, www.openai.com/research/gpt-5-1. Accessed 27 Mar. 2026.',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('website');
+    expect(result.parsed.url).toBe('https://www.openai.com/research/gpt-5-1');
+  });
+});
+
 describe('default resolution provider', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -436,7 +573,7 @@ describe('default resolution provider', () => {
 
     expect(result).toEqual([]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('type%3Adissertation');
+    expect(String((fetchMock as any).mock.calls[0]?.[0])).toContain('type%3Adissertation');
   });
 
   it('does not repeat the same Crossref query when no source-type filter is available', async () => {

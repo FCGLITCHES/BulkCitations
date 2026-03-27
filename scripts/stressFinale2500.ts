@@ -36,6 +36,7 @@ type ApiReference = {
   parsedData: Record<string, any>;
   inputStyle: string;
   outputStyle: string;
+  styleDetectionFailed?: boolean;
 };
 
 function loadManualBatch(): string[] {

@@ -66,6 +66,13 @@ function sanitizeCitation(value: string): string {
   return lastChar === 46 || lastChar === 63 || lastChar === 33 ? normalized : `${normalized}.`;
 }
 
+function sanitizeTrustedCitation(value: string): string {
+  const normalized = value.trim();
+  if (!normalized) return normalized;
+  const lastChar = normalized.charCodeAt(normalized.length - 1);
+  return lastChar === 46 || lastChar === 63 || lastChar === 33 ? normalized : `${normalized}.`;
+}
+
 function isRenderable(value: string): boolean {
   return value.trim().length >= 3 && /[A-Za-z0-9]/.test(value);
 }
@@ -85,7 +92,7 @@ export function createRenderStage(): V2Stage {
         items: context.citations,
         run: (citation, index) => {
           if (citation.truth?.usedValidatedOutput && citation.truth.validatedOutput) {
-            const trustedOutput = sanitizeCitation(postCslCleanup(citation.truth.validatedOutput));
+            const trustedOutput = sanitizeTrustedCitation(postCslCleanup(citation.truth.validatedOutput));
             const nextCitationBase = {
               ...citation,
               rendered: {

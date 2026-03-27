@@ -549,7 +549,7 @@ async function applyGrobidRecoveryExtraction(
       warningFlags: result.authorWarningFlags ?? [],
       rejectedCandidates: result.rejectedCandidates ?? [],
     }
-    : parseAuthorsForStyle(result.parsed.authors ?? [], inputStyle);
+    : parseAuthorsForStyle(result.parsed.authors ?? [], result.detectedStyle ?? inputStyle);
   const yearValue = result.parsed.year ? Number.parseInt(result.parsed.year, 10) : null;
 
   const preferStringField = (

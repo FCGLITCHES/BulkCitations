@@ -38,7 +38,7 @@ export default function FAQ() {
           <div className="flex items-center justify-between gap-2 min-w-0">
             <div className="flex items-center space-x-3 mb-8">
               <Link href="/">
-                <div className="w-10 h-10 bg-gradient-brand rounded-xl flex items-center justify-center shadow-md hover:scale-105 transition-transform cursor-pointer">
+                <div className="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center shadow-md hover:scale-105 transition-transform cursor-pointer">
                   <Quote className="text-white text-lg" />
                 </div>
               </Link>

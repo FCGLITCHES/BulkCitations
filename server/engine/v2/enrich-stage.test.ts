@@ -64,7 +64,7 @@ function makeCitation(overrides: Record<string, unknown> = {}) {
   } as any;
 }
 
-function makeProvider(overrides: Partial<ResolutionProviderAdapter> = {}): ResolutionProviderAdapter {
+function makeProvider(overrides: any = {}): ResolutionProviderAdapter {
   return {
     id: 'test-resolution-provider',
     lookupByDoi: vi.fn(async () => []),
@@ -72,7 +72,7 @@ function makeProvider(overrides: Partial<ResolutionProviderAdapter> = {}): Resol
     searchPubmedByTitle: vi.fn(async () => []),
     searchOpenAlexByTitle: vi.fn(async () => []),
     ...overrides,
-  };
+  } as any;
 }
 
 const cache = {
@@ -92,7 +92,7 @@ describe('strict enrich stage', () => {
     });
     const provider = makeProvider();
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
 
     expect(provider.searchCrossrefByTitle).not.toHaveBeenCalled();
     expect(result.citations[0]?.resolution?.status).toBe('insufficient_evidence');
@@ -114,7 +114,7 @@ describe('strict enrich stage', () => {
     } as any;
     const provider = makeProvider();
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
 
     expect(provider.searchOpenAlexByTitle).not.toHaveBeenCalled();
     expect(result.citations[0]?.resolution?.status).toBe('provider_no_coverage');
@@ -148,7 +148,7 @@ describe('strict enrich stage', () => {
       }]),
     });
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
     const enriched = result.citations[0];
 
     expect(provider.lookupByDoi).toHaveBeenCalledWith('10.1038/d43747-021-00045-7');
@@ -174,7 +174,7 @@ describe('strict enrich stage', () => {
     const provider = makeProvider({
       lookupByDoi: vi.fn(async () => [{
         provider: 'crossref',
-        title: citation.title.value ?? undefined,
+        title: baseCitation.title.value ?? undefined,
         authors: ['Smith, J.', 'Doe, A.', 'Muller, T.'],
         year: 2021,
         venue: 'IEEE Transactions on Medical Imaging',
@@ -192,7 +192,7 @@ describe('strict enrich stage', () => {
       id: `strong-local-doi-${index + 1}`,
       raw: `${baseCitation.raw} Batch ${index + 1}.`,
     }));
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citations));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citations));
 
     expect(provider.lookupByDoi).not.toHaveBeenCalled();
     for (const citation of result.citations) {
@@ -224,7 +224,7 @@ describe('strict enrich stage', () => {
       }]),
     });
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
     const enriched = result.citations[0];
 
     expect(provider.searchCrossrefByTitle).toHaveBeenCalledWith(expect.objectContaining({
@@ -268,7 +268,7 @@ describe('strict enrich stage', () => {
       }]),
     });
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
     const enriched = result.citations[0];
 
     expect(enriched?.resolution?.status).toBe('verified');
@@ -299,7 +299,7 @@ describe('strict enrich stage', () => {
       }]),
     });
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
     const enriched = result.citations[0];
 
     expect(enriched?.resolution?.status).toBe('verified');
@@ -355,7 +355,7 @@ describe('strict enrich stage', () => {
       ]),
     });
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
     const enriched = result.citations[0];
 
     expect(enriched?.resolution?.status).toBe('verified');
@@ -405,7 +405,7 @@ describe('strict enrich stage', () => {
       ]),
     });
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
     const enriched = result.citations[0];
 
     expect(enriched?.resolution?.status).toBe('verified');
@@ -442,7 +442,7 @@ describe('strict enrich stage', () => {
       ]),
     });
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
     const enriched = result.citations[0];
 
     expect(enriched?.resolution?.status).toBe('ambiguous_match');
@@ -466,7 +466,7 @@ describe('strict enrich stage', () => {
       }]),
     });
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
     const enriched = result.citations[0];
 
     expect(enriched?.resolution?.status).toBe('verified');
@@ -500,7 +500,7 @@ describe('strict enrich stage', () => {
       }]),
     });
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
     const enriched = result.citations[0];
 
     expect(enriched?.resolution?.status).toBe('verified');
@@ -556,7 +556,7 @@ describe('strict enrich stage', () => {
       }),
     });
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext([left, right]));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext([left, right]));
     const enriched = result.citations;
 
     expect(provider.searchCrossrefByTitle).toHaveBeenCalledTimes(1);
@@ -576,7 +576,7 @@ describe('strict enrich stage', () => {
         searchCrossrefByTitle: vi.fn(async () => new Promise<never>(() => {})),
       });
 
-      const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+      const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
       const enriched = result.citations[0];
 
       expect(provider.searchCrossrefByTitle).toHaveBeenCalledTimes(1);
@@ -621,7 +621,7 @@ describe('strict enrich stage', () => {
       }]),
     });
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
     const enriched = result.citations[0];
 
     expect(enriched?.resolution?.status).toBe('verified');
@@ -661,7 +661,7 @@ describe('strict enrich stage', () => {
       }]),
     });
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
     const enriched = result.citations[0];
 
     expect(enriched?.resolution?.status).toBe('verified');
@@ -700,7 +700,7 @@ describe('strict enrich stage', () => {
       }]),
     });
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
     const enriched = result.citations[0];
 
     expect(enriched?.resolution?.status).toBe('verified');
@@ -738,7 +738,7 @@ describe('strict enrich stage', () => {
       }]),
     });
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
     const enriched = result.citations[0];
 
     expect(enriched?.resolution?.status).toBe('verified');
@@ -777,7 +777,7 @@ describe('strict enrich stage', () => {
       }]),
     });
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
     const enriched = result.citations[0];
 
     expect(enriched?.resolution?.status).toBe('verified');
@@ -814,7 +814,7 @@ describe('strict enrich stage', () => {
       }]),
     });
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
     const enriched = result.citations[0];
 
     expect(enriched?.resolution?.status).toBe('verified');
@@ -852,7 +852,7 @@ describe('strict enrich stage', () => {
       }]),
     });
 
-    const result = await createEnrichStage(provider, cache as any).run(makeContext(citation));
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
     const enriched = result.citations[0];
 
     expect(enriched?.resolution?.status).toBe('verified');

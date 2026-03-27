@@ -90,6 +90,7 @@ function restoreTokens(input: string, map: Map<string, string>): string {
 const SURNAME_INITIALS = /^[A-Z][a-záéíóú\-']{1,25}(?:,?\s+[A-Z]{1,3}\.?(\s+[A-Z]{1,3}\.?)*)\s*$/;
 const FIRSTNAME_LASTNAME = /^[A-Z][a-záéíóú\-']+\s+[A-Z][a-záéíóú\-']+$/;
 const PARTICLE_NAME = /^(de|van|von|del|da|di|le|la|dos|las|los)\s+[A-Z][a-z]+/i;
+const PARTICLE_SURNAME_INITIALS = /^(?:(?:de|van|von|del|da|di|du|la|le|dos|las|los)\s+)+[A-Z][a-záéíóú\-']+(?:\s+[A-Z][a-záéíóú\-']+)*\s+[A-Z]{1,4}\.?$/i;
 const INITIALS_ONLY = /^([A-Z]\.?\s*){1,3}$/;
 
 // Hard author stop rule: the moment this returns false, we stop consuming authors.
@@ -100,6 +101,7 @@ function isPersonToken(token: string): boolean {
   if (SURNAME_INITIALS.test(t)) return true;
   if (FIRSTNAME_LASTNAME.test(t)) return true;
   if (PARTICLE_NAME.test(t)) return true;
+  if (PARTICLE_SURNAME_INITIALS.test(t)) return true;
   if (INITIALS_ONLY.test(t)) return true;
   return false;
 }
@@ -112,6 +114,25 @@ function extractAuthorSegment(raw: string): { authorSegment: string; remaining: 
   const tokens = normalized.split(/,\s*/).filter(Boolean);
   const authorTokens: string[] = [];
   let consumed = 0;
+
+  const splitLeadingAuthorFromMixedToken = (token: string): { author: string; remainder: string } | null => {
+    const boundaryRe = /\.\s+/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = boundaryRe.exec(token)) !== null) {
+      const authorCandidate = token.slice(0, match.index).trim();
+      const remainderCandidate = token.slice(match.index + match[0].length).trim();
+      if (!authorCandidate || !remainderCandidate) continue;
+      if (isPersonToken(authorCandidate) && !isPersonToken(remainderCandidate)) {
+        return {
+          author: authorCandidate,
+          remainder: remainderCandidate,
+        };
+      }
+    }
+
+    return null;
+  };
 
   for (let i = 0; i < tokens.length; i++) {
     const tok = tokens[i].trim();
@@ -132,6 +153,14 @@ function extractAuthorSegment(raw: string): { authorSegment: string; remaining: 
       continue;
     }
     if (!isPersonToken(tok)) {
+      const splitMixedToken = splitLeadingAuthorFromMixedToken(tok);
+      if (splitMixedToken) {
+        authorTokens.push(splitMixedToken.author);
+        consumed = i + 1;
+        const authorSegment = authorTokens.join(', ');
+        const remaining = [splitMixedToken.remainder, ...tokens.slice(consumed)].filter(Boolean).join(', ');
+        return { authorSegment, remaining };
+      }
       break;
     }
     authorTokens.push(tok);
@@ -145,8 +174,9 @@ function extractAuthorSegment(raw: string): { authorSegment: string; remaining: 
 
 function isValidYear(candidate: string | undefined): boolean {
   if (!candidate) return false;
+  if (/^n\.d\.$/i.test(candidate)) return true;
   const n = parseInt(candidate, 10);
-  return !isNaN(n) && n >= 1800 && n <= NEXT_YEAR;
+  return !isNaN(n) && n >= 1800 && n <= 2999;
 }
 
 type YearCandidate = { year: string; index: number; score: number };
@@ -775,11 +805,14 @@ export class CitationParser {
 
     // 3. Extract Article Numbers / e-locators (040501, e10293, n71, b2535, Art. no. 6, L12345)
     if (clean.pages) {
+      const explicitArticleLocator = /^Article\s+/i.test(clean.pages);
       const loc = this.extractLocator(clean.pages);
       if (loc) {
         if (loc['article-number']) {
           clean['article-number'] = loc['article-number'];
-          delete clean.pages;
+          if (!explicitArticleLocator) {
+            delete clean.pages;
+          }
         } else if (loc.pages) {
           clean.pages = loc.pages;
         }
@@ -1048,7 +1081,7 @@ export class CitationParser {
 
     // 1) Extract authors and year
     // Pattern: everything before "(YYYY)" is authors
-    const authorYearMatch = cleanText.match(/^(.+?)\s*\((\d{4}[a-z]?)(?:,\s*[^)]+)?\)\.\s*/);
+    const authorYearMatch = cleanText.match(/^(.+?)\s*\(((?:\d{4}[a-z]?|n\.d\.))(?:,\s*[^)]+)?\)\.\s*/i);
     if (authorYearMatch) {
       parsed.authors = this.parseAuthorList(authorYearMatch[1].trim(), 'apa');
       parsed.year = authorYearMatch[2];
@@ -1211,6 +1244,10 @@ export class CitationParser {
       .replace(/[,\s.]+$/, '')
       .trim();
 
+    if (/^proc(?:eedings)?\.?\s+/i.test(conf)) {
+      conf = conf.replace(/^proc(?:eedings)?\.?\s+/i, 'Proceedings of the ');
+    }
+
     if (conf && !parsed.conferenceTitle) {
       parsed.conferenceTitle = conf;
       if (DEBUG_STRESS) console.debug('[CR2] set:', { year: parsed.year, pages: parsed.pages, conferenceTitle: parsed.conferenceTitle, publisher: parsed.publisher });
@@ -1264,6 +1301,11 @@ export class CitationParser {
     if (/^(?:In\s+)?(?:\d{4}\s+)?(?:Proc(?:eedings)?\.?|Proceedings|.*\bConference\b|.*\bSymposium\b|.*\bWorkshop\b)/i.test(clean)
       && !/,\s*\d+\s*(?:\(|,|$)/.test(clean)) {
       parsed.conferenceTitle = clean.replace(/^In\s+/i, '').trim();
+      return;
+    }
+
+    // Skip journal parsing if it clearly looks like a book chapter "In: ... editor"
+    if (/^In:\s+.*(?:editor|editors|Ed\.|Eds\.)/i.test(clean)) {
       return;
     }
 
@@ -1807,21 +1849,25 @@ export class CitationParser {
       const supplMatch = afterTitle.match(/Suppl\.?\s*(\d+)/i);
       if (supplMatch && !parsed.issue) parsed.issue = `Suppl. ${supplMatch[1]}`;
 
-      // Proceedings pattern: "in Proc. Conference Name" or "in Proceedings of the Conference"
-      const procMatch = afterTitle.match(/\bin\s+Proc(?:eedings)?\.?\s+(?:of\s+(?:the\s+)?)?(.+)/i);
-      if (procMatch) {
-        let confTitle = procMatch[1]
-          .split(/,\s*(?:vol\.|no\.|pp\.)/i)[0]
-          .replace(/,\s*(?:19|20)\d{2}[.,]?\s*$/, '')
-          .replace(/[,.\s]+$/, '')
-          .trim();
-        if (confTitle) {
-          if (!/^(?:proc(?:eedings)?\.?|proceedings)\b/i.test(confTitle)) {
-            confTitle = `Proceedings of the ${confTitle}`;
-          }
-          parsed.conferenceTitle = confTitle;
-        }
+      if (this.parseConferenceRemainder(afterTitle, parsed)) {
+        delete parsed.journal;
       } else {
+        // Proceedings pattern: "in Proc. Conference Name" or "in Proceedings of the Conference"
+        const procMatch = afterTitle.match(/\bin\s+Proc(?:eedings)?\.?\s+(?:of\s+(?:the\s+)?)?(.+)/i);
+        if (procMatch) {
+          let confTitle = procMatch[1]
+            .split(/,\s*(?:vol\.|no\.|pp\.)/i)[0]
+            .replace(/,\s*(?:19|20)\d{2}[.,]?\s*$/, '')
+            .replace(/[,.\s]+$/, '')
+            .trim();
+          if (confTitle) {
+            if (!/^(?:proc(?:eedings)?\.?|proceedings)\b/i.test(confTitle)) {
+              confTitle = `Proceedings of the ${confTitle}`;
+            }
+            parsed.conferenceTitle = confTitle;
+          }
+        }
+
         // Regular journal extraction: text before "vol." or "no." or "pp."
         const journalPart = afterTitle.split(/,?\s*(?:vol\.|no\.|pp\.)/i)[0].replace(/[,.]$/, '').trim();
         if (journalPart && journalPart.length > 1) {
@@ -1970,6 +2016,53 @@ export class CitationParser {
       }
       return true;
     };
+    const extractCompactLeadAuthors = (value: string): { authors: string[]; remainder: string } | null => {
+      const boundaryRe = /\.\s+/g;
+      let match: RegExpExecArray | null;
+
+      while ((match = boundaryRe.exec(value)) !== null) {
+        const authorCandidate = value.slice(0, match.index).trim().replace(/\.$/, '');
+        const remainderCandidate = value.slice(match.index + match[0].length).trim();
+        const firstSentence = remainderCandidate.split(/\.\s+/)[0]?.trim() ?? '';
+        const firstSentenceLooksAuthorLike =
+          (/^[A-Z]\.?,\s*[A-Z][A-Za-z'’-]+(?:\s+[A-Z][A-Za-z'’-]+)*\s+[A-Z]{1,4}\.?$/i.test(firstSentence))
+          || (this.parseAuthorList(firstSentence, 'vancouver').length >= 2 && firstSentence.split(/\s+/).length <= 4);
+        if (!authorCandidate || !remainderCandidate || !firstSentence || firstSentenceLooksAuthorLike) {
+          continue;
+        }
+
+        const authors = this.parseAuthorList(authorCandidate, 'vancouver');
+        if (authors.length < 2) {
+          continue;
+        }
+
+        const hasBrokenInitialToken = authors.some((author) => /^[A-Z]\.?$/.test(author.trim()));
+        if (hasBrokenInitialToken) {
+          continue;
+        }
+
+        return { authors, remainder: remainderCandidate };
+      }
+
+      return null;
+    };
+    const assignCompactLeadSegments = (beforeYearStr: string): boolean => {
+      const compactLead = extractCompactLeadAuthors(beforeYearStr);
+      if (!compactLead) return false;
+
+      parsed.authors = compactLead.authors;
+      const segments = compactLead.remainder.split(/\.\s+/).map((segment) => segment.trim()).filter(Boolean);
+      if (segments.length >= 1) {
+        parsed.title = segments[0].trim();
+      }
+      if (segments.length >= 2) {
+        const venue = segments.slice(1).join('. ').trim();
+        if (!this.parseConferenceRemainder(venue, parsed)) {
+          parsed.journal = venue;
+        }
+      }
+      return true;
+    };
     const stripTrailingDoi = (value: string): string => value
       .replace(/\b10\.\d{4,9}\/\S+\b.*$/i, '')
       .replace(/[.;,\s]+$/g, '')
@@ -2033,7 +2126,7 @@ export class CitationParser {
       const beforeYearStr = cleanText.substring(0, cleanText.indexOf(yearVolMatch[0])).trim().replace(/\.\s*$/, '');
 
       // Prefer period-split (Author. Title. Journal); if that yields too few segments, try comma-split for search inputs
-      if (!assignLeadSegments(beforeYearStr)) {
+      if (!assignLeadSegments(beforeYearStr) && !assignCompactLeadSegments(beforeYearStr)) {
         const segments = beforeYearStr.split(/\.\s+/);
         if (segments.length < 3 && beforeYearStr.includes(',')) {
         const commaSegs = beforeYearStr.split(',').map((s) => s.trim()).filter(Boolean);
@@ -2062,7 +2155,7 @@ export class CitationParser {
       parsed.year = yearLocatorOnlyMatch[1];
       parsed.pages = yearLocatorOnlyMatch[2].replace(/–/g, '-');
       const beforeYearStr = cleanText.substring(0, cleanText.indexOf(yearLocatorOnlyMatch[0])).trim().replace(/\.\s*$/, '');
-      if (!assignLeadSegments(beforeYearStr)) {
+      if (!assignLeadSegments(beforeYearStr) && !assignCompactLeadSegments(beforeYearStr)) {
         const segments = beforeYearStr.split(/\.\s+/).map((segment) => segment.trim()).filter(Boolean);
         if (segments.length >= 3) {
           parsed.authors = this.parseAuthorList(segments[0].trim(), 'vancouver');
@@ -2081,7 +2174,7 @@ export class CitationParser {
       if (yyyySemicolonEnd) {
         parsed.year = yyyySemicolonEnd[1];
         const beforeYearStr = cleanText.substring(0, cleanText.indexOf(yyyySemicolonEnd[0])).trim().replace(/\.\s*$/, '');
-        if (!assignLeadSegments(beforeYearStr)) {
+        if (!assignLeadSegments(beforeYearStr) && !assignCompactLeadSegments(beforeYearStr)) {
           const segments = beforeYearStr.split(/\.\s+/);
           if (segments.length >= 3) {
             parsed.authors = this.parseAuthorList(segments[0].trim(), 'vancouver');
@@ -2097,17 +2190,35 @@ export class CitationParser {
       } else {
         // Fallback: split by periods
         const beforeTail = cleanText.replace(/\.\s*$/, '');
-        if (!assignLeadSegments(beforeTail)) {
-          const segments = beforeTail.split(/\.\s+/);
+        if (!assignCompactLeadSegments(beforeTail)) {
+          const extractedLead = extractAuthorSegment(beforeTail);
+          if (extractedLead.authorSegment && extractedLead.remaining) {
+          parsed.authors = this.parseAuthorList(extractedLead.authorSegment, 'vancouver');
+          const segments = extractedLead.remaining.split(/\.\s+/).map((segment) => segment.trim()).filter(Boolean);
+          if (segments.length >= 1) {
+            parsed.title = segments[0].trim();
+          }
           if (segments.length >= 2) {
-            parsed.authors = this.parseAuthorList(segments[0].trim(), 'vancouver');
-            parsed.title = segments[1].trim();
-            if (segments.length >= 3) {
-              parsed.journal = segments[2].trim();
+            const venue = segments.slice(1).join('. ').trim();
+            if (!this.parseConferenceRemainder(venue, parsed)) {
+              parsed.journal = venue;
             }
           }
-          const yearMatch = cleanText.match(/\b((?:19|20)\d{2}|n\.d\.)\b/i);
-          if (yearMatch) parsed.year = yearMatch[1];
+          } else if (!assignLeadSegments(beforeTail)) {
+            const segments = beforeTail.split(/\.\s+/);
+            if (segments.length >= 2) {
+              parsed.authors = this.parseAuthorList(segments[0].trim(), 'vancouver');
+              parsed.title = segments[1].trim();
+              if (segments.length >= 3) {
+                const venue = segments.slice(2).join('. ').trim();
+                if (!this.parseConferenceRemainder(venue, parsed)) {
+                  parsed.journal = venue;
+                }
+              }
+            }
+            const yearMatch = cleanText.match(/\b((?:19|20)\d{2}|n\.d\.)\b/i);
+            if (yearMatch) parsed.year = yearMatch[1];
+          }
         }
       }
     }
@@ -2241,7 +2352,7 @@ export class CitationParser {
 
     const trailingGroupAuthors = Array.from(new Set(
       clean
-        .split(/,\s*/)
+        .split(/,?\s+and\s+|,\s*&\s*|,\s*(?=[A-Z][a-z])/)
         .map((part) => normalizeGroupAuthor(part.trim()))
         .filter((part) => isGroupAuthor(part)),
     ));
@@ -2492,9 +2603,23 @@ export class CitationParser {
     };
 
     const venue = (parsed.journal ?? parsed.conferenceTitle ?? '').toLowerCase();
+    const title = (parsed.title ?? '').toLowerCase();
+    const bookTitle = (parsed.bookTitle ?? '').toLowerCase();
+    const institution = (parsed.institution ?? '').toLowerCase();
     const publisher = (parsed.publisher ?? '').toLowerCase();
     const raw = ((parsed as { rawInput?: string }).rawInput ?? '').toLowerCase();
-    const combined = venue + ' ' + raw;
+    const combined = `${venue} ${bookTitle} ${publisher} ${institution} ${title} ${raw}`;
+    const websiteSignals = /\b(accessed|viewed|available(?:\s+at|\s+from)?|\[online\])\b/.test(combined);
+    const bareUrlSignals = /\b(?:https?:\/\/|www\.)\S+/i.test(raw);
+    const chapterSignals = /\bedited by\b/.test(combined)
+      || /^in\s+/i.test(parsed.journal ?? '')
+      || /^in\s+/i.test(bookTitle)
+      || /\bin\s+.+?,\s+edited by\b/.test(raw);
+    const journalLeakSignals = /\bedited by\b/.test(venue)
+      || /^in\s+/i.test(parsed.journal ?? '')
+      || websiteSignals;
+    const institutionalSignals = /\b(organization|agency|administration|department|ministry|office|commission|council|bank|foundation|programme|program|centre|center|college|university|hospital|authority|committee|collaboration|network|initiative|institute|society|association|union|research|world health organization|un women|united nations|oecd|world bank|ema|nice)\b/.test(combined);
+    const reportSignals = /\b(report|guideline|working paper|technical report|white paper|policy brief|fact sheet|statement|bulletin)\b/.test(combined);
 
     if (parsed.journal) score.journal += 4;
     if (parsed.volume) score.journal += 2;
@@ -2507,6 +2632,8 @@ export class CitationParser {
     }
 
     if (/ieee\s+transactions/.test(combined) && (parsed.volume || parsed.issue || parsed.pages)) score.journal += 4;
+    if (journalLeakSignals) score.journal -= 6;
+    if (websiteSignals && (!parsed.volume && !parsed.issue)) score.journal -= 3;
 
     if (/proceedings|conference|symposium|workshop|in proc\b/.test(combined)) score.conference += 4;
     if (/\b(cvpr|iccv|eccv|neurips|nips|icml|iclr|acl|emnlp|naacl|aaai|ijcai)\b/.test(combined)) score.conference += 3;
@@ -2514,9 +2641,12 @@ export class CitationParser {
 
     if (parsed.bookTitle) score.bookChapter += 4;
     if (parsed.editor) score.bookChapter += 2;
+    if (chapterSignals) score.bookChapter += 4;
+    if (parsed.bookTitle && parsed.pages) score.bookChapter += 2;
 
     if (/press|publisher|springer|elsevier|wiley|cambridge|oxford/.test(publisher)) score.book += 3;
     if (!parsed.volume && !parsed.issue && !parsed.pages && parsed.publisher) score.book += 2;
+    if (!parsed.journal && !parsed.conferenceTitle && parsed.publisher && (parsed.placeOfPublication || parsed.year)) score.book += 4;
     // Author + title + year only (no venue) → treat as book rather than other
     if (
       parsed.authors?.length &&
@@ -2528,12 +2658,17 @@ export class CitationParser {
       !parsed.publisher
     )
       score.book += 2;
+    if (chapterSignals) score.book -= 2;
 
     if (/thesis|dissertation|doctoral|phd|master/.test(combined + ' ' + publisher)) score.thesis += 4;
     if (/technical report|working paper|nber|oecd|world bank|who/.test(combined + ' ' + publisher)) score.report += 4;
+    if (institutionalSignals && reportSignals) score.report += 4;
+    if (parsed.institution) score.report += 2;
     if (/arxiv|biorxiv|medrxiv|ssrn|preprint/.test(combined)) score.preprint += 4;
 
     if (parsed.url && !parsed.volume && !parsed.issue && !parsed.journal) score.website += 3;
+    if ((parsed.url || bareUrlSignals) && websiteSignals && !parsed.volume && !parsed.issue && !parsed.conferenceTitle) score.website += 5;
+    if ((parsed.url || bareUrlSignals) && !parsed.journal && !parsed.conferenceTitle && !parsed.bookTitle) score.website += 2;
 
     const ranked = (Object.entries(score) as [ReferenceType, number][]).filter(([k]) => k !== 'other').sort((a, b) => b[1] - a[1]);
     const [bestType, bestScore] = ranked[0];

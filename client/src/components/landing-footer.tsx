@@ -9,17 +9,17 @@ export function LandingFooter() {
           <p className="font-body text-xs text-slate-500 dark:text-slate-400 transition-colors">© {new Date().getFullYear()} BulkReferences. Precision in Every Reference.</p>
         </div>
         <div className="flex gap-8">
-          <Link href="/support">
-            <a className="font-body text-xs text-slate-500 dark:text-slate-400 hover:text-primary-container dark:hover:text-blue-200 transition-colors opacity-80 hover:opacity-100 duration-300">Support</a>
+          <Link href="/support" className="font-body text-xs text-slate-500 dark:text-slate-400 hover:text-primary-container dark:hover:text-blue-200 transition-colors opacity-80 hover:opacity-100 duration-300">
+            Support
           </Link>
-          <Link href="/contact">
-            <a className="font-body text-xs text-slate-500 dark:text-slate-400 hover:text-primary-container dark:hover:text-blue-200 transition-colors opacity-80 hover:opacity-100 duration-300">Contact</a>
+          <Link href="/contact" className="font-body text-xs text-slate-500 dark:text-slate-400 hover:text-primary-container dark:hover:text-blue-200 transition-colors opacity-80 hover:opacity-100 duration-300">
+            Contact
           </Link>
-          <Link href="/privacy">
-            <a className="font-body text-xs text-slate-500 dark:text-slate-400 hover:text-primary-container dark:hover:text-blue-200 transition-colors opacity-80 hover:opacity-100 duration-300">Privacy</a>
+          <Link href="/privacy" className="font-body text-xs text-slate-500 dark:text-slate-400 hover:text-primary-container dark:hover:text-blue-200 transition-colors opacity-80 hover:opacity-100 duration-300">
+            Privacy
           </Link>
-          <Link href="/terms">
-            <a className="font-body text-xs text-slate-500 dark:text-slate-400 hover:text-primary-container dark:hover:text-blue-200 transition-colors opacity-80 hover:opacity-100 duration-300">Terms</a>
+          <Link href="/terms" className="font-body text-xs text-slate-500 dark:text-slate-400 hover:text-primary-container dark:hover:text-blue-200 transition-colors opacity-80 hover:opacity-100 duration-300">
+            Terms
           </Link>
         </div>
       </div>

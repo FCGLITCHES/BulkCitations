@@ -97,6 +97,7 @@ export function createEmptyCitation(raw: string): CanonicalCitation {
     pages: createFieldValue(null, 'extracted', 0, 'split'),
     doi: createFieldValue(null, 'extracted', 0, 'split'),
     publisher: createFieldValue(null, 'extracted', 0, 'split'),
+    placeOfPublication: createFieldValue(null, 'extracted', 0, 'split'),
     url: createFieldValue(null, 'extracted', 0, 'split'),
     conferenceTitle: createFieldValue(null, 'extracted', 0, 'split'),
     bookTitle: createFieldValue(null, 'extracted', 0, 'split'),

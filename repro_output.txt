@@ -1,0 +1,14 @@
+Loaded 12 dynamic patterns
+Normalized: FakeAuthorName, X. Y., & MadeUpName, Z. (2099). The theoretical impossibility of parsing edge cases. Journal of Fictional Testing, 42(7), 101-110. https://doi.org/10.9999/fake.doi.123
+Parsed Authors: [
+  "FakeAuthorName, X. Y.",
+  "FakeAuthorName"
+]
+Author block: FakeAuthorName, X. Y., & MadeUpName, Z
+ampParts: [ 'FakeAuthorName, X. Y.', 'MadeUpName, Z' ]
+Tracing splitAuthors for: "FakeAuthorName, X. Y."
+  Match found: family="FakeAuthorName", given="X. Y."
+Part: "FakeAuthorName, X. Y." -> Results: [ 'FakeAuthorName, X. Y.' ]
+Tracing splitAuthors for: "MadeUpName, Z"
+  Match found: family="MadeUpName", given="Z"
+Part: "MadeUpName, Z" -> Results: [ 'MadeUpName, Z' ]

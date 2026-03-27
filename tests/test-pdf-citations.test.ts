@@ -10,6 +10,7 @@
 
 import { processReferences } from '../server/engine/pipeline';
 import { stripLeadingNumbering } from '../shared/stripNumbering';
+import { describe, expect, it } from 'vitest';
 
 // ── Client-side segmentation logic (extracted from reference-input.tsx) ──
 
@@ -554,9 +555,9 @@ async function runDiagnostic(refs: string[], label: string) {
   return { segmented: refs.length, output: result.references.length, pass, review, fail };
 }
 
-// ── Main ──
+// ── Main diagnostic runner ──
 
-async function main() {
+async function runPdfDiagnostic() {
   console.log('\n╔═══════════════════════════════════════════════╗');
   console.log('║  PDF Citation Robustness Diagnostic           ║');
   console.log('╚═══════════════════════════════════════════════╝');
@@ -607,6 +608,25 @@ async function main() {
   console.log(`║  PASS:   ${totalPass}  REVIEW: ${totalReview}  FAIL: ${totalFail}`.padEnd(48) + '║');
   console.log(`║  Pass rate: ${((totalPass/total)*100).toFixed(1)}%`.padEnd(48) + '║');
   console.log('╚═══════════════════════════════════════════════╝');
+
+  return {
+    bracketSegments,
+    fullSegments,
+    total,
+    totalFail,
+    totalPass,
+    totalReview,
+    vanSegments,
+  };
 }
 
-main().catch(console.error);
+describe('PDF Citation Robustness Diagnostic', () => {
+  it('runs without catastrophic segmentation drift', async () => {
+    const result = await runPdfDiagnostic();
+
+    expect(result.vanSegments.length).toBeLessThanOrEqual(85);
+    expect(result.bracketSegments.length).toBe(46);
+    expect(result.fullSegments.length).toBeLessThanOrEqual(130);
+    expect(result.total).toBeGreaterThanOrEqual(120);
+  });
+});

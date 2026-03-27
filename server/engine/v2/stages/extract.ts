@@ -62,7 +62,7 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
             warningFlags: result.authorWarningFlags ?? [],
             rejectedCandidates: result.rejectedCandidates ?? [],
           }
-          : parseAuthorsForStyle(result.parsed.authors ?? [], effectiveStyle);
+          : parseAuthorsForStyle(result.parsed.authors ?? [], result.detectedStyle ?? effectiveStyle);
         const yearValue = result.parsed.year ? Number.parseInt(result.parsed.year, 10) : null;
         if (result.fallbackUsed) {
           fallbacksUsed.push(`extract:${result.method}`);
@@ -74,6 +74,14 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
         let nextCitation: CanonicalCitation = {
           ...citation,
           referenceType: result.referenceType,
+          detectedStyle: result.detectedStyle
+            ? createFieldValue(
+              result.detectedStyle,
+              'extracted',
+              Math.max(citation.detectedStyle.confidence, result.detectedStyleConfidence ?? 0),
+              'extract',
+            )
+            : citation.detectedStyle,
           authors: createFieldValue(authorParseResult.authors, 'extracted', result.fieldConfidence.authors ?? 0, 'extract'),
           title: createFieldValue(result.parsed.title ?? null, 'extracted', result.fieldConfidence.title ?? 0, 'extract'),
           year: createFieldValue(Number.isFinite(yearValue) ? yearValue : null, 'extracted', result.fieldConfidence.year ?? 0, 'extract'),
@@ -102,6 +110,8 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           },
         };
         nextCitation = attachCitationDebug(nextCitation, 'extract', {
+          detectedStyle: result.detectedStyle,
+          detectedStyleConfidence: result.detectedStyleConfidence,
           selectedBranch: result.selectedBranch,
           selectionReason: result.selectionReason,
           extractorPath: result.extractorPath,
@@ -114,6 +124,8 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           ...(verboseDebug ? (result.debug ?? {}) : {}),
         }, context.debugEnabled);
         logStructuredDebug(context, 'extract', citationIndex, nextCitation, {
+          detectedStyle: result.detectedStyle,
+          detectedStyleConfidence: result.detectedStyleConfidence,
           selectedBranch: result.selectedBranch,
           selectionReason: result.selectionReason,
           extractorPath: result.extractorPath,
@@ -134,6 +146,8 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
               method: result.method,
               fallbackUsed: result.fallbackUsed,
               extractorPath: result.extractorPath,
+                detectedStyle: result.detectedStyle,
+                detectedStyleConfidence: result.detectedStyleConfidence,
                 warnings: [
                   ...result.warnings,
                   ...authorParseResult.warningFlags,

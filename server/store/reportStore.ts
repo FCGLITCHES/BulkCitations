@@ -434,7 +434,8 @@ class ResilientReportStore implements IReportStore {
     this.fallback = fallback;
   }
 
-  private shouldFallback(error: unknown): boolean {
+  private shouldFallback(error: any): boolean {
+    if (error?.code === 'XX000' || error?.severity === 'FATAL') return true;
     const message = error instanceof Error ? error.message : String(error);
     return /Error connecting to database|fetch failed|ECONNRESET|ENOTFOUND|ETIMEDOUT|connection/i.test(message);
   }

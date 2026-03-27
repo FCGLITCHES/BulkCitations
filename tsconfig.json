@@ -23,9 +23,12 @@
     }
   },
   "include": [
-    "client/src/main.tsx",
-    "server/index.ts",
+    "client/src/**/*.ts",
+    "client/src/**/*.tsx",
+    "server/**/*.ts",
     "shared/**/*.ts",
-    "shared/**/*.d.ts"
+    "shared/**/*.d.ts",
+    "tests/**/*.ts",
+    "scripts/**/*.ts"
   ]
 }

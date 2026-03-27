@@ -9,7 +9,17 @@ const pdfParse: (buffer: Buffer) => Promise<{ text: string }> =
 import { storage } from "./storage";
 import reportsRouter from "./routes/reports";
 import v2Router from "./routes/v2";
-import { conversionRequestSchema, contactRequestSchema, waitlistRequestSchema, type ConvertedReference, type ConversionResponse, type DuplicateGroup } from "@shared/schema";
+import {
+  adminAccessRequestSchema,
+  adminApprovalSchema,
+  adminLoginRequestSchema,
+  conversionRequestSchema,
+  contactRequestSchema,
+  waitlistRequestSchema,
+  type ConvertedReference,
+  type ConversionResponse,
+  type DuplicateGroup,
+} from "@shared/schema";
 import { processReferences, reformatReferences, initCSLStyles } from "./engine/index";
 import { runAssertions } from "./engine/strictRenderer.js";
 import { processV2Conversion } from "./engine/v2/index.js";
@@ -19,7 +29,15 @@ import { attachReferencePayloads } from "./engine/shared/referencePayloads.js";
 import { runSanityCheck } from "./engine/stages/sanityCheck.js";
 import { getAuthorityData } from "../shared/authorityLookup";
 import { calculateConfidence } from "../shared/confidence";
-import { sendContactAutoReply, sendContactNotification, sendWaitlistAutoReply, sendWaitlistNotification } from "./utils/email";
+import { computeRulesScore } from "../shared/computeRulesScore";
+import {
+  sendAdminAccessRequestAutoReply,
+  sendAdminAccessRequestNotification,
+  sendContactAutoReply,
+  sendContactNotification,
+  sendWaitlistAutoReply,
+  sendWaitlistNotification,
+} from "./utils/email";
 import { getAnalyticsSummary, trackAnalyticsEvent, type AnalyticsEventType, type AnalyticsMetadataValue } from "./store/analyticsStore.js";
 import {
   checkAdminLoginRateLimit,
@@ -30,8 +48,14 @@ import {
   requireAdmin,
   recordFailedAdminLogin,
   setAdminSessionCookie,
-  verifyAdminPassword,
 } from "./utils/adminAuth.js";
+import {
+  approveAdminAccessRequest,
+  createAdminAccessRequest,
+  findAdminAccountByEmailOrUsername,
+  getApprovedAdminByIdentifier,
+  verifyAdminAccountPassword,
+} from "./store/adminAuthStore.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize CSL styles at startup
@@ -54,13 +78,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const sanityWarnings = runSanityCheck(ref.convertedText, ref.outputStyle).warnings;
     if (sanityWarnings.length > 0) warnings = [...warnings, ...sanityWarnings];
 
-    let rulesScore = 100;
-    for (const warning of warnings) {
-      if (warning.startsWith("error:")) rulesScore -= 20;
-      else if (warning.startsWith("warning:")) rulesScore -= 5;
-    }
-
-    return Math.max(0, rulesScore);
+    return computeRulesScore(warnings);
   }
 
   function getStableConfidenceForStoredReference(ref: Awaited<ReturnType<typeof storage.getReference>>) {
@@ -147,6 +165,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const normalized = value.trim();
     if (!/^[A-Za-z0-9_-]{8,80}$/.test(normalized)) return null;
     return normalized;
+  }
+
+  function getBaseUrl(req: Request) {
+    const configured = process.env.APP_URL?.trim() || process.env.PUBLIC_APP_URL?.trim();
+    if (configured) {
+      return configured.replace(/\/+$/, "");
+    }
+
+    const forwardedProto = String(req.headers["x-forwarded-proto"] ?? "").split(",")[0]?.trim();
+    const protocol = forwardedProto || req.protocol || "https";
+    const host = req.get("host");
+    return host ? `${protocol}://${host}` : "https://bulkreferences.com";
   }
 
   function normalizeAnalyticsPath(value: unknown): string {
@@ -259,17 +289,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(getAdminSessionStatus(req));
   });
 
+  app.post("/api/admin/request-access", async (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+
+    try {
+      const data = adminAccessRequestSchema.parse(req.body);
+
+      if (!isAdminAuthConfigured()) {
+        return res.status(503).json({
+          message: "Admin access is not configured. Set ADMIN_SESSION_SECRET.",
+        });
+      }
+
+      const result = createAdminAccessRequest(data);
+      if (!result.ok) {
+        const message = result.reason === "approved_exists"
+          ? "An approved admin account already exists for that email or username."
+          : "An admin request for that email or username is already pending review.";
+        return res.status(409).json({ message });
+      }
+
+      const approvalUrl = `${getBaseUrl(req)}/adm1n/approve?token=${encodeURIComponent(result.approvalToken)}`;
+      const notificationResult = await sendAdminAccessRequestNotification({
+        name: data.name,
+        username: data.username.trim().toLowerCase(),
+        email: data.email.trim().toLowerCase(),
+        approvalUrl,
+      });
+
+      if (!notificationResult.success) {
+        return res.status(502).json({
+          message: "The access request was saved, but the approval email could not be delivered.",
+        });
+      }
+
+      sendAdminAccessRequestAutoReply({
+        name: data.name,
+        email: data.email.trim().toLowerCase(),
+      }).catch((error) => {
+        console.error("[admin] Admin access auto-reply failed:", error instanceof Error ? error.message : String(error));
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: "Your admin access request has been sent to contact@bulkreferences.com for approval.",
+      });
+    } catch (error) {
+      return res.status(400).json({
+        message: "Invalid admin access request.",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  });
+
   app.post("/api/admin/login", (req, res) => {
     res.setHeader("Cache-Control", "no-store");
 
-    const { password } = req.body as { password?: unknown };
-    if (typeof password !== "string" || password.trim().length === 0) {
-      return res.status(400).json({ message: "Password is required." });
+    let data;
+    try {
+      data = adminLoginRequestSchema.parse(req.body);
+    } catch (error) {
+      return res.status(400).json({
+        message: "Email or username and password are required.",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
     }
 
     if (!isAdminAuthConfigured()) {
       return res.status(503).json({
-        message: "Admin access is not configured. Add ADMIN_PASSWORD and ADMIN_SESSION_SECRET.",
+        message: "Admin access is not configured. Set ADMIN_SESSION_SECRET.",
       });
     }
 
@@ -281,14 +369,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
 
-    if (!verifyAdminPassword(password)) {
+    const existingAccount = findAdminAccountByEmailOrUsername(data.identifier, data.identifier);
+    if (existingAccount?.status === "pending") {
+      return res.status(403).json({
+        message: "This admin account is still pending approval from contact@bulkreferences.com.",
+      });
+    }
+
+    const account = getApprovedAdminByIdentifier(data.identifier);
+    if (!account) {
+      recordFailedAdminLogin(req);
+      return res.status(401).json({ message: "Invalid credentials." });
+    }
+
+    if (!verifyAdminAccountPassword(account, data.password)) {
       recordFailedAdminLogin(req);
       return res.status(401).json({ message: "Invalid credentials." });
     }
 
     clearAdminLoginFailures(req);
-    setAdminSessionCookie(req, res);
-    return res.json({ success: true });
+    setAdminSessionCookie(req, res, account.id);
+    return res.json({
+      success: true,
+      account: {
+        id: account.id,
+        name: account.name,
+        username: account.username,
+        email: account.email,
+      },
+    });
+  });
+
+  app.post("/api/admin/approve", (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+
+    try {
+      const { token } = adminApprovalSchema.parse(req.body);
+      const result = approveAdminAccessRequest(token);
+
+      if (!result.ok) {
+        return res.status(404).json({ message: "Approval link is invalid or has already been used." });
+      }
+
+      return res.json({
+        success: true,
+        alreadyApproved: result.alreadyApproved,
+        account: result.account,
+      });
+    } catch (error) {
+      return res.status(400).json({
+        message: "Approval token is required.",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
   });
 
   app.post("/api/admin/logout", (req, res) => {

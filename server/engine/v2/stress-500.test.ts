@@ -34,7 +34,7 @@ describe('v2 500-case stress corpus', () => {
     expect(response.processingPath.stagesRun).toEqual(
       expect.arrayContaining(['split', 'extract', 'validate', 'score', 'respond']),
     );
-    expect(response.partial_result ?? false).toBe(false);
+    expect(response.processingPath.partialResult ?? false).toBe(false);
 
     const debugCitations = response.debug?.citations ?? [];
     expect(debugCitations).toHaveLength(TOTAL_STRESS_CASES);
@@ -58,7 +58,7 @@ describe('v2 500-case stress corpus', () => {
     ).toHaveLength(0);
 
     for (const citation of response.citations) {
-      expect('cleanedChunk' in (citation as Record<string, unknown>)).toBe(false);
+      expect('cleanedChunk' in (citation as unknown as Record<string, unknown>)).toBe(false);
     }
 
     const sampleHeaderCases = corpus

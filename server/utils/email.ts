@@ -1,9 +1,10 @@
 import { Resend } from 'resend';
 
 const STATIC_TO_EMAIL = "support@bulkreferences.com";
+const ADMIN_APPROVAL_TO_EMAIL = "contact@bulkreferences.com";
 const DEFAULT_FROM_EMAIL = "Bulk References <support@bulkreferences.com>";
 const APP_NAME = "Bulk References";
-const APP_URL = "https://bulkreferences.com";
+const APP_URL = process.env.APP_URL?.trim() || process.env.PUBLIC_APP_URL?.trim() || "https://bulkreferences.com";
 
 type SendEmailResult = { success: boolean; error?: string };
 
@@ -298,6 +299,56 @@ export function buildWaitlistAutoReplyEmailHtml(data: {
     });
 }
 
+export function buildAdminAccessRequestNotificationEmailHtml(data: {
+    name: string;
+    username: string;
+    email: string;
+    approvalUrl: string;
+}) {
+    const safeName = escapeHtml(data.name);
+    const safeUsername = escapeHtml(data.username);
+    const safeEmail = escapeHtml(data.email);
+    const safeApprovalUrl = escapeHtml(data.approvalUrl);
+
+    return buildEmailShell({
+        badge: "Admin Access Request",
+        title: "A new admin request is waiting",
+        description: "A new admin account request was submitted for Bulk References. Review the applicant and approve access when ready.",
+        sections: joinRows([
+            buildSectionRow("Applicant", `${safeName}<div style="font-size:14px;line-height:22px;color:#475569;font-weight:500;">@${safeUsername}</div>`),
+            buildSectionRow("Email", safeEmail, true),
+            buildBodyRow("Approval", `
+                This request stays pending until it is approved. Use the secure approval link below to activate the account.
+                ${buildCtaButton("Approve admin access", safeApprovalUrl)}
+                <div style="margin-top:14px;font-size:12px;line-height:20px;color:#64748b;word-break:break-all;">${safeApprovalUrl}</div>
+            `),
+        ]),
+        footer: "Sent from the Bulk References admin access workflow.",
+    });
+}
+
+export function buildAdminAccessRequestAutoReplyEmailHtml(data: {
+    name: string;
+}) {
+    const safeName = escapeHtml(data.name);
+
+    return buildEmailShell({
+        badge: "Request Received",
+        title: "Your admin request is pending review",
+        description: `Hi ${safeName}, your Bulk References admin access request has been submitted to our team.`,
+        sections: joinRows([
+            buildBodyRow("What happens next", `
+                We sent your request to contact@bulkreferences.com for approval. Once approved, you can sign in at ${escapeHtml(`${APP_URL}/adm1n`)} using the credentials you just created.
+            `),
+            buildBodyRow("Need help?", `
+                If you need to update your request, reply to this email and our team can help.
+                ${buildCtaButton("Open admin sign in", `${APP_URL}/adm1n`)}
+            `),
+        ]),
+        footer: "This is an automatic confirmation from Bulk References.",
+    });
+}
+
 async function sendEmail(params: {
     to: string;
     subject: string;
@@ -398,5 +449,31 @@ export async function sendWaitlistAutoReply(data: {
         to: data.email,
         subject: `You're on the ${APP_NAME} waitlist`,
         html: buildWaitlistAutoReplyEmailHtml(data),
+    });
+}
+
+export async function sendAdminAccessRequestNotification(data: {
+    name: string;
+    username: string;
+    email: string;
+    approvalUrl: string;
+}): Promise<SendEmailResult> {
+    return sendEmail({
+        to: ADMIN_APPROVAL_TO_EMAIL,
+        subject: `[Bulk References Admin] Access request from ${data.name}`,
+        replyTo: data.email,
+        replyToName: data.name,
+        html: buildAdminAccessRequestNotificationEmailHtml(data),
+    });
+}
+
+export async function sendAdminAccessRequestAutoReply(data: {
+    name: string;
+    email: string;
+}): Promise<SendEmailResult> {
+    return sendEmail({
+        to: data.email,
+        subject: `Your ${APP_NAME} admin request is pending approval`,
+        html: buildAdminAccessRequestAutoReplyEmailHtml(data),
     });
 }

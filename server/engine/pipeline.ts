@@ -12,6 +12,7 @@ import { normaliseEncoding } from './stages/normaliseEncoding.js';
 import { runSanityCheck } from './stages/sanityCheck.js';
 import { getAuthorityData } from '../../shared/authorityLookup.js';
 import { calculateConfidence } from '../../shared/confidence.js';
+import { computeRulesScore } from '../../shared/computeRulesScore.js';
 import { hasAuthorInitialsOnly } from '../utils/authorResolution.js';
 import { clusterCitations } from '../../shared/clustering.js';
 import { computeWorkKey } from '../utils/workKey.js';
@@ -167,12 +168,7 @@ export async function processReferences(
 
 
             // Stage 8: Confidence scoring
-            let baseRulesScore = 100;
-            for (const w of warnings) {
-                if (w.startsWith('error:')) baseRulesScore -= 20;
-                else if (w.startsWith('warning:')) baseRulesScore -= 5;
-            }
-            baseRulesScore = Math.max(0, baseRulesScore);
+            const baseRulesScore = computeRulesScore(warnings);
 
             // Stage 7: Authority data enrichment
             let authorityData: any;
@@ -285,12 +281,7 @@ export function reformatReferences(
             const convertedText = fixFormatting(outputStyleInternal, rawText, ref.parsedData);
             const assertionResult: AssertionResult = runAssertions(outputStyleInternal, convertedText, ref.parsedData);
 
-            let baseRulesScore = 100;
-            for (const w of assertionResult.warnings) {
-                if (w.startsWith('error:')) baseRulesScore -= 20;
-                else if (w.startsWith('warning:')) baseRulesScore -= 5;
-            }
-            baseRulesScore = Math.max(0, baseRulesScore);
+            const baseRulesScore = computeRulesScore(assertionResult.warnings);
 
             const confidence = calculateConfidence(ref.parsedData, baseRulesScore);
 

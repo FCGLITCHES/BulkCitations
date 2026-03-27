@@ -15,8 +15,11 @@
 
 ## Backend & Infrastructure
 - **Language**: TypeScript for frontend/orchestration; Python for NLP/ML (FastAPI) to handle SciBERT and BART-NLI models.
+- **Schema Architecture**: `shared/schema.ts` is a barrel re-export from 4 focused submodules: `schema/types.ts` (core), `schema/v2Types.ts` (v2 engine), `schema/reportTypes.ts` (failure reporting), `schema/validation.ts` (Zod + utilities).
+- **Shared Utilities**: Common logic lives in `shared/` (e.g., `computeRulesScore.ts`, `confidence.ts`, `clustering.ts`). New duplicated patterns should always be extracted here.
 - **Database**: 
-    - **Primary**: File-based JSONL for reports and patterns (low-overhead).
+    - **v2 Jobs**: Supabase Postgres via Drizzle ORM (`v2JobStorage.ts`, resilient pattern with in-memory fallback).
+    - **Reports/Truth**: File-based JSONL (`data/reports.v2.jsonl`, `data/truthStore.v2.jsonl`).
     - **Cache**: Redis for embeddings and API (Crossref/Semantic Scholar) response caching.
 - **Async Processing**: ARQ (Async Redis Queue) for handling large batch jobs (Phase 12+).
 - **Deployment**: Vercel (Frontend/API) + GPU-enabled instances for NLP models (e.g., Render or Modal).

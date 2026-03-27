@@ -423,9 +423,18 @@ function CitationRow({
       )}
 
       {showDebug && showInputFormat && (
-        <Button variant="outline" size="sm" className="h-6 px-2 text-xs shrink-0">
-          From {INPUT_STYLE_LABELS[refData.inputStyle] ?? refData.inputStyle}
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="sm" className="h-6 px-2 text-xs shrink-0">
+                From {INPUT_STYLE_LABELS[refData.inputStyle] ?? refData.inputStyle}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs text-xs">
+              Parser used {INPUT_STYLE_LABELS[refData.inputStyle] ?? refData.inputStyle} as the source style. If Auto-detect was enabled, this was the winning style.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
 
       {showDebug && refData.styleDetectionFailed && (
@@ -464,7 +473,7 @@ function CitationRow({
             }
             className={`text-xs cursor-help flex items-center gap-1 border-transparent ${
               health.state === "clean"
-                ? "bg-secondary-fixed text-on-secondary-fixed dark:bg-emerald-900/40 dark:text-emerald-400"
+                ? "bg-primary-container/10 text-primary-container dark:bg-blue-900/40 dark:text-blue-300"
                 : health.state === "review"
                   ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400"
                   : "bg-error-container text-on-error-container dark:bg-red-900/40 dark:text-red-400"
@@ -538,7 +547,7 @@ function CitationRow({
   );
 
   return (
-    <div className={`bg-surface-container-lowest dark:bg-slate-800 p-5 sm:p-6 rounded-xl border border-outline-variant/30 dark:border-slate-700/50 shadow-sm citation-card ${health?.state === "clean" ? "ready" : health?.state === "review" ? "review" : "error"} relative group mb-4 transition-colors`}>
+    <div className={`bg-surface-container-lowest dark:bg-slate-800 p-5 sm:p-6 rounded-lg border border-outline-variant/30 dark:border-slate-700/50 shadow-sm citation-card ${health?.state === "clean" ? "ready" : health?.state === "review" ? "review" : "error"} relative group mb-4 transition-colors`}>
       
       {/* Primary Content Area */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-4 min-w-0">
@@ -621,7 +630,7 @@ function CitationRow({
 
       {/* Expanded Debug Trace */}
       {canShowDebugTrace && showDebugTrace && (
-        <div className="mb-4 rounded-xl border border-outline-variant/20 dark:border-slate-700/50 bg-surface-container-low dark:bg-slate-700/30 p-3 sm:p-4 text-on-surface dark:text-slate-200">
+        <div className="mb-4 rounded-lg border border-outline-variant/20 dark:border-slate-700/50 bg-surface-container-low dark:bg-slate-700/30 p-3 sm:p-4 text-on-surface dark:text-slate-200">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-lg border border-outline-variant/20 bg-surface-container-lowest p-3">
               <p className="text-[10px] uppercase tracking-widest font-bold text-outline">Engine</p>
@@ -1243,7 +1252,7 @@ export default function ReferenceOutput({
       </div>
 
       {showStageDebug && (
-        <div className="rounded-xl border border-border/60 bg-card/80 p-3 sm:p-4 shadow-sm">
+        <div className="rounded-lg border border-border/60 bg-card/80 p-3 sm:p-4 shadow-sm">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h4 className="text-sm font-semibold text-foreground">Review Hotspots</h4>
@@ -1437,7 +1446,7 @@ export default function ReferenceOutput({
 
         {/* Copy All + Download row */}
         <div
-          className={`fixed md:relative bottom-4 md:bottom-auto z-40 md:z-auto bg-card/95 md:bg-transparent backdrop-blur-md md:backdrop-blur-none p-3 md:p-0 rounded-xl md:rounded-none shadow-2xl md:shadow-none border border-border md:border-0 flex flex-row md:justify-center gap-2 sm:max-w-[calc(100vw-4.5rem)] md:max-w-none
+          className={`fixed md:relative bottom-4 md:bottom-auto z-40 md:z-auto bg-card/95 md:bg-transparent backdrop-blur-md md:backdrop-blur-none p-3 md:p-0 rounded-lg md:rounded-none shadow-2xl md:shadow-none border border-border md:border-0 flex flex-row md:justify-center gap-2 sm:max-w-[calc(100vw-4.5rem)] md:max-w-none
             ${isScrollPastThreshold ? "left-4 right-[4.5rem] sm:right-[5.5rem] md:left-auto md:right-auto w-auto" : "left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 w-[calc(100vw-3rem)] sm:w-auto"}
           `}
         >

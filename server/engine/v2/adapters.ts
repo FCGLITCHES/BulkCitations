@@ -77,6 +77,16 @@ const PLACE_SEGMENT_PATTERN = /^(?:[A-Z][A-Za-z'’.-]+(?:,\s*[A-Z][A-Za-z'’.-
 const BOOK_TAIL_PATTERN = /(?<place>[A-Z][^.:]{1,80}?)\s*:\s*(?<publisher>[^.;]+?)(?:[;,]\s*(?<year>(?:1[5-9]\d{2}|20\d{2})))?\.?$/i;
 const BOOK_PUBLISHER_YEAR_PATTERN = /(?<publisher>[^.;]+?)\s*,\s*(?<year>(?:1[5-9]\d{2}|20\d{2}))\.?$/i;
 const BOOK_NOTE_PATTERN = /^(?<title>.+?)\.\s*(?<note>(?:translated|edited|with\s+a\s+foreword|foreword|preface|introduction)\b.+)$/i;
+const HARVARD_JOURNAL_PATTERN = /^(?<author>.+?)\s+(?<year>(?:1[5-9]\d{2}|20\d{2}))\s*,\s*["'](?<title>[^"']+)["']\s*,\s*(?<journal>.+?),\s*vol\.?\s*(?<volume>\d+)(?:,\s*no\.?\s*(?<issue>[^,]+))?,\s*pp\.?\s*(?<pages>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?)\.?$/i;
+const HARVARD_BOOK_PATTERN = /^(?<author>.+?)\s+(?<year>(?:1[5-9]\d{2}|20\d{2}))\s*,\s*(?<title>[^,]+?)(?:,\s*(?<edition>\d+(?:st|nd|rd|th)\s+ed(?:ition)?|[A-Za-z0-9.\- ]+ edition))?,\s*(?<publisher>[^,]+),\s*(?<place>[^.]+)\.?$/i;
+const HARVARD_WEBSITE_PATTERN = /^(?<author>.+?)\s+(?<year>(?:1[5-9]\d{2}|20\d{2}))\s*,\s*["'](?<title>[^"']+)["']\s*,\s*(?<container>.+?),\s*(?:viewed|accessed)\b.+?(?<url>(?:https?:\/\/|www\.)\S+)/i;
+const QUOTED_WEBSITE_PATTERN = /^(?:\[\d+\]\s*)?(?<author>.+?)\.\s+"(?<title>[^"]+?)"\.?\s+(?<rest>.+)$/i;
+const MLA_CHAPTER_PATTERN = /^(?<author>.+?)\.\s+"(?<title>[^"]+?)"\.?\s+(?<bookTitle>.+?),\s+edited by\s+(?<editor>.+?),\s+(?<publisher>[^,]+),\s+(?<year>(?:1[5-9]\d{2}|20\d{2})),\s*pp\.?\s*(?<pages>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?)\.?$/i;
+const CHICAGO_CHAPTER_PATTERN = /^(?<author>.+?)\.\s+"(?<title>[^"]+?)"\.?\s+In\s+(?<bookTitle>.+?),\s+edited by\s+(?<editor>.+?),\s*(?:pp\.?\s*)?(?<pages>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?)\.\s+(?<place>[^:]+):\s*(?<publisher>[^,]+),\s*(?<year>(?:1[5-9]\d{2}|20\d{2}))\.?$/i;
+const MLA_BOOK_PATTERN = /^(?<author>.+?)\.\s+(?<title>[^."]+?)\.\s+(?<publisher>[^,]+),\s*(?<year>(?:1[5-9]\d{2}|20\d{2}))\.?$/i;
+const CHICAGO_BOOK_PATTERN = /^(?<author>.+?)\.\s+(?<title>[^."]+?)\.\s+(?<place>[^:]+):\s*(?<publisher>[^,]+),\s*(?<year>(?:1[5-9]\d{2}|20\d{2}))\.?$/i;
+const IEEE_BOOK_PATTERN = /^(?:\[\d+\]\s*)?(?<author>(?:[\p{Lu}]\.\s*)+[\p{Lu}][\p{L}'’-]+),\s*(?<title>[^.]+?)\.\s+(?<place>[^:]+):\s*(?<publisher>[^,]+),\s*(?<year>(?:1[5-9]\d{2}|20\d{2}))\.?$/u;
+const AUTO_STYLE_CANDIDATES: CitationStyle[] = ['apa', 'mla', 'harvard', 'chicago', 'ieee', 'vancouver'];
 
 let grobidCooldownUntil = 0;
 
@@ -155,28 +165,73 @@ function preNormalizeExtractorInput(parser: CitationParser, input: string): stri
   return parser.preNormalize(fixUnicodeText(input));
 }
 
-function buildDeterministicCandidate(input: string, inputStyle: string) {
+function attachAutoStyleToCandidate(
+  parser: CitationParser,
+  normalized: string,
+  candidate: ParsedSelectionCandidate | null,
+  styleLocked: boolean,
+): ParsedSelectionCandidate | null {
+  if (!candidate || styleLocked || candidate.styleUsed) return candidate;
+  const autoCandidate = selectBestAutoStyleCandidate(parser, normalized);
+  if (!autoCandidate.styleUsed) return candidate;
+  if (autoCandidate.referenceType !== candidate.referenceType) return candidate;
+  return {
+    ...candidate,
+    styleUsed: autoCandidate.styleUsed,
+    styleConfidence: autoCandidate.styleConfidence,
+  };
+}
+
+function buildDeterministicCandidate(input: string, inputStyle: string, detectionConfidence = 0) {
   const parser = getParser();
   const normalized = preNormalizeExtractorInput(parser, input);
   const rawUrl = extractUrlSpan(normalized)?.url;
+  const styleLocked = inputStyle !== 'auto' && detectionConfidence >= 0.88;
   const quotedTitleJournalLocator = buildQuotedTitleJournalLocatorCandidate(normalized);
   if (quotedTitleJournalLocator) {
-    return quotedTitleJournalLocator;
+    return attachAutoStyleToCandidate(parser, normalized, quotedTitleJournalLocator as ParsedSelectionCandidate, styleLocked)
+      ?? quotedTitleJournalLocator;
   }
   const compactJournalTail = buildCompactJournalTailCandidate(normalized);
   if (compactJournalTail) {
-    return compactJournalTail;
+    return attachAutoStyleToCandidate(parser, normalized, compactJournalTail as ParsedSelectionCandidate, styleLocked)
+      ?? compactJournalTail;
   }
+  const harvardJournal = buildHarvardJournalCandidate(normalized);
+  if (harvardJournal) return harvardJournal;
+  const quotedWebsite = buildQuotedWebsiteCandidate(normalized, inputStyle);
+  if (quotedWebsite) return quotedWebsite;
+  const harvardWebsite = buildHarvardWebsiteCandidate(normalized);
+  if (harvardWebsite) return harvardWebsite;
+  const quotedBookChapter = buildQuotedBookChapterCandidate(normalized, inputStyle);
+  if (quotedBookChapter) return quotedBookChapter;
+  const harvardBook = buildHarvardBookCandidate(normalized);
+  if (harvardBook) return harvardBook;
+  const ieeeBook = buildIeeeBookCandidate(normalized);
+  if (ieeeBook) return ieeeBook;
   const bookTail = buildBookTailCandidate(normalized, inputStyle);
   if (bookTail) {
-    return bookTail;
+    return attachAutoStyleToCandidate(parser, normalized, bookTail as ParsedSelectionCandidate, styleLocked)
+      ?? bookTail;
   }
-  const detectedStyle = inputStyle !== 'auto'
-    ? inputStyle
-    : looksLikeAuthorColonVancouverReference(normalized)
-      ? 'vancouver'
-      : parser.detectStyle(normalized) ?? 'apa';
-  const { parsed } = parser.parseReference(normalized, detectedStyle as CitationStyle);
+
+  const selectedStyleCandidate = !styleLocked || inputStyle === 'auto'
+    ? (looksLikeAuthorColonVancouverReference(normalized)
+      ? {
+          branch: 'deterministic_raw' as const,
+          normalized,
+          parsed: parser.parseReference(normalized, 'vancouver').parsed,
+          referenceType: 'unknown',
+          warnings: [],
+          styleUsed: 'vancouver' as CitationStyle,
+          styleConfidence: 0.9,
+        }
+      : selectBestAutoStyleCandidate(parser, normalized))
+    : null;
+  const styleToParse = styleLocked
+    ? inputStyle as CitationStyle
+    : (selectedStyleCandidate?.styleUsed ?? inputStyle ?? 'apa') as CitationStyle;
+  const { parsed } = parser.parseReference(normalized, styleToParse);
   const normalizedParsedUrl = cleanTrailingUrl(parsed.url);
   if (rawUrl && (!normalizedParsedUrl || rawUrl.length > normalizedParsedUrl.length)) {
     parsed.url = rawUrl;
@@ -234,6 +289,8 @@ function buildDeterministicCandidate(input: string, inputStyle: string) {
     parsed,
     referenceType,
     warnings: parsed.parseWarnings ?? [],
+    styleUsed: styleToParse,
+    styleConfidence: styleLocked ? 1 : selectedStyleCandidate?.styleConfidence,
   };
 }
 
@@ -262,11 +319,17 @@ type ParsedSelectionCandidate = {
   parsed: ParsedReference;
   referenceType: string;
   warnings: string[];
+  styleUsed?: CitationStyle | null;
+  styleConfidence?: number;
 };
 
 function cleanTrailingUrl(url: string | undefined): string | undefined {
-  const normalized = normalizeWhitespace(url ?? '').replace(/\s+/g, '');
-  return normalized ? normalized.replace(/[).,;]+$/g, '') : undefined;
+  const normalized = normalizeWhitespace(url ?? '')
+    .replace(/[<>]/g, '')
+    .replace(/\s+/g, '');
+  if (!normalized) return undefined;
+  const cleaned = normalized.replace(/[)\].,;:]+$/g, '');
+  return /^www\./i.test(cleaned) ? `https://${cleaned}` : cleaned;
 }
 
 type ExtractedUrlSpan = {
@@ -278,7 +341,7 @@ type ExtractedUrlSpan = {
 const URL_CHAR_PATTERN = /[A-Za-z0-9\-._~:/?#\[\]@!$&'()*+,;=%]/;
 
 function extractUrlSpan(value: string): ExtractedUrlSpan | null {
-  const startMatch = value.match(/https?:\/\//i);
+  const startMatch = value.match(/https?:\/\/|www\./i);
   const start = startMatch?.index ?? -1;
   if (start < 0) return null;
 
@@ -292,7 +355,10 @@ function extractUrlSpan(value: string): ExtractedUrlSpan | null {
         lookahead += 1;
       }
       if (lookahead >= value.length) break;
+      const nextToken = value.slice(lookahead).match(/^[^\s]+/)?.[0] ?? '';
       const nextChar = value[lookahead] ?? '';
+      if (/^(?:accessed|viewed|available|retrieved|doi|vol|no|pp)\b/i.test(nextToken)) break;
+      if (/[.]\s*$/.test(raw) && /^[A-Z]/.test(nextToken)) break;
       if (!URL_CHAR_PATTERN.test(nextChar)) break;
       raw += value.slice(cursor, lookahead);
       cursor = lookahead;
@@ -713,6 +779,385 @@ function buildBookTailCandidate(normalized: string, inputStyle: string): {
     referenceType: inferBookTailReferenceType(authors, title, publisher),
     warnings: [...(parsed.parseWarnings ?? []), ...authorParse.warningFlags],
   };
+}
+
+function buildHarvardJournalCandidate(normalized: string): ParsedSelectionCandidate | null {
+  const match = normalized.match(HARVARD_JOURNAL_PATTERN);
+  if (!match?.groups) return null;
+
+  const authorParse = parseAuthorsForStyle([match.groups.author ?? ''], 'harvard');
+  const authors = authorParse.authors.map((author) => renderAuthor(author)).filter(Boolean);
+  const title = stripTrailingPeriod(match.groups.title ?? '');
+  const journal = cleanContainerTitle(match.groups.journal ?? '');
+  const volume = normalizeWhitespace(match.groups.volume ?? '');
+  const issue = normalizeWhitespace(match.groups.issue ?? '') || undefined;
+  const pages = normalizeWhitespace(match.groups.pages ?? '').replace(/\s*[-–]\s*/g, '-');
+  const year = normalizeParsedYear(match.groups.year);
+
+  if (!title || !journal || authors.length === 0 || !volume || !pages || !year) return null;
+
+  const parsed: ParsedReference = {
+    authors,
+    title,
+    year,
+    journal,
+    volume,
+    issue,
+    pages,
+    parseWarnings: ['harvard-journal-heuristic'],
+  };
+
+  return {
+    branch: 'deterministic_raw',
+    normalized,
+    parsed,
+    referenceType: 'journal',
+    warnings: [...(parsed.parseWarnings ?? []), ...authorParse.warningFlags],
+    styleUsed: 'harvard',
+    styleConfidence: 0.93,
+  };
+}
+
+function buildHarvardBookCandidate(normalized: string): ParsedSelectionCandidate | null {
+  if (/\b(?:vol\.?|no\.?|pp\.?|journal|conference|proceedings|viewed|accessed)\b/i.test(normalized)) return null;
+  const match = normalized.match(HARVARD_BOOK_PATTERN);
+  if (!match?.groups) return null;
+
+  const authorParse = parseAuthorsForStyle([match.groups.author ?? ''], 'harvard');
+  const authors = authorParse.authors.map((author) => renderAuthor(author)).filter(Boolean);
+  const title = cleanContainerTitle(match.groups.title ?? '');
+  const publisher = cleanContainerTitle(match.groups.publisher ?? '');
+  const placeOfPublication = cleanContainerTitle(match.groups.place ?? '');
+  const year = normalizeParsedYear(match.groups.year);
+  const edition = normalizeWhitespace(match.groups.edition ?? '') || undefined;
+
+  if (!title || !publisher || !placeOfPublication || !year || authors.length === 0) return null;
+
+  const parsed: ParsedReference = {
+    authors,
+    title,
+    year,
+    publisher,
+    placeOfPublication,
+    edition,
+    parseWarnings: ['harvard-book-heuristic'],
+  };
+
+  return {
+    branch: 'deterministic_raw',
+    normalized,
+    parsed,
+    referenceType: 'book',
+    warnings: [...(parsed.parseWarnings ?? []), ...authorParse.warningFlags],
+    styleUsed: 'harvard',
+    styleConfidence: 0.93,
+  };
+}
+
+function buildHarvardWebsiteCandidate(normalized: string): ParsedSelectionCandidate | null {
+  const match = normalized.match(HARVARD_WEBSITE_PATTERN);
+  if (!match?.groups) return null;
+
+  const authorLead = normalizeWhitespace(match.groups.author ?? '');
+  const authorParse = looksLikeInstitutionalLead(authorLead)
+    ? { authors: [], parserMode: 'institutional_literal', warningFlags: [], rejectedCandidates: [] }
+    : parseAuthorsForStyle([authorLead], 'harvard');
+  const authors = looksLikeInstitutionalLead(authorLead)
+    ? [normalizeInstitutionalAuthor(authorLead)]
+    : authorParse.authors.map((author) => renderAuthor(author)).filter(Boolean);
+  const title = stripTrailingPeriod(match.groups.title ?? '');
+  const institution = cleanContainerTitle(match.groups.container ?? '');
+  const year = normalizeParsedYear(match.groups.year);
+  const url = cleanTrailingUrl(match.groups.url);
+
+  if (!title || !institution || !year || !url || authors.length === 0) return null;
+
+  const parsed: ParsedReference = {
+    authors,
+    title,
+    year,
+    institution,
+    url,
+    parseWarnings: ['harvard-website-heuristic'],
+  };
+
+  return {
+    branch: 'deterministic_raw',
+    normalized,
+    parsed,
+    referenceType: 'website',
+    warnings: [...(parsed.parseWarnings ?? []), ...authorParse.warningFlags],
+    styleUsed: 'harvard',
+    styleConfidence: 0.92,
+  };
+}
+
+function buildQuotedWebsiteCandidate(normalized: string, inputStyle: string): ParsedSelectionCandidate | null {
+  const match = normalized.match(QUOTED_WEBSITE_PATTERN);
+  if (!match?.groups) return null;
+
+  const rest = normalizeWhitespace(match.groups.rest ?? '');
+  const urlSpan = extractUrlSpan(rest);
+  const url = urlSpan?.url;
+  if (!url) return null;
+
+  const restWithoutUrl = stripTrailingPeriod(removeUrlSpan(rest, urlSpan));
+  if (!/\b(accessed|viewed|available(?:\s+at|\s+from)?|\[online\])\b/i.test(restWithoutUrl) && !/\b(accessed|viewed|available(?:\s+at|\s+from)?|\[online\])\b/i.test(rest)) {
+    return null;
+  }
+
+  const inferredStyle = /^\s*\[\d+\]/.test(normalized)
+    ? 'ieee'
+    : /\bviewed\b/i.test(normalized)
+      ? 'harvard'
+      : /\baccessed\b/i.test(restWithoutUrl) && /,\s*(?:https?:\/\/|www\.)/i.test(rest)
+        ? (inputStyle === 'auto' ? 'mla' : inputStyle)
+        : /\baccessed\b/i.test(normalized)
+          ? 'chicago'
+          : (inputStyle === 'auto' ? 'mla' : inputStyle);
+  const authorLead = normalizeWhitespace(match.groups.author ?? '');
+  const authorParse = looksLikeInstitutionalLead(authorLead)
+    ? { authors: [], parserMode: 'institutional_literal', warningFlags: [], rejectedCandidates: [] }
+    : parseAuthorsForStyle([authorLead], inferredStyle);
+  const authors = looksLikeInstitutionalLead(authorLead)
+    ? [normalizeInstitutionalAuthor(authorLead)]
+    : authorParse.authors.map((author) => renderAuthor(author)).filter(Boolean);
+  const title = stripTrailingPeriod(match.groups.title ?? '');
+  const year = extractWebsitePublicationYear(rest);
+  const institution = cleanContainerTitle(
+    restWithoutUrl
+      .replace(/\b(?:accessed|viewed|available(?:\s+at|\s+from)?|\[online\])\b[\s\S]*$/i, '')
+      .replace(/,\s*((?:1[5-9]\d{2}|20\d{2}))\.?$/i, '')
+      .replace(/[,.]\s*$/g, ''),
+  );
+
+  if (!title || !institution || !url || authors.length === 0) return null;
+
+  const parsed: ParsedReference = {
+    authors,
+    title,
+    year,
+    institution,
+    url,
+    parseWarnings: ['quoted-website-heuristic'],
+  };
+
+  return {
+    branch: 'deterministic_raw',
+    normalized,
+    parsed,
+    referenceType: 'website',
+    warnings: [...(parsed.parseWarnings ?? []), ...authorParse.warningFlags],
+    styleUsed: inferredStyle === 'auto' ? null : inferredStyle as CitationStyle,
+    styleConfidence: year ? 0.9 : 0.84,
+  };
+}
+
+function buildQuotedBookChapterCandidate(normalized: string, inputStyle: string): ParsedSelectionCandidate | null {
+  const mlaMatch = normalized.match(MLA_CHAPTER_PATTERN);
+  if (mlaMatch?.groups) {
+    const authorParse = parseAuthorsForStyle([mlaMatch.groups.author ?? ''], inputStyle === 'auto' ? 'mla' : inputStyle);
+    const authors = authorParse.authors.map((author) => renderAuthor(author)).filter(Boolean);
+    const title = stripTrailingPeriod(mlaMatch.groups.title ?? '');
+    const bookTitle = cleanContainerTitle(mlaMatch.groups.bookTitle ?? '');
+    const editor = cleanContainerTitle(mlaMatch.groups.editor ?? '');
+    const publisher = cleanContainerTitle(mlaMatch.groups.publisher ?? '');
+    const year = normalizeParsedYear(mlaMatch.groups.year);
+    const pages = normalizeWhitespace(mlaMatch.groups.pages ?? '').replace(/\s*[-–]\s*/g, '-');
+
+    if (authors.length > 0 && title && bookTitle && publisher && year && pages) {
+      const parsed: ParsedReference = {
+        authors,
+        title,
+        year,
+        bookTitle,
+        editor,
+        publisher,
+        pages,
+        parseWarnings: ['quoted-book-chapter-heuristic'],
+      };
+
+      return {
+        branch: 'deterministic_raw',
+        normalized,
+        parsed,
+        referenceType: 'chapter',
+        warnings: [...(parsed.parseWarnings ?? []), ...authorParse.warningFlags],
+        styleUsed: 'mla',
+        styleConfidence: 0.94,
+      };
+    }
+  }
+
+  const chicagoMatch = normalized.match(CHICAGO_CHAPTER_PATTERN);
+  if (!chicagoMatch?.groups) return null;
+
+  const authorParse = parseAuthorsForStyle([chicagoMatch.groups.author ?? ''], inputStyle === 'auto' ? 'chicago' : inputStyle);
+  const authors = authorParse.authors.map((author) => renderAuthor(author)).filter(Boolean);
+  const title = stripTrailingPeriod(chicagoMatch.groups.title ?? '');
+  const bookTitle = cleanContainerTitle(chicagoMatch.groups.bookTitle ?? '');
+  const editor = cleanContainerTitle(chicagoMatch.groups.editor ?? '');
+  const publisher = cleanContainerTitle(chicagoMatch.groups.publisher ?? '');
+  const placeOfPublication = cleanContainerTitle(chicagoMatch.groups.place ?? '');
+  const year = normalizeParsedYear(chicagoMatch.groups.year);
+  const pages = normalizeWhitespace(chicagoMatch.groups.pages ?? '').replace(/\s*[-–]\s*/g, '-');
+
+  if (authors.length === 0 || !title || !bookTitle || !publisher || !placeOfPublication || !year || !pages) {
+    return null;
+  }
+
+  const parsed: ParsedReference = {
+    authors,
+    title,
+    year,
+    bookTitle,
+    editor,
+    publisher,
+    placeOfPublication,
+    pages,
+    parseWarnings: ['quoted-book-chapter-heuristic'],
+  };
+
+  return {
+    branch: 'deterministic_raw',
+    normalized,
+    parsed,
+    referenceType: 'chapter',
+    warnings: [...(parsed.parseWarnings ?? []), ...authorParse.warningFlags],
+    styleUsed: 'chicago',
+    styleConfidence: 0.94,
+  };
+}
+
+function buildIeeeBookCandidate(normalized: string): ParsedSelectionCandidate | null {
+  const match = normalized.match(IEEE_BOOK_PATTERN);
+  if (!match?.groups) return null;
+
+  const authorParse = parseAuthorsForStyle([match.groups.author ?? ''], 'ieee');
+  const authors = authorParse.authors.map((author) => renderAuthor(author)).filter(Boolean);
+  const title = cleanContainerTitle(match.groups.title ?? '');
+  const placeOfPublication = cleanContainerTitle(match.groups.place ?? '');
+  const publisher = cleanContainerTitle(match.groups.publisher ?? '');
+  const year = normalizeParsedYear(match.groups.year);
+
+  if (authors.length === 0 || !title || !placeOfPublication || !publisher || !year) return null;
+
+  const parsed: ParsedReference = {
+    authors,
+    title,
+    year,
+    publisher,
+    placeOfPublication,
+    parseWarnings: ['ieee-book-heuristic'],
+  };
+
+  return {
+    branch: 'deterministic_raw',
+    normalized,
+    parsed,
+    referenceType: 'book',
+    warnings: [...(parsed.parseWarnings ?? []), ...authorParse.warningFlags],
+    styleUsed: 'ieee',
+    styleConfidence: 0.95,
+  };
+}
+
+function getStyleSignalScore(normalized: string, style: CitationStyle): number {
+  switch (style) {
+    case 'ieee':
+      return (
+        (/^\[\d+\]/.test(normalized) ? 8 : 0)
+        + (/\bin\s+Proc\b|\bArt\.?\s*no\.?/i.test(normalized) ? 4 : 0)
+        + (/^(?:\[\d+\]\s*)?(?:[\p{Lu}]\.\s*){1,4}[\p{Lu}][\p{L}'’-]+/u.test(normalized) ? 3 : 0)
+        - ((MLA_BOOK_PATTERN.test(normalized) || CHICAGO_BOOK_PATTERN.test(normalized)) ? 7 : 0)
+        - ((/\bvol\.\s*\d+/i.test(normalized) && /,\s*(?:1[5-9]\d{2}|20\d{2}),\s*pp\./i.test(normalized)) ? 5 : 0)
+      );
+    case 'vancouver':
+      return (
+        (/\b(?:1[5-9]\d{2}|20\d{2});\d+(?:\(\d+\))?:[A-Za-z]?\d+/i.test(normalized) ? 9 : 0)
+        + (/^(?:[\p{Lu}][\p{L}'’-]+\s+[\p{Lu}]{1,4},\s*){2,}/u.test(normalized) ? 4 : 0)
+        - ((MLA_BOOK_PATTERN.test(normalized) || CHICAGO_BOOK_PATTERN.test(normalized)) ? 6 : 0)
+      );
+    case 'harvard':
+      return (
+        (HARVARD_JOURNAL_PATTERN.test(normalized) ? 8 : 0)
+        + (HARVARD_BOOK_PATTERN.test(normalized) ? 8 : 0)
+        + (HARVARD_WEBSITE_PATTERN.test(normalized) ? 8 : 0)
+        + (/\bviewed\b|\bAvailable at:/i.test(normalized) ? 3 : 0)
+      );
+    case 'mla':
+      return (
+        (/\bvol\.\s*\d+/i.test(normalized) && /,\s*(?:1[5-9]\d{2}|20\d{2}),\s*pp\./i.test(normalized) ? 8 : 0)
+        + (MLA_CHAPTER_PATTERN.test(normalized) ? 8 : 0)
+        + (MLA_BOOK_PATTERN.test(normalized) ? 7 : 0)
+        + ((/"[^"]+\."\s+.+?,\s*(?:1[5-9]\d{2}|20\d{2}),\s*(?:https?:\/\/|www\.)/i.test(normalized)) ? 5 : 0)
+      );
+    case 'chicago':
+      return (
+        (/\b\d+,\s*no\.\s*[^,]+\s*\((?:1[5-9]\d{2}|20\d{2})\):\s*[A-Za-z]?\d+/i.test(normalized) ? 8 : 0)
+        + (CHICAGO_CHAPTER_PATTERN.test(normalized) ? 8 : 0)
+        + (CHICAGO_BOOK_PATTERN.test(normalized) ? 9 : 0)
+        + (/"[^"]+"\.\s+.+\.\s+Accessed\b/i.test(normalized) ? 5 : 0)
+        + (/[A-Z][A-Za-z'’-]+:\s+[^,]+,\s*(?:1[5-9]\d{2}|20\d{2})\.?$/i.test(normalized) ? 4 : 0)
+      );
+    case 'apa':
+      return (
+        (/^[^.]+\(\d{4}[a-z]?\)\./.test(normalized) ? 7 : 0)
+        + (/&\s+[A-Z][a-zÀ-ÿ]+,\s*[A-Z]\./.test(normalized) ? 3 : 0)
+      );
+    default:
+      return 0;
+  }
+}
+
+function selectBestAutoStyleCandidate(parser: CitationParser, normalized: string): ParsedSelectionCandidate {
+  const candidates = AUTO_STYLE_CANDIDATES.map((style) => {
+    const { parsed } = parser.parseReference(normalized, style);
+    const referenceType = parsedReferenceTypeToCanonical(parser.determineReferenceType(parsed));
+    const sanitized = sanitizeParsedReference(parsed, referenceType);
+    const repairedParsed = normalizeAuthorOptionalWebsiteParse(sanitized.parsed, sanitized.referenceType);
+    const authorParse = parseAuthorsForStyle(repairedParsed.authors ?? [], style);
+    const score = scoreCandidate(repairedParsed, sanitized.referenceType)
+      - (authorParse.warningFlags.length * 2)
+      - (authorParse.rejectedCandidates.length * 1.5)
+      + ((authorParse.parserMode === 'alternating_pairs' || authorParse.parserMode === 'surname_given_pairs') ? 8 : 0)
+      + getStyleSignalScore(normalized, style);
+
+    return {
+      style,
+      candidate: {
+        branch: 'deterministic_raw' as const,
+        normalized,
+        parsed: repairedParsed,
+        referenceType: sanitized.referenceType,
+        warnings: parsed.parseWarnings ?? [],
+        styleUsed: style,
+      },
+      score,
+    };
+  }).sort((left, right) => right.score - left.score);
+
+  const best = candidates[0];
+  const second = candidates[1];
+  const margin = best && second ? best.score - second.score : 0;
+  const confidence = best
+    ? Math.max(0.42, Math.min(0.96, Number((0.58 + Math.max(margin, 0) * 0.035 + Math.max(getStyleSignalScore(normalized, best.style), 0) * 0.02).toFixed(3))))
+    : 0.35;
+
+  return best
+    ? {
+        ...best.candidate,
+        styleConfidence: confidence,
+      }
+    : {
+        branch: 'deterministic_raw',
+        normalized,
+        parsed: {},
+        referenceType: 'unknown',
+        warnings: [],
+        styleUsed: null,
+        styleConfidence: 0.35,
+      };
 }
 
 function buildTitleLedWebsiteCandidate(
@@ -1546,6 +1991,14 @@ function shouldShortCircuitDeterministicSelection(
     ? true
     : normalizedStyle === 'vancouver';
   const safeInvertedCoauthors = !(hasDelimitedCoauthorLead && authorParse.parserMode === 'inverted_or_generic');
+  const inSourceContainerMissing = /\bIn\s+.+\bpp?\.?\s*[A-Z]?\d+/i.test(input)
+    && !parsed.conferenceTitle
+    && !parsed.bookTitle
+    && (
+      (referenceType === 'chapter' && Boolean(parsed.journal))
+      || (referenceType === 'conference' && !/conference|proceedings|symposium|workshop/i.test(parsed.journal ?? ''))
+    );
+  if (inSourceContainerMissing) return false;
 
   return hasCoreTitle
     && hasCoreAuthors
@@ -1883,25 +2336,37 @@ class DefaultClassifierAdapter implements ClassifierAdapter {
     if (looksLikeAuthorColonVancouverReference(normalized)) {
       return { style: 'vancouver', confidence: 0.9 };
     }
-    if (/^\s*\[\d+\]/.test(normalized) || /\bvol\.\s*\d+/i.test(normalized) && /"\s*,?\s*[A-Z]/.test(normalized)) {
-      return { style: 'ieee', confidence: 0.91 };
+    if (/"[^"]+,"\s+in\s+(?:proc(?:eedings)?\.?|proceedings)\b/i.test(normalized)) {
+      return { style: 'ieee', confidence: 0.95 };
     }
-    if (/\.\s+\d{4};\d+(?:\(\d+\))?:\S+/i.test(normalized) || /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\s+[A-Z]{1,4}\.\s+\d{4};/.test(normalized)) {
-      return { style: 'vancouver', confidence: 0.9 };
+    if (/^\s*\[\d+\]/.test(normalized) && /\bin\s+(?:proc(?:eedings)?\.?|proceedings)\b/i.test(normalized)) {
+      return { style: 'ieee', confidence: 0.94 };
     }
-    if (/\(\d{4}\)\.\s+/.test(normalized)) {
-      return { style: 'apa', confidence: 0.88 };
+    if (/^\s*\[\d+\]/.test(normalized) && /\bpp?\.\s*[A-Za-z]?\d+/i.test(normalized) && /,\s*(?:1[5-9]\d{2}|20\d{2})\.?$/i.test(normalized)) {
+      return { style: 'ieee', confidence: 0.92 };
     }
-    if (/".+?"\s+[A-Z]/.test(normalized) && /\bvol\.\s*\d+/i.test(normalized)) {
-      return { style: 'mla', confidence: 0.82 };
+    const heuristicStyle = buildHarvardJournalCandidate(normalized)
+      ?? buildHarvardWebsiteCandidate(normalized)
+      ?? buildQuotedWebsiteCandidate(normalized, 'auto')
+      ?? buildQuotedBookChapterCandidate(normalized, 'auto')
+      ?? buildHarvardBookCandidate(normalized)
+      ?? buildIeeeBookCandidate(normalized);
+    if (heuristicStyle?.styleUsed) {
+      return {
+        style: heuristicStyle.styleUsed,
+        confidence: heuristicStyle.styleConfidence ?? 0.9,
+      };
     }
-    if (/\b\d{4}\.\s+.+,\s+\d+\(\d+\),\s+pp?\./i.test(normalized)) {
-      return { style: 'harvard', confidence: 0.86 };
+    if (CHICAGO_BOOK_PATTERN.test(normalized)) {
+      return { style: 'chicago', confidence: 0.92 };
     }
-    const detected = parser.detectStyle(normalized);
+    if (MLA_BOOK_PATTERN.test(normalized)) {
+      return { style: 'mla', confidence: 0.9 };
+    }
+    const selected = selectBestAutoStyleCandidate(parser, normalized);
     return {
-      style: detected,
-      confidence: detected ? 0.84 : 0.35,
+      style: selected.styleUsed ?? null,
+      confidence: selected.styleConfidence ?? 0.35,
     };
   }
 }
@@ -1918,14 +2383,17 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     llmBudget?: { maxCalls: number; totalCalls: number; splitCalls: number; extractCalls: number; capReached: boolean };
     debugEnabled?: boolean;
   }) {
-    const deterministicBase = buildDeterministicCandidate(input, inputStyle);
+    const deterministicBase = buildDeterministicCandidate(input, inputStyle, options?.detectionConfidence ?? 0);
     const deterministicSanitized = sanitizeParsedReference(deterministicBase.parsed, deterministicBase.referenceType);
     const deterministic = {
       ...deterministicBase,
       parsed: normalizeAuthorOptionalWebsiteParse(deterministicSanitized.parsed, deterministicSanitized.referenceType),
       referenceType: deterministicSanitized.referenceType,
     };
-    const deterministicAuthorParse = parseAuthorsForStyle(deterministic.parsed.authors ?? [], inputStyle);
+    const deterministicAuthorParse = parseAuthorsForStyle(
+      deterministic.parsed.authors ?? [],
+      deterministic.styleUsed ?? inputStyle,
+    );
     const deterministicScore = scoreCandidate(deterministic.parsed, deterministic.referenceType)
       - (deterministicAuthorParse.warningFlags.length * 2)
       - (deterministicAuthorParse.rejectedCandidates.length * 1.5)
@@ -2263,9 +2731,11 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
           : '';
     const selectedAuthorFingerprint = JSON.stringify(selectedBase.parsed.authors ?? []);
     const mergedAuthorFingerprint = JSON.stringify(mergedSelection.authors ?? []);
+    const selectedStyle = selectedBase.styleUsed ?? deterministic.styleUsed ?? (inputStyle === 'auto' ? null : inputStyle);
+    const selectedStyleConfidence = selectedBase.styleConfidence ?? deterministic.styleConfidence;
     const finalAuthorParse = selectedAuthorFingerprint === mergedAuthorFingerprint
       ? selectedAuthorParse
-      : parseAuthorsForStyle(mergedSelection.authors ?? [], inputStyle);
+      : parseAuthorsForStyle(mergedSelection.authors ?? [], selectedStyle);
 
     return {
       parsed: mergedSelection,
@@ -2275,6 +2745,8 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       extractorPath,
       selectedBranch: llmApplied ? 'hybrid' as const : selectedBranch,
       selectionReason: `${selectedReason}${selectionReasonSuffix}`,
+      detectedStyle: selectedStyle,
+      detectedStyleConfidence: selectedStyleConfidence,
       canonicalAuthors: finalAuthorParse.authors,
       authorParserMode: finalAuthorParse.parserMode,
       authorWarningFlags: finalAuthorParse.warningFlags,
@@ -2302,6 +2774,8 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             selected_branch: llmApplied ? 'hybrid' : selectedBranch,
             selection_reason: `${selectedReason}${selectionReasonSuffix}`,
             extractor_path: extractorPath,
+            detected_style: selectedStyle,
+            detected_style_confidence: selectedStyleConfidence,
             deterministic_score: deterministicScore,
             fallback_score: fallbackScore,
             institutional_score: institutionalScore,

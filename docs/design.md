@@ -34,6 +34,11 @@ Every interactive element MUST support:
 - **Component Gap**: 16px (consistent with `gap-4` in Tailwind).
 - **Inner Padding**: 12px or 16px for cards and containers.
 
+## Border Radius
+- **Professional Standard**: 0.5rem (`8px`). 
+- **Primary Containers**: Use `rounded-lg` (mapped to `--radius`).
+- **Secondary Elements**: Use `rounded-md` or `rounded-sm` for tighter nesting.
+
 ## Notifications (Toasts)
 - **Pattern**: Sonner-style toasts.
 - **Placement**: Bottom-right on desktop, top-center on mobile.
@@ -44,4 +49,3 @@ Every interactive element MUST support:
 - **Loading Buttons**: Must display a spinner and become `disabled` immediately upon click. Text should change to present-continuous (e.g., "Saving..." instead of "Save").
 - **Optimistic UI**: Use for simple actions like "Hide Duplicate".
 - **Dead-Feeling UI Prevention**: Use `AnimatePresence` for all list additions/removals. Ensure a minimum animation duration of 200ms to allow the eye to follow changes.
-

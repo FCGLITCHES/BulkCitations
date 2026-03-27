@@ -237,7 +237,8 @@ function reportItem(citation: CanonicalCitation, manifest: Manifest) {
       citationId: citation.id,
       raw: citation.raw,
       caseIds,
-      familyId: null,
+      familyName: null,
+      edgeTags: [],
       expectedStyle: null,
       detectedStyle: citation.detectedStyle.value,
       expectedReferenceType: null,
@@ -260,6 +261,8 @@ function reportItem(citation: CanonicalCitation, manifest: Manifest) {
       raw: citation.raw,
       caseIds,
       familyId: null,
+      familyName: null,
+      edgeTags: [],
       expectedStyle: null,
       detectedStyle: citation.detectedStyle.value,
       expectedReferenceType: null,
@@ -336,7 +339,7 @@ function familySummary(items: ReturnType<typeof reportItem>[], manifest: Manifes
     }
   }
 
-  for (const item of items) {
+  for (const item of items as any[]) {
     const familyId = item.familyId ?? 'unmapped';
     if (!families.has(familyId)) {
       families.set(familyId, {

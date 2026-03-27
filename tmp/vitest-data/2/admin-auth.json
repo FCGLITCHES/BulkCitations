@@ -1,0 +1,18 @@
+{
+  "accounts": [
+    {
+      "id": "8849b69d35c081403734d9a6",
+      "name": "Jane Archivist",
+      "username": "archivist_id_01",
+      "email": "jane@example.com",
+      "passwordHash": "7533983b07501708b57c72b3067add29dc45aa4e270b776d42e25ef6244411a3fc182c4159fc6d264d531e6e493c672757ce8a445733e3f134c8a0125a2878e7",
+      "passwordSalt": "f5ae9e3e0d04eea039347b8b0fd93f15",
+      "status": "approved",
+      "approvalTokenHash": null,
+      "approvalTokenIssuedAt": null,
+      "approvedAt": "2026-03-27T00:24:12.680Z",
+      "createdAt": "2026-03-27T00:24:12.636Z",
+      "updatedAt": "2026-03-27T00:24:12.680Z"
+    }
+  ]
+}

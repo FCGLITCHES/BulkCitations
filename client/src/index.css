@@ -22,11 +22,11 @@
   --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(210, 40%, 98%);
   --ring: hsl(160, 84%, 39%);
-  --radius: 0.75rem;
+  --radius: 0.5rem;
   --surface: hsl(0, 0%, 100%);
-  --gradient-start: hsl(222, 47%, 11%);
-  --gradient-mid: hsl(217, 33%, 17%);
-  --gradient-end: hsl(160, 84%, 39%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --ring: hsl(160, 84%, 39%);
+  --radius: 0.5rem;
 }
 
 .dark {
@@ -49,11 +49,12 @@
   --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(0, 0%, 98%);
   --ring: hsl(160, 84%, 45%);
-  --radius: 0.75rem;
+  --radius: 0.5rem;
   --surface: hsl(0, 0%, 11%);
-  --gradient-start: hsl(160, 84%, 50%);
-  --gradient-mid: hsl(180, 84%, 50%);
-  --gradient-end: hsl(200, 84%, 50%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(160, 84%, 45%);
+  --radius: 0.5rem;
 }
 
 @layer base {
@@ -74,7 +75,7 @@
 }
 
 .bg-gradient-brand {
-  background: var(--primary);
+  background: var(--primary-container);
 }
 
 .text-gradient-brand {
@@ -88,6 +89,22 @@
 .glass-header {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+}
+
+.vellum-shadow {
+  box-shadow: 0 24px 48px -12px rgba(25, 28, 30, 0.04);
+}
+
+.signature-cta {
+  background: #002147;
+}
+
+.tonal-shift {
+  @apply bg-slate-50/50 dark:bg-slate-900/50;
+}
+
+.sage-gradient {
+  background: #002147;
 }
 
 .custom-scrollbar::-webkit-scrollbar {

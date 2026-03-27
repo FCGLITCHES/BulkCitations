@@ -50,7 +50,7 @@ function makeContext(citations: any[], overrides: Partial<any> = {}) {
   } as any;
 }
 
-function makeProvider(overrides: Partial<ResolutionProviderAdapter> = {}): ResolutionProviderAdapter {
+function makeProvider(overrides: any = {}): ResolutionProviderAdapter {
   return {
     id: 'test-resolution-provider',
     lookupByDoi: vi.fn(async () => []),
@@ -58,7 +58,7 @@ function makeProvider(overrides: Partial<ResolutionProviderAdapter> = {}): Resol
     searchPubmedByTitle: vi.fn(async () => []),
     searchOpenAlexByTitle: vi.fn(async () => []),
     ...overrides,
-  };
+  } as any;
 }
 
 const cache = {
@@ -104,7 +104,7 @@ describe('enrich + validate + dedup architecture', () => {
       }]),
     });
 
-    const enrichedContext = await createEnrichStage(provider, cache as any).run(makeContext([citation], {
+    const enrichedContext = await createEnrichStage(provider, cache as any, {} as any).run(makeContext([citation], {
       request: { dedup: false },
     }));
     const validatedContext = await createValidateStage().run(enrichedContext);
@@ -376,7 +376,7 @@ describe('enrich + validate + dedup architecture', () => {
       }),
     });
 
-    const enriched = await createEnrichStage(provider, cache as any).run(makeContext([bmj, plos], {
+    const enriched = await createEnrichStage(provider, cache as any, {} as any).run(makeContext([bmj, plos], {
       request: { dedup: false },
     }));
     const deduped = await createDedupStage().run({

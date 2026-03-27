@@ -257,7 +257,7 @@ export function classifyLocatorToken(token: string): { kind: LocatorKind; value:
     return { kind: 'article-number', value: normalized };
   }
 
-  if (/^\d{6,}$/.test(normalized)) {
+  if (/^\d{5,}$/.test(normalized)) {
     return { kind: 'article-number', value: normalized };
   }
 

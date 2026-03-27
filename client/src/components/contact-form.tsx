@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { 
   Send, 
@@ -35,7 +36,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { contactRequestSchema, type ContactRequest } from "@shared/schema";
 
-export function ContactForm() {
+export function ContactForm({ className }: { className?: string }) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -97,7 +98,7 @@ export function ContactForm() {
   }
 
   return (
-    <Card className="shadow-lg border-border/60">
+    <Card className={cn("shadow-lg border-border/60", className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MessageSquare className="h-5 w-5 text-primary" />
@@ -209,7 +210,7 @@ export function ContactForm() {
 
             <Button 
               type="submit" 
-              className="w-full bg-primary hover:bg-primary/90 h-10"
+              className="w-full bg-[#002147] hover:bg-[#003366] text-white h-10 transition-colors shadow-lg"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

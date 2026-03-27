@@ -310,7 +310,7 @@ export default function ReferenceInput({
       <div className="flex justify-between items-end px-1">
         <h3 className="font-headline text-2xl font-bold text-primary-container dark:text-blue-50">Original Citations</h3>
         <div className="flex items-center gap-4">
-          <span className="text-xs font-semibold text-brand-green bg-brand-green/10 px-2 py-1 rounded">
+          <span className="text-xs font-semibold text-primary-container bg-primary-container/10 px-2 py-1 rounded">
             {referenceCount} reference{referenceCount !== 1 ? 's' : ''} detected
           </span>
           {referenceCount > 0 && (
@@ -342,7 +342,7 @@ export default function ReferenceInput({
             setInputText(SAMPLE_MIXED_REFERENCES);
             handleInputChange(SAMPLE_MIXED_REFERENCES);
           }}
-          className="text-xs font-bold uppercase tracking-widest text-brand-green border border-brand-green/20 hover:bg-brand-green bg-brand-green/5 hover:text-white px-6 py-3 rounded transition-all sm:w-auto w-full text-center"
+          className="text-xs font-bold uppercase tracking-widest text-primary-container border border-primary-container/20 hover:bg-primary-container bg-primary-container/5 hover:text-white px-6 py-3 rounded transition-all sm:w-auto w-full text-center"
         >
           Load Sample
         </button>
@@ -417,7 +417,7 @@ export default function ReferenceInput({
       <button 
         onClick={() => handleConvert()}
         disabled={isProcessing || !inputText.trim()}
-        className="w-full bg-brand-green py-4 rounded text-white font-bold tracking-wide flex items-center justify-center gap-3 shadow-lg shadow-brand-green/20 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-primary-container py-4 rounded text-white font-bold tracking-wide flex items-center justify-center gap-3 shadow-lg shadow-primary-container/20 hover:bg-[#002f5f] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isProcessing ? (
           <RotateCw className="w-5 h-5 animate-spin" />

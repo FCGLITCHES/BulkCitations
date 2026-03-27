@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createDefaultAdapters } from './adapters.js';
 import { processV2Conversion } from './pipeline.js';
 
+const processV2 = (req: any, opt?: any) => processV2Conversion(req, opt);
+
 describe('v2 pipeline', () => {
   afterEach(() => {
     delete process.env.ENABLE_GROBID_EXTRACTOR;
@@ -12,7 +14,7 @@ describe('v2 pipeline', () => {
   });
 
   it('builds a canonical response with provenance, stage logs, and duplicate metadata', async () => {
-    const { response } = await processV2Conversion({
+    const { response } = await processV2({
       sourceType: 'text',
       content: [
         'Smith, J. (2020). The future of testing. Journal of Quality, 10(2), 11-19.',
@@ -23,6 +25,7 @@ describe('v2 pipeline', () => {
       enrich: false,
       dedup: true,
       group: false,
+      debug: false,
     });
 
     expect(response.job_id).toBeTruthy();
@@ -40,7 +43,7 @@ describe('v2 pipeline', () => {
   });
 
   it('records per-stage timings and exposes a slowest-first phase summary', async () => {
-    const { response } = await processV2Conversion({
+    const { response } = await processV2({
       sourceType: 'text',
       content: 'Smith, J. (2020). The future of testing. Journal of Quality, 10(2), 11-19.',
       inputStyle: 'auto',
@@ -69,7 +72,7 @@ describe('v2 pipeline', () => {
   });
 
   it('omits the debug envelope unless debug mode is explicitly enabled', async () => {
-    const { response } = await processV2Conversion({
+    const { response } = await processV2({
       sourceType: 'text',
       content: 'Smith, J. (2020). The future of testing. Journal of Quality, 10(2), 11-19.',
       inputStyle: 'auto',
@@ -84,7 +87,7 @@ describe('v2 pipeline', () => {
   });
 
   it('recovers the healthcare regression fixture without pseudo-authors and preserves conference venue data', async () => {
-    const { response } = await processV2Conversion({
+    const { response } = await processV2({
       sourceType: 'text',
       content: [
         'Gomes, M.A.S., Kovaleski, J.L., Pagani, R.N. and da Silva, V.L., 2022. Machine learning applied to healthcare: a conceptual review. Journal of Medical Engineering & Technology, 46(7), pp.608-616.',
@@ -127,7 +130,7 @@ describe('v2 pipeline', () => {
   });
 
   it('renders conference and chapter container heuristics without dropping the recovered venue context', async () => {
-    const { response } = await processV2Conversion({
+    const { response } = await processV2({
       sourceType: 'text',
       content: [
         'Aljohani, Mohammed, and Tanweer Alam. "An algorithm for accessing traffic database using wireless technologies." In Computational Intelligence and Computing Research (ICCIC), 2015 IEEE International Conference on, pp. 1-4. IEEE, 2015. DOI: https://doi.org/10.1109/iccic.2015.7435818',
@@ -158,7 +161,7 @@ describe('v2 pipeline', () => {
   });
 
   it('deduplicates only the true mixed-format duplicate pair in a broader mixed-style citation set', async () => {
-    const { response } = await processV2Conversion({
+    const { response } = await processV2({
       sourceType: 'text',
       content: [
         'Gomes, M.A.S., Kovaleski, J.L., Pagani, R.N. and da Silva, V.L., 2022. Machine learning applied to healthcare: a conceptual review. Journal of Medical Engineering & Technology, 46(7), pp.608-616.',
@@ -199,7 +202,7 @@ describe('v2 pipeline', () => {
   });
 
   it('deduplicates already-rendered mixed-format variants of the same citation', async () => {
-    const { response } = await processV2Conversion({
+    const { response } = await processV2({
       sourceType: 'text',
       content: [
         'Gomes, M. A. S., Kovaleski, J. L., Pagani, R. N.., da Silva, V. L.. (2022). Machine learning applied to healthcare: a conceptual review. Journal of Medical Engineering & Technology, 46(7), 608–616.',
@@ -238,13 +241,13 @@ describe('v2 pipeline', () => {
     };
     const authorityLookup = {
       ...adapters.authorityLookup,
-      async lookup(citation) {
+      async lookup(citation: any) {
         authorityLookupCalls.push(citation.id);
         throw new Error('Semantic Scholar should not be called in the active enrichment path');
       },
     };
 
-    const { response } = await processV2Conversion({
+    const { response } = await processV2({
       sourceType: 'text',
       content: 'Example Preprint Team. Foundation models for triage. 2024.',
       inputStyle: 'auto',
@@ -277,7 +280,7 @@ describe('v2 pipeline', () => {
       },
     };
 
-    const { response } = await processV2Conversion({
+    const { response } = await processV2({
       sourceType: 'text',
       content: [
         'Smith, J. (2020). Stable citation. Journal of Quality, 10(2), 11-19.',
@@ -342,7 +345,7 @@ describe('v2 pipeline', () => {
         year: 2021,
         doi: '10.1136/bmj.n71',
         sourceType: 'journal',
-      }]),
+      }] as any),
       searchCrossrefByTitle: vi.fn(async () => []),
       searchPubmedByTitle: vi.fn(async () => []),
       searchOpenAlexByTitle: vi.fn(async () => []),
@@ -368,7 +371,7 @@ describe('v2 pipeline', () => {
       set: vi.fn(async () => undefined),
     };
 
-    const { response } = await processV2Conversion({
+    const { response } = await processV2({
       sourceType: 'text',
       content: 'Page, M. J. (2021). The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. https://doi.org/10.1136/bmj.n71',
       inputStyle: 'auto',
@@ -419,7 +422,7 @@ describe('v2 pipeline', () => {
       throw new Error(`Unexpected fetch: ${url}`);
     }) as any);
 
-    const { response } = await processV2Conversion({
+    const { response } = await processV2({
       sourceType: 'text',
       content: 'Smith J Structured extraction from local GROBID Journal of Quality 2020 10 2 11-19',
       inputStyle: 'auto',
@@ -451,7 +454,7 @@ describe('v2 pipeline', () => {
       'Smith, J. (2020). The future of testing. Journal of Quality, 10(2), 11-19.',
       'auto',
       {
-        inputProfile: { structure: 'structured', estimatedCount: 1 },
+        inputProfile: { structure: 'structured', estimatedCount: 1 } as any,
         detectionConfidence: 0.95,
         batchSize: 1,
       },
@@ -491,7 +494,7 @@ describe('v2 pipeline', () => {
       'Smith J Recovered by GROBID in large batch Journal of Quality 2020 10 2 11-19',
       'auto',
       {
-        inputProfile: { structure: 'semi_structured', estimatedCount: 200 },
+        inputProfile: { structure: 'semi_structured', estimatedCount: 200 } as any,
         detectionConfidence: 0.4,
         batchSize: 200,
       },
@@ -577,7 +580,7 @@ describe('v2 pipeline', () => {
             issue: '2',
             pages: '11-19',
             sourceType: 'journal-article',
-          }];
+          }] as any;
         }
         return [];
       }),
@@ -585,7 +588,7 @@ describe('v2 pipeline', () => {
       searchOpenAlexByTitle: vi.fn(async () => []),
     };
 
-    const { response } = await processV2Conversion({
+    const { response } = await processV2({
       sourceType: 'text',
       content: 'Recovered 2020',
       inputStyle: 'auto',
@@ -654,7 +657,7 @@ describe('v2 pipeline', () => {
       searchOpenAlexByTitle: vi.fn(async () => []),
     };
 
-    const { response } = await processV2Conversion({
+    const { response } = await processV2({
       sourceType: 'text',
       content: 'Smith, J. A., & Doe, R. B. (2023). Neural network optimization in low-resource environments. Journal of Artificial Intelligence Research, 45(2), 112-128.',
       inputStyle: 'auto',
@@ -684,7 +687,7 @@ describe('v2 pipeline', () => {
       throw new Error(`Unexpected fetch: ${url}`);
     }) as any);
 
-    const { response } = await processV2Conversion({
+    const { response } = await processV2({
       sourceType: 'text',
       content: 'McCoy, L. G., Banja, J. D., Ghassemi, M., & Celi, L. A. (2020). Ensuring machine learning for healthcare works for all. BMJ Health & Care Informatics, 27(3), e100237. https://doi.org/10.1136/bmjhci-2020-100237',
       inputStyle: 'auto',
@@ -700,7 +703,7 @@ describe('v2 pipeline', () => {
   });
 
   it('profiles explicit doi lists during ingestion', async () => {
-    const { response } = await processV2Conversion({
+    const { response } = await processV2({
       sourceType: 'doi_list',
       content: [
         'https://doi.org/10.1000/xyz123',
@@ -719,7 +722,7 @@ describe('v2 pipeline', () => {
   });
 
   it('profiles book-heavy, doi-heavy, and OCR-like input signals during ingestion', async () => {
-    const bookHeavy = await processV2Conversion({
+    const bookHeavy = await processV2({
       sourceType: 'text',
       content: [
         'Kennedy, David. New Relations: The Refashioning of British Poetry 1980-1994. Bridgend: Seren, 1996.',
@@ -734,7 +737,7 @@ describe('v2 pipeline', () => {
     });
     expect(bookHeavy.response.inputProfile?.signals).toContain('book_tail_markers');
 
-    const doiHeavy = await processV2Conversion({
+    const doiHeavy = await processV2({
       sourceType: 'text',
       content: [
         'Smith, J. (2020). Example one. Journal of Quality, 10(2), 11-19. https://doi.org/10.5555/example-1',
@@ -750,7 +753,7 @@ describe('v2 pipeline', () => {
     });
     expect(doiHeavy.response.inputProfile?.signals).toContain('doi_heavy');
 
-    const ocrLike = await processV2Conversion({
+    const ocrLike = await processV2({
       sourceType: 'text',
       content: [
         '2024 Example Proceedings Header 2 of 12',
@@ -779,7 +782,7 @@ describe('v2 pipeline', () => {
       })),
     };
 
-    const { response } = await processV2Conversion({
+    const { response } = await processV2({
       sourceType: 'text',
       content: [
         '1. Smith, J. (2020). Mixed systems in practi- ce. Journal of Quality, 10(2), 11-19.',

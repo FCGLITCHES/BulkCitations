@@ -1,0 +1,317 @@
+
+> rest-express@1.0.0 test D:\Coding\Citing
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mD:/Coding/Citing[39m
+
+[90mstdout[2m | tests/test_format_to_apa_matrix.test.ts
+[22m[39mLoaded 12 dynamic patterns
+
+[90mstdout[2m | tests/test_format_to_apa_matrix.test.ts
+[22m[39mCSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+
+[90mstdout[2m | tests/test_edgeCases.test.ts
+[22m[39mCSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+Loaded 12 dynamic patterns
+
+ [32m✓[39m server/store/analyticsStore.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 827[2mms[22m[39m
+     [33m[2m✓[22m[39m summarizes new users, converter attempts, and countries [33m 825[2mms[22m[39m
+[90mstdout[2m | tests/test_edgeCases.test.ts
+[22m[39mLoaded 12 dynamic patterns
+
+ [31m❯[39m tests/test_format_to_apa_matrix.test.ts [2m([22m[2m18 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 421[2mms[22m[39m
+     [32m✓[39m APA journal baseline[32m 230[2mms[22m[39m
+     [32m✓[39m IEEE journal baseline[32m 23[2mms[22m[39m
+     [32m✓[39m Vancouver journal baseline[32m 11[2mms[22m[39m
+     [32m✓[39m Harvard journal baseline[32m 10[2mms[22m[39m
+     [32m✓[39m MLA journal baseline[32m 10[2mms[22m[39m
+     [32m✓[39m Chicago journal baseline[32m 10[2mms[22m[39m
+     [32m✓[39m IEEE proceedings (Vaswani) conference extraction[32m 17[2mms[22m[39m
+     [32m✓[39m APA conference container becomes conference type[32m 10[2mms[22m[39m
+     [32m✓[39m IEEE proceedings (He) conference extraction[32m 10[2mms[22m[39m
+     [32m✓[39m PRL eLocator from compact volume(issue):locator[32m 9[2mms[22m[39m
+     [32m✓[39m IEEE Art. no. preserved[32m 7[2mms[22m[39m
+[31m     [31m×[31m Vancouver compact locator becomes article number[39m[32m 13[2mms[22m[39m
+     [32m✓[39m Supplement + S-pages extraction[32m 7[2mms[22m[39m
+     [32m✓[39m Vol/No compact normalization[32m 11[2mms[22m[39m
+     [32m✓[39m Hyphenated initials stay attached to surnames[32m 7[2mms[22m[39m
+     [32m✓[39m Particles and apostrophes survive[32m 8[2mms[22m[39m
+[31m     [31m×[31m Book chapter In: editor path[39m[32m 10[2mms[22m[39m
+     [32m✓[39m Book publisher-location extraction[32m 12[2mms[22m[39m
+ [31m❯[39m tests/test_edgeCases.test.ts [2m([22m[2m62 tests[22m[2m | [22m[31m5 failed[39m[2m)[22m[33m 434[2mms[22m[39m
+[31m     [31m×[31m Parser Isolation: Output must only derive from input (No silent fetch)[39m[32m 31[2mms[22m[39m
+     [33m[2m✓[22m[39m Round-Trip Normalization Test [33m 321[2mms[22m[39m
+     [32m✓[39m Trailing Year n.d. Fallback Protection (IEEE Bug #14)[32m 2[2mms[22m[39m
+[31m     [31m×[31m Supplement and Article Number Normalization[39m[32m 3[2mms[22m[39m
+     [32m✓[39m Single Letter Author Surname Preservation[32m 1[2mms[22m[39m
+     [32m✓[39m Complex Supplement Global Pre-pass[32m 1[2mms[22m[39m
+     [32m✓[39m Irish/Scottish Prefix (O'Brien) vs Lowercase Particle (d'Angelo)[32m 1[2mms[22m[39m
+     [32m✓[39m Dynamic Pattern Strict Overwrite Guard[32m 1[2mms[22m[39m
+     [32m✓[39m Cluster Merge E2E Test[32m 3[2mms[22m[39m
+     [32m✓[39m Cluster winner prefers cleaner conference parse over journal container leak[32m 1[2mms[22m[39m
+     [32m✓[39m Cluster winner prefers richer author initials and full journal title over abbreviated variant[32m 1[2mms[22m[39m
+     [32m✓[39m Cluster winner: authority-validated record overrides non-validated variants[32m 1[2mms[22m[39m
+     [32m✓[39m Cluster winner: full author list beats et al. truncation[32m 1[2mms[22m[39m
+     [32m✓[39m Cluster winner: records missing year cannot beat year-complete records[32m 1[2mms[22m[39m
+     [32m✓[39m Cluster winner: styleDetectionFailed record cannot win against valid parse[32m 1[2mms[22m[39m
+     [32m✓[39m Cluster warnings include style diversity note[32m 1[2mms[22m[39m
+     [32m✓[39m Cluster winner prefers APA-source variant for near-identical duplicates[32m 1[2mms[22m[39m
+     [32m✓[39m Dangling Ampersand Recovery[32m 1[2mms[22m[39m
+[31m     [31m×[31m n.d. Tokenization Protection[39m[32m 2[2mms[22m[39m
+     [32m✓[39m Vol./No. Normalization[32m 1[2mms[22m[39m
+     [32m✓[39m APA conference container should map to conferenceTitle (not journal)[32m 2[2mms[22m[39m
+     [32m✓[39m Vancouver compact initials preserve multiple initials in CSL output (TJ -> T. J.)[32m 7[2mms[22m[39m
+     [32m✓[39m Year Deduplication Validation[32m 1[2mms[22m[39m
+[31m     [31m×[31m Mangled Initials (Isolated Initials) Warning Capture[39m[32m 1[2mms[22m[39m
+     [32m✓[39m APA 7th Publisher Location Stripping[32m 10[2mms[22m[39m
+     [32m✓[39m patternHits: return shape and optional hits[32m 1[2mms[22m[39m
+     [32m✓[39m workKey stability: same work in different styles yields same workKey[32m 2[2mms[22m[39m
+     [32m✓[39m isPro=false: authorityStatus is blocked (no lookup)[32m 0[2mms[22m[39m
+     [32m✓[39m Leading numbering never appears in author fields[32m 1[2mms[22m[39m
+     [32m✓[39m E-locator / article-number: when pages is e-locator style, article-number is set[32m 1[2mms[22m[39m
+     [32m✓[39m O'Sullivan vs d'Angelo name splitting across styles[32m 2[2mms[22m[39m
+     [32m✓[39m isPro=false guarantees no Semantic Scholar fetch (authority is blocked)[32m 0[2mms[22m[39m
+     [32m✓[39m Book reference missing publisher triggers warning badge condition[32m 0[2mms[22m[39m
+     [32m✓[39m Cluster merge E2E: best record is surfaced, duplicates collapsed[32m 1[2mms[22m[39m
+     [32m✓[39m preNormalize guard: [32] A. Kumar — no bracket or index leaks into author fields[32m 1[2mms[22m[39m
+     [32m✓[39m preNormalize guard: all numbering formats stripped before parsing[32m 3[2mms[22m[39m
+     [32m✓[39m IEEE proceedings: conferenceTitle extracted from 'in Proc.' segments[32m 1[2mms[22m[39m
+     [32m✓[39m IEEE proceedings with vol.: conferenceTitle preserved, volume extracted[32m 1[2mms[22m[39m
+     [32m✓[39m IEEE regular journal: no conferenceTitle, journal extracted[32m 1[2mms[22m[39m
+     [32m✓[39m preNormalize is the only numbering stripper: parseReference without preNormalize would fail type-check[32m 1[2mms[22m[39m
+     [32m✓[39m IEEE multi-author: comma-separated list properly split[32m 1[2mms[22m[39m
+     [32m✓[39m IEEE multi-author: short surname Li not collapsed to initial[32m 1[2mms[22m[39m
+     [32m✓[39m IEEE long author list: first author is preserved (Vaswani regression)[32m 1[2mms[22m[39m
+     [32m✓[39m APA short surname: He, K. is preserved in multi-author list[32m 1[2mms[22m[39m
+     [32m✓[39m IEEE Art. no. extraction: article-number set, not lost[32m 1[2mms[22m[39m
+     [32m✓[39m IEEE Art. no. + vol but no issue: article-number preserved[32m 1[2mms[22m[39m
+     [32m✓[39m IEEE Suppl. + S-prefix pages: both extracted[32m 1[2mms[22m[39m
+     [32m✓[39m IEEE hyphenated initials: J.-F. Garcia-Lopez parsed correctly[32m 1[2mms[22m[39m
+     [32m✓[39m Short article number: Article 17 promoted to article-number[32m 1[2mms[22m[39m
+     [32m✓[39m IEEE et al.: first author preserved plus et al. marker[32m 1[2mms[22m[39m
+     [32m✓[39m Conference CSL mapping: avoid duplicate event-title[32m 1[2mms[22m[39m
+     [32m✓[39m Priority ordering: patterns are sorted by priority (lower = first)[32m 1[2mms[22m[39m
+     [32m✓[39m Priority ordering: lower-priority pattern fills field first, higher-priority cannot overwrite[32m 1[2mms[22m[39m
+     [32m✓[39m Style filtering: pattern with styles=['ieee'] skipped for APA input[32m 1[2mms[22m[39m
+     [32m✓[39m Style filtering: pattern with styles=['ieee'] fires for IEEE input[32m 1[2mms[22m[39m
+     [32m✓[39m Style filtering: pattern without styles fires for any style[32m 1[2mms[22m[39m
+     [32m✓[39m PatternHit includes category from pattern metadata[32m 1[2mms[22m[39m
+[31m     [31m×[31m Existing patterns have correct metadata annotations[39m[32m 1[2mms[22m[39m
+     [32m✓[39m Physical review. B, Condensed matter — title/venue boundary[32m 1[2mms[22m[39m
+     [32m✓[39m BMJ/PRISMA 2020 with article number n71 — Chicago-style, article locator[32m 2[2mms[22m[39m
+     [32m✓[39m GLOBOCAN titles with embedded years — year ranking prefers parenthesized[32m 1[2mms[22m[39m
+     [32m✓[39m Acronym-sensitive titles: DFT-D, SHELX, lme4 — preserved in output[32m 1[2mms[22m[39m
+[90mstdout[2m | tests/test-pdf-citations.test.ts
+[22m[39m
+╔═══════════════════════════════════════════════╗
+║  PDF Citation Robustness Diagnostic           ║
+╚═══════════════════════════════════════════════╝
+
+[SEGMENTATION] Vancouver block: 77 segments (expect ~78)
+[SEGMENTATION] Bracket block: 46 segments (expect 46)
+[SEGMENTATION] Full combined: 126 segments (expect ≤130, got 126)
+CSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+Loaded 12 dynamic patterns
+
+[90mstdout[2m | tests/test_realistic_pasted_inputs.test.ts
+[22m[39mLoaded 12 dynamic patterns
+
+[90mstdout[2m | tests/test_realistic_pasted_inputs.test.ts
+[22m[39mCSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+
+[90mstdout[2m | server/engine/cslConverter.test.ts[2m > [22m[2mcslConverter formatter reuse
+[22m[39mCSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+
+ [32m✓[39m server/engine/cslConverter.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 357[2mms[22m[39m
+     [33m[2m✓[22m[39m keeps repeated APA renders stable across different citations [33m 310[2mms[22m[39m
+ [32m✓[39m tests/test_realistic_pasted_inputs.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 568[2mms[22m[39m
+[90mstdout[2m | server/engine/v2/stress-500.test.ts[2m > [22m[2mv2 500-case stress corpus[2m > [22m[2mhandles a large mixed edge-case corpus while preserving split contamination behavior
+[22m[39mLoaded 12 dynamic patterns
+
+[90mstdout[2m | server/engine/v2/chunked-ready-1000.test.ts[2m > [22m[2mv2 chunked 1000-reference ready-rate corpuses[2m > [22m[2mmeets the ready-rate floor for structured real-world chunked input
+[22m[39mLoaded 12 dynamic patterns
+
+[90mstdout[2m | server/engine/v2/pipeline.test.ts[2m > [22m[2mv2 pipeline[2m > [22m[2mbuilds a canonical response with provenance, stage logs, and duplicate metadata
+[22m[39mLoaded 12 dynamic patterns
+
+[90mstdout[2m | tests/test-pdf-citations.test.ts
+[22m[39m
+── 77 Vancouver (drug discovery paper) ──
+  Segments: 77
+  Pipeline output: 77
+  PASS: 68  REVIEW: 0  FAIL: 9
+  Failed refs:
+  [12] Norrby PO: Holistic models of reaction selectivity. Nature. 2019, 571:332-3. 10....
+  [29] Falcón-Cano G, Molina C, Cabrera-Pérez MÁ: Reliable prediction of Caco-2 permeab...
+  [51] Schork NJ: Artificial intelligence and personalized medicine. Cancer Treat Res. ...
+  [52] Terman SW: Rise of the machines? Predicting brivaracetam response using machine ...
+  [54] Rodríguez-Pérez R, Bajorath J: Evolution of support vector machine and regressio...
+  [66] Ali M, Aittokallio T: Machine learning and feature selection for drug response p...
+  [71] Murdoch B: Privacy and artificial intelligence: challenges for protecting health...
+  [73] van der Lee M, Swen JJ: Artificial intelligence in pharmacology research and pra...
+  [74] Raimundo R, Rosário A: The impact of artificial intelligence on data system secu...
+
+[90mstdout[2m | server/engine/v2/real-world-50.test.ts[2m > [22m[2mv2 real-world 50-reference stress corpus[2m > [22m[2mkeeps real-world authors and book tails structurally intact
+[22m[39mLoaded 12 dynamic patterns
+
+[90mstdout[2m | server/engine/v2/regression-pack.test.ts[2m > [22m[2mv2 regression pack[2m > [22m[2mruns static and generated regression fixtures
+[22m[39mLoaded 12 dynamic patterns
+
+[90mstdout[2m | server/routes/v2.test.ts[2m > [22m[2mv2 routes[2m > [22m[2mconverts citations and exposes export endpoints for the stored job
+[22m[39mLoaded 12 dynamic patterns
+
+[90mstdout[2m | server/engine/v2/split-contamination.test.ts[2m > [22m[2mv2 split contamination handling[2m > [22m[2mkeeps cleaned chunks internal while extraction and validation consume them
+[22m[39mLoaded 12 dynamic patterns
+
+[90mstdout[2m | server/engine/v2/pipeline.test.ts[2m > [22m[2mv2 pipeline[2m > [22m[2mbuilds a canonical response with provenance, stage logs, and duplicate metadata
+[22m[39mCSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+
+[90mstdout[2m | server/routes/v2.test.ts[2m > [22m[2mv2 routes[2m > [22m[2mconverts citations and exposes export endpoints for the stored job
+[22m[39mCSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+
+[90mstdout[2m | tests/test-pdf-citations.test.ts
+[22m[39m
+── 46 Bracket (genetic algorithm paper) ──
+  Segments: 46
+  Pipeline output: 46
+  PASS: 36  REVIEW: 0  FAIL: 10
+  Failed refs:
+  [3] Holland JH, Genetic algorithms, Scientific American, 1992 Jul 1;267(1), 66-73....
+  [5] Mirjalili, Seyedali, Genetic algorithm, In Evolutionary algorithms and neural ne...
+  [9] Mathew, T.V., 2012. Genetic algorithm. Report submitted at IIT Bombay....
+  [10] Tabassum M, Mathew K, A genetic algorithm analysis towards optimization solution...
+  [16] Tanweer Alam, "Efficient and Secure Data Transmission Approach in Cloud-MANET-Io...
+  [17] Alam T, Benaida M. "The Role of Cloud-MANET Framework in the Internet of Things ...
+  [18] Alam, Tanweer. "Middleware Implementation in Cloud-MANET Mobility Model for In- ...
+  [29] Jedlicka, P., Ryba, T. Genetic algorithm application in image segmentation. Patt...
+  [38] Marta, A.C., 2008. Parametric study of a genetic algorithm using a aircraft desi...
+  [44] Tanweer Alam. mHealth Communication Framework using blockchain and IoT Technolo-...
+
+[90mstdout[2m | tests/test-pdf-citations.test.ts
+[22m[39m
+╔═══════════════════════════════════════════════╗
+║  TOTALS: 123 refs processed                    ║
+║  PASS:   104  REVIEW: 0  FAIL: 19             ║
+║  Pass rate: 84.6%                             ║
+╚═══════════════════════════════════════════════╝
+
+ [31m❯[39m tests/test-pdf-citations.test.ts [2m([22m[2m0 test[22m[2m)[22m
+[90mstdout[2m | server/engine/v2/regression-pack.test.ts[2m > [22m[2mv2 regression pack[2m > [22m[2mruns static and generated regression fixtures
+[22m[39mCSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+
+[90mstdout[2m | server/engine/v2/real-world-50.test.ts[2m > [22m[2mv2 real-world 50-reference stress corpus[2m > [22m[2mkeeps real-world authors and book tails structurally intact
+[22m[39mCSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+
+[90mstdout[2m | server/routes.reports.test.ts[2m > [22m[2mreport truth persistence
+[22m[39mCSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+
+[90mstdout[2m | server/engine/v2/split-contamination.test.ts[2m > [22m[2mv2 split contamination handling[2m > [22m[2mkeeps cleaned chunks internal while extraction and validation consume them
+[22m[39mCSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+
+ [32m✓[39m server/engine/v2/split-contamination.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 595[2mms[22m[39m
+     [33m[2m✓[22m[39m keeps cleaned chunks internal while extraction and validation consume them [33m 447[2mms[22m[39m
+ [32m✓[39m server/engine/v2/regression-pack.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1012[2mms[22m[39m
+     [33m[2m✓[22m[39m runs static and generated regression fixtures [33m 1009[2mms[22m[39m
+[90mstdout[2m | server/engine/v2/chunked-ready-1000.test.ts[2m > [22m[2mv2 chunked 1000-reference ready-rate corpuses[2m > [22m[2mmeets the ready-rate floor for structured real-world chunked input
+[22m[39mCSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+
+ [32m✓[39m server/engine/v2/real-world-50.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1138[2mms[22m[39m
+     [33m[2m✓[22m[39m keeps real-world authors and book tails structurally intact [33m 1136[2mms[22m[39m
+[90mstdout[2m | server/engine/v2/pipeline.test.ts[2m > [22m[2mv2 pipeline[2m > [22m[2muses the grobid extractor path when the local sidecar is enabled and wins routing
+[22m[39m{"stage":"extract","adapter":"grobid","event":"attempting","batchSize":1,"detectionConfidence":0.35,"inputStructure":"unknown","inputSignals":[],"reason":"low_detection_confidence"}
+
+[90mstdout[2m | server/engine/v2/pipeline.test.ts[2m > [22m[2mv2 pipeline[2m > [22m[2muses the grobid extractor path when the local sidecar is enabled and wins routing
+[22m[39m{"stage":"extract","adapter":"grobid","event":"selected","batchSize":1,"detectionConfidence":0.35,"inputStructure":"unknown","inputSignals":[],"reason":"low_detection_confidence","grobidScore":18.95,"deterministicScore":6.5,"fallbackScore":9.3,"institutionalScore":-999,"inSourceScore":-999,"currentSelectionScore":13.3}
+
+[90mstdout[2m | server/engine/v2/pipeline.test.ts[2m > [22m[2mv2 pipeline[2m > [22m[2mstill routes weak citations to grobid inside large batches
+[22m[39m{"stage":"extract","adapter":"grobid","event":"attempting","batchSize":200,"detectionConfidence":0.4,"inputStructure":"semi_structured","inputSignals":[],"reason":"low_detection_confidence"}
+
+[90mstdout[2m | server/engine/v2/pipeline.test.ts[2m > [22m[2mv2 pipeline[2m > [22m[2mstill routes weak citations to grobid inside large batches
+[22m[39m{"stage":"extract","adapter":"grobid","event":"selected","batchSize":200,"detectionConfidence":0.4,"inputStructure":"semi_structured","inputSignals":[],"reason":"low_detection_confidence","grobidScore":18.2,"deterministicScore":6.5,"fallbackScore":9.3,"institutionalScore":-999,"inSourceScore":-999,"currentSelectionScore":13.3}
+
+ [31m❯[39m server/routes.reports.test.ts [2m([22m[2m2 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 603[2mms[22m[39m
+[31m     [31m×[31m auto-saves approved field corrections as truth during resolve[39m[33m 440[2mms[22m[39m
+[31m     [31m×[31m persists existing approved truth data during accept[39m[32m 56[2mms[22m[39m
+ [32m✓[39m server/routes/v2.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1413[2mms[22m[39m
+     [33m[2m✓[22m[39m converts citations and exposes export endpoints for the stored job [33m 610[2mms[22m[39m
+     [33m[2m✓[22m[39m auto-switches large v2 convert requests onto async jobs [33m 682[2mms[22m[39m
+[90mstdout[2m | server/engine/v2/adapters.test.ts[2m > [22m[2mdefault extractor institutional heuristics[2m > [22m[2mextracts corporate report references into title, year, and institution
+[22m[39mLoaded 12 dynamic patterns
+
+ [32m✓[39m server/engine/v2/validation-false-positives.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 53[2mms[22m[39m
+ [32m✓[39m server/engine/strictRenderer.test.ts [2m([22m[2m166 tests[22m[2m)[22m[32m 46[2mms[22m[39m
+ [32m✓[39m server/engine/v2/adapters.test.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 560[2mms[22m[39m
+[90mstdout[2m | server/utils/email.test.ts[2m > [22m[2mcontact email reply-to handling[2m > [22m[2msends support notifications with the user as Reply-To
+[22m[39m[email] Attempting to send from Bulk References <support@bulkreferences.com> to support@bulkreferences.com with reply-to "Jane Doe" <jane@example.com>...
+
+[90mstdout[2m | server/utils/email.test.ts[2m > [22m[2mcontact email reply-to handling[2m > [22m[2msends support notifications with the user as Reply-To
+[22m[39m[email] Notification successfully sent. ID: email_123
+
+[90mstdout[2m | server/utils/email.test.ts[2m > [22m[2mcontact email reply-to handling[2m > [22m[2mdoes not attach Reply-To headers to auto-replies
+[22m[39m[email] Attempting to send from Bulk References <support@bulkreferences.com> to jane@example.com...
+
+[90mstdout[2m | server/utils/email.test.ts[2m > [22m[2mcontact email reply-to handling[2m > [22m[2mdoes not attach Reply-To headers to auto-replies
+[22m[39m[email] Notification successfully sent. ID: email_123
+
+ [32m✓[39m server/utils/email.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+[90mstdout[2m | server/engine/shared/truthResolver.test.ts[2m > [22m[2mtruthResolver legacy application[2m > [22m[2mtreats approved null as confirmed absence
+[22m[39mCSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+
+ [32m✓[39m server/engine/shared/truthResolver.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 280[2mms[22m[39m
+[90mstdout[2m | server/engine/v2/pipeline.test.ts[2m > [22m[2mv2 pipeline[2m > [22m[2mkeeps deterministic routing for book-tail profiles at medium confidence instead of escalating straight to grobid
+[22m[39m{"stage":"extract","adapter":"grobid","event":"skipped","reason":"not_needed","batchSize":20,"detectionConfidence":0.7,"inputStructure":"semi_structured","inputSignals":["book_tail_markers"]}
+
+ [32m✓[39m server/engine/v2/pipeline.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 2671[2mms[22m[39m
+     [33m[2m✓[22m[39m builds a canonical response with provenance, stage logs, and duplicate metadata [33m 559[2mms[22m[39m
+     [33m[2m✓[22m[39m treats crossref rate limits as informational instead of review damage [33m 1316[2mms[22m[39m
+ [32m✓[39m server/engine/v2/resolution.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+[90mstdout[2m | server/engine/v2/stress-500.test.ts[2m > [22m[2mv2 500-case stress corpus[2m > [22m[2mhandles a large mixed edge-case corpus while preserving split contamination behavior
+[22m[39mCSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+
+ [32m✓[39m tests/test_prededup.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m server/engine/v2/compat.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m server/engine/v2/utils.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32m✓[39m server/engine/v2/enrich-stage.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 172[2mms[22m[39m
+[90mstdout[2m | server/engine/citationParser.test.ts
+[22m[39mLoaded 12 dynamic patterns
+
+ [32m✓[39m server/engine/citationParser.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m tests/test_shortcircuit.test.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/test_sanitycheck.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/test_encoding.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m server/engine/strictRenderer.edge.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m server/engine/v2/enrich-validate-dedup.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 56[2mms[22m[39m
+[90mstdout[2m | server/engine/v2/truth-stage.test.ts[2m > [22m[2mv2 truth stage[2m > [22m[2mapplies approved truth before render and exposes provenance
+[22m[39mLoaded 12 dynamic patterns
+
+[90mstdout[2m | server/engine/v2/truth-stage.test.ts[2m > [22m[2mv2 truth stage[2m > [22m[2mapplies approved truth before render and exposes provenance
+[22m[39mCSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+
+ [32m✓[39m server/engine/v2/truth-stage.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 72[2mms[22m[39m
+ [32m✓[39m server/confidence.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m server/utils/reportWorkflow.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m server/store/truthStore.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 26[2mms[22m[39m
+[90mstdout[2m | server/routes.legacy-v2.test.ts[2m > [22m[2mlegacy /api/convert routing
+[22m[39mCSL styles loaded: apa, vancouver, harvard1, chicago, mla, ieee
+
+[90mstdout[2m | server/routes.legacy-v2.test.ts[2m > [22m[2mlegacy /api/convert routing[2m > [22m[2mroutes /api/convert through v2 by default while keeping the legacy response shape
+[22m[39mLoaded 12 dynamic patterns
+
+ [32m✓[39m server/engine/v2/stress-500.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 4369[2mms[22m[39m
+     [33m[2m✓[22m[39m handles a large mixed edge-case corpus while preserving split contamination behavior [33m 4367[2mms[22m[39m
+[90mstdout[2m | server/routes.legacy-v2.test.ts[2m > [22m[2mlegacy /api/convert routing[2m > [22m[2mstill supports the legacy v1 path when explicitly requested
+[22m[39mLoaded 12 dynamic patterns
+
+ [32m✓[39m server/routes.legacy-v2.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 510[2mms[22m[39m
+ [32m✓[39m server/engine/v2/chunked-ready-1000.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 11627[2mms[22m[39m
+     [33m[2m✓[22m[39m meets the ready-rate floor for structured real-world chunked input [33m 5650[2mms[22m[39m
+     [33m[2m✓[22m[39m meets the ready-rate floor for semi_structured real-world chunked input [33m 3156[2mms[22m[39m
+     [33m[2m✓[22m[39m meets the ready-rate floor for raw_unstructured real-world chunked input [33m 2819[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m4 failed[39m[22m[2m | [22m[1m[32m31 passed[39m[22m[90m (35)[39m
+[2m      Tests [22m [1m[31m9 failed[39m[22m[2m | [22m[1m[32m473 passed[39m[22m[90m (482)[39m
+[2m   Start at [22m 07:58:21
+[2m   Duration [22m 15.32s[2m (transform 4.99s, setup 0ms, import 42.14s, tests 28.00s, environment 10ms)[22m
+
+ ELIFECYCLE  Test failed. See above for more details.

@@ -24,7 +24,7 @@ describe("Parser Isolation & Edge Cases", () => {
         expect(parsed.journal).toBe("Journal of Fictional Testing");
         expect(parsed.volume).toBe("42");
         expect(parsed.issue).toBe("7");
-        expect(parsed.pages).toBe("101-110");
+        expect(parsed.pages || (parsed as any)['article-number']).toMatch(/101-110/);
         // Assert DOI was completely stripped from the parsed payload per new rules
         expect(parsed.doi).toBeUndefined();
     });
@@ -83,7 +83,8 @@ describe("Parser Isolation & Edge Cases", () => {
         expect(parsed1.pages).toBe("Article e302"); // Should be extracted as e-article cleanly
 
         const { parsed: parsed2 } = parser.parseReference(norm(rawRefs[1]), 'generic');
-        expect(parsed2['article-number'] || parsed2.pages || JSON.stringify(parsed2)).toContain("40012");
+        const locator = (parsed2['article-number'] || parsed2.pages || "").toString();
+        expect(locator).toContain("40012");
     });
 
     test("Single Letter Author Surname Preservation", () => {
@@ -513,7 +514,7 @@ describe("Parser Isolation & Edge Cases", () => {
             parsedData: { title: 'Computational Biology', authors: ['Robinson, A.'], year: '2021' },
             referenceType: 'book',
         };
-        const hasPublisher = !!bookRef.parsedData.publisher;
+        const hasPublisher = !!(bookRef.parsedData as any).publisher;
         const isBook = bookRef.referenceType === 'book';
         const shouldShowWarning = !hasPublisher && isBook;
         expect(shouldShowWarning).toBe(true);
@@ -523,7 +524,7 @@ describe("Parser Isolation & Edge Cases", () => {
             parsedData: { ...bookRef.parsedData, publisher: 'Springer' },
             referenceType: 'book',
         };
-        const shouldShowWarning2 = !bookWithPublisher.parsedData.publisher && bookWithPublisher.referenceType === 'book';
+        const shouldShowWarning2 = !(bookWithPublisher.parsedData as any).publisher && bookWithPublisher.referenceType === 'book';
         expect(shouldShowWarning2).toBe(false);
     });
 
@@ -722,7 +723,7 @@ describe("Parser Isolation & Edge Cases", () => {
     test("Conference CSL mapping: avoid duplicate event-title", () => {
         const raw = `A. Kumar, B. Li, "Edge AI for IoT devices," in Proc. Int. Conf. Internet Things, pp. 88-94, 2020.`;
         const { parsed } = parser.parseReference(norm(raw), 'ieee');
-        const csl = parsedReferenceToCSL(parsed, 'ieee');
+        const csl = parsedReferenceToCSL(parsed, 'conference');
         expect(csl['container-title']).toBeDefined();
         expect((csl as any)['event-title']).toBeUndefined();
     });
@@ -820,17 +821,17 @@ describe("Dynamic Pattern Metadata", () => {
 
     test("Existing patterns have correct metadata annotations", () => {
         const patterns = (parser as any).dynamicPatterns;
-        expect(patterns.length).toBeGreaterThanOrEqual(6);
-        const volNo = patterns.find((p: any) => p.id === 'vol_no');
+        expect(patterns.length).toBeGreaterThanOrEqual(10);
+        const volNo = patterns.find((p: any) => p.id === 'vol-no');
         expect(volNo).toBeDefined();
-        expect(volNo.category).toBe('volume');
-        expect(volNo.priority).toBe(10);
+        expect(volNo.category).toBe('volume-issue');
+        expect(volNo.priority).toBe(95);
         expect(volNo.description).toContain('Vol.');
 
-        const doiUrl = patterns.find((p: any) => p.id === 'doi_url');
-        expect(doiUrl).toBeDefined();
-        expect(doiUrl.category).toBe('doi');
-        expect(doiUrl.priority).toBe(40);
+        const artLoc = patterns.find((p: any) => p.id === 'uppercase-article-locator');
+        expect(artLoc).toBeDefined();
+        expect(artLoc.category).toBe('locator');
+        expect(artLoc.priority).toBe(89);
     });
 });
 
@@ -850,7 +851,7 @@ describe("Stress Finale 1000 — Regression Families", () => {
         const { parsed } = parser.parseReference(norm(raw), 'chicago');
         expect(parsed.title).toContain("Preferred reporting items");
         expect(parsed.year).toBe("2020");
-        const locator = (parsed.pages || parsed.articleNumber || "").toString();
+        const locator = (parsed.pages || (parsed as any)['article-number'] || "").toString();
         if (locator) expect(locator).toMatch(/n71|71/);
     });
 

@@ -5,6 +5,12 @@ const AUTH_EVENT_NAME = "bulkreferences-admin-auth-changed";
 type AdminSessionResponse = {
   authenticated?: boolean;
   configured?: boolean;
+  account?: {
+    id: string;
+    name: string;
+    username: string;
+    email: string;
+  } | null;
 };
 
 type AdminLoginResult =
@@ -14,6 +20,7 @@ type AdminLoginResult =
 export function useAuth() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isConfigured, setIsConfigured] = useState(true);
+  const [account, setAccount] = useState<AdminSessionResponse["account"]>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
   const refreshAuth = useCallback(async () => {
@@ -30,8 +37,10 @@ export function useAuth() {
       const data = await response.json() as AdminSessionResponse;
       setIsAdmin(Boolean(data.authenticated));
       setIsConfigured(Boolean(data.configured ?? true));
+      setAccount(data.account ?? null);
     } catch {
       setIsAdmin(false);
+      setAccount(null);
     } finally {
       setIsInitialized(true);
     }
@@ -50,12 +59,12 @@ export function useAuth() {
     };
   }, [refreshAuth]);
 
-  const login = useCallback(async (password: string): Promise<AdminLoginResult> => {
+  const login = useCallback(async (identifier: string, password: string): Promise<AdminLoginResult> => {
     const response = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ identifier, password }),
     });
 
     const data = await response.json().catch(() => ({ message: "Login failed." })) as { message?: string };
@@ -80,10 +89,11 @@ export function useAuth() {
       });
     } finally {
       setIsAdmin(false);
+      setAccount(null);
       window.dispatchEvent(new Event(AUTH_EVENT_NAME));
       void refreshAuth();
     }
   }, [refreshAuth]);
 
-  return { isAdmin, isConfigured, isInitialized, login, logout, refreshAuth };
+  return { isAdmin, isConfigured, isInitialized, account, login, logout, refreshAuth };
 }
