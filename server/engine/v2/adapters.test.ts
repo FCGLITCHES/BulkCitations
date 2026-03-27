@@ -523,6 +523,130 @@ describe('style detection and source-type regressions', () => {
     expect(result.parsed.url).toBe('https://stress.example.org/hvw/071');
   });
 
+  it('extracts compact-author Harvard journals instead of collapsing them into Vancouver blobs', async () => {
+    const detection = await classifier.detectStyle(
+      "Berg N, Adams R and Santos L 2015, 'Dose response ranking for translational pharmacology: case SDE-HVJ-001', Computational Therapeutics, vol. 14, no. 4, pp. 482-498, doi: 10.7001/hvj.051.",
+    );
+    const result = await extractor.extract(
+      "Berg N, Adams R and Santos L 2015, 'Dose response ranking for translational pharmacology: case SDE-HVJ-001', Computational Therapeutics, vol. 14, no. 4, pp. 482-498, doi: 10.7001/hvj.051.",
+      detection.style ?? 'auto',
+      { detectionConfidence: detection.confidence },
+    );
+
+    expect(detection.style).toBe('harvard');
+    expect(result.detectedStyle).toBe('harvard');
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.authors).toEqual(['Berg, N.', 'Adams, R.', 'Santos, L.']);
+    expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-HVJ-001');
+    expect(result.parsed.journal).toBe('Computational Therapeutics');
+    expect(result.parsed.volume).toBe('14');
+    expect(result.parsed.issue).toBe('4');
+    expect(result.parsed.pages).toBe('482-498');
+    expect(result.parsed.doi).toBe('10.7001/hvj.051');
+  });
+
+  it('extracts Harvard conference proceedings with compact authors as conferences', async () => {
+    const detection = await classifier.detectStyle(
+      "Berg N, Adams R and Santos L 2021, 'Dose response ranking for translational pharmacology: case SDE-HVC-001', in Proceedings of the Congress on Translational Pharmacology, London, pp. 55-68, Blue Harbor Research.",
+    );
+    const result = await extractor.extract(
+      "Berg N, Adams R and Santos L 2021, 'Dose response ranking for translational pharmacology: case SDE-HVC-001', in Proceedings of the Congress on Translational Pharmacology, London, pp. 55-68, Blue Harbor Research.",
+      detection.style ?? 'auto',
+      { detectionConfidence: detection.confidence },
+    );
+
+    expect(detection.style).toBe('harvard');
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.conferenceTitle).toBe('Proceedings of the Congress on Translational Pharmacology');
+    expect(result.parsed.publisher).toBe('Blue Harbor Research');
+    expect(result.parsed.pages).toBe('55-68');
+  });
+
+  it('extracts Chicago author-date journals without misclassifying them as IEEE', async () => {
+    const detection = await classifier.detectStyle(
+      'Rossi, Luca, Sara Al-Harbi, and Leila Haddad. 2019. "Dose response ranking for translational pharmacology: case SDE-CDA-001." Computational Therapeutics 9, no. 4: 727-746. https://doi.org/10.7001/cda.091.',
+    );
+    const result = await extractor.extract(
+      'Rossi, Luca, Sara Al-Harbi, and Leila Haddad. 2019. "Dose response ranking for translational pharmacology: case SDE-CDA-001." Computational Therapeutics 9, no. 4: 727-746. https://doi.org/10.7001/cda.091.',
+      detection.style ?? 'auto',
+      { detectionConfidence: detection.confidence },
+    );
+
+    expect(detection.style).toBe('chicago');
+    expect(result.detectedStyle).toBe('chicago');
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.authors).toEqual(['Rossi, L.', 'Al-Harbi, S.', 'Haddad, L.']);
+    expect(result.parsed.journal).toBe('Computational Therapeutics');
+    expect(result.parsed.volume).toBe('9');
+    expect(result.parsed.issue).toBe('4');
+    expect(result.parsed.pages).toBe('727-746');
+  });
+
+  it('extracts Chicago author-date institutional reports as reports instead of books or websites', async () => {
+    const detection = await classifier.detectStyle(
+      'Precision Molecule Institute. 2017. Dose response ranking for translational pharmacology: case SDE-CDR-001. Toronto: Open Metrics Press. https://stress.example.org/cdr/101.',
+    );
+    const result = await extractor.extract(
+      'Precision Molecule Institute. 2017. Dose response ranking for translational pharmacology: case SDE-CDR-001. Toronto: Open Metrics Press. https://stress.example.org/cdr/101.',
+      detection.style ?? 'auto',
+      { detectionConfidence: detection.confidence },
+    );
+
+    expect(detection.style).toBe('chicago');
+    expect(result.referenceType).toBe('report');
+    expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-CDR-001');
+    expect(result.parsed.publisher).toBe('Open Metrics Press');
+    expect(result.parsed.institution).toBe('Precision Molecule Institute');
+    expect(result.parsed.url).toBe('https://stress.example.org/cdr/101');
+  });
+
+  it('extracts APA dissertations as theses without leaking the institutional note into the title', async () => {
+    const detection = await classifier.detectStyle(
+      "O'Rourke, N. (2019). Dose response ranking for translational pharmacology: case SDE-APAT-001 (Doctoral dissertation, North Coast University). https://stress.example.org/apat/031",
+    );
+    const result = await extractor.extract(
+      "O'Rourke, N. (2019). Dose response ranking for translational pharmacology: case SDE-APAT-001 (Doctoral dissertation, North Coast University). https://stress.example.org/apat/031",
+      detection.style ?? 'auto',
+      { detectionConfidence: detection.confidence },
+    );
+
+    expect(detection.style).toBe('apa');
+    expect(result.referenceType).toBe('thesis');
+    expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-APAT-001');
+    expect(result.parsed.institution).toBe('North Coast University');
+    expect(result.parsed.url).toBe('https://stress.example.org/apat/031');
+  });
+
+  it('extracts MLA dissertations as theses instead of treating the institution as a journal', async () => {
+    const result = await extractor.extract(
+      'Weber, Jonas. "Dose response ranking for translational pharmacology: case SDE-MLT-001." North Coast University, 2019. PhD dissertation.',
+      'auto',
+      {},
+    );
+
+    expect(result.detectedStyle).toBe('mla');
+    expect(result.referenceType).toBe('thesis');
+    expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-MLT-001');
+    expect(result.parsed.institution).toBe('North Coast University');
+  });
+
+  it('rescues numbered biomedical colon stress cases without mangling inverted author pairs', async () => {
+    const result = await extractor.extract(
+      '6. Author006, A. Builder006, B.: Stress corpus biomedical colon scenario 006. Biomed Res Notes. 2020;15(2):20-28. doi:10.5555/stress-006',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.authors).toEqual(['Author006, A.', 'Builder006, B.']);
+    expect(result.parsed.title).toBe('Stress corpus biomedical colon scenario 006');
+    expect(result.parsed.journal).toBe('Biomed Res Notes');
+    expect(result.parsed.volume).toBe('15');
+    expect(result.parsed.issue).toBe('2');
+    expect(result.parsed.pages).toBe('20-28');
+    expect(result.parsed.doi).toBe('10.5555/stress-006');
+  });
+
   it('extracts IEEE books without scrambling author, title, or year fields', async () => {
     const result = await extractor.extract(
       '[5] J. Smith, The Craft of Testing. New York: IEEE Press, 2019.',

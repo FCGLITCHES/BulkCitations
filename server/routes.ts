@@ -186,7 +186,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   function getBaseUrl(req: Request) {
     const configured = process.env.APP_URL?.trim() || process.env.PUBLIC_APP_URL?.trim();
     if (configured) {
-      return configured.replace(/\/+$/, "");
+      const normalized = /^https?:\/\//i.test(configured)
+        ? configured
+        : configured.includes("localhost")
+          ? `http://${configured}`
+          : `https://${configured}`;
+      return normalized.replace(/\/+$/, "");
     }
 
     const forwardedProto = String(req.headers["x-forwarded-proto"] ?? "").split(",")[0]?.trim();

@@ -1,5 +1,13 @@
 export type ChunkedReadyMode = 'structured' | 'semi_structured' | 'raw_unstructured';
 
+export type ChunkedReadyCorpusChunk = {
+  mode: ChunkedReadyMode;
+  chunkIndex: number;
+  startIndex: number;
+  expectedCount: number;
+  content: string;
+};
+
 export const READY_CORPUS_TOTAL = 1000;
 export const READY_CORPUS_CHUNK_SIZE = 100;
 
@@ -97,15 +105,30 @@ export function buildChunkedReadyCorpus(
   total: number = READY_CORPUS_TOTAL,
   chunkSize: number = READY_CORPUS_CHUNK_SIZE,
 ): string[] {
+  return buildChunkedReadyCorpusPlan(mode, total, chunkSize).map((chunk) => chunk.content);
+}
+
+export function buildChunkedReadyCorpusPlan(
+  mode: ChunkedReadyMode,
+  total: number = READY_CORPUS_TOTAL,
+  chunkSize: number = READY_CORPUS_CHUNK_SIZE,
+): ChunkedReadyCorpusChunk[] {
   const base = mode === 'structured'
     ? STRUCTURED_REFERENCES
     : mode === 'semi_structured'
       ? SEMI_STRUCTURED_REFERENCES
       : RAW_UNSTRUCTURED_REFERENCES;
   const expanded = repeatToTotal(base, total);
-  const chunks: string[] = [];
+  const chunks: ChunkedReadyCorpusChunk[] = [];
   for (let start = 0; start < expanded.length; start += chunkSize) {
-    chunks.push(formatChunk(mode, expanded.slice(start, start + chunkSize), chunks.length));
+    const references = expanded.slice(start, start + chunkSize);
+    chunks.push({
+      mode,
+      chunkIndex: chunks.length,
+      startIndex: start,
+      expectedCount: references.length,
+      content: formatChunk(mode, references, chunks.length),
+    });
   }
   return chunks;
 }

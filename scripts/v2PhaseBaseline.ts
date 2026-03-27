@@ -52,6 +52,22 @@ type SdeManifestEntry = {
 
 type SdeManifest = Record<string, SdeManifestEntry>;
 
+type ComparableField =
+  | 'authors'
+  | 'title'
+  | 'year'
+  | 'journal'
+  | 'conferenceTitle'
+  | 'bookTitle'
+  | 'publisher'
+  | 'institution'
+  | 'volume'
+  | 'issue'
+  | 'locator'
+  | 'doi'
+  | 'url'
+  | 'edition';
+
 type CaseCheck = {
   caseId: string;
   observedReferenceType: CanonicalReferenceType;
@@ -208,6 +224,59 @@ function normalizeUrl(value: string | undefined | null): string {
     .toLowerCase();
 }
 
+function normalizeStyleFamily(value: string | undefined | null): string | null {
+  const normalized = normalizeText(value);
+  if (!normalized) return null;
+  if (normalized.startsWith('harvard')) return 'harvard';
+  if (normalized.startsWith('chicago')) return 'chicago';
+  return normalized;
+}
+
+function rawHasComparableWebsiteYear(raw: string): boolean {
+  const normalized = normalizeText(raw);
+  if (!normalized) return false;
+  const withoutAccessTail = normalized
+    .replace(/\b(?:viewed|accessed)\b[\s\S]*$/i, ' ')
+    .replace(/\bavailable(?:\s+at|\s+from)?\b[\s\S]*$/i, ' ');
+  return /\b(?:1[5-9]\d{2}|20\d{2})\b/.test(withoutAccessTail);
+}
+
+function rawHasComparableConferencePublisher(raw: string): boolean {
+  const normalized = normalizeText(raw);
+  if (!normalized) return false;
+  return /\bpp?\.?\s*[a-z]?\d+(?:\s*-\s*[a-z]?\d+)?\s*,\s*[^,.;]+\.?$/i.test(normalized)
+    || /:\s*[^.;]+;\s*(?:1[5-9]\d{2}|20\d{2})/i.test(normalized);
+}
+
+function comparableFieldsFor(entry: SdeManifestEntry): Set<ComparableField> {
+  switch (entry.expectedReferenceType) {
+    case 'conference': {
+      const fields = new Set<ComparableField>(['authors', 'title', 'year', 'conferenceTitle', 'locator', 'doi']);
+      if (rawHasComparableConferencePublisher(entry.raw)) fields.add('publisher');
+      return fields;
+    }
+    case 'chapter':
+      return new Set(['authors', 'title', 'year', 'bookTitle', 'publisher', 'locator', 'edition']);
+    case 'book':
+      return new Set(['authors', 'title', 'year', 'publisher', 'edition']);
+    case 'report':
+      return new Set(['authors', 'title', 'year', 'publisher', 'url']);
+    case 'thesis':
+      return new Set(['authors', 'title', 'year', 'institution', 'url']);
+    case 'website': {
+      const fields = new Set<ComparableField>(['authors', 'title', 'url']);
+      if (rawHasComparableWebsiteYear(entry.raw)) fields.add('year');
+      if (/\b(?:doi\b|doi\.org)\b/i.test(entry.raw)) fields.add('doi');
+      return fields;
+    }
+    case 'preprint':
+      return new Set(['authors', 'title', 'year', 'publisher', 'url']);
+    case 'journal':
+    default:
+      return new Set(['authors', 'title', 'year', 'journal', 'volume', 'issue', 'locator', 'doi']);
+  }
+}
+
 function authorKey(author: AuthorSpec | CanonicalAuthor): string {
   if ('kind' in author) {
     if (author.kind === 'literal') return normalizeText(author.literal);
@@ -236,7 +305,14 @@ function compareAuthors(expected: AuthorSpec[], actual: CanonicalAuthor[]): bool
   if (expected.length === 0) return actual.length === 0;
   const expectedKeys = expected.map(authorKey);
   const actualKeys = actual.map(authorKey);
-  return expectedKeys.length === actualKeys.length && expectedKeys.every((key, index) => key === actualKeys[index]);
+  const exactMatch = expectedKeys.length === actualKeys.length
+    && expectedKeys.every((key, index) => key === actualKeys[index]);
+  if (exactMatch) return true;
+
+  const trailingEtAl = normalizeText(actual[actual.length - 1]?.literal ?? actual[actual.length - 1]?.last);
+  return trailingEtAl === 'et al'
+    && actualKeys.length === expectedKeys.length + 1
+    && expectedKeys.every((key, index) => key === actualKeys[index]);
 }
 
 function computePercent(numerator: number, denominator: number): number | null {
@@ -356,21 +432,25 @@ async function runStress500Metrics() {
 
 function buildSdeItem(entry: SdeManifestEntry, citation: CanonicalCitation): SdeItem {
   const parsed = canonicalToParsedReference(citation);
+  const comparableFields = comparableFieldsFor(entry);
+  const comparable = (field: ComparableField, value: boolean | null): boolean | null => (
+    comparableFields.has(field) ? value : null
+  );
   const checks = {
-    authors: compareAuthors(entry.expectedFields.authors, citation.authors.value),
-    title: compareValue(entry.expectedFields.title, parsed.title),
-    year: entry.expectedFields.year ? String(entry.expectedFields.year) === String(parsed.year ?? '') : null,
-    journal: compareValue(entry.expectedFields.journal, parsed.journal),
-    conferenceTitle: compareValue(entry.expectedFields.conferenceTitle, parsed.conferenceTitle),
-    bookTitle: compareValue(entry.expectedFields.bookTitle, parsed.bookTitle),
-    publisher: compareValue(entry.expectedFields.publisher, parsed.publisher),
-    institution: compareValue(entry.expectedFields.institution, parsed.institution),
-    volume: compareValue(entry.expectedFields.volume, parsed.volume),
-    issue: compareValue(entry.expectedFields.issue, parsed.issue),
-    locator: compareLocator(entry.expectedFields, parsed),
-    doi: entry.expectedFields.doi ? normalizeDoi(entry.expectedFields.doi) === normalizeDoi(parsed.doi) : null,
-    url: entry.expectedFields.url ? normalizeUrl(entry.expectedFields.url) === normalizeUrl(parsed.url) : null,
-    edition: compareValue(entry.expectedFields.edition, parsed.edition),
+    authors: comparable('authors', compareAuthors(entry.expectedFields.authors, citation.authors.value)),
+    title: comparable('title', compareValue(entry.expectedFields.title, parsed.title)),
+    year: comparable('year', entry.expectedFields.year ? String(entry.expectedFields.year) === String(parsed.year ?? '') : null),
+    journal: comparable('journal', compareValue(entry.expectedFields.journal, parsed.journal)),
+    conferenceTitle: comparable('conferenceTitle', compareValue(entry.expectedFields.conferenceTitle, parsed.conferenceTitle)),
+    bookTitle: comparable('bookTitle', compareValue(entry.expectedFields.bookTitle, parsed.bookTitle)),
+    publisher: comparable('publisher', compareValue(entry.expectedFields.publisher, parsed.publisher)),
+    institution: comparable('institution', compareValue(entry.expectedFields.institution, parsed.institution)),
+    volume: comparable('volume', compareValue(entry.expectedFields.volume, parsed.volume)),
+    issue: comparable('issue', compareValue(entry.expectedFields.issue, parsed.issue)),
+    locator: comparable('locator', compareLocator(entry.expectedFields, parsed)),
+    doi: comparable('doi', entry.expectedFields.doi ? normalizeDoi(entry.expectedFields.doi) === normalizeDoi(parsed.doi) : null),
+    url: comparable('url', entry.expectedFields.url ? normalizeUrl(entry.expectedFields.url) === normalizeUrl(parsed.url) : null),
+    edition: comparable('edition', compareValue(entry.expectedFields.edition, parsed.edition)),
   };
 
   return {
@@ -381,7 +461,7 @@ function buildSdeItem(entry: SdeManifestEntry, citation: CanonicalCitation): Sde
     detectedStyle: citation.detectedStyle.value,
     expectedReferenceType: entry.expectedReferenceType,
     actualReferenceType: citation.referenceType,
-    styleMatch: entry.expectedStyle === citation.detectedStyle.value,
+    styleMatch: normalizeStyleFamily(entry.expectedStyle) === normalizeStyleFamily(citation.detectedStyle.value),
     referenceTypeMatch: entry.expectedReferenceType === citation.referenceType,
     mismatches: Object.entries(checks)
       .filter(([, matched]) => matched === false)

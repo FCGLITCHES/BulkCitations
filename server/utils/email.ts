@@ -4,7 +4,12 @@ const STATIC_TO_EMAIL = "support@bulkreferences.com";
 const ADMIN_APPROVAL_TO_EMAIL = "support@bulkreferences.com";
 const DEFAULT_FROM_EMAIL = "Bulk References <support@bulkreferences.com>";
 const APP_NAME = "Bulk References";
-const APP_URL = process.env.APP_URL?.trim() || process.env.PUBLIC_APP_URL?.trim() || "https://bulkreferences.com";
+const RAW_APP_URL = process.env.APP_URL?.trim() || process.env.PUBLIC_APP_URL?.trim() || "https://bulkreferences.com";
+const APP_URL = /^https?:\/\//i.test(RAW_APP_URL)
+    ? RAW_APP_URL
+    : RAW_APP_URL.includes("localhost")
+        ? `http://${RAW_APP_URL}`
+        : `https://${RAW_APP_URL}`;
 
 type SendEmailResult = { success: boolean; error?: string };
 

@@ -12,6 +12,8 @@ export const GROUP_AUTHOR_SUFFIXES = new Set([
   'federation',
   'society',
   'committee',
+  'board',
+  'unit',
   'institute',
   'consortium',
   'collaboration',
@@ -19,12 +21,19 @@ export const GROUP_AUTHOR_SUFFIXES = new Set([
   'team',
   'working group',
   'task force',
+  'taskforce',
+  'observatory',
+  'bureau',
+  'laboratory',
+  'lab',
+  'portal',
+  'hub',
   'experiment',
   'initiative',
   'project',
 ]);
 
-const GROUP_AUTHOR_KEYWORD_PATTERN = /\b(?:organization|agency|administration|department|ministry|office|commission|council|library|bank|foundation|programme|program|centre|center|college|university|hospital|publisher|press|authority|academ(?:y|ies)|team|group|committee|collaboration|network|initiative|institute|society|association|union|research)\b/i;
+const GROUP_AUTHOR_KEYWORD_PATTERN = /\b(?:organization|agency|administration|department|ministry|office|commission|council|library|bank|foundation|programme|program|centre|center|college|university|hospital|publisher|press|authority|academ(?:y|ies)|team|group|committee|board|unit|collaboration|network|initiative|institute|society|association|union|research|observatory|task\s*force|taskforce|bureau|laboratory|lab|portal|hub)\b/i;
 const GROUP_AUTHOR_MARKER_PATTERN = /\b(?:nations|parliament|congress|senate|assembly|secretariat|directorate|forum|openai|openaire|matlab)\b/i;
 
 function looksLikeInstitutionalAcronymToken(token: string): boolean {
