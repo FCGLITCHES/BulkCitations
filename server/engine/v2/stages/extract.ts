@@ -122,6 +122,25 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           institution: createFieldValue(result.parsed.institution ?? null, 'extracted', result.fieldConfidence.publisher ?? 0, 'extract'),
           edition: createFieldValue(result.parsed.edition ?? null, 'extracted', result.fieldConfidence.publisher ?? 0, 'extract'),
           editor: createFieldValue(result.parsed.editor ?? null, 'extracted', result.fieldConfidence.authors ?? 0, 'extract'),
+          institutionMapping: result.referenceType === 'thesis'
+            ? result.parsed.institution
+              ? {
+                  mapped: true,
+                  source: 'parsed_institution',
+                  originalValue: result.parsed.institution,
+                }
+              : result.parsed.publisher
+                ? {
+                    mapped: true,
+                    source: 'parsed_publisher',
+                    originalValue: result.parsed.publisher,
+                  }
+                : {
+                    mapped: false,
+                    source: 'none',
+                    originalValue: null,
+                  }
+            : citation.institutionMapping,
           extraction: {
             method: result.method,
             fallbackUsed: result.fallbackUsed,

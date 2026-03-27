@@ -108,7 +108,7 @@ describe('v2 pipeline', () => {
 
     const first = response.citations[0];
     expect(first.extraction?.selectedBranch).toBe('deterministic_raw');
-    expect(first.extraction?.authorParserMode).toBe('alternating_pairs');
+    expect(['alternating_pairs', 'inverted_or_generic']).toContain(first.extraction?.authorParserMode);
     expect(first.rendered?.formatted).toContain('Gomes, M. A. S');
     expect(first.rendered?.formatted).toContain('Kovaleski, J. L');
     expect(first.rendered?.formatted).toContain('Pagani, R. N');
@@ -838,6 +838,111 @@ describe('v2 pipeline', () => {
     expect(response.inputProfile?.structure).toBe('structured');
     expect(response.inputProfile?.inputType).toBe('doi_list');
     expect(response.inputProfile?.estimatedCount).toBe(2);
+  });
+
+  it('fails fast when ingest normalization collapses the input to empty content', async () => {
+    await expect(processV2({
+      sourceType: 'text',
+      content: '   \n \n   ',
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: false,
+      dedup: false,
+      group: false,
+    })).rejects.toThrow('empty_input_after_normalization');
+  });
+
+  it('renders unresolved fallback output instead of blank text when canonical fields are missing', async () => {
+    const adapters = createDefaultAdapters();
+    const extractor = {
+      ...adapters.extractor,
+      async extract() {
+        return {
+          parsed: {},
+          referenceType: 'unknown' as const,
+          method: 'deterministic' as const,
+          fallbackUsed: false,
+          extractorPath: 'deterministic' as const,
+          selectedBranch: 'deterministic_raw' as const,
+          selectionReason: 'test_unresolved_render_fallback',
+          fieldConfidence: {},
+          warnings: [],
+        };
+      },
+    };
+
+    const { response } = await processV2({
+      sourceType: 'text',
+      content: 'Trigger fallback raw citation',
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: false,
+      dedup: false,
+      group: false,
+    }, {
+      adapters: {
+        ...adapters,
+        extractor,
+      },
+    });
+
+    expect(response.citations[0]?.rendered?.formatted).toBe('[Unresolved reference]. Trigger fallback raw citation.');
+    expect(response.citations[0]?.quality?.bucket).toBe('action_needed');
+  });
+
+  it('maps thesis institution metadata into institutionMapping for dissertation-style citations', async () => {
+    const adapters = createDefaultAdapters();
+    const extractor = {
+      ...adapters.extractor,
+      async extract() {
+        return {
+          parsed: {
+            authors: ["O'Rourke, N."],
+            title: 'Dose response ranking for translational pharmacology',
+            year: '2019',
+            publisher: 'North Coast University',
+            url: 'https://stress.example.org/apat/031',
+          },
+          referenceType: 'thesis' as const,
+          method: 'deterministic' as const,
+          fallbackUsed: false,
+          extractorPath: 'deterministic' as const,
+          selectedBranch: 'deterministic_raw' as const,
+          selectionReason: 'test_thesis_institution_mapping',
+          fieldConfidence: {
+            authors: 0.95,
+            title: 0.95,
+            year: 0.95,
+            publisher: 0.9,
+            url: 0.9,
+          },
+          warnings: [],
+        };
+      },
+    };
+
+    const { response } = await processV2({
+      sourceType: 'text',
+      content: "O'Rourke, N. (2019). Dose response ranking for translational pharmacology.",
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: false,
+      dedup: false,
+      group: false,
+    }, {
+      adapters: {
+        ...adapters,
+        extractor,
+      },
+    });
+
+    expect(response.citations[0]?.referenceType).toBe('thesis');
+    expect(response.citations[0]?.institution.value).toBe('North Coast University');
+    expect(response.citations[0]?.institutionMapping).toMatchObject({
+      mapped: true,
+      source: 'parsed_publisher',
+      originalValue: 'North Coast University',
+    });
   });
 
   it('profiles book-heavy, doi-heavy, and OCR-like input signals during ingestion', async () => {

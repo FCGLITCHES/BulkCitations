@@ -170,10 +170,21 @@ export function normalizeWhitespace(value: string): string {
 }
 
 export function normalizeDoiValue(value: string): string {
-  return normalizeWhitespace(value)
+  let normalized = normalizeWhitespace(value)
     .replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, '')
-    .replace(/^doi:\s*/i, '')
-    .replace(/[.)]+$/, '');
+    .replace(/^doi:\s*/i, '');
+
+  while (/[)\].,;:]+$/.test(normalized)) {
+    const lastChar = normalized.slice(-1);
+    if (lastChar === ')') {
+      const openCount = (normalized.match(/\(/g) ?? []).length;
+      const closeCount = (normalized.match(/\)/g) ?? []).length;
+      if (closeCount <= openCount) break;
+    }
+    normalized = normalized.slice(0, -1);
+  }
+
+  return normalized;
 }
 
 export function doiToUrl(doi: string): string {
@@ -379,9 +390,9 @@ export function fixUnicodeText(value: string): string {
 }
 
 export function isLikelyAllCaps(value: string): boolean {
-  const letters = Array.from(value).filter((char) => /[A-Za-z]/.test(char));
+  const letters = Array.from(value).filter((char) => /\p{L}/u.test(char));
   if (letters.length < 4) return false;
-  const upper = letters.filter((char) => /[A-Z]/.test(char)).length;
+  const upper = letters.filter((char) => char === char.toLocaleUpperCase() && char !== char.toLocaleLowerCase()).length;
   return upper / letters.length > 0.8;
 }
 
@@ -391,12 +402,18 @@ const DOTTED_INITIALS_PATTERN = /^[\p{Lu}](?:\.[\p{Lu}])+\.?$/u;
 
 export function toSmartTitleCase(value: string): string {
   return fixUnicodeText(value)
-    .toLowerCase()
     .split(/\s+/)
     .map((word, index) => {
-      if (/^[A-Z0-9-]{2,}$/.test(word.toUpperCase())) return word.toUpperCase();
-      if (index > 0 && TITLE_STOP_WORDS.has(word)) return word;
-      return word.charAt(0).toUpperCase() + word.slice(1);
+      const lower = word.toLocaleLowerCase();
+      if (
+        word === word.toLocaleUpperCase()
+        && /[\p{L}\p{N}]/u.test(word)
+        && /^[\p{Lu}\p{N}-]{2,}$/u.test(word)
+      ) {
+        return word.toLocaleUpperCase();
+      }
+      if (index > 0 && TITLE_STOP_WORDS.has(lower)) return lower;
+      return lower.replace(/^\p{L}/u, (char) => char.toLocaleUpperCase());
     })
     .join(' ');
 }
@@ -416,7 +433,7 @@ function initialsFromWords(words: string[]): string | null {
           .map((part) => Array.from(part)[0]?.toUpperCase() ?? '')
           .filter(Boolean);
       }
-      if (DOTTED_INITIALS_PATTERN.test(compact) || /^[\p{Lu}]{2,6}$/u.test(withoutDots)) {
+      if (DOTTED_INITIALS_PATTERN.test(compact) || /^[\p{Lu}]{2,3}$/u.test(withoutDots)) {
         return withoutDots.split('').map((part) => part.toUpperCase());
       }
       if (/^[\p{Lu}]\.?$/u.test(word)) return [word.replace(/\./g, '').toUpperCase()];
@@ -615,6 +632,9 @@ function splitAuthorBlob(author: string): string[] {
   }
   if (commaTokens.length >= 4 && commaTokens.length % 2 === 0 && looksLikeAlternatingTokenArray(commaTokens)) {
     return buildPairedAuthorsFromAlternatingTokens(commaTokens);
+  }
+  if (commaTokens.length === 2 && looksLikeSurnameToken(commaTokens[0]) && looksLikeGivenNamesToken(commaTokens[1])) {
+    return [normalized];
   }
   if (
     commaTokens.length >= 2

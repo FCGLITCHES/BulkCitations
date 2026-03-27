@@ -311,6 +311,9 @@ export function createIngestStage(): V2Stage {
       if (rawItems.length > INGESTION_LIMITS.maxCitationCount) {
         ingestFailure('citation_count_limit_exceeded');
       }
+      if (rawItems.length === 0 || rawItems.some((item) => normalizeWhitespace(item).length === 0)) {
+        ingestFailure('empty_input_after_normalization');
+      }
 
       const inputProfile = classifyInputProfile(rawItems.join('\n\n'));
 

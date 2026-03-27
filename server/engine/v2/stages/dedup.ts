@@ -8,7 +8,7 @@ import {
   getStageRuntimeTimeoutMs,
   runStageTasksWithIsolation,
 } from '../stageIsolation.js';
-import { addCitationStageLog, average, createStageDiagnostic, firstAuthorLastName, normalizedField, normalizeWhitespace } from '../utils.js';
+import { addCitationStageLog, attachCitationDebug, average, createStageDiagnostic, firstAuthorLastName, normalizedField, normalizeWhitespace } from '../utils.js';
 import { hasCanonicalMalformedAuthors } from '../qualityRules.js';
 import { validateCitationOffline } from './validate.js';
 
@@ -128,6 +128,14 @@ function duplicateConfidencePenalty(changedFields: string[]): number | undefined
   if (changedFields.length === 0) return undefined;
   const penalty = changedFields.reduce((sum, field) => sum + (DUPLICATE_FIELD_PENALTIES[field] ?? 0.01), 0);
   return Number(Math.min(0.15, penalty).toFixed(2));
+}
+
+function dedupSnapshot(citation: CanonicalCitation) {
+  return {
+    title: citation.title.value ?? null,
+    authors: citation.authors.value.map((author) => author.literal ?? `${author.last}, ${author.initials ?? author.first ?? ''}`.trim()),
+    doi: citation.doi.value ?? null,
+  };
 }
 
 function sharedAuthorSignature(left: CanonicalCitation, right: CanonicalCitation): boolean {
@@ -603,8 +611,10 @@ export function createDedupStage(): V2Stage {
               const hydrated = await hydrateDuplicateCitation(citation, mergedCitation, group.method);
               const changedFields = changedDuplicateFields(citation, hydrated);
               const confidencePenalty = duplicateConfidencePenalty(changedFields);
+              const fieldSubstitution = changedFields.some((field) => ['title', 'authors', 'doi'].includes(field))
+                && !isVerifiedResolution(mergedCitation);
               return addCitationStageLog(
-                {
+                attachCitationDebug({
                   ...hydrated,
                   status: 'duplicate',
                   duplicate: {
@@ -616,7 +626,11 @@ export function createDedupStage(): V2Stage {
                     changedFields,
                     confidencePenalty,
                   },
-                },
+                }, 'dedup', {
+                  preDedupSnapshot: dedupSnapshot(citation),
+                  postDedupSnapshot: dedupSnapshot(hydrated),
+                  fieldSubstitution,
+                }, context.debugEnabled),
                 createStageDiagnostic('dedup', 'warning', 'Citation marked as duplicate; merged record created.', {
                   mergedId: mergedCitation.id,
                   method: group.method,

@@ -75,7 +75,54 @@ function sanitizeTrustedCitation(value: string): string {
 }
 
 function isRenderable(value: string): boolean {
-  return value.trim().length >= 3 && /[A-Za-z0-9]/.test(value);
+  const trimmed = value.trim();
+  if (trimmed.length < 3 || !/[A-Za-z0-9]/.test(trimmed)) return false;
+  if (/^\(?n\.d\.\)?\.?$/i.test(trimmed)) return false;
+  return true;
+}
+
+function fallbackAuthorToken(citation: any): string | null {
+  const author = citation.authors?.value?.[0];
+  if (!author) return null;
+  const last = fixUnicodeText(author.last ?? author.literal ?? '').trim();
+  const initials = fixUnicodeText(author.initials ?? '').trim();
+  const firstInitial = fixUnicodeText(author.first ?? '').trim().charAt(0);
+  if (!last) return null;
+  if (initials) return `${last}, ${initials}`;
+  if (firstInitial) return `${last}, ${firstInitial.toUpperCase()}.`;
+  return last;
+}
+
+function buildMinimalApaFallback(citation: any): string {
+  const author = fallbackAuthorToken(citation);
+  const year = citation.year?.value != null ? String(citation.year.value) : 'n.d.';
+  const title = fixUnicodeText((citation.title?.value ?? '').trim());
+  const raw = fixUnicodeText((citation.raw ?? '').trim());
+
+  if (author && title) {
+    return `${author} (${year}). ${sanitizeCitation(title)}`;
+  }
+  if (title) {
+    return `[Unresolved reference]. ${sanitizeCitation(title)}`;
+  }
+  if (raw) {
+    return `[Unresolved reference]. ${sanitizeCitation(raw)}`;
+  }
+  return '[Unresolved reference]. Citation unavailable.';
+}
+
+function markActionNeeded(citation: any) {
+  return {
+    ...citation,
+    quality: citation.quality
+      ? {
+          ...citation.quality,
+          bucket: 'action_needed',
+          bucketReasons: [...new Set([...(citation.quality.bucketReasons ?? []), 'render_fallback_applied'])],
+          flags: [...new Set([...(citation.quality.flags ?? []), 'action_needed'])],
+        }
+      : citation.quality,
+  };
 }
 
 export function createRenderStage(): V2Stage {
@@ -145,10 +192,10 @@ export function createRenderStage(): V2Stage {
           }
 
           const nextCitationBase = {
-            ...citation,
+            ...(renderable ? citation : markActionNeeded(citation)),
             rendered: {
               outputStyle: context.request.outputStyle,
-              formatted: renderable ? sanitized : sanitizeCitation(citation.raw),
+              formatted: renderable ? sanitized : buildMinimalApaFallback(citation),
               warnings: [
                 ...assertionResult.warnings,
                 ...(renderable ? [] : ['warning:render_output_empty_or_invalid']),
@@ -186,10 +233,10 @@ export function createRenderStage(): V2Stage {
           fallbacksUsed.push(fallbackTag);
           return addCitationStageLog(
             attachCitationDebug({
-              ...citation,
+              ...markActionNeeded(citation),
               rendered: {
                 outputStyle: context.request.outputStyle,
-                formatted: sanitizeCitation(citation.raw),
+                formatted: buildMinimalApaFallback(citation),
                 warnings: ['warning:render_stage_error'],
                 sanitized: false,
                 assertionSummary: citation.rendered?.assertionSummary,

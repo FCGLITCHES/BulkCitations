@@ -22,6 +22,9 @@
     "baseline:v2:freeze": "tsx scripts/v2PhaseBaseline.ts freeze",
     "baseline:v2:check": "tsx scripts/v2PhaseBaseline.ts check",
     "benchmark": "tsx scripts/benchmark.ts",
+    "benchmark:academic:generate": "tsx scripts/generateAcademicBenchmarkCorpus.ts",
+    "benchmark:academic": "tsx scripts/runAcademicBenchmark.ts",
+    "benchmark:academic:debug": "tsx scripts/debugAcademicBenchmarkBatch.ts",
     "test:pdf": "tsx tests/test-pdf-citations.test.ts"
   },
   "dependencies": {

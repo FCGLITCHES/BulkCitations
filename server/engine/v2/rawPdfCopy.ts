@@ -21,11 +21,14 @@ export const OVERSIZED_WORKING_CHUNK_CHARS = 800;
 export const OVERSIZED_WORKING_CHUNK_LINES = 12;
 
 const NUMERIC_CITATION_MARKER_PATTERN = /^(?:\[\d+\]|\d+[.)])\s+/;
-const SURNAME_INITIAL_OPENER_PATTERN = /^[A-Z][A-Za-záéíóúüñç'’.-]+,\s+[A-Z](?:[.\-\s]*[A-Z])*\.?(?:\s|,|&)/u;
-const SURNAME_FULL_NAME_OPENER_PATTERN = /^[A-Z][A-Za-záéíóúüñç'’.-]+,\s+[A-Z][A-Za-záéíóúüñç'’.-]+(?:\s+[A-Z][A-Za-záéíóúüñç'’.-]+){0,3}\.?(?:\s|,|["“”'])/u;
-const ORG_AUTHOR_OPENER_PATTERN = /^[A-Z][A-Za-z&'’.-]+(?:\s+(?:(?:of|and|for|the|in|on|at|by|de|van|du|der|da|del|di|la|le)\b|[A-Z][A-Za-z&'’.-]+)){0,7}\.\s/u;
-const COMPACT_AUTHOR_RUN_OPENER_PATTERN = /^(?:[A-Z][A-Za-z'’.-]+\s+[A-Z]{1,4}\.?,\s*){1,}[A-Z][A-Za-z'’.-]+\s+[A-Z]{1,4}\.?/u;
-const INITIALS_LEAD_AUTHOR_RUN_OPENER_PATTERN = /^(?:(?:[A-Z]\.\s*){1,3}[A-Z][A-Za-z'’.-]+,\s*){1,}(?:and\s+)?(?:[A-Z]\.\s*){1,3}[A-Z][A-Za-z'’.-]+/u;
+const SURNAME_INITIAL_OPENER_PATTERN = /^[\p{Lu}][\p{L}\p{M}'’.-]+,\s+[A-Z](?:[.\-\s]*[A-Z])*\.?(?:\s|,|&)/u;
+const SURNAME_FULL_NAME_OPENER_PATTERN = /^[\p{Lu}][\p{L}\p{M}'’.-]+,\s+[\p{Lu}][\p{L}\p{M}'’.-]+(?:\s+[\p{Lu}][\p{L}\p{M}'’.-]+){0,3}\.?(?:\s|,|["“”'])/u;
+const ORG_AUTHOR_OPENER_PATTERN = /^[\p{Lu}][\p{L}\p{M}&'’.-]+(?:\s+(?:(?:of|and|for|the|in|on|at|by|de|van|du|der|da|del|di|la|le)\b|[\p{Lu}][\p{L}\p{M}&'’.-]+)){0,7}\.\s/u;
+const COMPACT_AUTHOR_RUN_OPENER_PATTERN = /^(?:[\p{Lu}][\p{L}\p{M}'’.-]+\s+[A-Z]{1,4}\.?,\s*){1,}[\p{Lu}][\p{L}\p{M}'’.-]+\s+[A-Z]{1,4}\.?/u;
+const VANCOUVER_AUTHOR_RUN_OPENER_PATTERN = /^(?:[\p{Lu}][\p{L}\p{M}'’.-]+\s+[A-Z](?:[.\-\s]*[A-Z])*(?:[.,])\s+){1,}[\p{Lu}][\p{L}\p{M}'’.-]+\s+[A-Z](?:[.\-\s]*[A-Z])*\.?/u;
+const SINGLE_AUTHOR_INITIAL_OPENER_PATTERN = /^[\p{Lu}][\p{L}\p{M}'’.-]+\s+[A-Z](?:[.\-\s]*[A-Z])*\.\s+[\p{Lu}"“”'(\[]/u;
+const INITIALS_LEAD_AUTHOR_RUN_OPENER_PATTERN = /^(?:(?:[A-Z]\.?\s*){1,3}[\p{Lu}][\p{L}\p{M}'’.-]+(?:,\s*|\s+and\s+)){1,}(?:[A-Z]\.?\s*){1,3}[\p{Lu}][\p{L}\p{M}'’.-]+/u;
+const MIXED_AUTHOR_ORDER_OPENER_PATTERN = /^(?:(?:(?:[A-Z]\.?\s*){1,3}|[\p{Lu}][\p{L}\p{M}'’.-]+\s+)[\p{Lu}][\p{L}\p{M}'’.-]+(?:,\s*|\s+and\s+)){1,}(?:(?:[A-Z]\.?\s*){1,3}|[\p{Lu}][\p{L}\p{M}'’.-]+\s+)[\p{Lu}][\p{L}\p{M}'’.-]+/u;
 const YEAR_ANCHOR_PATTERN = /\(\d{4}[a-z]?\)/u;
 const BARE_TRAILING_YEAR_PATTERN = /\b(?:19|20)\d{2}\b/u;
 const VANCOUVER_TAIL_PATTERN = /\b(?:19|20)\d{2};\d+(?:\([A-Za-z0-9-]+\))?:[A-Za-z]?\d/u;
@@ -36,10 +39,12 @@ const DOI_OR_URL_PATTERN = new RegExp(`${DOI_CORE_PATTERN.source}|${URL_PATTERN.
 const ACCESS_DATE_PATTERN = /^(?:accessed|viewed|retrieved)\b/i;
 const SHORT_HEADING_PATTERN = /^(?:references?|bibliography|works cited)$/iu;
 const PAGE_ARTIFACT_PATTERN = /^(?:page\s+)?\d+\.?(?:\s+(?:of|\/)\s+\d+)?$/iu;
-const RUNNING_TITLE_PATTERN = /^[A-Z][A-Za-z'’.-]+(?:\s+[A-Z][A-Za-z'’.-]+){1,8}$/u;
+const RUNNING_TITLE_PATTERN = /^[\p{Lu}][\p{L}\p{M}'’.-]+(?:\s+[\p{Lu}][\p{L}\p{M}'’.-]+){1,8}$/u;
 const CONTINUATION_TAIL_PATTERN = /(?:&|,|\band\b)\s*$/iu;
-const SURNAME_INITIAL_TAIL_PATTERN = /[A-Z][A-Za-záéíóúüñç'’.-]+,\s+[A-Z](?:[.\-\s]*[A-Z])*\.?$/u;
+const SURNAME_INITIAL_TAIL_PATTERN = /[\p{Lu}][\p{L}\p{M}'’.-]+,\s+[A-Z](?:[.\-\s]*[A-Z])*\.?$/u;
 const STRONG_SEPARATOR_PATTERN = /;|\)\.|[.](?=\s+[A-Z])/gu;
+const BOUNDARY_CONTINUATION_PATTERN = /^(?:in\b|translated\b|edited\b|retrieved\b|available\b|accessed\b|from\b|pp?\.?\b|pages?\b|vol(?:ume)?\.?\b|issue\b|no\.?\b|doi\b|https?:\/\/|www\.|and\b|&\b)/iu;
+const BOUNDARY_BIBLIOGRAPHIC_SIGNAL_PATTERN = /\b(?:10\.\d{4,9}\/\S+|https?:\/\/\S+|(?:19|20)\d{2}|vol(?:ume)?\.?\b|issue\b|no\.?\b|pp?\.?\b|pages?\b|journal\b|conference\b|proceedings\b|press\b|university\b|publisher\b)\b/iu;
 const YEAR_TOKEN_PATTERN = /\(\d{4}[a-z]?\)/gu;
 const SINGLE_TOKEN_ARTIFACT_PATTERN = /\b([B-HJ-Z])\s+([a-záéíóúüñç]{2,})\b/gu;
 const LOWER_SINGLE_TOKEN_ARTIFACT_PATTERN = /\b([b-hj-z])\s+([a-záéíóúüñç]{2,})\b/gu;
@@ -141,7 +146,7 @@ function tokenCount(value: string): number {
 }
 
 function containsUppercaseWord(value: string): boolean {
-  return /\b[A-Z][A-Za-z'’.-]+\b/u.test(value);
+  return /\b[\p{Lu}][\p{L}\p{M}'’.-]+\b/u.test(value);
 }
 
 function hasValidNumericMarkerLead(value: string): boolean {
@@ -156,7 +161,10 @@ function hasAuthorLead(normalized: string): boolean {
   return SURNAME_INITIAL_OPENER_PATTERN.test(normalized)
     || SURNAME_FULL_NAME_OPENER_PATTERN.test(normalized)
     || COMPACT_AUTHOR_RUN_OPENER_PATTERN.test(normalized)
+    || VANCOUVER_AUTHOR_RUN_OPENER_PATTERN.test(normalized)
+    || SINGLE_AUTHOR_INITIAL_OPENER_PATTERN.test(normalized)
     || INITIALS_LEAD_AUTHOR_RUN_OPENER_PATTERN.test(normalized)
+    || MIXED_AUTHOR_ORDER_OPENER_PATTERN.test(normalized)
     || isLikelyGroupAuthorLine(normalized);
 }
 
@@ -194,7 +202,13 @@ function parseableUriOrDoi(value: string): boolean {
 function isUriTailLine(line: RawLine): boolean {
   if (!parseableUriOrDoi(line.trimmed)) return false;
   if (ACCESS_DATE_PATTERN.test(line.trimmed)) return false;
-  return tokenCount(line.trimmed) <= 8 || /^(?:doi:|https?:\/\/|www\.)/i.test(line.trimmed);
+  if (/^(?:doi:|https?:\/\/|www\.)/i.test(line.trimmed)) return true;
+
+  const normalized = normalizeLineForScoring(line.trimmed);
+  if (hasAuthorLead(normalized)) return false;
+  if (YEAR_ANCHOR_PATTERN.test(normalized) || BARE_TRAILING_YEAR_PATTERN.test(normalized)) return false;
+
+  return tokenCount(normalized) <= 4;
 }
 
 function continuationSignalsForLine(normalized: string, nextNormalized: string | null): string[] {
@@ -262,6 +276,30 @@ function scoreLine(
   if (/^(?:In |pp?\.?|vol\.?|issue\b|doi:|https?:\/\/|www\.)/i.test(normalized)) score -= 0.15;
 
   return Number(Math.max(0, Math.min(1, score)).toFixed(2));
+}
+
+function looksLikeBoundarySeed(normalized: string): boolean {
+  if (!normalized) return false;
+  if (BOUNDARY_CONTINUATION_PATTERN.test(normalized)) return false;
+  if (/^[\p{Ll}]/u.test(normalized)) return false;
+  if (hasAuthorLead(normalized)) return true;
+
+  const tokens = tokenCount(normalized);
+  if (tokens < 3) return false;
+
+  if (YEAR_ANCHOR_PATTERN.test(normalized) && !/^(?:In |Translated |Edited |Retrieved |Available )/iu.test(normalized)) {
+    return true;
+  }
+
+  if (DOI_OR_URL_PATTERN.test(compactUriDoiSpacing(normalized)) && tokens >= 4) {
+    return true;
+  }
+
+  if (tokens >= 4 && BOUNDARY_BIBLIOGRAPHIC_SIGNAL_PATTERN.test(normalized) && /[.:"“”;,]/u.test(normalized)) {
+    return true;
+  }
+
+  return tokens >= 6 && /\b(?:19|20)\d{2}\b/u.test(normalized) && /[.;:,]/u.test(normalized);
 }
 
 function buildContentLines(lines: RawLine[]): V2ContentLine[] {
@@ -337,7 +375,9 @@ function startsNewCitation(
   if (!currentCandidate || currentCandidate.includedLineIndices.length === 0) return true;
   if (boundaryBefore) {
     const normalized = normalizeLineForScoring(line.text.trim());
-    if (hasValidNumericMarkerLead(line.text.trim()) || hasAuthorLead(normalized)) return true;
+    if (hasValidNumericMarkerLead(line.text.trim()) || looksLikeBoundarySeed(normalized)) {
+      return true;
+    }
   }
   return line.openerConfidence >= OPENER_THRESHOLD;
 }

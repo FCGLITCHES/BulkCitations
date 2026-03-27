@@ -11,6 +11,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { ConversionRequest, ConversionResponse, INPUT_STYLES } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { stripLeadingNumbering } from "@shared/stripNumbering";
+import { countEngineLikeInputReferences } from "@shared/liveReferenceDetection";
 
 interface ReferenceInputProps {
   onConversionResult: (response: ConversionResponse) => void;
@@ -134,42 +135,16 @@ export default function ReferenceInput({
   const handleInputChange = useCallback((value: string) => {
     setInputText(value);
 
-    // Count references using the same logic as handleConvert
-    const text = value.trim();
-    let refCount = 0;
-
-    if (!text) {
+    if (!value.trim()) {
       setReferenceCount(0);
       setDetectionStatus("No references detected");
       return;
     }
 
-    // Split by double newlines first (paragraph separation)
-    const paragraphs = text.split(/\n\s*\n/);
-    refCount = paragraphs.filter(p => p.trim()).length;
-
-    // If no double newlines found, try counting numbered references
-    if (refCount <= 1 && text.includes('\n')) {
-      const lines = text.split('\n');
-      refCount = 0;
-
-      for (const line of lines) {
-        const trimmedLine = line.trim();
-        if (trimmedLine.match(/^\d+\.\s*(.+)/)) {
-          refCount++;
-        }
-      }
-
-      // If no numbered references found, estimate by author patterns
-      if (refCount === 0) {
-        const authorPatterns = text.match(/[A-Z][a-z]+,\s+[A-Z]\./g) || [];
-        refCount = Math.max(1, authorPatterns.length);
-      }
-    }
+    const refCount = countEngineLikeInputReferences(value);
 
     setReferenceCount(refCount);
 
-    // Update detection status
     if (refCount > 0 && inputStyle === "auto") {
       setDetectionStatus("Auto-detecting...");
     } else if (refCount === 0) {

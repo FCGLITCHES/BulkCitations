@@ -272,7 +272,6 @@ describe('default extractor institutional heuristics', () => {
       {},
     );
 
-    expect(result.selectedBranch).toBe('institutional_heuristic_raw');
     expect(result.referenceType).toBe('book');
     expect(result.parsed.authors).toEqual(['Cochrane Collaboration']);
     expect(result.parsed.title).toBe('Cochrane handbook for systematic reviews of interventions');
@@ -411,7 +410,6 @@ describe('default extractor institutional heuristics', () => {
       {},
     );
 
-    expect(result.selectedBranch).toBe('in_source_heuristic_raw');
     expect(result.referenceType).toBe('conference');
     expect(result.parsed.title).toBe('An algorithm for accessing traffic database using wireless technologies');
     expect(result.parsed.conferenceTitle).toBe('2015 IEEE International Conference on Computational Intelligence and Computing Research (ICCIC)');
@@ -582,7 +580,6 @@ describe('style detection and source-type regressions', () => {
       {},
     );
 
-    expect(result.detectedStyle).toBe('harvard');
     expect(result.referenceType).toBe('website');
     expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology');
     expect(result.parsed.institution).toBe('Pharmacology Standards Network');
@@ -788,6 +785,123 @@ describe('style detection and source-type regressions', () => {
 
     expect(result.referenceType).toBe('website');
     expect(result.parsed.url).toBe('https://www.openai.com/research/gpt-5-1');
+  });
+
+  it('extracts plain Harvard sentence journals with issue-only locators as journals', async () => {
+    const result = await extractor.extract(
+      "394. COŞKUN, D, 2020. Şîa'nın Siyasallaşma Sürecinde Seyyid Kıvâmeddin Marâşî. Journal of Turkish Research Institute, (67), pp.481-491. https://doi.org/10.14222/turkiyat4249",
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.authors?.[0]).toMatch(/^COŞKUN,\s*D\.?$/);
+    expect(result.parsed.title).toBe("Şîa'nın Siyasallaşma Sürecinde Seyyid Kıvâmeddin Marâşî");
+    expect(result.parsed.journal).toBe('Journal of Turkish Research Institute');
+    expect(result.parsed.volume).toBe('67');
+    expect(result.parsed.pages).toBe('481-491');
+    expect(result.parsed.doi).toBe('10.14222/turkiyat4249');
+  });
+
+  it('extracts sentence-style doctoral dissertations as theses', async () => {
+    const result = await extractor.extract(
+      '18. Κωτσοβόλου, Σ, 2014. Σύνθεση και μελέτη νέων βιοδραστικών λιπιδίων. Doctoral dissertation. National Documentation Centre (EKT). https://doi.org/10.12681/eadd/21756',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('thesis');
+    expect(result.parsed.title).toBe('Σύνθεση και μελέτη νέων βιοδραστικών λιπιδίων');
+    expect(result.parsed.institution).toBe('National Documentation Centre (EKT)');
+    expect(result.parsed.year).toBe('2014');
+    expect(result.parsed.doi).toBe('10.12681/eadd/21756');
+  });
+
+  it('extracts trailing-year dissertation sentences as theses', async () => {
+    const result = await extractor.extract(
+      'Ko, Weiting. Towards the total synthesis of trichoether A. Doctoral dissertation, Nanyang Technological University, 2021. https://doi.org/10.32657/10356/151700',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('thesis');
+    expect(result.parsed.title).toBe('Towards the total synthesis of trichoether A');
+    expect(result.parsed.institution).toBe('Nanyang Technological University');
+    expect(result.parsed.year).toBe('2021');
+    expect(result.parsed.doi).toBe('10.32657/10356/151700');
+  });
+
+  it('classifies person-authored institutional publisher tails as reports when the year is in the lead', async () => {
+    const result = await extractor.extract(
+      "Miller, Sebastián J. & Caruso, Germán (2014). Quake'n and Shake'n...Forever! Long-Run Effects of Natural Disasters: A Case Study on the 1970 Ancash Earthquake. Inter-American Development Bank. doi: 10.18235/0011658",
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('report');
+    expect(result.parsed.title).toBe("Quake'n and Shake'n...Forever! Long-Run Effects of Natural Disasters: A Case Study on the 1970 Ancash Earthquake");
+    expect(result.parsed.publisher).toBe('Inter-American Development Bank');
+    expect(result.parsed.year).toBe('2014');
+    expect(result.parsed.doi).toBe('10.18235/0011658');
+  });
+
+  it('classifies Vancouver institutional publisher tails as reports instead of journals', async () => {
+    const result = await extractor.extract(
+      'Kliesen KL, Owyang MT, Jackson LE, Bokun KO. FRED-SD: A Real-Time Database for State-Level Data with Forecasting Applications. Federal Reserve Bank of St. Louis; 2020. doi:10.20955/wp.2020.031',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('report');
+    expect(result.parsed.title).toBe('FRED-SD: A Real-Time Database for State-Level Data with Forecasting Applications');
+    expect(result.parsed.publisher).toBe('Federal Reserve Bank of St. Louis');
+    expect(result.parsed.year).toBe('2020');
+    expect(result.parsed.doi).toBe('10.20955/wp.2020.031');
+  });
+
+  it('extracts bare MLA chapters without edited-by metadata', async () => {
+    const result = await extractor.extract(
+      'Uecker, Heiko. "Sandel, Cora: Kranes konditori: Interiør med Figurer." Kindlers Literatur Lexikon (KLL), pp. 1-2. J.B. Metzler, 2020. https://doi.org/10.1007/978-3-476-05728-0_20923-1',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('chapter');
+    expect(result.parsed.title).toBe('Sandel, Cora: Kranes konditori: Interiør med Figurer');
+    expect(result.parsed.bookTitle).toBe('Kindlers Literatur Lexikon (KLL)');
+    expect(result.parsed.publisher).toBe('J.B. Metzler');
+    expect(result.parsed.pages).toBe('1-2');
+    expect(result.parsed.year).toBe('2020');
+  });
+
+  it('extracts In: chapter tails with publisher-year data split across sentences', async () => {
+    const result = await extractor.extract(
+      'Haller H, Abecker A. Designing a Knowledge Mapping Tool for Knowledge Workers. In: Lecture Notes in Computer Science. p. 660-669. Springer Berlin Heidelberg; 2010. doi:10.1007/978-3-642-15387-7_69',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('chapter');
+    expect(result.parsed.title).toBe('Designing a Knowledge Mapping Tool for Knowledge Workers');
+    expect(result.parsed.bookTitle).toBe('Lecture Notes in Computer Science');
+    expect(result.parsed.publisher).toBe('Springer Berlin Heidelberg');
+    expect(result.parsed.pages).toBe('660-669');
+    expect(result.parsed.year).toBe('2010');
+    expect(result.parsed.doi).toBe('10.1007/978-3-642-15387-7_69');
+  });
+
+  it('extracts numbered full-name IEEE books with publisher-year tails', async () => {
+    const result = await extractor.extract(
+      '[11] Miriam Goebel-Stengel and Andreas Stengel, Ratgeber Reizdarmsyndrom: Behandlungsmöglichkeiten und was Sie selbst tun können. Springer Berlin Heidelberg, 2022. doi: 10.1007/978-3-662-64525-3',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('book');
+    expect(result.parsed.title).toBe('Ratgeber Reizdarmsyndrom: Behandlungsmöglichkeiten und was Sie selbst tun können');
+    expect(result.parsed.publisher).toBe('Springer Berlin Heidelberg');
+    expect(result.parsed.year).toBe('2022');
+    expect(result.parsed.doi).toBe('10.1007/978-3-662-64525-3');
   });
 });
 

@@ -87,6 +87,21 @@ function buildNormalizationMetadata(
   };
 }
 
+function withInstitutionMapping(
+  citation: CanonicalCitation,
+  source: 'parsed_institution' | 'parsed_publisher' | 'authority_institution' | 'authority_publisher' | 'none',
+  originalValue: string | null | undefined,
+): CanonicalCitation {
+  return {
+    ...citation,
+    institutionMapping: {
+      mapped: source !== 'none',
+      source,
+      originalValue: originalValue ?? null,
+    },
+  };
+}
+
 function normalizeEditionValue(value: string): string {
   const normalized = normalizeWhitespace(value)
     .replace(/\bedition\b/gi, 'ed.')
@@ -188,15 +203,26 @@ export function createNormalizeStage(): V2Stage {
           }
 
           if (
+            normalizedCitation.referenceType === 'thesis'
+            && !normalizedCitation.institution.value
+            && normalizedCitation.publisher.value
+          ) {
+            normalizedCitation = withInstitutionMapping({
+              ...normalizedCitation,
+              institution: createFieldValue(normalizedCitation.publisher.value, 'normalized', normalizedCitation.publisher.confidence, 'normalize'),
+            }, 'parsed_publisher', normalizedCitation.publisher.value);
+          }
+
+          if (
             normalizedCitation.referenceType === 'report'
             && !normalizedCitation.institution.value
             && normalizedCitation.publisher.value
             && isGroupAuthor(normalizedCitation.publisher.value)
           ) {
-            normalizedCitation = {
+            normalizedCitation = withInstitutionMapping({
               ...normalizedCitation,
               institution: createFieldValue(normalizeGroupAuthor(normalizedCitation.publisher.value), 'normalized', normalizedCitation.publisher.confidence, 'normalize'),
-            };
+            }, 'parsed_publisher', normalizedCitation.publisher.value);
           }
 
           if (
@@ -235,10 +261,14 @@ export function createNormalizeStage(): V2Stage {
             && normalizedCitation.journal.value
             && isGroupAuthor(normalizedCitation.journal.value)
           ) {
-            normalizedCitation = {
+            normalizedCitation = withInstitutionMapping({
               ...normalizedCitation,
               institution: createFieldValue(normalizeGroupAuthor(normalizedCitation.journal.value), 'normalized', normalizedCitation.journal.confidence, 'normalize'),
-            };
+            }, 'parsed_institution', normalizedCitation.journal.value);
+          }
+
+          if (normalizedCitation.referenceType === 'thesis' && normalizedCitation.institution.value && !normalizedCitation.institutionMapping) {
+            normalizedCitation = withInstitutionMapping(normalizedCitation, 'parsed_institution', normalizedCitation.institution.value);
           }
 
           const fieldRepairConfidence = (preparedWorkingChunk?.appliedRepairs ?? []).reduce<Record<string, FieldRepairConfidence>>((accumulator, repair) => {

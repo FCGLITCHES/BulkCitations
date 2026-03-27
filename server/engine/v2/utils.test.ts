@@ -4,6 +4,7 @@ import { getRequirementProfile, normalizeLocatorValue } from './qualityRules.js'
 import {
   fixUnicodeText,
   looksLikeSurnameGivenAlternatingArray,
+  normalizeDoiValue,
   normalizeCanonicalAuthor,
   parseAuthorsForStyle,
 } from './utils.js';
@@ -169,5 +170,26 @@ describe('v2 author rescue utilities', () => {
       initials: null,
       literal: 'IBM Research Team',
     });
+  });
+
+  it('preserves valid DOI suffix parentheses in historical DOI formats', () => {
+    expect(normalizeDoiValue('10.1016/0030-4018(76)90095-x')).toBe('10.1016/0030-4018(76)90095-x');
+    expect(normalizeDoiValue('https://doi.org/10.1016/0030-4018(76)90095-x)')).toBe('10.1016/0030-4018(76)90095-x');
+  });
+
+  it('keeps uppercase unicode surnames as surnames instead of exploding them into initials', () => {
+    const result = parseAuthorsForStyle(['COŞKUN, D.'], 'apa');
+
+    expect(result.authors).toMatchObject([
+      { last: 'COŞKUN', initials: 'D.' },
+    ]);
+  });
+
+  it('preserves particle surnames in inverted author strings', () => {
+    const result = parseAuthorsForStyle(['da Silva, V. L.'], 'harvard');
+
+    expect(result.authors).toMatchObject([
+      { last: 'da Silva', initials: 'V. L.' },
+    ]);
   });
 });

@@ -85,6 +85,7 @@ export type {
   SplitMetadata,
   ExtractionMetadata,
   ValidationMetadata,
+  InstitutionMappingMetadata,
   InputProfile,
   FieldRepairConfidence,
   AppliedRepairMetadata,

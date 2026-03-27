@@ -1,0 +1,1632 @@
+{
+  "request": {
+    "batchSize": 50,
+    "batchIndex": 0,
+    "limit": 50
+  },
+  "durationMs": 1262.7,
+  "inputProfile": {
+    "structure": "semi_structured",
+    "confidence": 0.6363636363636364,
+    "inputType": "mixed_styles",
+    "estimatedCount": 50,
+    "hasDois": true,
+    "hasUrls": true,
+    "styleHints": [
+      "numbered_list",
+      "conference_tail"
+    ],
+    "signals": [
+      "numbered_lines",
+      "author_line_starts",
+      "doi_density",
+      "doi_heavy",
+      "conference_tail_markers",
+      "mixed_style_markers",
+      "long_prose_lines",
+      "ocr_noise_markers"
+    ]
+  },
+  "stats": {
+    "input_count": 50,
+    "unique_count": 50,
+    "duplicate_count": 0,
+    "enriched_count": 0,
+    "avg_confidence": 0.92,
+    "retracted_count": 0,
+    "llm_fallback_count": 0
+  },
+  "stageTimings": [
+    {
+      "stageId": "ingest",
+      "status": "success",
+      "durationMs": 11,
+      "workUnits": 1,
+      "timeoutMs": 3000
+    },
+    {
+      "stageId": "split",
+      "status": "success",
+      "durationMs": 55,
+      "workUnits": 50,
+      "timeoutMs": 151500
+    },
+    {
+      "stageId": "detect",
+      "status": "success",
+      "durationMs": 443,
+      "workUnits": 50,
+      "timeoutMs": 5750
+    },
+    {
+      "stageId": "extract",
+      "status": "success",
+      "durationMs": 449,
+      "workUnits": 50,
+      "timeoutMs": 12800
+    },
+    {
+      "stageId": "enrich",
+      "status": "success",
+      "durationMs": 0,
+      "workUnits": 50,
+      "timeoutMs": 187500
+    },
+    {
+      "stageId": "normalize",
+      "status": "success",
+      "durationMs": 15,
+      "workUnits": 50,
+      "timeoutMs": 7000
+    },
+    {
+      "stageId": "validate",
+      "status": "success",
+      "durationMs": 6,
+      "workUnits": 50,
+      "timeoutMs": 10400
+    },
+    {
+      "stageId": "truth",
+      "status": "success",
+      "durationMs": 8,
+      "workUnits": 50,
+      "timeoutMs": 15500
+    },
+    {
+      "stageId": "dedup",
+      "status": "success",
+      "durationMs": 0,
+      "workUnits": 50,
+      "timeoutMs": 30000
+    },
+    {
+      "stageId": "group",
+      "status": "skipped",
+      "durationMs": 0,
+      "workUnits": 0,
+      "timeoutMs": 0
+    },
+    {
+      "stageId": "score",
+      "status": "success",
+      "durationMs": 3,
+      "workUnits": 50,
+      "timeoutMs": 6500
+    },
+    {
+      "stageId": "render",
+      "status": "success",
+      "durationMs": 270,
+      "workUnits": 50,
+      "timeoutMs": 24500
+    },
+    {
+      "stageId": "respond",
+      "status": "success",
+      "durationMs": 1,
+      "workUnits": 50,
+      "timeoutMs": 2000
+    }
+  ],
+  "pipelineLogTail": [
+    {
+      "stageId": "normalize",
+      "status": "success",
+      "message": "Normalized 50 citation(s).",
+      "details": {
+        "citationCount": 50
+      },
+      "durationMs": 14,
+      "timestamp": "2026-03-27T15:30:48.753Z"
+    },
+    {
+      "stageId": "validate",
+      "status": "success",
+      "message": "Validated 50 citation(s).",
+      "details": {
+        "citationCount": 50
+      },
+      "durationMs": 6,
+      "timestamp": "2026-03-27T15:30:48.759Z"
+    },
+    {
+      "stageId": "truth",
+      "status": "success",
+      "message": "No approved truth matched this batch.",
+      "details": {
+        "citationCount": 50,
+        "appliedCount": 0
+      },
+      "durationMs": 8,
+      "timestamp": "2026-03-27T15:30:48.767Z"
+    },
+    {
+      "stageId": "dedup",
+      "status": "skipped",
+      "message": "Deduplication disabled for this request.",
+      "timestamp": "2026-03-27T15:30:48.767Z"
+    },
+    {
+      "stageId": "group",
+      "status": "skipped",
+      "message": "Stage 'group' is disabled in the active v2 registry.",
+      "timestamp": "2026-03-27T15:30:48.767Z"
+    },
+    {
+      "stageId": "score",
+      "status": "success",
+      "message": "Calculated quality scores for 50 citation(s).",
+      "details": {
+        "citationCount": 50
+      },
+      "durationMs": 3,
+      "timestamp": "2026-03-27T15:30:48.770Z"
+    },
+    {
+      "stageId": "render",
+      "status": "success",
+      "message": "Rendered 50 citation(s) in apa.",
+      "details": {
+        "citationCount": 50,
+        "outputStyle": "apa"
+      },
+      "durationMs": 270,
+      "timestamp": "2026-03-27T15:30:49.040Z"
+    },
+    {
+      "stageId": "respond",
+      "status": "success",
+      "message": "Built the v2 response envelope.",
+      "details": {
+        "citationCount": 50,
+        "duplicateCount": 0
+      },
+      "durationMs": 1,
+      "timestamp": "2026-03-27T15:30:49.041Z"
+    }
+  ],
+  "countIntegrity": {
+    "expected": 50,
+    "actual": 50,
+    "missing": 0
+  },
+  "matchedSummary": {
+    "render_ok": 50,
+    "extract_branch:deterministic_raw": 49,
+    "extract_branch:in_source_heuristic_raw": 1
+  },
+  "missingExamples": [],
+  "firstActualCitations": [
+    {
+      "citationIndex": 0,
+      "referenceType": "journal",
+      "title": "Magnetism in La2CuO4 based compounds",
+      "venue": "Physica C: Superconductivity",
+      "rendered": "Machida, K. (1989). Magnetism in La2CuO4 based compounds. Physica C: Superconductivity, 158(1-2), 192-196.",
+      "qualityBucket": "ready",
+      "renderWarnings": [
+        "warning:apa:volume_issue_format"
+      ],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 172,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Machida, Kazushige. \"Magnetism in La2CuO4 based compounds.\" Physica C: Superconductivity, vol. 158, no. 1-2, 1989, pp. 192-196. https://d..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 1,
+      "referenceType": "unknown",
+      "title": "Şîa'nın Siyasallaşma Sürecinde Seyyid Kıvâmeddin Marâşî",
+      "venue": "Journal of Turkish Research Institute, (67), pp. 481-491",
+      "rendered": "C. O.ŞK. U. N., D. (2020). Şîa'nın Siyasallaşma Sürecinde Seyyid Kıvâmeddin Marâşî. 481-491.",
+      "qualityBucket": "action_needed",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_numbering"
+        ],
+        "flags": [],
+        "chunkLength": 173,
+        "lineCount": 1,
+        "cleanedChunkPreview": "394. COŞKUN, D, 2020. Şîa'nın Siyasallaşma Sürecinde Seyyid Kıvâmeddin Marâşî. Journal of Turkish Research Institute, (67), pp.481-491. h..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 2,
+      "referenceType": "journal",
+      "title": "INNOVATION MANAGEMENT: STIMULATION AND MANAGEMENT OF CREATIVITY AND IDEAS IN THE ORGANIZATION.\" Eastern Europe: economy, business and management, no",
+      "venue": "4(41) (2023). https://doi.org/10.32782/easterneurope.41-10",
+      "rendered": "Zhytomyr Ivan Franko State University, Verbovskyi, I., Mykhailiv, H., Vasyl Stefanyk Precarpathian National University, Soima, S., Univer...",
+      "qualityBucket": "worth_reviewing",
+      "renderWarnings": [
+        "warning:apa:author_particle_handling"
+      ],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 384,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Zhytomyr Ivan Franko State University, Igor Verbovskyi, Halyna Mykhailiv, Vasyl Stefanyk Precarpathian National University, Svitlana Soim..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 3,
+      "referenceType": "journal",
+      "title": "SCF MO calculations of heteroatomic systems with the variable ? approximation: IV. Electronic structure and spectra of protonated N-heterocycles",
+      "venue": "Theoretica Chimica Acta",
+      "rendered": "Nishimoto, K. (1969). SCF MO calculations of heteroatomic systems with the variable ? approximation: IV. Electronic structure and spectra...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_numbering"
+        ],
+        "flags": [],
+        "chunkLength": 314,
+        "lineCount": 1,
+        "cleanedChunkPreview": "498. Nishimoto, Kichisuke, Kimiko Nakatsukasa, Ryoichi Fujishiro, and Shunji Kato. \"SCF MO calculations of heteroatomic systems with the ..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 4,
+      "referenceType": "chapter",
+      "title": "Darstellungsarten",
+      "venue": "In Bauaufnahme, pp. 124-130. Vieweg+Teubner Verlag. https://doi.org/10.1007/978-3-322-89462-5_15",
+      "rendered": "Wangerin, & 1986. (1986). Darstellungsarten. In Bauaufnahme (pp. 124-130). Vieweg+Teubner Verlag. https://doi.org/10.1007/978-3-322-89462...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 133,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Wangerin, G, 1986. Darstellungsarten. In Bauaufnahme, pp.124-130. Vieweg+Teubner Verlag. https://doi.org/10.1007/978-3-322-89462-5_15"
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 5,
+      "referenceType": "journal",
+      "title": "Lithium: poisonings and suicide prevention",
+      "venue": "European Psychiatry",
+      "rendered": "Montagnon, F., Saïd, S., & Lepine, J. (2002). Lithium: poisonings and suicide prevention. European Psychiatry, 17(2), 92-95.",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 147,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Montagnon F, Saïd S, Lepine J. Lithium: poisonings and suicide prevention. European Psychiatry. 2002;17(2):92-95. doi:10.1016/s0924-9338(..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 6,
+      "referenceType": "unknown",
+      "title": "Innovation and Knowledge in Agri-food and Environmental Systems: Proceedings of the LVIII Conference of the Italian Association of Agricultural Economists, Palermo 2022",
+      "venue": "Springer Nature Switzerland; 2024. doi:10.1007/978-3-031-65168-7",
+      "rendered": "Cavicchi, A., Caracciolo, F., Crescimanno, M., de Salvo, M., Galati, A., Seccia, A., & Secco, L. (2024). Innovation and Knowledge in Agri...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 316,
+        "lineCount": 2,
+        "cleanedChunkPreview": "Cavicchi A, Caracciolo F, Crescimanno M, De Salvo M, Galati A, Seccia A, Secco L. Innovation and Knowledge in Agri-food and Environmental..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 7,
+      "referenceType": "book",
+      "title": "Quake'n and Shake'n...Forever! Long-Run Effects of Natural Disasters: A Case Study on the 1970 Ancash Earthquake",
+      "venue": "Inter-American Development Bank",
+      "rendered": "Miller, S. J., & Caruso, G. (2014). Quake'n and Shake'n.Forever! Long-Run Effects of Natural Disasters: A Case Study on the 1970 Ancash E...",
+      "qualityBucket": "worth_reviewing",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_author_year_start"
+        ],
+        "flags": [],
+        "chunkLength": 214,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Miller, Sebastián J. & Caruso, Germán (2014). Quake'n and Shake'n...Forever! Long-Run Effects of Natural Disasters: A Case Study on the 1..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 8,
+      "referenceType": "journal",
+      "title": "Correction",
+      "venue": "Journal of the American Statistical Association",
+      "rendered": "Martin, R., & Liu, C. (2013). Correction. Journal of the American Statistical Association, 108(503), 1138-1139.",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_numbering"
+        ],
+        "flags": [],
+        "chunkLength": 169,
+        "lineCount": 1,
+        "cleanedChunkPreview": "[571] Martin, Ryan & Liu, Chuanhai (2013). Correction. Journal of the American Statistical Association, 108(503), 1138-1139. https://doi...."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 9,
+      "referenceType": "journal",
+      "title": "Assessment of the Anterior Loop of the Inferior Alveolar Nerve, and Mental Foramen in a sample of Egyptian Population using CBCT: Retrospective Study",
+      "venue": "Egyptian Dental Journal",
+      "rendered": "Rehan, O. M., Elsharkawy, A. M., Fayoumy, E., W., H. (2025). Assessment of the Anterior Loop of the Inferior Alveolar Nerve, and Mental F...",
+      "qualityBucket": "action_needed",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 271,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Rehan OM, Elsharkawy AM, El Fayoumy HW. Assessment of the Anterior Loop of the Inferior Alveolar Nerve, and Mental Foramen in a sample of..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": [
+          "initials_as_surname_suspected"
+        ]
+      }
+    },
+    {
+      "citationIndex": 10,
+      "referenceType": "journal",
+      "title": "Sandel, Cora: Kranes konditori: Interiør med Figurer",
+      "venue": "Kindlers Literatur Lexikon (KLL), pp",
+      "rendered": "Uecker, H. (2020). Sandel, Cora: Kranes konditori: Interiør med Figurer. Kindlers Literatur Lexikon (KLL), Pp, 1-2.",
+      "qualityBucket": "worth_reviewing",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 183,
+        "lineCount": 2,
+        "cleanedChunkPreview": "Uecker, Heiko. \"Sandel, Cora: Kranes konditori: Interiør med Figurer.\" Kindlers Literatur Lexikon (KLL), pp. 1-2. J.B. Metzler, 2020. htt..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 11,
+      "referenceType": "journal",
+      "title": "Corrosion behavior of FeCrNi medium-entropy alloy fabricated by laser powder bed fusion",
+      "venue": "Materials Today Communications",
+      "rendered": "Fu, A., Cao, Y., Zhou, Z., Wang, J., Khanlari, K., Wang, B., & Liu, B. (2024). Corrosion behavior of FeCrNi medium-entropy alloy fabricat...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_author_year_start"
+        ],
+        "flags": [],
+        "chunkLength": 283,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Fu, Ao, Cao, Yuankui, Zhou, Zhengyan, Wang, Jian, Khanlari, Khashayar, Wang, Bingfeng, & Liu, Bin (2024). Corrosion behavior of FeCrNi me..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 12,
+      "referenceType": "book",
+      "title": "From the Gridiron to the Battlefield: Minnesota's March to a College Football Title and into World War II",
+      "venue": "Rowman & Littlefield Publishers",
+      "rendered": "Spewak, D. (2021). From the Gridiron to the Battlefield: Minnesota's March to a College Football Title and into World War II. Rowman & Li...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 194,
+        "lineCount": 2,
+        "cleanedChunkPreview": "Spewak, D, 2021. From the Gridiron to the Battlefield: Minnesota's March to a College Football Title and into World War II. Rowman & Litt..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 13,
+      "referenceType": "journal",
+      "title": "Vasopressor Potentiation of Neurotoxicity in Experimental Aortography: Implications regarding Pathogenesis of Contrast Medium Injury",
+      "venue": "Acta Radiologica. Diagnosis",
+      "rendered": "Margolis, G., & Yerasimides, T. G. (1966). Vasopressor Potentiation of Neurotoxicity in Experimental Aortography: Implications regarding ...",
+      "qualityBucket": "ready",
+      "renderWarnings": [
+        "warning:apa:volume_issue_format"
+      ],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_author_year_start"
+        ],
+        "flags": [],
+        "chunkLength": 273,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Margolis, George & Yerasimides, Theodore G. (1966). Vasopressor Potentiation of Neurotoxicity in Experimental Aortography: Implications r..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 14,
+      "referenceType": "journal",
+      "title": "Performance of resident nurses in obstetrics on childbirth care",
+      "venue": "Revista Brasileira de Saúde Materno Infantil",
+      "rendered": "Santana, A. T. D. (2019). Performance of resident nurses in obstetrics on childbirth care. Revista Brasileira de Saúde Materno Infantil, ...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_numbering"
+        ],
+        "flags": [],
+        "chunkLength": 304,
+        "lineCount": 1,
+        "cleanedChunkPreview": "330. Santana, Ariane Teixeira de, Ridalva Dias Martins Felzemburgh, Telmara Menezes Couto, and Lívia Pinheiro Pereira. \"Performance of re..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 15,
+      "referenceType": "journal",
+      "title": "The Effect of Revenue and Operating Costs on Net Income at PT. Fast Food Indonesia Tbk 2017-2021",
+      "venue": "Journal of Accounting and Finance Management",
+      "rendered": "Zebua, S., & Ingat, Y. (2023). The Effect of Revenue and Operating Costs on Net Income at PT. Fast Food Indonesia Tbk 2017-2021. Journal ...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_numbering"
+        ],
+        "flags": [],
+        "chunkLength": 261,
+        "lineCount": 1,
+        "cleanedChunkPreview": "450. Setia Zebua, Yenima Ingat, and Noor Sembiring. \"The Effect of Revenue and Operating Costs on Net Income at PT. Fast Food Indonesia T..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 16,
+      "referenceType": "journal",
+      "title": "Nomofobia yel nivel productividad de las organizaciones",
+      "venue": "Libros IC, vol., pp",
+      "rendered": "Alberto Morales Ospina. (2022). Nomofobia yel nivel productividad de las organizaciones. Libros IC, Vol. Pp, 107-122.",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_numbering"
+        ],
+        "flags": [],
+        "chunkLength": 156,
+        "lineCount": 1,
+        "cleanedChunkPreview": "482. Alberto Morales Ospina, \"Nomofobia y el nivel productividad de las organizaciones,\" Libros IC, vol. , pp. 107-122, 2022. doi: 10.157..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 17,
+      "referenceType": "journal",
+      "title": "2-Alkenyl anions and their surprising endo preference",
+      "venue": "Facile and extreme stereocontrol over carbon-carbon linking reactions with organometallics of the allyl type. Journal of the American Chemical Society",
+      "rendered": "Schlosser, M., & Hartmann, J. (1976). 2-Alkenyl anions and their surprising endo preference. Facile and Extreme Stereocontrol over Carbon...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 300,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Schlosser, M and Hartmann, J, 1976. 2-Alkenyl anions and their surprising endo preference. Facile and extreme stereocontrol over carbon-c..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 18,
+      "referenceType": "journal",
+      "title": "Abtastregelung",
+      "venue": "Springer Berlin Heidelberg; 1983. doi:10.1007/978-3-662-11022-5",
+      "rendered": "Ackermann, J. (1983). Abtastregelung. Springer Berlin Heidelberg; 1983. doi:10.1007/978-3-662-11022-5.",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 92,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Ackermann J. Abtastregelung. Springer Berlin Heidelberg; 1983. doi:10.1007/978-3-662-11022-5"
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 19,
+      "referenceType": "unknown",
+      "title": "Caracterização psicologica de crianças pre-escolares da cidade de Vitoria-ES: subsidios para a elaboração de documentos e/ou guias curriculares",
+      "venue": "Doctoral dissertation. Universidade Estadual de Campinas",
+      "rendered": "Meri Cestari Barbosa, J. (2021). Caracterização psicologica de crianças pre-escolares da cidade de Vitoria-ES: subsidios para a elaboraçã...",
+      "qualityBucket": "worth_reviewing",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_numbering"
+        ],
+        "flags": [],
+        "chunkLength": 283,
+        "lineCount": 1,
+        "cleanedChunkPreview": "42. Meri Cestari Barbosa, J, 2021. Caracterização psicologica de crianças pre-escolares da cidade de Vitoria-ES: subsidios para a elabora..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 20,
+      "referenceType": "journal",
+      "title": "role and significance of physical culture and sport in the sphere of education",
+      "venue": "International journal of health sciences",
+      "rendered": "Djumabaevich, T. S., Karimovich, K. Z., Beknazarovich, X. Z., Sagdullaevich, A. N., & Tirkashevich, M. S. (2022). role and significance o...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_numbering"
+        ],
+        "flags": [],
+        "chunkLength": 351,
+        "lineCount": 1,
+        "cleanedChunkPreview": "2. Tashtaev Sharof Djumabaevich, Khudoiberganov Zokir Karimovich, Xudaykulov Zafar Beknazarovich, Adilov Nuriddin Sagdullaevich, and Mama..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 21,
+      "referenceType": "journal",
+      "title": "State estimation for distributed cyber-physical power systems under data attacks",
+      "venue": "International Journal of Modelling, Identification and Control",
+      "rendered": "Li, Y. (2016). State estimation for distributed cyber-physical power systems under data attacks. International Journal of Modelling, Iden...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_author_year_start"
+        ],
+        "flags": [],
+        "chunkLength": 249,
+        "lineCount": 2,
+        "cleanedChunkPreview": "Li, Yining, Jing Wu, and Shaoyuan Li. \"State estimation for distributed cyber-physical power systems under data attacks.\" International J..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 22,
+      "referenceType": "journal",
+      "title": "Perforation of inferior vena cava and duodenum by strut of inferior vena cava filter: A case report",
+      "venue": "Medicine",
+      "rendered": "Park, H. O. (2019). Perforation of inferior vena cava and duodenum by strut of inferior vena cava filter: A case report. Medicine, 98(47)...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 402,
+        "lineCount": 2,
+        "cleanedChunkPreview": "Park, Hyun Oh, Jun Young Choi, In Seok Jang, Jong Duk Kim, Jong Woo Kim, Joung Hun Byun, Sung Hwan Kim, Jun Ho Yang, Seong Ho Moon, Ki Ny..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 23,
+      "referenceType": "journal",
+      "title": "Mapping three decades of research on artificial intelligence in electric vehicles: A comprehensive bibliometric and knowledge domain analysis (1995-2024",
+      "venue": "Alexandria: The Journal of National and International Library and Information Issues, vol.",
+      "rendered": "Subramani, S., & Veeraramu, K. (2026). Mapping three decades of research on artificial intelligence in electric vehicles: A comprehensive...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 365,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Subramani, Saravanakumaran, and K Veeraramu. \"Mapping three decades of research on artificial intelligence in electric vehicles: A compre..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 24,
+      "referenceType": "journal",
+      "title": "Optimum Microalloying of Niobium and Boron in HSLA Steel for Thermomechanical Processing",
+      "venue": "Transactions of the Iron and Steel Institute of Japan",
+      "rendered": "TAMEHIRO, MURATA, HABU, & NAGUMO. (1987). Optimum Microalloying of Niobium and Boron in HSLA Steel for Thermomechanical Processing. Trans...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 245,
+        "lineCount": 1,
+        "cleanedChunkPreview": "TAMEHIRO H, MURATA M, HABU R, NAGUMO M. Optimum Microalloying of Niobium and Boron in HSLA Steel for Thermomechanical Processing. Transac..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 25,
+      "referenceType": "journal",
+      "title": "Infectious Sources of Sepsis",
+      "venue": "In: Encyclopedia of Intensive Care Medicine. pp. 1230-1230. Springer Berlin Heidelberg; 2012. doi:10.1007/978-3-642-00418-6_1748",
+      "rendered": "Citerio, G., Giussani, C., Sax, H., Pittet, D., Wen, X., Kellum, J. A., Mills, A. M., Panebianco, N. L., Flechner, S. M., Carlet, J., Lee...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 641,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Citerio G, Giussani C, Sax H, Pittet D, Wen X, Kellum JA, Mills AM, Panebianco NL, Flechner SM, Carlet J, Lee AS, Harbarth SJ, Ferries J,..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 26,
+      "referenceType": "journal",
+      "title": "Hepatitis B in general practice: epidemiology, clinical and serological features, and control",
+      "venue": "BMJ, vol",
+      "rendered": "Clee, W. B., & Hunter, P. R. (1987). Hepatitis B in general practice: epidemiology, clinical and serological features, and control. BMJ, ...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 196,
+        "lineCount": 1,
+        "cleanedChunkPreview": "W B Clee and P R Hunter, “Hepatitis B in general practice: epidemiology, clinical and serological features, and control.,” BMJ, vol. 295,..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 27,
+      "referenceType": "journal",
+      "title": "Testing Physiologic Endpoint-Directed Cardiopulmonary Resuscitation: Precision Cardiopulmonary Resuscitation on the Horizon*",
+      "venue": "Critical Care Medicine",
+      "rendered": "Guerguerian, A. M. (2022). Testing Physiologic Endpoint-Directed Cardiopulmonary Resuscitation: Precision Cardiopulmonary Resuscitation o...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_author_year_start"
+        ],
+        "flags": [],
+        "chunkLength": 242,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Guerguerian, Anne-Marie (2022). Testing Physiologic Endpoint-Directed Cardiopulmonary Resuscitation: Precision Cardiopulmonary Resuscitat..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 28,
+      "referenceType": "journal",
+      "title": "Div",
+      "venue": "of Reactor Controls and Human Factors (1995). Non-Power Reactor Operator Licensing Examiner Standards. Revision 1. Office of Scientific and Technical Information (OSTI). https://doi.org/10.2172/87065",
+      "rendered": "Nuclear Regulatory Commission, W., D. C. (United States). (1995). Div. Of Reactor Controls and Human Factors (1995). Non-Power Reactor Op...",
+      "qualityBucket": "worth_reviewing",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 267,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Nuclear Regulatory Commission, Washington, DC (United States). Div. of Reactor Controls and Human Factors (1995). Non-Power Reactor Opera..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 29,
+      "referenceType": "journal",
+      "title": "Transcriptional activation of Fsp27 by the liver‐enriched transcription factor CREBH promotes lipid droplet growth and hepatic steatosis",
+      "venue": "Hepatology",
+      "rendered": "Xu, X., Park, J., So, J., & Lee, A. (2015). Transcriptional activation of Fsp27 by the liver‐enriched transcription factor CREBH promotes...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 218,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Xu X, Park J, So J, Lee A. Transcriptional activation of Fsp27 by the liver‐enriched transcription factor CREBH promotes lipid droplet gr..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 30,
+      "referenceType": "journal",
+      "title": "Production of 300W, nanosecond, transform limited optical pulses",
+      "venue": "Optics Communications",
+      "rendered": "Bölger, B., Baede, L., & Gibbs, H. M. (1976). Production of 300W, nanosecond, transform limited optical pulses. Optics Communications, 19...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 208,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Bölger, B., L. Baede, and H.M. Gibbs. \"Production of 300W, nanosecond, transform limited optical pulses.\" Optics Communications, vol. 19,..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 31,
+      "referenceType": "journal",
+      "title": "The Influence of E-Book Teaching on the Motivation and Effectiveness of Learning Law by Using Data Mining Analysis",
+      "venue": "Journal of Organizational and End User Computing",
+      "rendered": "Zhao, S. (2022). The Influence of E-Book Teaching on the Motivation and Effectiveness of Learning Law by Using Data Mining Analysis. Jour...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_author_year_start"
+        ],
+        "flags": [],
+        "chunkLength": 261,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Zhao, Shouzheng, and Jielei Chen. “The Influence of E-Book Teaching on the Motivation and Effectiveness of Learning Law by Using Data Min..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 32,
+      "referenceType": "book",
+      "title": "doi",
+      "venue": "Behandlungsmöglichkeiten und was Sie selbst tun können. Springer Berlin Heidelberg",
+      "rendered": "Goebel-Stengel, M. (2022). doi. Behandlungsmöglichkeiten und was Sie selbst tun können. Springer Berlin Heidelberg.",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_numbering"
+        ],
+        "flags": [],
+        "chunkLength": 194,
+        "lineCount": 1,
+        "cleanedChunkPreview": "[11] Miriam Goebel-Stengel and Andreas Stengel, Ratgeber Reizdarmsyndrom: Behandlungsmöglichkeiten und was Sie selbst tun können. Springe..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 33,
+      "referenceType": "journal",
+      "title": "Poroke med krvnimi sorodniki: genetske in / ali pravne ovire",
+      "venue": "Pomurska obzorja, vol",
+      "rendered": "Škerget, A. E. (2022). Poroke med krvnimi sorodniki: genetske in / ali pravne ovire. Pomurska Obzorja, Vol, 1(1), 29-34.",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 183,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Alenka Erjavec Škerget, “Poroke med krvnimi sorodniki: genetske in / ali pravne ovire,” Pomurska obzorja, vol. 1, no. 1, pp. 29–34, 2022...."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 34,
+      "referenceType": "unknown",
+      "title": "Micro-fabrication of bio-MEMS based force sensor to measure the force response of living cells",
+      "venue": "Doctoral dissertation. Michigan Technological University",
+      "rendered": "Gouthaman, V. (2020). Micro-fabrication of bio-MEMS based force sensor to measure the force response of living cells.",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 214,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Gouthaman, V, 2020. Micro-fabrication of bio-MEMS based force sensor to measure the force response of living cells. Doctoral dissertation..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 35,
+      "referenceType": "journal",
+      "title": "Clinical Reliability of the",
+      "venue": "Furcation Arrow\" as a Diagnostic Marker.\" Journal of Periodontology",
+      "rendered": "Deas, David, E., Moritz, A. J., Mealey, B. L., McDonnell, H. T., & Powell, C. A. (2006). Clinical Reliability of the. Furcation Arrow\" as...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 268,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Deas, David E., Alan J. Moritz, Brian L. Mealey, Howard T. McDonnell, and Charles A. Powell. \"Clinical Reliability of the “Furcation Arro..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 36,
+      "referenceType": "chapter",
+      "title": "Post-infectiou cough hypersensitivity syndrom: modern problem solving",
+      "venue": "NEW TRENDS AND UNSOLVED ISSUES IN MEDICINE",
+      "rendered": "Iliuk, I. A., Baranova, I. V., & Postovitenko, K. P. (2022). Post-infectiou cough hypersensitivity syndrom: modern problem solving. In NE...",
+      "qualityBucket": "ready",
+      "renderWarnings": [
+        "error:apa:no_quotes_around_title"
+      ],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 267,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Iliuk, I. A., I. V. Baranova, and K. P. Postovitenko. \"Post-infectiou cough hypersensitivity syndrom: modern problem solving.\" In NEW TRE..."
+      },
+      "extract": {
+        "selectedBranch": "in_source_heuristic_raw",
+        "selectionReason": "deterministic_missing_container_in_source_selected",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 37,
+      "referenceType": "unknown",
+      "title": "Endothelial dysfunction and vascular disease in systemic sclerosis",
+      "venue": "Doctoral dissertation. The University of Hong Kong Libraries",
+      "rendered": "Mok, M. (2012). Endothelial dysfunction and vascular disease in systemic sclerosis.",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 179,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Mok, M, 2012. Endothelial dysfunction and vascular disease in systemic sclerosis. Doctoral dissertation. The University of Hong Kong Libr..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 38,
+      "referenceType": "journal",
+      "title": "Developing a Transit Cybersecurity Framework Community Profile",
+      "venue": "National Institute of Standards and Technology, 2025. https://doi.org/10.6028/nist.cswp.51.ipd",
+      "rendered": "Tang, & CheeYee. (2025). Developing a Transit Cybersecurity Framework Community Profile. National Institute of Standards and Technology, ...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 173,
+        "lineCount": 2,
+        "cleanedChunkPreview": "Tang, CheeYee. Developing a Transit Cybersecurity Framework Community Profile. National Institute of Standards and Technology, 2025. http..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 39,
+      "referenceType": "journal",
+      "title": "Vitamin D Deficiency Is Associated with Cardiac Iron Loading in Thalassemia Major",
+      "venue": "Blood",
+      "rendered": "Wood, J. C., Claster, S., Carson, S., Rachna, K., Hofstra, T., & Coates, T. D. (2007). Vitamin D Deficiency Is Associated with Cardiac Ir...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 208,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Wood JC, Claster S, Carson S, Rachna K, Hofstra T, Coates TD. Vitamin D Deficiency Is Associated with Cardiac Iron Loading in Thalassemia..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 40,
+      "referenceType": "journal",
+      "title": "Risk Adjusted Set Membership Identification of Wiener Systems",
+      "venue": "IEEE Transactions on Automatic Control",
+      "rendered": "Sznaier, M., & Camps, O. I. (2009). Risk Adjusted Set Membership Identification of Wiener Systems. IEEE Transactions on Automatic Control...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 223,
+        "lineCount": 2,
+        "cleanedChunkPreview": "M. Sznaier, Wenjing Ma, O.I. Camps, and Hwasup Lim, \"Risk Adjusted Set Membership Identification of Wiener Systems,\" IEEE Transactions on..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 41,
+      "referenceType": "journal",
+      "title": "An Analysis of Interference as a Source for Diffraction",
+      "venue": "Journal of Electromagnetic Analysis and Applications",
+      "rendered": "Waksberg, A. (2010). An Analysis of Interference as a Source for Diffraction. Journal of Electromagnetic Analysis and Applications, 02(10...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 191,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Waksberg, A, 2010. An Analysis of Interference as a Source for Diffraction. Journal of Electromagnetic Analysis and Applications, 02(10),..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 42,
+      "referenceType": "journal",
+      "title": "IKK Goes BAD",
+      "venue": "Science Signaling",
+      "rendered": "Foley, J. F. (2013). IKK Goes BAD. Science Signaling, 6(260).",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_author_year_start"
+        ],
+        "flags": [],
+        "chunkLength": 105,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Foley, John F. (2013). IKK Goes BAD. Science Signaling, 6(260). https://doi.org/10.1126/scisignal.2004004"
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 43,
+      "referenceType": "journal",
+      "title": "Certifications of Critical Systems - The CECRIS Experience",
+      "venue": "River Publishers; 2022. doi:10.1201/9781003337485",
+      "rendered": "Brancati, F., & Bondavalli, A. (2022). Certifications of Critical Systems - The CECRIS Experience. River Publishers; 2022. doi:10.1201/97...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_numbering"
+        ],
+        "flags": [],
+        "chunkLength": 139,
+        "lineCount": 1,
+        "cleanedChunkPreview": "66. Brancati F, Bondavalli A. Certifications of Critical Systems – The CECRIS Experience. River Publishers; 2022. doi:10.1201/9781003337485"
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 44,
+      "referenceType": "journal",
+      "title": "Magnetic susceptibility of Mn 2 + ions in Mg O and evidence of clustering",
+      "venue": "Physical Review B",
+      "rendered": "Gordon, B. L. (1989). Magnetic susceptibility of Mn 2 + ions in Mg O and evidence of clustering. Physical Review B, 40(4), 2348-2353.",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_author_year_start"
+        ],
+        "flags": [],
+        "chunkLength": 205,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Gordon, Brian L., and Mohindar S. Seehra. \"Magnetic susceptibility of Mn 2 + ions in MgO and evidence of clustering.\" Physical Review B 4..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 45,
+      "referenceType": "unknown",
+      "title": "Σύνθεση και μελέτη νέων βιοδραστικών λιπιδίων",
+      "venue": "Doctoral dissertation. National Documentation Centre (EKT)",
+      "rendered": "Κωτσοβόλου, Σ. (2014). Σύνθεση και μελέτη νέων βιοδραστικών λιπιδίων.",
+      "qualityBucket": "worth_reviewing",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_numbering"
+        ],
+        "flags": [],
+        "chunkLength": 167,
+        "lineCount": 1,
+        "cleanedChunkPreview": "18. Κωτσοβόλου, Σ, 2014. Σύνθεση και μελέτη νέων βιοδραστικών λιπιδίων. Doctoral dissertation. National Documentation Centre (EKT). https..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 46,
+      "referenceType": "journal",
+      "title": "Drug-induced stuttering associated with venlafaxineolanzapine combination: A rare pharmacodynamic interaction",
+      "venue": "Dusunen Adam: Journal of Psychiatry, Neurological Sciences. 2025;:277-278. doi:10.14744/dajpns.2025.00305",
+      "rendered": "Kurt, B. (2025). Drug-induced stuttering associated with venlafaxineolanzapine combination: A rare pharmacodynamic interaction. Dusunen A...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_numbering"
+        ],
+        "flags": [],
+        "chunkLength": 233,
+        "lineCount": 1,
+        "cleanedChunkPreview": "[267] Kurt B. Drug-induced stuttering associated with venlafaxineolanzapine combination: A rare pharmacodynamic interaction. Dusunen Adam..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 47,
+      "referenceType": "journal",
+      "title": "Beyond the UN Charter: Peace, Security and the Role of Justice",
+      "venue": "Hague Academic Press, an imprint of T.M.C. Asser Press",
+      "rendered": "Ribbelink, O. (2008). Beyond the UN Charter: Peace, Security and the Role of Justice. Hague Academic Press, an Imprint of T.M.C. Asser Pr...",
+      "qualityBucket": "worth_reviewing",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_author_year_start"
+        ],
+        "flags": [],
+        "chunkLength": 188,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Ribbelink, Olivier (2008). Beyond the UN Charter: Peace, Security and the Role of Justice. Hague Academic Press, an imprint of T.M.C. Ass..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 48,
+      "referenceType": "journal",
+      "title": "Direct evidence of the anisotropy of magnetization in rare-earth metals and rare-earth/ Fe 2 alloys",
+      "venue": "Physical Review B",
+      "rendered": "Benito, L., Dumesnil, K., & Ward, R. C. C. (2014). Direct evidence of the anisotropy of magnetization in rare-earth metals and rare-earth...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 230,
+        "lineCount": 1,
+        "cleanedChunkPreview": "L. Benito, K. Dumesnil, and R. C. C. Ward, \"Direct evidence of the anisotropy of magnetization in rare-earth metals and rare-earth/ Fe 2 ..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 49,
+      "referenceType": "book",
+      "title": "Li, Y., Dynamics, M. R. F., & Growth, P. (2015). The Role of Micro-and Small Enterprises. Oxford University Press on behalf of the World Bank.",
+      "venue": "The Role of Micro-and Small Enterprises. Oxford University Press on behalf of the World Bank",
+      "rendered": "Li, Y., Dynamics, M. R. F., & Growth, P. (2015). The Role of Micro-and Small Enterprises. Oxford University Press on behalf of the World ...",
+      "qualityBucket": "action_needed",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_ocr_noise_markers",
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 234,
+        "lineCount": 2,
+        "cleanedChunkPreview": "Li, Yue, and Martín Rama. Firm Dynamics, Productivity Growth, and Job Creation in Developing Countries: The Role of Micro- and Small Ente..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    }
+  ]
+}

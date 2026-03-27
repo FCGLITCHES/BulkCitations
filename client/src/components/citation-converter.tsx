@@ -12,6 +12,7 @@ import { appendHistoryItems, ensureHistorySync, syncPendingHistory } from "@/lib
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { FileText } from "lucide-react";
+import { countEngineLikeInputReferences } from "@shared/liveReferenceDetection";
 
 const CAPTURE_BATCH_KEY = "bulkcitations_capture_batch";
 const loadReferenceOutput = () => import("./reference-output");
@@ -64,7 +65,7 @@ export default function CitationConverter() {
 
   useEffect(() => {
     if (!initialCaptureText) return;
-    const n = initialCaptureText.split(/\n\s*\n/).filter(Boolean).length || 1;
+    const n = countEngineLikeInputReferences(initialCaptureText);
     toast({
       title: "Captured from browser",
       description: `${n} reference${n === 1 ? "" : "s"} loaded. Review and convert when ready.`,
@@ -76,7 +77,7 @@ export default function CitationConverter() {
       const text = readCaptureBatch();
       if (text) {
         setInitialCaptureText(text);
-        const n = text.split(/\n\s*\n/).filter(Boolean).length || 1;
+        const n = countEngineLikeInputReferences(text);
         toast({
           title: "Captured from browser",
           description: `${n} reference${n === 1 ? "" : "s"} loaded. Review and convert when ready.`,

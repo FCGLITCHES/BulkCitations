@@ -212,6 +212,12 @@ export interface ValidationMetadata {
   mismatchFields: string[];
 }
 
+export interface InstitutionMappingMetadata {
+  mapped: boolean;
+  source: 'parsed_institution' | 'parsed_publisher' | 'authority_institution' | 'authority_publisher' | 'none';
+  originalValue?: string | null;
+}
+
 export interface InputProfile {
   structure: 'structured' | 'semi_structured' | 'unstructured' | 'unknown';
   confidence: number;
@@ -316,6 +322,7 @@ export interface CanonicalCitation {
     resolvedCanonical?: ApprovedCanonicalFields;
     validatedOutput?: string;
   };
+  institutionMapping?: InstitutionMappingMetadata;
   validationIssues: ValidationIssue[];
   duplicate?: DuplicateMetadata | null;
   enrichment?: EnrichmentMetadata | null;
