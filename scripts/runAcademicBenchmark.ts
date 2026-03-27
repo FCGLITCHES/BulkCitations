@@ -81,6 +81,9 @@ type CitationFailure = {
   mismatches: string[];
   renderSimilarityPct: number;
   identityContaminationCategory?: IdentityContaminationCategory;
+  selectionMode?: string;
+  winnerAdapterId?: string;
+  selectionReason?: string;
 };
 
 type BatchAlignment = {
@@ -141,6 +144,7 @@ export type AcademicBenchmarkReport = {
   generatedAt: string;
   corpusPath: string;
   corpusSize: number;
+  ieeeCorpusCount: number;
   repeats: number;
   methodology: {
     source: string;
@@ -174,6 +178,17 @@ export type AcademicBenchmarkReport = {
   identityContaminationCount: number;
   identityContaminationByCategory: Record<IdentityContaminationCategory, number>;
   ieeeFailureBreakdown: Record<FailureBreakdownCategory, number>;
+  typeConfusionMatrix: Array<{
+    expectedReferenceType: string;
+    actualReferenceType: string;
+    count: number;
+  }>;
+  selectorDiagnostics: {
+    selectorModes: Record<string, number>;
+    selectionModes: Record<string, number>;
+    topWinnerAdapters: Array<{ adapterId: string; count: number }>;
+    topSelectionReasons: Array<{ reason: string; count: number }>;
+  };
   byBatchSize: BatchSizeSummary[];
   bySourceType: Array<{
     sourceType: string;
@@ -255,6 +270,18 @@ function updateSlice(slice: SliceMetrics, evaluation: {
   slice.fieldPass += evaluation.fieldPass;
   slice.fieldTotal += evaluation.fieldTotal;
   slice.renderScores.push(evaluation.renderSimilarityPct);
+}
+
+function incrementCount(map: Map<string, number>, key: string | null | undefined): void {
+  const normalized = cleanText(key ?? '');
+  if (!normalized) return;
+  map.set(normalized, (map.get(normalized) ?? 0) + 1);
+}
+
+function rankedCounts(map: Map<string, number>) {
+  return Array.from(map.entries())
+    .map(([value, count]) => ({ value, count }))
+    .sort((left, right) => right.count - left.count || left.value.localeCompare(right.value));
 }
 
 function fieldValue<T>(field: { value: T } | undefined): T | undefined {
@@ -573,6 +600,7 @@ function renderMarkdown(report: AcademicBenchmarkReport): string {
   lines.push(`Generated: ${report.generatedAt}`);
   lines.push(`Frozen corpus: ${report.methodology.frozenAt}`);
   lines.push(`Corpus size: ${report.corpusSize} real citations`);
+  lines.push(`IEEE slice: ${report.ieeeCorpusCount} citations per corpus run`);
   lines.push(`Machine-readable report: ${OUTPUT_JSON}`);
   lines.push('');
   lines.push('## Executive summary');
@@ -628,6 +656,21 @@ function renderMarkdown(report: AcademicBenchmarkReport): string {
     lines.push(`- ${category}: ${count}`);
   }
   lines.push('');
+  lines.push('## Selector diagnostics');
+  lines.push('');
+  for (const [mode, count] of Object.entries(report.selectorDiagnostics.selectionModes)) {
+    lines.push(`- selection mode ${mode}: ${count}`);
+  }
+  for (const entry of report.selectorDiagnostics.topWinnerAdapters.slice(0, 5)) {
+    lines.push(`- top winner adapter ${entry.adapterId}: ${entry.count}`);
+  }
+  lines.push('');
+  lines.push('## Type confusion matrix');
+  lines.push('');
+  for (const entry of report.typeConfusionMatrix.slice(0, 10)) {
+    lines.push(`- ${entry.expectedReferenceType} -> ${entry.actualReferenceType}: ${entry.count}`);
+  }
+  lines.push('');
   lines.push('## Strengths');
   lines.push('');
   for (const strength of report.strengths) {
@@ -664,7 +707,7 @@ function renderMarkdown(report: AcademicBenchmarkReport): string {
     lines.push('- No failures captured in the retained sample set.');
   } else {
     for (const failure of report.sampleFailures) {
-      lines.push(`- ${failure.recordId} [batch ${failure.batchSize}, repeat ${failure.repeat}] mismatches: ${failure.mismatches.join(', ') || 'none'}; render similarity: ${formatPercent(failure.renderSimilarityPct)}${failure.identityContaminationCategory ? `; identity: ${failure.identityContaminationCategory}` : ''}`);
+      lines.push(`- ${failure.recordId} [batch ${failure.batchSize}, repeat ${failure.repeat}] mismatches: ${failure.mismatches.join(', ') || 'none'}; render similarity: ${formatPercent(failure.renderSimilarityPct)}${failure.identityContaminationCategory ? `; identity: ${failure.identityContaminationCategory}` : ''}${failure.winnerAdapterId ? `; winner: ${failure.winnerAdapterId}` : ''}${failure.selectionMode ? `; mode: ${failure.selectionMode}` : ''}`);
       lines.push(`  Expected: ${failure.expectedApa}`);
       lines.push(`  Actual: ${failure.actualApa}`);
     }
@@ -683,6 +726,12 @@ export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
   const batchSummaries: BatchSizeSummary[] = [];
   const overallIdentityBuckets = createIdentityBuckets();
   const ieeeFailureBreakdown = createIeeeBreakdown();
+  const typeConfusionCounts = new Map<string, number>();
+  const selectorModeCounts = new Map<string, number>();
+  const selectionModeCounts = new Map<string, number>();
+  const winnerAdapterCounts = new Map<string, number>();
+  const selectionReasonCounts = new Map<string, number>();
+  const ieeeCorpusCount = corpus.records.filter((record) => record.inputStyle === 'ieee').length;
 
   process.env.ENABLE_LLM_EXTRACTOR = '0';
   process.env.ENABLE_GROBID_EXTRACTOR = '0';
@@ -782,6 +831,11 @@ export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
           const identityContaminationCategory = detectIdentityContamination(records, response.citations, recordIndex, citationIndex, seenOutputs);
           const normalizedOutput = normalizeOutputForIdentity(citation.rendered?.formatted ?? citation.title?.value ?? '');
           if (normalizedOutput) seenOutputs.set(normalizedOutput, recordIndex);
+          incrementCount(typeConfusionCounts, `${record.expected.referenceType}=>${String(citation.referenceType ?? 'unknown')}`);
+          incrementCount(selectorModeCounts, String(citation.extraction?.selectorMode ?? ''));
+          incrementCount(selectionModeCounts, String(citation.extraction?.selectionMode ?? ''));
+          incrementCount(winnerAdapterCounts, String(citation.extraction?.winnerAdapterId ?? ''));
+          incrementCount(selectionReasonCounts, String(citation.extraction?.selectionReason ?? ''));
 
           if (identityContaminationCategory) {
             identityContaminationCount += 1;
@@ -831,6 +885,9 @@ export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
               mismatches: evaluation.mismatches,
               renderSimilarityPct: evaluation.renderSimilarityPct,
               identityContaminationCategory,
+              selectionMode: citation.extraction?.selectionMode,
+              winnerAdapterId: citation.extraction?.winnerAdapterId,
+              selectionReason: citation.extraction?.selectionReason,
             };
             ieeeFailureBreakdown[classifyIeeeFailure(record, failure)] += 1;
           }
@@ -852,11 +909,15 @@ export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
               mismatches: evaluation.mismatches,
               renderSimilarityPct: evaluation.renderSimilarityPct,
               identityContaminationCategory,
+              selectionMode: citation.extraction?.selectionMode,
+              winnerAdapterId: citation.extraction?.winnerAdapterId,
+              selectionReason: citation.extraction?.selectionReason,
             });
           }
         }
 
         for (const { record } of alignment.missing) {
+          incrementCount(typeConfusionCounts, `${record.expected.referenceType}=>missing`);
           const evaluation = evaluateCitation(record, createEmptyCitation(record.rawInput), undefined);
           legacyFieldPass += evaluation.legacyFieldPass;
           legacyFieldTotal += evaluation.legacyFieldTotal;
@@ -895,6 +956,9 @@ export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
               actualApa: '',
               mismatches: evaluation.mismatches,
               renderSimilarityPct: evaluation.renderSimilarityPct,
+              selectionMode: 'missing',
+              winnerAdapterId: 'missing',
+              selectionReason: 'missing_output',
             };
             ieeeFailureBreakdown[classifyIeeeFailure(record, failure)] += 1;
           }
@@ -915,6 +979,9 @@ export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
               actualApa: '',
               mismatches: evaluation.mismatches,
               renderSimilarityPct: evaluation.renderSimilarityPct,
+              selectionMode: 'missing',
+              winnerAdapterId: 'missing',
+              selectionReason: 'missing_output',
             });
           }
         }
@@ -993,6 +1060,16 @@ export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
     consistencyPct,
     averageRenderSimilarityPct,
   };
+  const typeConfusionMatrix = Array.from(typeConfusionCounts.entries())
+    .map(([key, count]) => {
+      const [expectedReferenceType, actualReferenceType] = key.split('=>');
+      return {
+        expectedReferenceType: expectedReferenceType ?? 'unknown',
+        actualReferenceType: actualReferenceType ?? 'unknown',
+        count,
+      };
+    })
+    .sort((left, right) => right.count - left.count || left.expectedReferenceType.localeCompare(right.expectedReferenceType) || left.actualReferenceType.localeCompare(right.actualReferenceType));
 
   const strongestType = bySourceTypeSummary[0];
   const weakestType = [...bySourceTypeSummary].sort((left, right) => left.strictEssentialAccuracyPct - right.strictEssentialAccuracyPct)[0];
@@ -1039,6 +1116,7 @@ export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
     generatedAt: new Date().toISOString(),
     corpusPath: CORPUS_PATH,
     corpusSize: corpus.records.length,
+    ieeeCorpusCount,
     repeats: REPEATS,
     methodology: {
       source: 'Crossref public works metadata frozen into a local JSON corpus.',
@@ -1087,6 +1165,17 @@ export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
     identityContaminationCount: Object.values(overallIdentityBuckets).reduce((sum, value) => sum + value, 0),
     identityContaminationByCategory: overallIdentityBuckets,
     ieeeFailureBreakdown,
+    typeConfusionMatrix,
+    selectorDiagnostics: {
+      selectorModes: Object.fromEntries(Array.from(selectorModeCounts.entries()).sort((left, right) => left[0].localeCompare(right[0]))),
+      selectionModes: Object.fromEntries(Array.from(selectionModeCounts.entries()).sort((left, right) => left[0].localeCompare(right[0]))),
+      topWinnerAdapters: rankedCounts(winnerAdapterCounts)
+        .slice(0, 12)
+        .map(({ value, count }) => ({ adapterId: value, count })),
+      topSelectionReasons: rankedCounts(selectionReasonCounts)
+        .slice(0, 12)
+        .map(({ value, count }) => ({ reason: value, count })),
+    },
     byBatchSize: batchSummaries,
     bySourceType: bySourceTypeSummary,
     byInputStyle: byInputStyleSummary,

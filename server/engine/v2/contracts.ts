@@ -1,9 +1,11 @@
 import type {
   AppliedRepairMetadata,
+  CandidateSelectionMode,
   CanonicalAuthor,
   CanonicalCitation,
   CanonicalReferenceType,
   CitationStyle,
+  V2SelectorMode,
   FieldRepairConfidence,
   InputProfile,
   RepairMissMetadata,
@@ -174,6 +176,11 @@ export interface ExtractorAdapter {
     extractorPath?: 'deterministic' | 'grobid' | 'llm' | 'hybrid';
     selectedBranch?: 'deterministic_raw' | 'year_anchored_fallback_raw' | 'institutional_heuristic_raw' | 'in_source_heuristic_raw' | 'hybrid';
     selectionReason?: string;
+    selectorMode?: V2SelectorMode;
+    selectionMode?: CandidateSelectionMode;
+    winnerAdapterId?: string;
+    winnerCandidateId?: string;
+    typeResolutionReason?: string;
     detectedStyle?: CitationStyle | null;
     detectedStyleConfidence?: number;
     canonicalAuthors?: CanonicalAuthor[];

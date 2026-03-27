@@ -202,6 +202,11 @@ export interface ExtractionMetadata {
   extractorPath?: 'deterministic' | 'grobid' | 'llm' | 'hybrid';
   selectedBranch?: 'deterministic_raw' | 'year_anchored_fallback_raw' | 'institutional_heuristic_raw' | 'in_source_heuristic_raw' | 'hybrid';
   selectionReason?: string;
+  selectorMode?: V2SelectorMode;
+  selectionMode?: CandidateSelectionMode;
+  winnerAdapterId?: string;
+  winnerCandidateId?: string;
+  typeResolutionReason?: string;
   authorParserMode?: string;
   rejectedCandidates?: string[];
 }
@@ -216,6 +221,82 @@ export interface InstitutionMappingMetadata {
   mapped: boolean;
   source: 'parsed_institution' | 'parsed_publisher' | 'authority_institution' | 'authority_publisher' | 'none';
   originalValue?: string | null;
+}
+
+export type V2SelectorMode = 'legacy_first_match' | 'multi_candidate';
+export type CandidateSelectionMode = 'full_scoring' | 'single_survivor' | 'unanimous_diversity_guard';
+export type ContainerKindHint = 'journal' | 'conference' | 'book' | 'report' | 'thesis' | 'website' | 'unknown';
+
+export interface FieldPlausibilityAssessment {
+  plausible: boolean;
+  penalty: number;
+  reason: string;
+}
+
+export interface ExtractionCandidatePlausibility {
+  authors: FieldPlausibilityAssessment;
+  title: FieldPlausibilityAssessment;
+  venue: FieldPlausibilityAssessment;
+  locator: FieldPlausibilityAssessment;
+  publisher: FieldPlausibilityAssessment;
+  year: FieldPlausibilityAssessment;
+}
+
+export interface ExtractionContainerHints {
+  containerKindHint: ContainerKindHint;
+  containerKindConfidence: number;
+  venueContaminated: boolean;
+  titleContainerBleed: boolean;
+  publisherTailPresent: boolean;
+  locatorInVenue: boolean;
+  copyrightTailPresent: boolean;
+  copyrightPublisherCandidate?: string | null;
+}
+
+export interface ExtractionCandidateNormalizedKeyFields {
+  title: string | null;
+  year: string | null;
+  venue: string | null;
+  doi: string | null;
+}
+
+export interface ExtractionCandidate {
+  id: string;
+  adapterId: string;
+  claimedType: CanonicalReferenceType;
+  parsed: Record<string, unknown>;
+  normalizedKeyFields: ExtractionCandidateNormalizedKeyFields;
+  containerHints: ExtractionContainerHints;
+  plausibility: ExtractionCandidatePlausibility;
+}
+
+export interface CandidateScoreBreakdown {
+  vetoed: boolean;
+  vetoReasons: string[];
+  requiredCoveredCount: number;
+  expectedCoveredCount: number;
+  optionalCoveredCount: number;
+  contaminationPenalty: number;
+  consensusScore: number;
+  sourceTypeCoherence: number;
+  doiYearConsistency: number;
+  adapterPriority: number;
+}
+
+export interface AdapterFiringRegistryEntry {
+  adapterId: string;
+  candidateId?: string;
+  attempted: boolean;
+  producedCandidate: boolean;
+  vetoed: boolean;
+  vetoReasons: string[];
+  coverageTuple: [number, number, number];
+  contaminationPenalty: number;
+  consensusScore: number;
+  sourceTypeCoherence: number;
+  doiYearConsistency: number;
+  adapterPriority: number;
+  selected: boolean;
 }
 
 export interface InputProfile {

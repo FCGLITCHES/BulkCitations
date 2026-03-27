@@ -3,7 +3,13 @@ import { Buffer } from 'node:buffer';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { z } from 'zod';
 import { getAuthorityData } from '@shared/authorityLookup';
-import type { CanonicalAuthor, CitationStyle, ParsedReference, V2ConversionResponse } from '@shared/schema';
+import type {
+  CanonicalAuthor,
+  CitationStyle,
+  ParsedReference,
+  V2ConversionResponse,
+  V2SelectorMode,
+} from '@shared/schema';
 import { CitationParser } from '../citationParser.js';
 import { fetchCrossrefMetadata } from '../doiEnrichment.js';
 import { classifyLocatorToken, isGroupAuthor, normalizeGroupAuthor } from '../shared/citationSemantics.js';
@@ -31,6 +37,16 @@ import {
   sanitizeParsedReference,
 } from './qualityRules.js';
 import { getOpenAiExtractTimeoutMs, tryConsumeLlmCall } from './llmConfig.js';
+import { assessCandidatePlausibility } from './fieldPlausibility.js';
+import { buildContainerHints, resolveWinnerContainer } from './containerHints.js';
+import {
+  buildNormalizedKeyFields,
+  selectExtractionCandidate,
+} from './candidateSelector.js';
+import {
+  areReferenceTypesMergeCompatible,
+  resolveReferenceTypeFromEvidence,
+} from './typeResolution.js';
 import type {
   AuthorityLookupAdapter,
   CacheAdapter,
@@ -358,6 +374,211 @@ function buildYearAnchoredCandidate(input: string) {
   };
 }
 
+function getSelectorMode(): V2SelectorMode {
+  const value = normalizeWhitespace(process.env.V2_SELECTOR_MODE ?? '').toLowerCase();
+  if (value === 'legacy_first_match') return 'legacy_first_match';
+  return 'multi_candidate';
+}
+
+function buildStyleParserSelectionCandidate(
+  parser: CitationParser,
+  normalized: string,
+  style: CitationStyle,
+  styleConfidence?: number,
+): ParsedSelectionCandidate {
+  const rawUrl = extractUrlSpan(normalized)?.url;
+  const { parsed } = parser.parseReference(normalized, style);
+  const normalizedParsedUrl = cleanTrailingUrl(parsed.url);
+  if (rawUrl && (!normalizedParsedUrl || rawUrl.length > normalizedParsedUrl.length)) {
+    parsed.url = rawUrl;
+  } else if (normalizedParsedUrl) {
+    parsed.url = normalizedParsedUrl;
+  }
+
+  const doiMatch = normalized.match(DOI_PATTERN);
+  if (!parsed.doi && doiMatch) {
+    parsed.doi = normalizeDoiValue(doiMatch[0]);
+  }
+  if (!parsed.doi) {
+    parsed.doi = deriveDoiHintFromUrl(parsed.url ?? rawUrl);
+  }
+
+  const looksAuthorOptionalWebsite = Boolean(parsed.url)
+    && !hasParsedVenue(parsed)
+    && !parsed.publisher
+    && !parsed.institution
+    && !isLocatorLike(parsed.pages ?? parsed['article-number'])
+    && !parsed.volume
+    && !parsed.issue;
+  const primaryAuthor = normalizeWhitespace(parsed.authors?.[0] ?? '');
+  if (looksAuthorOptionalWebsite && (parsed.authors?.length ?? 0) === 1) {
+    if (!parsed.title && primaryAuthor && !looksLikeInstitutionalLead(primaryAuthor)) {
+      parsed.title = primaryAuthor;
+      parsed.authors = undefined;
+    } else if (
+      parsed.title
+      && primaryAuthor
+      && normalizeWhitespace(parsed.title.toLowerCase()) === normalizeWhitespace(primaryAuthor.toLowerCase())
+    ) {
+      parsed.authors = undefined;
+    }
+  }
+
+  let referenceType = parsedReferenceTypeToCanonical(parser.determineReferenceType(parsed));
+  if (
+    parsed.url
+    && !hasParsedVenue(parsed)
+    && !parsed.publisher
+    && !parsed.institution
+    && !isLocatorLike(parsed.pages ?? parsed['article-number'])
+    && (!parsed.volume && !parsed.issue)
+    && ((parsed.authors?.length ?? 0) <= 1 || referenceType === 'unknown')
+  ) {
+    referenceType = 'website';
+  }
+  if (referenceType === 'website' && looksLikeUrlLedWebsitePseudoAuthorParse(parsed, referenceType)) {
+    parsed.authors = undefined;
+  }
+
+  return {
+    branch: 'deterministic_raw',
+    normalized,
+    parsed,
+    referenceType,
+    warnings: parsed.parseWarnings ?? [],
+    styleUsed: style,
+    styleConfidence,
+  };
+}
+
+function collectDeterministicCandidateAttempts(input: string, inputStyle: string, detectionConfidence = 0): CandidateAttempt[] {
+  const parser = getParser();
+  const normalized = preNormalizeExtractorInput(parser, input);
+  const styleLocked = inputStyle !== 'auto' && detectionConfidence >= 0.88;
+  const attempts: CandidateAttempt[] = [];
+  let adapterPriority = 0;
+
+  const pushAttempt = (adapterId: string, candidate: ParsedSelectionCandidate | null, branch: ExtractorSelectionBranch = 'deterministic_raw') => {
+    attempts.push({
+      adapterId,
+      adapterPriority: adapterPriority += 1,
+      branch,
+      candidate: candidate ? { ...candidate, branch } : null,
+    });
+  };
+
+  if (hasWebsiteAccessSignals(normalized)) {
+    pushAttempt('heuristic:website_access_institutional', buildInstitutionalCandidate(normalized));
+  }
+
+  const quotedTitleJournalLocator = buildQuotedTitleJournalLocatorCandidate(normalized);
+  pushAttempt(
+    'heuristic:quoted_title_journal_locator',
+    quotedTitleJournalLocator
+      ? (attachAutoStyleToCandidate(parser, normalized, quotedTitleJournalLocator as ParsedSelectionCandidate, styleLocked)
+        ?? quotedTitleJournalLocator)
+      : null,
+  );
+  pushAttempt('heuristic:apa_journal', buildApaJournalCandidate(normalized));
+  pushAttempt('heuristic:ieee_conference', buildIeeeConferenceCandidate(normalized));
+  pushAttempt('heuristic:vancouver_article_number', buildVancouverArticleNumberCandidate(normalized));
+  pushAttempt('heuristic:author_colon_vancouver', buildAuthorColonVancouverCandidate(normalized));
+  pushAttempt('heuristic:vancouver_compact_journal', buildVancouverCompactJournalCandidate(normalized));
+  pushAttempt('heuristic:vancouver_publisher_year_source', buildVancouverPublisherYearSourceCandidate(normalized));
+
+  const compactJournalTail = buildCompactJournalTailCandidate(normalized);
+  pushAttempt(
+    'heuristic:compact_journal_tail',
+    compactJournalTail
+      ? (attachAutoStyleToCandidate(parser, normalized, compactJournalTail as ParsedSelectionCandidate, styleLocked)
+        ?? compactJournalTail)
+      : null,
+  );
+
+  pushAttempt('heuristic:harvard_journal', buildHarvardJournalCandidate(normalized));
+  pushAttempt('heuristic:harvard_sentence_journal', buildHarvardSentenceJournalCandidate(normalized));
+  pushAttempt('heuristic:harvard_conference', buildHarvardConferenceCandidate(normalized));
+  pushAttempt('heuristic:harvard_in_source_chapter', buildHarvardInSourceChapterCandidate(normalized));
+  pushAttempt('heuristic:quoted_website', buildQuotedWebsiteCandidate(normalized, inputStyle));
+  pushAttempt('heuristic:harvard_website', buildHarvardWebsiteCandidate(normalized));
+  pushAttempt('heuristic:quoted_book_chapter', buildQuotedBookChapterCandidate(normalized, inputStyle));
+  pushAttempt('heuristic:chicago_author_date_journal', buildChicagoAuthorDateJournalCandidate(normalized));
+  pushAttempt('heuristic:chicago_author_date_report', buildChicagoAuthorDateReportCandidate(normalized));
+  pushAttempt('heuristic:apa_thesis', buildApaThesisCandidate(normalized));
+  pushAttempt('heuristic:mla_thesis', buildMlaThesisCandidate(normalized));
+  pushAttempt('heuristic:sentence_thesis', buildSentenceThesisCandidate(normalized, inputStyle));
+  pushAttempt('heuristic:author_year_publisher_tail', buildAuthorYearPublisherTailCandidate(normalized, inputStyle));
+  pushAttempt('heuristic:harvard_book', buildHarvardBookCandidate(normalized));
+  pushAttempt('heuristic:ieee_book', buildIeeeBookCandidate(normalized));
+  pushAttempt('heuristic:numbered_publisher_year_book', buildNumberedPublisherYearBookCandidate(normalized));
+
+  const bookTail = buildBookTailCandidate(normalized, inputStyle);
+  pushAttempt(
+    'heuristic:book_tail',
+    bookTail
+      ? (attachAutoStyleToCandidate(parser, normalized, bookTail as ParsedSelectionCandidate, styleLocked)
+        ?? bookTail)
+      : null,
+  );
+
+  const selectedStyleCandidate = !styleLocked || inputStyle === 'auto'
+    ? (looksLikeAuthorColonVancouverReference(normalized)
+      ? {
+          branch: 'deterministic_raw' as const,
+          normalized,
+          parsed: parser.parseReference(normalized, 'vancouver').parsed,
+          referenceType: 'unknown',
+          warnings: [],
+          styleUsed: 'vancouver' as CitationStyle,
+          styleConfidence: 0.9,
+        }
+      : selectBestAutoStyleCandidate(parser, normalized))
+    : null;
+  const styleToParse = styleLocked
+    ? inputStyle as CitationStyle
+    : (selectedStyleCandidate?.styleUsed ?? inputStyle ?? 'apa') as CitationStyle;
+  pushAttempt(
+    `parser:selected_style:${styleToParse}`,
+    buildStyleParserSelectionCandidate(
+      parser,
+      normalized,
+      styleToParse,
+      styleLocked ? 1 : selectedStyleCandidate?.styleConfidence,
+    ),
+  );
+
+  if (!styleLocked || inputStyle === 'auto') {
+    for (const style of AUTO_STYLE_CANDIDATES) {
+      pushAttempt(`parser:auto:${style}`, buildStyleParserSelectionCandidate(parser, normalized, style));
+    }
+  }
+
+  return attempts;
+}
+
+function prepareExtractionCandidate(attempt: CandidateAttempt): CandidateAttempt {
+  if (!attempt.candidate) return attempt;
+
+  const sanitized = sanitizeParsedReference(attempt.candidate.parsed, attempt.candidate.referenceType);
+  const parsed = normalizeAuthorOptionalWebsiteParse(sanitized.parsed, sanitized.referenceType);
+  const preparedCandidate: PreparedExtractionCandidate = {
+    ...attempt.candidate,
+    id: `${attempt.adapterId}:${attempt.adapterPriority}`,
+    adapterId: attempt.adapterId,
+    claimedType: sanitized.referenceType,
+    parsed,
+    referenceType: sanitized.referenceType,
+    normalizedKeyFields: buildNormalizedKeyFields(parsed),
+    containerHints: buildContainerHints(parsed, sanitized.referenceType),
+    plausibility: assessCandidatePlausibility(parsed, sanitized.referenceType),
+  };
+
+  return {
+    ...attempt,
+    candidate: preparedCandidate,
+  };
+}
+
 type ExtractorSelectionBranch =
   | 'deterministic_raw'
   | 'year_anchored_fallback_raw'
@@ -372,6 +593,22 @@ type ParsedSelectionCandidate = {
   warnings: string[];
   styleUsed?: CitationStyle | null;
   styleConfidence?: number;
+};
+
+type CandidateAttempt = {
+  adapterId: string;
+  adapterPriority: number;
+  branch: ExtractorSelectionBranch;
+  candidate: ParsedSelectionCandidate | null;
+};
+
+type PreparedExtractionCandidate = ParsedSelectionCandidate & {
+  id: string;
+  adapterId: string;
+  claimedType: ReturnType<typeof parsedReferenceTypeToCanonical>;
+  normalizedKeyFields: ReturnType<typeof buildNormalizedKeyFields>;
+  containerHints: ReturnType<typeof buildContainerHints>;
+  plausibility: ReturnType<typeof assessCandidatePlausibility>;
 };
 
 function cleanTrailingUrl(url: string | undefined): string | undefined {
@@ -3440,6 +3677,8 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     llmBudget?: { maxCalls: number; totalCalls: number; splitCalls: number; extractCalls: number; capReached: boolean };
     debugEnabled?: boolean;
   }) {
+    const selectorMode = getSelectorMode();
+    const detectionConfidence = options?.detectionConfidence ?? 0;
     const deterministicBase = buildDeterministicCandidate(input, inputStyle, options?.detectionConfidence ?? 0);
     const deterministicSanitized = sanitizeParsedReference(deterministicBase.parsed, deterministicBase.referenceType);
     const deterministic = {
@@ -3470,6 +3709,24 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       warningFlags: [],
       rejectedCandidates: [],
     } satisfies ReturnType<typeof parseAuthorsForStyle>;
+
+    const createPreparedBranchAttempt = (
+      adapterId: string,
+      branch: ExtractorSelectionBranch,
+      adapterPriority: number,
+      candidate: Omit<ParsedSelectionCandidate, 'branch'> | null,
+    ): CandidateAttempt | null => {
+      if (!candidate) return null;
+      return prepareExtractionCandidate({
+        adapterId,
+        adapterPriority,
+        branch,
+        candidate: {
+          ...candidate,
+          branch,
+        },
+      });
+    };
 
     const fallbackBase = skipCompetingCandidates ? null : buildYearAnchoredCandidate(input);
     const fallback = fallbackBase
@@ -3524,58 +3781,138 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       - (inSourceAuthorParse.warningFlags.length * 2)
       - (inSourceAuthorParse.rejectedCandidates.length * 1.5)
       + (inSource ? 1.8 : 0);
-    const scoredCandidates = [
-      {
-        branch: 'deterministic_raw' as const,
-        candidate: deterministic,
-        score: deterministicScore,
-      },
-      ...(fallback ? [{
-        branch: 'year_anchored_fallback_raw' as const,
-        candidate: fallback,
-        score: fallbackScore,
-      }] : []),
-      ...(institutional ? [{
-        branch: 'institutional_heuristic_raw' as const,
-        candidate: institutional,
-        score: institutionalScore,
-      }] : []),
-      ...(inSource ? [{
-        branch: 'in_source_heuristic_raw' as const,
-        candidate: inSource,
-        score: inSourceScore,
-      }] : []),
-    ].sort((left, right) => right.score - left.score);
-    const selectedCandidate = scoredCandidates[0] ?? {
-      branch: 'deterministic_raw' as const,
-      candidate: deterministic,
-      score: deterministicScore,
-    };
-    const selectedBranch = selectedCandidate.branch;
-    const selectedBase = selectedCandidate.candidate;
-    let mergedSelection = selectedBase.parsed;
-    for (const alternate of scoredCandidates.slice(1)) {
-      mergedSelection = fillMissingFromFallback(mergedSelection, alternate.candidate.parsed, selectedBase.referenceType);
-    }
-    let selectedReferenceType = selectedBase.referenceType;
-    if (selectedReferenceType === 'unknown') {
-      const promotedReferenceType = scoredCandidates.find((entry) => entry.candidate.referenceType !== 'unknown')?.candidate.referenceType;
-      if (promotedReferenceType) selectedReferenceType = promotedReferenceType;
-    }
-    const selectedReason = selectionReason(
-      selectedBranch,
-      deterministic.parsed,
-      fallback?.parsed ?? null,
-      institutional?.parsed ?? null,
-      inSource?.parsed ?? null,
+
+    const deterministicBaselineAttempt = createPreparedBranchAttempt(
+      'legacy:deterministic_baseline',
+      'deterministic_raw',
+      0,
+      deterministic,
     );
-    const selectedAuthorParse = selectedBranch === 'year_anchored_fallback_raw'
-      ? fallbackAuthorParse
-      : selectedBranch === 'institutional_heuristic_raw'
-        ? institutionalAuthorParse
-        : selectedBranch === 'in_source_heuristic_raw'
-          ? inSourceAuthorParse
-        : deterministicAuthorParse;
+    const preparedAttempts = collectDeterministicCandidateAttempts(input, inputStyle, detectionConfidence)
+      .map((attempt) => prepareExtractionCandidate(attempt));
+    let nextAdapterPriority = preparedAttempts.length;
+    const fallbackAttempt = createPreparedBranchAttempt(
+      'legacy:year_anchored_fallback',
+      'year_anchored_fallback_raw',
+      nextAdapterPriority += 1,
+      fallback,
+    );
+    const institutionalAttempt = createPreparedBranchAttempt(
+      'legacy:institutional_heuristic',
+      'institutional_heuristic_raw',
+      nextAdapterPriority += 1,
+      institutional,
+    );
+    const inSourceAttempt = createPreparedBranchAttempt(
+      'legacy:in_source_heuristic',
+      'in_source_heuristic_raw',
+      nextAdapterPriority += 1,
+      inSource,
+    );
+
+    if (fallbackAttempt) preparedAttempts.push(fallbackAttempt);
+    if (institutionalAttempt) preparedAttempts.push(institutionalAttempt);
+    if (inSourceAttempt) preparedAttempts.push(inSourceAttempt);
+
+    const attemptAuthorParse = new Map<string, ReturnType<typeof parseAuthorsForStyle>>();
+    const attemptScore = new Map<string, number>();
+    for (const attempt of preparedAttempts) {
+      if (!attempt.candidate) continue;
+      const authorParse = parseAuthorsForStyle(
+        attempt.candidate.parsed.authors ?? [],
+        attempt.candidate.styleUsed ?? inputStyle,
+      );
+      let candidateScore = scoreCandidate(attempt.candidate.parsed, attempt.candidate.claimedType)
+        - (authorParse.warningFlags.length * 2)
+        - (authorParse.rejectedCandidates.length * 1.5);
+      if (
+        authorParse.parserMode === 'alternating_pairs'
+        || authorParse.parserMode === 'surname_given_pairs'
+      ) {
+        candidateScore += 8;
+      }
+      if (attempt.branch === 'institutional_heuristic_raw') {
+        candidateScore += attempt.candidate.claimedType === 'report' ? 4 : 1.2;
+      }
+      if (attempt.branch === 'in_source_heuristic_raw') {
+        candidateScore += 1.8;
+      }
+      attemptAuthorParse.set(attempt.candidate.id, authorParse);
+      attemptScore.set(attempt.candidate.id, candidateScore);
+    }
+
+    const selection = selectExtractionCandidate(preparedAttempts, selectorMode);
+    const selectedBase = selection.winner
+      ?? deterministicBaselineAttempt?.candidate
+      ?? preparedAttempts.find((attempt) => attempt.candidate)?.candidate
+      ?? {
+        ...deterministic,
+        id: 'legacy:synthetic_fallback',
+        adapterId: 'legacy:synthetic_fallback',
+        claimedType: deterministic.referenceType,
+        normalizedKeyFields: buildNormalizedKeyFields(deterministic.parsed),
+        containerHints: buildContainerHints(deterministic.parsed, deterministic.referenceType),
+        plausibility: assessCandidatePlausibility(deterministic.parsed, deterministic.referenceType),
+      };
+    const selectedBranch = selectedBase.branch;
+    let selectedReferenceType = selectedBase.claimedType;
+    let mergedSelection = { ...selectedBase.parsed };
+    const selectedReason = selectorMode === 'legacy_first_match'
+      ? selectionReason(
+        selectedBranch,
+        deterministic.parsed,
+        fallback?.parsed ?? null,
+        institutional?.parsed ?? null,
+        inSource?.parsed ?? null,
+      )
+      : selection.selectionReason;
+    const selectedAuthorParse = attemptAuthorParse.get(selectedBase.id)
+      ?? parseAuthorsForStyle(selectedBase.parsed.authors ?? [], selectedBase.styleUsed ?? inputStyle);
+
+    const mergeCompatibleAlternates = preparedAttempts
+      .filter((attempt) => attempt.candidate && attempt.candidate.id !== selectedBase.id)
+      .filter((attempt) => {
+        const alternate = attempt.candidate!;
+        if (selectedReferenceType === 'unknown') return true;
+        if (alternate.claimedType === 'unknown') return true;
+        return areReferenceTypesMergeCompatible(selectedReferenceType, alternate.claimedType);
+      })
+      .sort((left, right) =>
+        (attemptScore.get(right.candidate!.id) ?? -999) - (attemptScore.get(left.candidate!.id) ?? -999));
+    for (const alternate of mergeCompatibleAlternates) {
+      mergedSelection = fillMissingFromFallback(
+        mergedSelection,
+        alternate.candidate!.parsed,
+        selectedReferenceType === 'unknown' ? alternate.candidate!.claimedType : selectedReferenceType,
+      );
+    }
+
+    let resolvedContainer = resolveWinnerContainer(
+      mergedSelection,
+      selectedReferenceType === 'unknown'
+        ? mergeCompatibleAlternates.find((attempt) => attempt.candidate?.claimedType !== 'unknown')?.candidate?.claimedType ?? 'unknown'
+        : selectedReferenceType,
+    );
+    mergedSelection = resolvedContainer.parsed;
+    let typeResolution = resolveReferenceTypeFromEvidence({
+      claimedType: selectedReferenceType,
+      parsed: mergedSelection,
+      containerHints: resolvedContainer.containerHints,
+      detectTypeHint: deterministic.referenceType !== 'unknown' ? deterministic.referenceType : null,
+    });
+    selectedReferenceType = typeResolution.referenceType;
+    const sanitizedSelection = sanitizeParsedReference(mergedSelection, selectedReferenceType);
+    mergedSelection = normalizeAuthorOptionalWebsiteParse(sanitizedSelection.parsed, sanitizedSelection.referenceType);
+    resolvedContainer = resolveWinnerContainer(mergedSelection, selectedReferenceType);
+    mergedSelection = resolvedContainer.parsed;
+    typeResolution = resolveReferenceTypeFromEvidence({
+      claimedType: selectedReferenceType,
+      parsed: mergedSelection,
+      containerHints: resolvedContainer.containerHints,
+      detectTypeHint: deterministic.referenceType !== 'unknown' ? deterministic.referenceType : null,
+    });
+    selectedReferenceType = typeResolution.referenceType;
+
     let selectedFieldConfidence = buildFieldConfidence(mergedSelection, selectedReferenceType);
     const splitArtifact = options?.splitArtifact;
     const splitContaminationFlags = splitArtifact?.contaminationFlags ?? [];
@@ -3600,7 +3937,6 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     const llmEnabled = !forceGrobid
       && /^(1|true|yes|on)$/i.test(process.env.ENABLE_LLM_EXTRACTOR ?? '1')
       && Boolean(process.env.OPENAI_API_KEY);
-    const detectionConfidence = options?.detectionConfidence ?? 0;
     const noisyProfileSignals = ['ocr_noise_markers', 'mixed_style_markers', 'long_prose_lines', 'footnote_markers']
       .filter((signal) => inputSignals.has(signal));
     const deterministicFriendlySignals = ['book_tail_markers', 'conference_tail_markers', 'doi_heavy']
@@ -3618,14 +3954,14 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
 
     const weakSelection =
       needsLlmFallback(mergedSelection, selectedFieldConfidence, selectedReferenceType)
-      || (selectedCandidate.score - contaminationScorePenalty) < 8
+      || ((attemptScore.get(selectedBase.id) ?? deterministicScore) - contaminationScorePenalty) < 8
       || selectedAuthorParse.warningFlags.length > 0
       || selectedAuthorParse.rejectedCandidates.length > 0
       || splitContaminationFlags.length > 0;
     const allowLlmFallback = shouldAllowLlmFallback(
       mergedSelection,
       selectedReferenceType,
-      selectedCandidate.score - contaminationScorePenalty,
+      (attemptScore.get(selectedBase.id) ?? deterministicScore) - contaminationScorePenalty,
       batchSize,
       options?.executionMode,
     );
@@ -3643,7 +3979,16 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             const merged = mergeLlmWithDeterministic({ parsed: mergedSelection, referenceType: selectedReferenceType }, llm);
             const sanitizedHybrid = sanitizeParsedReference(merged.parsed, merged.referenceType);
             mergedSelection = normalizeAuthorOptionalWebsiteParse(sanitizedHybrid.parsed, sanitizedHybrid.referenceType);
-            selectedReferenceType = sanitizedHybrid.referenceType;
+            let hybridContainer = resolveWinnerContainer(mergedSelection, sanitizedHybrid.referenceType);
+            mergedSelection = hybridContainer.parsed;
+            const hybridResolution = resolveReferenceTypeFromEvidence({
+              claimedType: sanitizedHybrid.referenceType,
+              parsed: mergedSelection,
+              containerHints: hybridContainer.containerHints,
+              detectTypeHint: deterministic.referenceType !== 'unknown' ? deterministic.referenceType : null,
+            });
+            selectedReferenceType = hybridResolution.referenceType;
+            typeResolution = hybridResolution;
             selectedFieldConfidence = {
               ...merged.fieldConfidence,
               ...applySplitPenaltyToFieldConfidence(buildFieldConfidence(mergedSelection, selectedReferenceType), splitPenalty),
@@ -3713,7 +4058,14 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
           grobidScore = scoreCandidate(grobidCandidate.parsed, grobidCandidate.referenceType) + 1;
           const grobidPreferredProfile = ['structured', 'semi_structured'].includes(inputStructure)
             && !profilePrefersDeterministic;
-          const currentBestScore = Math.max(currentSelectionScore, deterministicScore, fallbackScore, institutionalScore, inSourceScore);
+          const currentBestScore = Math.max(
+            currentSelectionScore,
+            deterministicScore,
+            fallbackScore,
+            institutionalScore,
+            inSourceScore,
+            ...Array.from(attemptScore.values()),
+          );
           const grobidLooksUsable = Boolean(grobidCandidate.parsed.title) && Boolean(grobidCandidate.parsed.authors?.length);
           if (
             (forceGrobid && grobidLooksUsable)
@@ -3722,7 +4074,18 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             || (grobidPreferredProfile && grobidLooksUsable && grobidScore >= currentBestScore - 0.25)
           ) {
             mergedSelection = fillMissingFromFallback(grobidCandidate.parsed, mergedSelection, grobidCandidate.referenceType);
-            selectedReferenceType = grobidCandidate.referenceType;
+            const sanitizedGrobid = sanitizeParsedReference(mergedSelection, grobidCandidate.referenceType);
+            mergedSelection = normalizeAuthorOptionalWebsiteParse(sanitizedGrobid.parsed, sanitizedGrobid.referenceType);
+            let grobidContainer = resolveWinnerContainer(mergedSelection, sanitizedGrobid.referenceType);
+            mergedSelection = grobidContainer.parsed;
+            const grobidResolution = resolveReferenceTypeFromEvidence({
+              claimedType: sanitizedGrobid.referenceType,
+              parsed: mergedSelection,
+              containerHints: grobidContainer.containerHints,
+              detectTypeHint: deterministic.referenceType !== 'unknown' ? deterministic.referenceType : null,
+            });
+            selectedReferenceType = grobidResolution.referenceType;
+            typeResolution = grobidResolution;
             selectedFieldConfidence = applySplitPenaltyToFieldConfidence(
               buildFieldConfidence(mergedSelection, selectedReferenceType),
               splitPenalty,
@@ -3793,15 +4156,41 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     const finalAuthorParse = selectedAuthorFingerprint === mergedAuthorFingerprint
       ? selectedAuthorParse
       : parseAuthorsForStyle(mergedSelection.authors ?? [], selectedStyle);
+    const warnings = Array.from(new Set([
+      ...deterministic.warnings,
+      ...(fallback?.warnings ?? []),
+      ...(institutional?.warnings ?? []),
+      ...(inSource?.warnings ?? []),
+      ...selectedBase.warnings,
+      ...splitWarnings,
+      ...llmWarnings,
+    ]));
+    const selectionDebugScores = preparedAttempts.reduce<Record<string, number>>((scores, attempt) => {
+      if (attempt.candidate) {
+        scores[attempt.adapterId] = attemptScore.get(attempt.candidate.id) ?? -999;
+      }
+      return scores;
+    }, {});
 
     return {
       parsed: mergedSelection,
       referenceType: selectedReferenceType,
       method: llmApplied ? 'hybrid' as const : 'deterministic' as const,
-      fallbackUsed: llmApplied || llmAttempted || llmCapReached,
+      fallbackUsed:
+        selectedBranch !== 'deterministic_raw'
+        || llmApplied
+        || llmAttempted
+        || llmCapReached
+        || extractorPath === 'grobid'
+        || extractorPath === 'hybrid',
       extractorPath,
       selectedBranch: llmApplied ? 'hybrid' as const : selectedBranch,
       selectionReason: `${selectedReason}${selectionReasonSuffix}`,
+      selectorMode,
+      selectionMode: selection.selectionMode,
+      winnerAdapterId: selectedBase.adapterId,
+      winnerCandidateId: selectedBase.id,
+      typeResolutionReason: typeResolution.reason,
       detectedStyle: selectedStyle,
       detectedStyleConfidence: selectedStyleConfidence,
       canonicalAuthors: finalAuthorParse.authors,
@@ -3813,14 +4202,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       ],
       llmCapReached,
       fieldConfidence: selectedFieldConfidence,
-      warnings: [
-        ...deterministic.warnings,
-        ...(fallback?.warnings ?? []),
-        ...(institutional?.warnings ?? []),
-        ...(inSource?.warnings ?? []),
-        ...splitWarnings,
-        ...llmWarnings,
-      ],
+      warnings,
       debug: options?.debugEnabled
         ? {
             deterministic_raw: deterministic.parsed,
@@ -3830,6 +4212,14 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             grobid_raw: grobidCandidate?.parsed ?? null,
             selected_branch: llmApplied ? 'hybrid' : selectedBranch,
             selection_reason: `${selectedReason}${selectionReasonSuffix}`,
+            selector_mode: selectorMode,
+            selection_mode: selection.selectionMode,
+            winner_adapter_id: selectedBase.adapterId,
+            winner_candidate_id: selectedBase.id,
+            winner_score_breakdown: selection.winnerBreakdown,
+            adapter_registry: selection.adapterRegistry,
+            winner_container_hints: resolvedContainer.containerHints,
+            type_resolution_reason: typeResolution.reason,
             extractor_path: extractorPath,
             detected_style: selectedStyle,
             detected_style_confidence: selectedStyleConfidence,
@@ -3838,6 +4228,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             institutional_score: institutionalScore,
             in_source_score: inSourceScore,
             grobid_score: grobidScore,
+            candidate_scores: selectionDebugScores,
             deterministic_author_parser_mode: deterministicAuthorParse.parserMode,
             deterministic_author_warning_flags: deterministicAuthorParse.warningFlags,
             fallback_author_parser_mode: fallbackAuthorParse.parserMode,
