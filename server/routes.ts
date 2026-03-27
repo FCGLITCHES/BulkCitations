@@ -8,6 +8,7 @@ const pdfParse: (buffer: Buffer) => Promise<{ text: string }> =
   typeof pdfParseModule === "function" ? pdfParseModule : (pdfParseModule?.default ?? pdfParseModule);
 import { storage } from "./storage";
 import reportsRouter from "./routes/reports";
+import historyRouter from "./routes/history";
 import v2Router from "./routes/v2";
 import {
   adminAccessRequestSchema,
@@ -15,6 +16,11 @@ import {
   adminLoginRequestSchema,
   conversionRequestSchema,
   contactRequestSchema,
+  institutionPartnershipRequestSchema,
+  institutionalLoginRequestSchema,
+  institutionalRegistrationRequestSchema,
+  publicLoginRequestSchema,
+  publicRegistrationRequestSchema,
   waitlistRequestSchema,
   type ConvertedReference,
   type ConversionResponse,
@@ -56,6 +62,16 @@ import {
   getApprovedAdminByIdentifier,
   verifyAdminAccountPassword,
 } from "./store/adminAuthStore.js";
+import { normalizeInstitutionSearchQuery, publicAuthStore, verifyPublicAccountPassword } from "./store/publicAuthStore.js";
+import {
+  checkPublicLoginRateLimit,
+  clearPublicLoginFailures,
+  clearPublicSessionCookie,
+  getPublicSessionStatus,
+  isPublicAuthConfigured,
+  recordFailedPublicLogin,
+  setPublicSessionCookie,
+} from "./utils/userAuth.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize CSL styles at startup
@@ -270,6 +286,251 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/auth/session", async (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.json(await getPublicSessionStatus(req));
+  });
+
+  app.get("/api/auth/institutions", async (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+
+    try {
+      const query = normalizeInstitutionSearchQuery(String(req.query.q ?? ""));
+      const institutions = await publicAuthStore.listInstitutions(query);
+      return res.json({
+        institutions: institutions.map((institution) => ({
+          id: institution.id,
+          slug: institution.slug,
+          name: institution.name,
+          domains: institution.domains,
+        })),
+      });
+    } catch (error) {
+      return res.status(500).json({
+        message: "Could not load institutions.",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  });
+
+  app.post("/api/auth/register", async (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+
+    let data;
+    try {
+      data = publicRegistrationRequestSchema.parse(req.body);
+    } catch (error) {
+      return res.status(400).json({
+        message: "Name, email, and password are required.",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+
+    if (!isPublicAuthConfigured()) {
+      return res.status(503).json({
+        message: "Public sign-in is not configured. Set APP_SESSION_SECRET or ADMIN_SESSION_SECRET.",
+      });
+    }
+
+    const result = await publicAuthStore.createIndividualAccount(data);
+    if (!result.ok) {
+      return res.status(409).json({
+        message: "An account already exists for that email address.",
+      });
+    }
+
+    clearPublicLoginFailures(req);
+    setPublicSessionCookie(req, res, result.account.id);
+    return res.status(201).json({
+      success: true,
+      account: result.account,
+    });
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+
+    let data;
+    try {
+      data = publicLoginRequestSchema.parse(req.body);
+    } catch (error) {
+      return res.status(400).json({
+        message: "Email and password are required.",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+
+    if (!isPublicAuthConfigured()) {
+      return res.status(503).json({
+        message: "Public sign-in is not configured. Set APP_SESSION_SECRET or ADMIN_SESSION_SECRET.",
+      });
+    }
+
+    const rateLimit = checkPublicLoginRateLimit(req);
+    if (!rateLimit.allowed) {
+      res.setHeader("Retry-After", String(rateLimit.retryAfterSeconds));
+      return res.status(429).json({
+        message: "Too many login attempts. Please try again later.",
+      });
+    }
+
+    const account = await publicAuthStore.getAccountRecordByEmail(data.email);
+    if (!account) {
+      recordFailedPublicLogin(req);
+      return res.status(401).json({ message: "Invalid credentials." });
+    }
+
+    if (account.accountType !== "individual") {
+      return res.status(403).json({
+        message: "This account belongs to an institution. Use the institutional login page instead.",
+      });
+    }
+
+    if (!verifyPublicAccountPassword(account, data.password)) {
+      recordFailedPublicLogin(req);
+      return res.status(401).json({ message: "Invalid credentials." });
+    }
+
+    clearPublicLoginFailures(req);
+    const sessionAccount = await publicAuthStore.recordSuccessfulLogin(account.id);
+    setPublicSessionCookie(req, res, account.id);
+    return res.json({
+      success: true,
+      account: sessionAccount,
+    });
+  });
+
+  app.post("/api/auth/institutional/register", async (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+
+    let data;
+    try {
+      data = institutionalRegistrationRequestSchema.parse(req.body);
+    } catch (error) {
+      return res.status(400).json({
+        message: "Name, institution, work email, and password are required.",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+
+    if (!isPublicAuthConfigured()) {
+      return res.status(503).json({
+        message: "Institutional sign-in is not configured. Set APP_SESSION_SECRET or ADMIN_SESSION_SECRET.",
+      });
+    }
+
+    const result = await publicAuthStore.createInstitutionalAccount(data);
+    if (!result.ok) {
+      if (result.reason === "email_exists") {
+        return res.status(409).json({ message: "An account already exists for that email address." });
+      }
+      if (result.reason === "domain_mismatch") {
+        return res.status(422).json({ message: "Use an email address from the selected institution domain." });
+      }
+      return res.status(404).json({ message: "Selected institution could not be found." });
+    }
+
+    clearPublicLoginFailures(req);
+    setPublicSessionCookie(req, res, result.account.id);
+    return res.status(201).json({
+      success: true,
+      account: result.account,
+    });
+  });
+
+  app.post("/api/auth/institutional/login", async (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+
+    let data;
+    try {
+      data = institutionalLoginRequestSchema.parse(req.body);
+    } catch (error) {
+      return res.status(400).json({
+        message: "Institutional email and password are required.",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+
+    if (!isPublicAuthConfigured()) {
+      return res.status(503).json({
+        message: "Institutional sign-in is not configured. Set APP_SESSION_SECRET or ADMIN_SESSION_SECRET.",
+      });
+    }
+
+    const rateLimit = checkPublicLoginRateLimit(req);
+    if (!rateLimit.allowed) {
+      res.setHeader("Retry-After", String(rateLimit.retryAfterSeconds));
+      return res.status(429).json({
+        message: "Too many login attempts. Please try again later.",
+      });
+    }
+
+    const account = await publicAuthStore.getAccountRecordByEmail(data.email);
+    if (!account) {
+      recordFailedPublicLogin(req);
+      return res.status(401).json({ message: "Invalid credentials." });
+    }
+
+    if (account.accountType !== "institutional") {
+      return res.status(403).json({
+        message: "This account is not linked to an institution. Use the standard login page instead.",
+      });
+    }
+
+    if (data.institutionId && account.institutionId !== data.institutionId) {
+      return res.status(403).json({
+        message: "This account is linked to a different institution.",
+      });
+    }
+
+    if (!verifyPublicAccountPassword(account, data.password)) {
+      recordFailedPublicLogin(req);
+      return res.status(401).json({ message: "Invalid credentials." });
+    }
+
+    clearPublicLoginFailures(req);
+    const sessionAccount = await publicAuthStore.recordSuccessfulLogin(account.id);
+    setPublicSessionCookie(req, res, account.id);
+    return res.json({
+      success: true,
+      account: sessionAccount,
+    });
+  });
+
+  app.post("/api/auth/institutions/request-partnership", async (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+
+    let data;
+    try {
+      data = institutionPartnershipRequestSchema.parse(req.body);
+    } catch (error) {
+      return res.status(400).json({
+        message: "Contact name, work email, and institution name are required.",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+
+    const result = await publicAuthStore.createPartnershipRequest(data);
+    if (!result.ok) {
+      return res.status(409).json({
+        message: "A partnership request from this email for that institution is already pending review.",
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      request: result.request,
+      message: "Your institutional access request has been saved for review.",
+    });
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    clearPublicLoginFailures(req);
+    clearPublicSessionCookie(req, res);
+    res.json({ success: true });
+  });
+
   app.get("/api/admin/analytics/summary", requireAdmin, async (req, res) => {
     try {
       const requestedDays = Number.parseInt(String(req.query.days ?? "30"), 10);
@@ -284,9 +545,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/admin/session", (req, res) => {
+  app.get("/api/admin/session", async (req, res) => {
     res.setHeader("Cache-Control", "no-store");
-    res.json(getAdminSessionStatus(req));
+    res.json(await getAdminSessionStatus(req));
   });
 
   app.post("/api/admin/request-access", async (req, res) => {
@@ -301,7 +562,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const result = createAdminAccessRequest(data);
+      const result = await createAdminAccessRequest(data);
       if (!result.ok) {
         const message = result.reason === "approved_exists"
           ? "An approved admin account already exists for that email or username."
@@ -332,7 +593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       return res.status(201).json({
         success: true,
-        message: "Your admin access request has been sent to contact@bulkreferences.com for approval.",
+        message: "Your admin access request has been sent to support@bulkreferences.com for approval.",
       });
     } catch (error) {
       return res.status(400).json({
@@ -342,7 +603,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/admin/login", (req, res) => {
+  app.post("/api/admin/login", async (req, res) => {
     res.setHeader("Cache-Control", "no-store");
 
     let data;
@@ -369,14 +630,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
 
-    const existingAccount = findAdminAccountByEmailOrUsername(data.identifier, data.identifier);
+    const existingAccount = await findAdminAccountByEmailOrUsername(data.identifier);
     if (existingAccount?.status === "pending") {
       return res.status(403).json({
-        message: "This admin account is still pending approval from contact@bulkreferences.com.",
+        message: "This admin account is still pending approval from support@bulkreferences.com.",
       });
     }
 
-    const account = getApprovedAdminByIdentifier(data.identifier);
+    const account = await getApprovedAdminByIdentifier(data.identifier);
     if (!account) {
       recordFailedAdminLogin(req);
       return res.status(401).json({ message: "Invalid credentials." });
@@ -400,15 +661,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.post("/api/admin/approve", (req, res) => {
+  app.post("/api/admin/approve", async (req, res) => {
     res.setHeader("Cache-Control", "no-store");
 
     try {
       const { token } = adminApprovalSchema.parse(req.body);
-      const result = approveAdminAccessRequest(token);
+      const result = await approveAdminAccessRequest(token);
 
       if (!result.ok) {
-        return res.status(404).json({ message: "Approval link is invalid or has already been used." });
+        return res.status(404).json({ message: "Approval link is invalid or no longer matches a pending admin request." });
       }
 
       return res.json({
@@ -432,6 +693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.use("/api/reports", reportsRouter);
+  app.use("/api/history", historyRouter);
   app.use("/api/v2", v2Router);
 
   // Convert citations endpoint — thin wrapper around engine pipeline

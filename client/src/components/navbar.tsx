@@ -5,10 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/use-auth";
+import { useUserSession } from "@/hooks/use-user-session";
 
 export function Navbar() {
   const [navOpen, setNavOpen] = useState(false);
   const { isAdmin, isConfigured, isInitialized, logout } = useAuth();
+  const {
+    isAuthenticated: isUserAuthenticated,
+    isInitialized: isUserInitialized,
+    account: userAccount,
+    logout: logoutUser,
+  } = useUserSession();
   const [, setLocation] = useLocation();
   const [isDark, setIsDark] = useState(false);
 
@@ -39,6 +46,12 @@ export function Navbar() {
     });
   };
 
+  const handleUserLogout = () => {
+    void logoutUser().finally(() => {
+      setLocation("/");
+    });
+  };
+
   return (
     <header className="bg-background/90 backdrop-blur-lg border-b border-border shadow-sm sticky top-0 z-50 transition-colors duration-300">
       <div className="container mx-auto px-4 py-3 sm:py-4">
@@ -59,16 +72,21 @@ export function Navbar() {
             <Link href="/about" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">About</Link>
             <Link href="/contact" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">Contact</Link>
 
-            {isInitialized ? (
-              isAdmin ? (
+            {isInitialized && isAdmin ? (
                 <>
                   <Link href="/admin/reports" className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer">Admin Mode</Link>
                   <button onClick={handleLogout} className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors cursor-pointer border px-3 py-1.5 rounded bg-muted/30">Logout</button>
                 </>
-              ) : isConfigured ? (
+              ) : isUserInitialized && isUserAuthenticated ? (
+                <>
+                  <Link href="/history" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">
+                    {userAccount?.institution ? userAccount.institution.name : "History"}
+                  </Link>
+                  <button onClick={handleUserLogout} className="text-sm font-medium text-destructive hover:text-destructive/80 transition-colors cursor-pointer border px-3 py-1.5 rounded bg-muted/30">Logout</button>
+                </>
+              ) : isInitialized && isConfigured ? (
                 <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer">Login</Link>
-              ) : null
-            ) : null}
+              ) : null}
             <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full w-8 h-8 ml-2" title="Toggle theme">
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               <span className="sr-only">Toggle theme</span>
@@ -113,8 +131,7 @@ export function Navbar() {
 
                 <div className="my-2 border-t border-border"></div>
 
-                {isInitialized ? (
-                  isAdmin ? (
+                {isInitialized && isAdmin ? (
                     <>
                       <Link href="/admin/reports" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-semibold text-primary hover:text-primary/80 transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
                         <LineChart className="w-4 h-4" />
@@ -125,13 +142,23 @@ export function Navbar() {
                         Logout
                       </button>
                     </>
-                  ) : isConfigured ? (
+                  ) : isUserInitialized && isUserAuthenticated ? (
+                    <>
+                      <Link href="/history" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
+                        <History className="w-4 h-4 text-muted-foreground" />
+                        {userAccount?.institution ? "Institution History" : "History"}
+                      </Link>
+                      <button onClick={() => { handleUserLogout(); setNavOpen(false); }} className="flex items-center gap-3 text-sm font-medium text-destructive hover:text-destructive/80 transition-colors py-3 px-2 text-left cursor-pointer rounded-md hover:bg-muted/50 w-full">
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </button>
+                    </>
+                  ) : isInitialized && isConfigured ? (
                     <Link href="/login" onClick={() => setNavOpen(false)} className="flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors py-3 px-2 cursor-pointer rounded-md hover:bg-muted/50">
                       <LogIn className="w-4 h-4 text-muted-foreground" />
                       Login
                     </Link>
-                  ) : null
-                ) : null}
+                  ) : null}
               </nav>
             </SheetContent>
           </Sheet>

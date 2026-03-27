@@ -18,6 +18,9 @@ export function LandingFooter() {
           <Link href="/privacy" className="font-body text-xs text-slate-500 dark:text-slate-400 hover:text-primary-container dark:hover:text-blue-200 transition-colors opacity-80 hover:opacity-100 duration-300">
             Privacy
           </Link>
+          <Link href="/admin-login" className="font-body text-xs text-slate-500 dark:text-slate-400 hover:text-primary-container dark:hover:text-blue-200 transition-colors opacity-80 hover:opacity-100 duration-300">
+            Admin
+          </Link>
           <Link href="/terms" className="font-body text-xs text-slate-500 dark:text-slate-400 hover:text-primary-container dark:hover:text-blue-200 transition-colors opacity-80 hover:opacity-100 duration-300">
             Terms
           </Link>

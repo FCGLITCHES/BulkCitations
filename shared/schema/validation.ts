@@ -58,6 +58,62 @@ export const waitlistRequestSchema = z.object({
 
 export type WaitlistRequest = z.infer<typeof waitlistRequestSchema>;
 
+export const publicRegistrationRequestSchema = z.object({
+  name: z.string().trim().min(2, "Name is required").max(80, "Name is too long"),
+  email: z.string().trim().email("A valid email is required"),
+  password: z.string().min(10, "Password must be at least 10 characters"),
+});
+
+export type PublicRegistrationRequest = z.infer<typeof publicRegistrationRequestSchema>;
+
+export const publicLoginRequestSchema = z.object({
+  email: z.string().trim().email("A valid email is required"),
+  password: z.string().min(1, "Password is required"),
+});
+
+export type PublicLoginRequest = z.infer<typeof publicLoginRequestSchema>;
+
+export const institutionalRegistrationRequestSchema = publicRegistrationRequestSchema.extend({
+  institutionId: z.string().trim().min(2, "Institution is required"),
+});
+
+export type InstitutionalRegistrationRequest = z.infer<typeof institutionalRegistrationRequestSchema>;
+
+export const institutionalLoginRequestSchema = publicLoginRequestSchema.extend({
+  institutionId: z.string().trim().min(2).optional(),
+});
+
+export type InstitutionalLoginRequest = z.infer<typeof institutionalLoginRequestSchema>;
+
+export const userHistoryItemSchema = z.object({
+  id: z.string().trim().min(1).max(160),
+  originalText: z.string().trim().min(1).max(10000),
+  convertedText: z.string().trim().min(1).max(10000),
+  inputStyle: z.string().trim().min(1).max(80),
+  outputStyle: z.string().trim().min(1).max(80),
+  healthState: z.string().trim().min(1).max(40).optional(),
+  timestamp: z.string().trim().min(1).max(80),
+  customName: z.string().trim().max(160).optional(),
+});
+
+export type UserHistoryItem = z.infer<typeof userHistoryItemSchema>;
+
+export const userHistorySnapshotSchema = z.object({
+  clientId: z.string().trim().regex(/^[A-Za-z0-9_-]{8,80}$/),
+  items: z.array(userHistoryItemSchema).max(5000),
+});
+
+export type UserHistorySnapshot = z.infer<typeof userHistorySnapshotSchema>;
+
+export const institutionPartnershipRequestSchema = z.object({
+  contactName: z.string().trim().min(2, "Contact name is required").max(80, "Contact name is too long"),
+  workEmail: z.string().trim().email("A valid work email is required"),
+  institutionName: z.string().trim().min(2, "Institution name is required").max(140, "Institution name is too long"),
+  notes: z.string().trim().max(1000, "Notes must be 1000 characters or fewer").optional().default(""),
+});
+
+export type InstitutionPartnershipRequest = z.infer<typeof institutionPartnershipRequestSchema>;
+
 export const adminAccessRequestSchema = z.object({
   name: z.string().trim().min(2, "Full name is required").max(80, "Name is too long"),
   username: z.string()

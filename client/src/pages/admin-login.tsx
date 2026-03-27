@@ -96,6 +96,9 @@ export default function AdminLogin() {
           </Link>
           <div className="flex items-center gap-4 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
             <span className="hidden sm:inline">Admin Portal</span>
+            <a href="/admin-login" className="text-[#002147] transition hover:opacity-70">
+              Easy link
+            </a>
             <a href="/contact" className="text-[#002147] transition hover:opacity-70">
               Support
             </a>
@@ -117,7 +120,10 @@ export default function AdminLogin() {
                     The Digital Archivist
                   </h1>
                   <p className="max-w-xl text-sm leading-7 text-slate-300 sm:text-base">
-                    This portal is reserved for approved BulkReferences administrators. New admins can request access here, and the request is routed to <span className="font-semibold text-white">contact@bulkreferences.com</span> for approval before dashboard access is granted.
+                    This portal is reserved for approved BulkReferences administrators. New admins can request access here, and the request is routed to <span className="font-semibold text-white">support@bulkreferences.com</span> for approval before dashboard access is granted.
+                  </p>
+                  <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
+                    Direct admin entry: /adm1n or /admin-login
                   </p>
                 </div>
 

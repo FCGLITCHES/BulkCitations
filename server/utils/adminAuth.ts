@@ -155,14 +155,14 @@ export function isAdminAuthConfigured() {
   return Boolean(getAdminSessionSecret());
 }
 
-export function getAuthenticatedAdminFromRequest(req: Request) {
+export async function getAuthenticatedAdminFromRequest(req: Request) {
   const payload = decodeSessionToken(parseCookie(req, ADMIN_SESSION_COOKIE));
   if (!payload) return null;
   return getAdminAccountById(payload.sub);
 }
 
-export function getAdminSessionStatus(req: Request) {
-  const account = getAuthenticatedAdminFromRequest(req);
+export async function getAdminSessionStatus(req: Request) {
+  const account = await getAuthenticatedAdminFromRequest(req);
   return {
     authenticated: Boolean(account),
     configured: isAdminAuthConfigured(),
@@ -215,7 +215,7 @@ export function clearAdminSessionCookie(req: Request, res: Response) {
   }));
 }
 
-export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   res.setHeader("Cache-Control", "no-store");
 
   if (!isAdminAuthConfigured()) {
@@ -224,7 +224,7 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
     });
   }
 
-  const account = getAuthenticatedAdminFromRequest(req);
+  const account = await getAuthenticatedAdminFromRequest(req);
   if (!account) {
     return res.status(401).json({ message: "Admin authentication required." });
   }

@@ -84,6 +84,7 @@ function AnalyticsRouteTracker() {
     if (location.startsWith("/admin")) return;
     if (location === "/login") return;
     if (location.startsWith("/adm1n")) return;
+    if (location === "/admin-login") return;
 
     trackAnalyticsEvent("page_view", {
       surface: location === "/" ? "home" : "site",
@@ -121,6 +122,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/contact" component={Contact} />
         <Route path="/login" component={Login} />
         <Route path="/adm1n" component={AdminLogin} />
+        <Route path="/admin-login" component={AdminLogin} />
         <Route path="/adm1n/approve" component={AdminApprove} />
         <Route path="/history" component={HistoryPage} />
         <Route path="/prices" component={Prices} />

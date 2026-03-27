@@ -42,8 +42,8 @@ export default function AdminApprove() {
       setState("success");
       setMessage(
         payload.alreadyApproved
-          ? `${approvedAccount} was already approved.`
-          : `${approvedAccount} has been approved and can now sign in at /adm1n.`,
+          ? `${approvedAccount} is already approved. The admin can sign in right away from the admin portal.`
+          : `${approvedAccount} has been approved. They can now sign in from the admin portal and enter the dashboard immediately.`,
       );
     })();
   }, []);
@@ -67,9 +67,12 @@ export default function AdminApprove() {
         <div className="mt-8">
           <Link href="/adm1n">
             <span className="inline-flex cursor-pointer items-center justify-center rounded-full bg-[#002147] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90">
-              Return to admin sign in
+              Open admin portal
             </span>
           </Link>
+          <p className="mt-3 text-xs uppercase tracking-[0.24em] text-slate-500">
+            Direct route: /adm1n
+          </p>
         </div>
       </div>
     </div>

@@ -1,0 +1,16 @@
+{
+  "accounts": [
+    {
+      "id": "fb77990c8e0aebe18207a4cb",
+      "name": "Jordan Admin",
+      "username": "jordan.admin",
+      "email": "jordan@example.com",
+      "passwordHash": "cb7d532456990ce408ddbe643f0cdfed090205e508b1762ee7bd7bbd75dca655196fa3aa79f5d262416a1ee95b2b40bcc572a46a8165dbaa4997e49bf6c347a4",
+      "passwordSalt": "245a8ab842748ce7bf593b7b0c08aca9",
+      "status": "approved",
+      "approvedAt": "2026-03-27T03:15:50.014Z",
+      "createdAt": "2026-03-27T03:15:49.950Z",
+      "updatedAt": "2026-03-27T03:15:50.014Z"
+    }
+  ]
+}

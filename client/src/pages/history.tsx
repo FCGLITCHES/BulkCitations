@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LandingNavbar } from "@/components/landing-navbar";
 import { LandingFooter } from "@/components/landing-footer";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { loadHistorySnapshot, saveHistorySnapshot } from "@/lib/history-sync";
 
 interface HistoryItem {
     id: string;
@@ -35,11 +36,8 @@ export default function HistoryPage() {
 
     useEffect(() => {
         const loadHistory = () => {
-            try {
-                const stored = localStorage.getItem("bulkcitations_history");
-                if (stored) {
-                    const parsed: HistoryItem[] = JSON.parse(stored);
-                    
+            void loadHistorySnapshot()
+                .then((parsed) => {
                     const groups: Record<string, HistoryItem[]> = {};
                     parsed.forEach(item => {
                         const date = new Date(item.timestamp);
@@ -57,19 +55,19 @@ export default function HistoryPage() {
                     })).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
                     
                     setHistoryBatches(batches);
-                }
-            } catch (e) {
-                console.error("Failed to load history", e);
-            }
+                })
+                .catch((e) => {
+                    console.error("Failed to load history", e);
+                });
         };
         loadHistory();
     }, []);
 
     const clearHistory = () => {
         if (confirm("Are you sure you want to clear your entire history? This action cannot be undone.")) {
-            localStorage.removeItem("bulkcitations_history");
             setHistoryBatches([]);
             setSelectedBatchIds(new Set());
+            void saveHistorySnapshot([]);
         }
     };
 
@@ -78,7 +76,7 @@ export default function HistoryPage() {
         setHistoryBatches(newBatches);
         
         const allRefs = newBatches.flatMap(b => b.references);
-        localStorage.setItem("bulkcitations_history", JSON.stringify(allRefs));
+        void saveHistorySnapshot(allRefs);
         
         const nextSelected = new Set(selectedBatchIds);
         ids.forEach(id => nextSelected.delete(id));
@@ -115,7 +113,7 @@ export default function HistoryPage() {
         setHistoryBatches(updatedBatches);
         
         const allRefs = updatedBatches.flatMap(b => b.references);
-        localStorage.setItem("bulkcitations_history", JSON.stringify(allRefs));
+        void saveHistorySnapshot(allRefs);
         setEditingBatchId(null);
     };
 

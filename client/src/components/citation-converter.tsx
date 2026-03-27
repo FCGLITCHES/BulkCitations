@@ -8,6 +8,7 @@ import ErrorToast from "./error-toast";
 import { ConvertedReference, ConversionResponse, DuplicateGroup } from "@/lib/types";
 import { apiRequest } from "@/lib/queryClient";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { appendHistoryItems, ensureHistorySync, syncPendingHistory } from "@/lib/history-sync";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { FileText } from "lucide-react";
@@ -55,6 +56,11 @@ export default function CitationConverter() {
   const deferredConvertedReferences = useDeferredValue(convertedReferences);
   const deferredClusters = useDeferredValue(clusters);
   const deferredDuplicateGroups = useDeferredValue(duplicateGroups);
+
+  useEffect(() => {
+    ensureHistorySync();
+    void syncPendingHistory();
+  }, []);
 
   useEffect(() => {
     if (!initialCaptureText) return;
@@ -125,26 +131,22 @@ export default function CitationConverter() {
       setLastEngineUsed(response.engineVersion ?? engineVersion);
     });
 
-    // Save to local storage history
     if (response.convertedReferences && response.convertedReferences.length > 0) {
-      try {
-        const existingHistory = JSON.parse(localStorage.getItem('bulkcitations_history') || '[]');
-        const newHistoryItems = response.convertedReferences
-          .filter(r => !r.styleDetectionFailed && r.convertedText)
-          .map(r => ({
-            id: r.id + '-' + Date.now(),
-            originalText: r.originalText,
-            convertedText: r.convertedText,
-            inputStyle: r.inputStyle,
-            outputStyle: r.outputStyle,
-            healthState: r.analyticsPayload?.healthState ?? r.healthState ?? 'clean',
-            timestamp: new Date().toISOString()
-          }));
+      const timestamp = new Date().toISOString();
+      const newHistoryItems = response.convertedReferences
+        .filter(r => !r.styleDetectionFailed && r.convertedText)
+        .map(r => ({
+          id: `${r.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          originalText: r.originalText,
+          convertedText: r.convertedText,
+          inputStyle: r.inputStyle,
+          outputStyle: r.outputStyle,
+          healthState: r.analyticsPayload?.healthState ?? r.healthState ?? 'clean',
+          timestamp,
+        }));
 
-        const combined = [...newHistoryItems, ...existingHistory].slice(0, 2000); // Keep last 2000 to preserve full large batches
-        localStorage.setItem('bulkcitations_history', JSON.stringify(combined));
-      } catch (e) {
-        console.warn("Could not save to local history", e);
+      if (newHistoryItems.length > 0) {
+        void appendHistoryItems(newHistoryItems);
       }
     }
 

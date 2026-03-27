@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 
 const STATIC_TO_EMAIL = "support@bulkreferences.com";
-const ADMIN_APPROVAL_TO_EMAIL = "contact@bulkreferences.com";
+const ADMIN_APPROVAL_TO_EMAIL = "support@bulkreferences.com";
 const DEFAULT_FROM_EMAIL = "Bulk References <support@bulkreferences.com>";
 const APP_NAME = "Bulk References";
 const APP_URL = process.env.APP_URL?.trim() || process.env.PUBLIC_APP_URL?.trim() || "https://bulkreferences.com";
@@ -338,7 +338,7 @@ export function buildAdminAccessRequestAutoReplyEmailHtml(data: {
         description: `Hi ${safeName}, your Bulk References admin access request has been submitted to our team.`,
         sections: joinRows([
             buildBodyRow("What happens next", `
-                We sent your request to contact@bulkreferences.com for approval. Once approved, you can sign in at ${escapeHtml(`${APP_URL}/adm1n`)} using the credentials you just created.
+                We sent your request to support@bulkreferences.com for approval. Once approved, you can sign in at ${escapeHtml(`${APP_URL}/adm1n`)} using the credentials you just created.
             `),
             buildBodyRow("Need help?", `
                 If you need to update your request, reply to this email and our team can help.

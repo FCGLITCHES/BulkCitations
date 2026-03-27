@@ -1,0 +1,99 @@
+{
+  "accounts": [
+    {
+      "id": "0da4b13b9614db2af92c5b0e",
+      "name": "Alex Librarian",
+      "email": "alex@mit.edu",
+      "passwordHash": "1e2d303ffbab13489cc0b8f9b4791a173fd123f109abec3d3dbf716d1ff8095f19b21f04ec61f1bca2d6a73c9b152009e4dd4833f14e19c32b76013125d8f1b2",
+      "passwordSalt": "83a3d4820e5dc2c5e12e4342090a4c07",
+      "accountType": "institutional",
+      "institutionId": "inst_mit",
+      "createdAt": "2026-03-27T00:39:55.373Z",
+      "updatedAt": "2026-03-27T00:39:55.373Z",
+      "lastLoginAt": "2026-03-27T00:39:55.373Z"
+    }
+  ],
+  "institutions": [
+    {
+      "id": "inst_harvard",
+      "slug": "harvard",
+      "name": "Harvard University",
+      "domains": [
+        "harvard.edu"
+      ],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "inst_imperial",
+      "slug": "imperial",
+      "name": "Imperial College London",
+      "domains": [
+        "imperial.ac.uk"
+      ],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "inst_mit",
+      "slug": "mit",
+      "name": "Massachusetts Institute of Technology",
+      "domains": [
+        "mit.edu"
+      ],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "inst_stanford",
+      "slug": "stanford",
+      "name": "Stanford University",
+      "domains": [
+        "stanford.edu"
+      ],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "inst_tsinghua",
+      "slug": "tsinghua",
+      "name": "Tsinghua University",
+      "domains": [
+        "tsinghua.edu.cn"
+      ],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "inst_cambridge",
+      "slug": "cambridge",
+      "name": "University of Cambridge",
+      "domains": [
+        "cam.ac.uk"
+      ],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "inst_oxford",
+      "slug": "oxford",
+      "name": "University of Oxford",
+      "domains": [
+        "ox.ac.uk"
+      ],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "inst_toronto",
+      "slug": "toronto",
+      "name": "University of Toronto",
+      "domains": [
+        "utoronto.ca"
+      ],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z"
+    }
+  ],
+  "partnershipRequests": []
+}
