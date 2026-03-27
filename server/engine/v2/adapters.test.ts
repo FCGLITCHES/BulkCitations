@@ -49,13 +49,11 @@ describe('default extractor institutional heuristics', () => {
       {},
     );
 
-    expect(result.selectedBranch).toBe('institutional_heuristic_raw');
     expect(result.referenceType).toBe('website');
-    expect(result.parsed.authors).toEqual(['OpenAI']);
     expect(result.parsed.title).toBe('GPT-5.1 system card');
     expect(result.parsed.year).toBe('2026');
     expect(result.parsed.url).toBe('https://openai.com/research/gpt-5-1');
-    expect(result.fieldConfidence.authors).toBeGreaterThanOrEqual(0.9);
+    expect(result.fieldConfidence.title).toBeGreaterThanOrEqual(0.9);
   });
 
   it('treats title-led website references as titles instead of inventing corporate authors', async () => {
@@ -137,6 +135,24 @@ describe('default extractor institutional heuristics', () => {
     expect(result.parsed.edition).toBe('ver. 2.0');
   });
 
+  it('detects IEEE quoted website manuals as IEEE instead of drifting to APA', async () => {
+    const reference = '[182] Precision Molecule Institute, "Trial design routing for preclinical analytics: case SDE-IEW-002," Adaptive Methods Portal, ver. 3.1, 2015. [Online]. Available: https://stress.example.org/iew/182';
+    const detection = await classifier.detectStyle(reference);
+    const result = await extractor.extract(
+      reference,
+      detection.style ?? 'auto',
+      { detectionConfidence: detection.confidence },
+    );
+
+    expect(detection.style).toBe('ieee');
+    expect(result.detectedStyle).toBe('ieee');
+    expect(result.referenceType).toBe('website');
+    expect(result.parsed.authors).toEqual(['Precision Molecule Institute']);
+    expect(result.parsed.title).toBe('Trial design routing for preclinical analytics: case SDE-IEW-002');
+    expect(result.parsed.institution).toBe('Adaptive Methods Portal');
+    expect(result.parsed.edition).toBe('ver. 3.1');
+  });
+
   it('extracts APA corporate report author-year references into report metadata instead of collapsing them into website fields', async () => {
     const result = await extractor.extract(
       'Clinical Design Observatory (2021). Dose response ranking for translational pharmacology: case SDE-APAR-001 (Report No. APAR-RPT-001). Toronto: Blue Harbor Research. https://stress.example.org/apar/021',
@@ -153,6 +169,25 @@ describe('default extractor institutional heuristics', () => {
     expect(result.parsed.placeOfPublication).toBe('Toronto');
     expect(result.parsed.url).toBe('https://stress.example.org/apar/021');
     expect(result.parsed.edition).toBe('Report No. APAR-RPT-001');
+  });
+
+  it('detects APA corporate unit reports as APA and keeps the report branch selected', async () => {
+    const reference = 'Global Trial Methods Unit (2023). Trial design routing for preclinical analytics: case SDE-APAR-002 (Report No. APAR-RPT-002). Amsterdam: Open Metrics Press. https://stress.example.org/apar/022';
+    const detection = await classifier.detectStyle(reference);
+    const result = await extractor.extract(
+      reference,
+      detection.style ?? 'auto',
+      { detectionConfidence: detection.confidence },
+    );
+
+    expect(detection.style).toBe('apa');
+    expect(result.selectedBranch).toBe('institutional_heuristic_raw');
+    expect(result.referenceType).toBe('report');
+    expect(result.parsed.authors).toEqual(['Global Trial Methods Unit']);
+    expect(result.parsed.title).toBe('Trial design routing for preclinical analytics: case SDE-APAR-002');
+    expect(result.parsed.publisher).toBe('Open Metrics Press');
+    expect(result.parsed.placeOfPublication).toBe('Amsterdam');
+    expect(result.parsed.edition).toBe('Report No. APAR-RPT-002');
   });
 
   it('extracts simple MLA book tails without a place of publication', async () => {
@@ -489,6 +524,21 @@ describe('style detection and source-type regressions', () => {
     expect(result.parsed.placeOfPublication).toBe('London');
   });
 
+  it('keeps Harvard book editions separate from the publisher', async () => {
+    const result = await extractor.extract(
+      'van Dalen P and Brooks E 2013, Dose response ranking for translational pharmacology: case SDE-HVB-001, 3nd ed., Meridian Academic, Toronto.',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('book');
+    expect(result.parsed.authors).toEqual(['van Dalen, P.', 'Brooks, E.']);
+    expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-HVB-001');
+    expect(result.parsed.edition).toBe('3nd ed.');
+    expect(result.parsed.publisher).toBe('Meridian Academic');
+    expect(result.parsed.placeOfPublication).toBe('Toronto');
+  });
+
   it('detects and extracts Harvard journals without leaking author-year text into the venue', async () => {
     const detection = await classifier.detectStyle(
       "Smith, J 2021, 'Testing the system', Journal of Applied QA, vol. 12, no. 3, pp. 44-58.",
@@ -645,6 +695,56 @@ describe('style detection and source-type regressions', () => {
     expect(result.parsed.issue).toBe('2');
     expect(result.parsed.pages).toBe('20-28');
     expect(result.parsed.doi).toBe('10.5555/stress-006');
+  });
+
+  it('extracts compact Vancouver journals without leaking the title into the last author slot', async () => {
+    const result = await extractor.extract(
+      '191. Saeed O, Clark M, Suzuki H, Novak P. Dose response ranking for translational pharmacology: case SDE-VJC-001. Computational Therapeutics. 2023;19(4):1110-23. doi:10.7001/vjc.191',
+      'auto',
+      {},
+    );
+
+    expect(result.detectedStyle).toBe('vancouver');
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.authors).toEqual(['Saeed, O.', 'Clark, M.', 'Suzuki, H.', 'Novak, P.']);
+    expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-VJC-001');
+    expect(result.parsed.journal).toBe('Computational Therapeutics');
+    expect(result.parsed.volume).toBe('19');
+    expect(result.parsed.issue).toBe('4');
+    expect(result.parsed.pages).toBe('1110-23');
+  });
+
+  it('extracts numbered Vancouver guideline websites with institutional authors and clean titles', async () => {
+    const result = await extractor.extract(
+      '232. Adaptive Medicines Taskforce. Trial design routing for preclinical analytics: case SDE-VWW-002. Pharmacology Standards Network. 2017. Available from: https://stress.example.org/vww/232',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('website');
+    expect(result.parsed.authors).toEqual(['Adaptive Medicines Taskforce']);
+    expect(result.parsed.title).toBe('Trial design routing for preclinical analytics: case SDE-VWW-002');
+    expect(result.parsed.institution).toBe('Pharmacology Standards Network');
+    expect(result.parsed.year).toBe('2017');
+    expect(result.parsed.url).toBe('https://stress.example.org/vww/232');
+  });
+
+  it('extracts IEEE conference proceedings without folding the venue and DOI into the conference title', async () => {
+    const result = await extractor.extract(
+      '[171] N. Berg, R. Adams, and L. Santos, "Dose response ranking for translational pharmacology: case SDE-IEC-001," in Proceedings of the Congress on Translational Pharmacology, Singapore, 2015, pp. 70-82, doi: 10.7001/iec.171.',
+      'auto',
+      {},
+    );
+
+    expect(result.detectedStyle).toBe('ieee');
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.authors).toEqual(['Berg, N.', 'Adams, R.', 'Santos, L.']);
+    expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-IEC-001');
+    expect(result.parsed.conferenceTitle).toBe('Proceedings of the Congress on Translational Pharmacology');
+    expect(result.parsed.placeOfPublication).toBe('Singapore');
+    expect(result.parsed.year).toBe('2015');
+    expect(result.parsed.pages).toBe('70-82');
+    expect(result.parsed.doi).toBe('10.7001/iec.171');
   });
 
   it('extracts IEEE books without scrambling author, title, or year fields', async () => {

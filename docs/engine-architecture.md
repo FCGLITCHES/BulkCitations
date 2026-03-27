@@ -8,7 +8,7 @@ There is still a legacy `/api/convert` surface for the website, but that route n
 
 ## Current Status
 
-As of `2026-03-23`, the current v2 architecture has already absorbed several important reliability changes:
+As of `2026-03-27`, the current v2 architecture has already absorbed several important reliability changes:
 
 - Phase 0 gate infrastructure now exists in `scripts/data/v2-phase-baseline.json`, and `pnpm baseline:v2:freeze` / `pnpm baseline:v2:check` now freeze and enforce the current cross-phase floors, per-type floors, per-family floors, route ceilings, and observability reports
 - `enrich` is now a strict resolution-and-repair stage, not a passive metadata check
@@ -39,7 +39,10 @@ As of `2026-03-23`, the current v2 architecture has already absorbed several imp
 - the default debug path is now compact by design: structured debug logging is off unless explicitly enabled, verbose stage payloads require `V2_DEBUG_VERBOSE=1`, and the legacy bridge strips repeated per-citation processing-path arrays and `inputProfile` in normal mode
 - the main website `/api/convert` bridge is now intentionally local-first for `v2`: it still routes into the v2 engine, but it does not allow the default site path to silently fall back into provider-bound enrichment work
 - the site now records anonymous analytics for page views, converter starts, completions, failures, country mix, and new-versus-returning visitors without storing raw citation text in analytics payloads
-- the test harness now includes chunked `1000`-citation real-world corpuses for `structured`, `semi_structured`, and `raw_unstructured` inputs, with explicit ready-rate floors (`100%`, `95%`, and `95%` respectively) so the engine is measured on realistic throughput scenarios instead of only adversarial corpuses
+- the test harness now includes chunked `1000`-citation real-reference corpuses for `structured`, `semi_structured`, and `raw_unstructured` inputs; those corpuses are seeded from real published journal articles, conference proceedings, books, and institutional reports rather than synthetic placeholder citations, so the ready-rate gates measure production-like bibliography behavior instead of only parser-friendly mock data
+- the deterministic extractor now has an APA long-author journal heuristic for real references with dense inverted author lists and ellipsis markers, which prevents those references from collapsing title and venue parsing into author spillover
+- author-quality scoring no longer penalizes normal inverted APA names such as `Surname, M. J.` as if they were one-character tail fragments, which means long real author lists can stay `ready` when the parse itself is structurally clean
+- `pnpm report:real-ready` now produces a reproducible local report at `output/real-ready-corpus-report.md` and `output/real-ready-corpus-report.json`, including the real seed set, per-mode readiness totals, sample outputs, and non-ready examples
 - the website now defaults new sessions to `v2`, preloads the results view while a conversion is running, defers PDF code until export time, defers bulk result props into the heavy output tree, memoizes per-citation confidence and row rendering, and avoids a duplicate-selection sync render on initial results load
 
 That combination is what made the latest 500-reference enrich/validate/dedup stress run land at `487/500 ready` (`97.4%`).
@@ -59,7 +62,7 @@ These changes were added for a simple architectural reason: the engine was alrea
 - wrapped URL reconstruction and DOI hint derivation were added because scholarly website references frequently line-wrap inside the URL itself. If the engine truncates the URL before enrichment sees it, both local rendering and provider resolution lose the strongest available evidence.
 - historical-year support was widened because older canonical works such as Darwin, Turing-era books, and classic monographs are normal bibliography input, not edge cases. A year regex that silently rejects `1859` is an architectural bug, not a harmless simplification.
 - institutional book-tail references now upgrade to `report` when the organization/title/publisher pattern clearly looks report-like because otherwise the engine can produce structurally clean but semantically wrong output, which drags reference-type accuracy down without surfacing as a parse error.
-- the new chunked real-world ready-rate corpuses were added because the adversarial SDE baseline is useful for regression detection but too harsh to answer the product question "does the engine reliably keep good real-world citations ready at scale?" The separate corpuses now measure that directly for clean structured input and messier but still realistic variants.
+- the new chunked real-reference ready-rate corpuses were added because the adversarial SDE baseline is useful for regression detection but too harsh to answer the product question "does the engine reliably keep good real published citations ready at scale?" The separate corpuses now measure that directly for clean structured input and messier but still realistic variants, using seed references pulled from real DOI-backed works and official report/book metadata instead of made-up bibliography strings.
 - the newer `score` ready paths were added because provider instability is not the same thing as citation unreliability. When the local parse is strong and the only unresolved problem is external verification failure or a non-critical missing venue on an otherwise verified citation, the bucket should reflect citation quality rather than network luck.
 - the provider no-match ceiling was relaxed because Crossref missing a clean citation is not strong evidence that the citation is wrong. A provider miss should lower certainty slightly, not destroy a locally strong result.
 - stage timing telemetry was added because performance work should be driven by measured phase cost. The engine now reports which stages were actually slowest for a given job.
@@ -336,13 +339,14 @@ On the 250-case SDE harness, those changes brought the debug-on batch from the e
 
 On the actual website bridge path after the local-first change, a direct `/api/convert` benchmark returned `10` citations in about `65-73ms` on warm runs and `500` citations in about `2440ms`. That matters architecturally because it confirms the main user-facing bottleneck was not core v2 parsing; it was the accidental coupling of the default site flow to provider-bound enrichment.
 
-The newest scale-oriented gate is now the chunked real-world ready corpus:
+The newest scale-oriented gate is now the chunked real-reference ready corpus:
 
-- `structured`: `1000/1000 ready`
-- `semi_structured`: `>= 95% ready`
-- `raw_unstructured`: `>= 95% ready`
+- seed corpus: real published journal articles, proceedings papers, books, and institutional reports
+- `structured`: `1000/1000 ready` (`100.0%`)
+- `semi_structured`: `1000/1000 ready` (`100.0%`)
+- `raw_unstructured`: `1000/1000 ready` (`100.0%`)
 
-Those corpuses deliberately run with enrichment off and in chunks, because they are intended to measure the local engine path the website depends on for predictable throughput.
+Those corpuses deliberately run with enrichment off and in chunks, because they are intended to measure the local engine path the website depends on for predictable throughput. The report script still keeps the exact sample inputs and outputs on disk so the gate remains inspectable instead of collapsing everything into a green test only.
 
 ### 6. `normalize`
 

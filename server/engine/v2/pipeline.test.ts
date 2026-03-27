@@ -160,6 +160,67 @@ describe('v2 pipeline', () => {
     expect(compactJournal.rendered?.formatted).not.toContain('Jan 1');
   });
 
+  it('keeps long APA author lists with ellipsis ready instead of collapsing title and venue parsing', async () => {
+    const { response } = await processV2({
+      sourceType: 'text',
+      content: [
+        'Page, M. J., McKenzie, J. E., Bossuyt, P. M., Boutron, I., Hoffmann, T. C., Mulrow, C. D., Shamseer, L., Tetzlaff, J. M., Akl, E. A., Brennan, S. E., Chou, R., Glanville, J., Grimshaw, J. M., Hrobjartsson, A., Lalu, M. M., Li, T., Loder, E. W., Mayo-Wilson, E., McDonald, S., ... Moher, D. (2021). The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. BMJ, 372, n71. https://doi.org/10.1136/bmj.n71',
+        'Arute, F., Arya, K., Babbush, R., Bacon, D., Bardin, J. C., Barends, R., Biswas, R., Boixo, S., Brandao, F. G. S. L., Buell, D. A., Burkett, B., Chen, Y., Chen, Z., Chiaro, B., Collins, R., Courtney, W., Dunsworth, A., Farhi, E., Foxen, B., ... Martinis, J. M. (2019). Quantum supremacy using a programmable superconducting processor. Nature, 574(7779), 505-510. https://doi.org/10.1038/s41586-019-1666-5',
+      ].join('\n\n'),
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: false,
+      dedup: false,
+      group: false,
+      debug: true,
+    });
+
+    const prisma = response.citations[0];
+    expect(prisma.title.value).toBe('The PRISMA 2020 statement: an updated guideline for reporting systematic reviews');
+    expect(prisma.journal.value).toBe('BMJ');
+    expect(prisma.doi.value).toBe('10.1136/bmj.n71');
+    expect(prisma.authors.value).toHaveLength(20);
+    expect(prisma.quality?.bucket).toBe('ready');
+
+    const supremacy = response.citations[1];
+    expect(supremacy.title.value).toBe('Quantum supremacy using a programmable superconducting processor');
+    expect(supremacy.journal.value).toBe('Nature');
+    expect(supremacy.volume.value).toBe('574');
+    expect(supremacy.issue.value).toBe('7779');
+    expect(supremacy.pages.value).toBe('505-510');
+    expect(supremacy.doi.value).toBe('10.1038/s41586-019-1666-5');
+    expect(supremacy.authors.value).toHaveLength(20);
+    expect(supremacy.quality?.bucket).toBe('ready');
+  });
+
+  it('keeps compact Vancouver titles with colons from leaking title text into the last author slot', async () => {
+    const { response } = await processV2({
+      sourceType: 'text',
+      content: [
+        'Watson JD, Crick FHC. Molecular structure of nucleic acids: a structure for deoxyribose nucleic acid. Nature. 1953;171(4356):737-738. doi:10.1038/171737a0',
+        'Kahneman D, Tversky A. Prospect theory: an analysis of decision under risk. Econometrica. 1979;47(2):263-291. doi:10.2307/1914185',
+      ].join('\n\n'),
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+      enrich: false,
+      dedup: false,
+      group: false,
+      debug: true,
+    });
+
+    const watson = response.citations[0];
+    expect(watson.authors.value.slice(0, 2).map((author) => author.last)).toEqual(['Watson', 'Crick']);
+    expect(watson.title.value).toBe('Molecular structure of nucleic acids: a structure for deoxyribose nucleic acid');
+    expect(watson.journal.value).toBe('Nature');
+    expect(watson.quality?.bucket).toBe('ready');
+
+    const kahneman = response.citations[1];
+    expect(kahneman.authors.value.slice(0, 2).map((author) => author.last)).toEqual(['Kahneman', 'Tversky']);
+    expect(kahneman.title.value).toBe('Prospect theory: an analysis of decision under risk');
+    expect(kahneman.journal.value).toBe('Econometrica');
+    expect(kahneman.quality?.bucket).toBe('ready');
+  });
+
   it('deduplicates only the true mixed-format duplicate pair in a broader mixed-style citation set', async () => {
     const { response } = await processV2({
       sourceType: 'text',

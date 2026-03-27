@@ -1,0 +1,6110 @@
+{
+  "generatedAt": "2026-03-27T04:07:29.261Z",
+  "inputPath": "D:\\Coding\\Citing\\scripts\\data\\stress-batch-20260322-sde-250.txt",
+  "manifestPath": "D:\\Coding\\Citing\\scripts\\data\\stress-batch-20260322-sde-250.manifest.json",
+  "summary": {
+    "expectedCount": 250,
+    "actualCount": 250,
+    "splitFailures": 0,
+    "missingCaseCount": 0,
+    "styleAccuracy": 0.98,
+    "referenceTypeAccuracy": 1,
+    "fieldAccuracy": 0.956,
+    "extractorPathsUsed": [
+      "deterministic"
+    ],
+    "fallbacksUsed": [],
+    "durationMs": 1921,
+    "partialResult": false,
+    "slowestStages": [
+      {
+        "stageId": "extract",
+        "status": "success",
+        "durationMs": 668,
+        "workUnits": 250,
+        "timeoutMs": 52400
+      },
+      {
+        "stageId": "render",
+        "status": "success",
+        "durationMs": 593,
+        "workUnits": 250,
+        "timeoutMs": 107000
+      },
+      {
+        "stageId": "detect",
+        "status": "success",
+        "durationMs": 571,
+        "workUnits": 250,
+        "timeoutMs": 17750
+      },
+      {
+        "stageId": "normalize",
+        "status": "success",
+        "durationMs": 31,
+        "workUnits": 250,
+        "timeoutMs": 27000
+      },
+      {
+        "stageId": "truth",
+        "status": "success",
+        "durationMs": 22,
+        "workUnits": 250,
+        "timeoutMs": 65000
+      }
+    ]
+  },
+  "missingCaseIds": [],
+  "familyBreakdown": [
+    {
+      "familyId": "apa_book_chapter",
+      "familyName": "APA book chapter",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 0.8571
+    },
+    {
+      "familyId": "apa_journal_multiline_doi",
+      "familyName": "APA journal multiline DOI continuation",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 0.9875
+    },
+    {
+      "familyId": "apa_journal_single",
+      "familyName": "APA journal single-line",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    },
+    {
+      "familyId": "apa_report_corporate",
+      "familyName": "APA report corporate author",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    },
+    {
+      "familyId": "apa_thesis",
+      "familyName": "APA thesis dissertation",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    },
+    {
+      "familyId": "chicago_ad_journal",
+      "familyName": "Chicago author-date journal",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    },
+    {
+      "familyId": "chicago_ad_report",
+      "familyName": "Chicago author-date report",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    },
+    {
+      "familyId": "chicago_nb_chapter",
+      "familyName": "Chicago notes-bibliography chapter",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 0.8286
+    },
+    {
+      "familyId": "chicago_nb_website",
+      "familyName": "Chicago notes-bibliography website",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    },
+    {
+      "familyId": "harvard_book",
+      "familyName": "Harvard book",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    },
+    {
+      "familyId": "harvard_conference",
+      "familyName": "Harvard conference proceedings",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    },
+    {
+      "familyId": "harvard_journal_pp",
+      "familyName": "Harvard journal with vol/no/pp",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    },
+    {
+      "familyId": "harvard_website_accessed",
+      "familyName": "Harvard website with accessed date",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    },
+    {
+      "familyId": "ieee_conference",
+      "familyName": "IEEE conference proceedings",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    },
+    {
+      "familyId": "ieee_journal",
+      "familyName": "IEEE journal with bracket numbering",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    },
+    {
+      "familyId": "ieee_website_manual",
+      "familyName": "IEEE website manual",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 0.5,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    },
+    {
+      "familyId": "mla_book",
+      "familyName": "MLA book",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 0.8
+    },
+    {
+      "familyId": "mla_journal",
+      "familyName": "MLA journal",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 0.875
+    },
+    {
+      "familyId": "mla_thesis",
+      "familyName": "MLA thesis",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 0.8
+    },
+    {
+      "familyId": "vancouver_article_number_journal",
+      "familyName": "Vancouver article-number journal with et al.",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    },
+    {
+      "familyId": "vancouver_colon_multiline",
+      "familyName": "Vancouver colon-led multiline journal",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 0.8375
+    },
+    {
+      "familyId": "vancouver_compact_journal",
+      "familyName": "Vancouver compact journal",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    },
+    {
+      "familyId": "vancouver_preprint_arxiv",
+      "familyName": "Vancouver preprint arXiv",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    },
+    {
+      "familyId": "vancouver_report_corporate",
+      "familyName": "Vancouver report corporate author",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    },
+    {
+      "familyId": "vancouver_website_guideline",
+      "familyName": "Vancouver website guideline",
+      "expectedCount": 10,
+      "observedCount": 10,
+      "splitFailures": 0,
+      "styleAccuracy": 1,
+      "referenceTypeAccuracy": 1,
+      "fieldAccuracy": 1
+    }
+  ],
+  "items": [
+    {
+      "citationId": "a3913f6e-c7cb-427e-8f5c-7ca58a6966fc",
+      "raw": "Nguyen, T., Nasser, Y., & Menon, P. (2023). Dose response ranking for translational pharmacology: case SDE-APAM-001.\nComputational Therapeutics, 19(4), 195-11.\nhttps://doi.org/10.7001/apam.011",
+      "caseIds": [
+        "SDE-APAM-001"
+      ],
+      "caseId": "SDE-APAM-001",
+      "familyId": "apa_journal_multiline_doi",
+      "familyName": "APA journal multiline DOI continuation",
+      "edgeTags": [
+        "multiline",
+        "apa",
+        "journal",
+        "doi_continuation"
+      ],
+      "expectedStyle": "apa",
+      "detectedStyle": "apa",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": true,
+          "locator": false,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "locator"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "nguyen|t",
+            "nasser|y",
+            "menon|p"
+          ],
+          "actualKeys": [
+            "nguyen|t",
+            "nasser|y",
+            "menon|p"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Nguyen, T.",
+          "Nasser, Y.",
+          "Menon, P."
+        ],
+        "title": "Dose response ranking for translational pharmacology: case SDE-APAM-001",
+        "year": "2023",
+        "journal": "Computational Therapeutics",
+        "volume": "19",
+        "issue": "4",
+        "pages": "11-195",
+        "doi": "10.7001/apam.011"
+      },
+      "split": {
+        "confidence": 0.85,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "deterministic_scored_higher",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "0c90750d-7098-4e4a-adc2-76db29400b83",
+      "raw": "Saeed, O. & Clark, M. (2017). Dose response ranking for translational pharmacology: case SDE-APAC-001. In Novak, P. & Petrov, I. (Eds.), Advanced Topics in Therapeutic Modeling (pp. 25-40). Open Metrics Press.",
+      "caseIds": [
+        "SDE-APAC-001"
+      ],
+      "caseId": "SDE-APAC-001",
+      "familyId": "apa_book_chapter",
+      "familyName": "APA book chapter",
+      "edgeTags": [
+        "apa",
+        "chapter",
+        "editors",
+        "book_title"
+      ],
+      "expectedStyle": "apa",
+      "detectedStyle": "apa",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "saeed|o",
+            "clark|m"
+          ],
+          "actualKeys": [
+            "saeed|o",
+            "clark|m"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Saeed, O.",
+          "Clark, M."
+        ],
+        "title": "Dose response ranking for translational pharmacology: case SDE-APAC-001",
+        "year": "2017",
+        "journal": "In Novak, P. & Petrov, I. (Eds.), Advanced Topics in Therapeutic Modeling (pp. 25-40). Open Metrics Press",
+        "pages": "25-40",
+        "publisher": "Open Metrics Press",
+        "bookTitle": "Advanced Topics in Therapeutic Modeling",
+        "editor": "Novak, P. &. P."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "95dc2c07-fed5-4caa-9787-1e4cb35260b0",
+      "raw": "Costa, M. & Navarro, I. (2019). Trial design routing for preclinical analytics: case SDE-APAC-002. In Adams, R. & Santos, L. (Eds.), Methods in Translational Drug Analytics (pp. 31-46). Meridian Academic.",
+      "caseIds": [
+        "SDE-APAC-002"
+      ],
+      "caseId": "SDE-APAC-002",
+      "familyId": "apa_book_chapter",
+      "familyName": "APA book chapter",
+      "edgeTags": [
+        "apa",
+        "chapter",
+        "editors",
+        "book_title"
+      ],
+      "expectedStyle": "apa",
+      "detectedStyle": "apa",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "costa|m",
+            "navarro|i"
+          ],
+          "actualKeys": [
+            "costa|m",
+            "navarro|i"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Costa, M.",
+          "Navarro, I."
+        ],
+        "title": "Trial design routing for preclinical analytics: case SDE-APAC-002",
+        "year": "2019",
+        "journal": "In Adams, R. & Santos, L. (Eds.), Methods in Translational Drug Analytics (pp. 31-46). Meridian Academic",
+        "pages": "31-46",
+        "publisher": "Meridian Academic",
+        "bookTitle": "Methods in Translational Drug Analytics",
+        "editor": "Adams, R. &. S."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "20449107-a480-4aaa-9f36-a1dba3092f3d",
+      "raw": "Kovacs, E. & Mahmoud, T. (2021). Biomarker evidence mapping for pharmacovigilance triage: case SDE-APAC-003. In Tanaka, M. & Khan, A. (Eds.), Practical Evidence Design for Clinical AI (pp. 37-52). Blue Harbor Research.",
+      "caseIds": [
+        "SDE-APAC-003"
+      ],
+      "caseId": "SDE-APAC-003",
+      "familyId": "apa_book_chapter",
+      "familyName": "APA book chapter",
+      "edgeTags": [
+        "apa",
+        "chapter",
+        "editors",
+        "book_title"
+      ],
+      "expectedStyle": "apa",
+      "detectedStyle": "apa",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "kovacs|e",
+            "mahmoud|t"
+          ],
+          "actualKeys": [
+            "kovacs|e",
+            "mahmoud|t"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Kovacs, E.",
+          "Mahmoud, T."
+        ],
+        "title": "Biomarker evidence mapping for pharmacovigilance triage: case SDE-APAC-003",
+        "year": "2021",
+        "journal": "In Tanaka, M. & Khan, A. (Eds.), Practical Evidence Design for Clinical AI (pp. 37-52). Blue Harbor Research",
+        "pages": "37-52",
+        "publisher": "Blue Harbor Research",
+        "bookTitle": "Practical Evidence Design for Clinical AI",
+        "editor": "Tanaka, M. &. K."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "73cbe254-3205-4d2c-898b-54ace3cdfe59",
+      "raw": "Nasser, Y. & Menon, P. (2023). Safety review clustering for drug discovery: case SDE-APAC-004. In Ibrahim, Z. & Rossi, L. (Eds.), Advanced Topics in Therapeutic Modeling (pp. 43-58). Open Metrics Press.",
+      "caseIds": [
+        "SDE-APAC-004"
+      ],
+      "caseId": "SDE-APAC-004",
+      "familyId": "apa_book_chapter",
+      "familyName": "APA book chapter",
+      "edgeTags": [
+        "apa",
+        "chapter",
+        "editors",
+        "book_title"
+      ],
+      "expectedStyle": "apa",
+      "detectedStyle": "apa",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "nasser|y",
+            "menon|p"
+          ],
+          "actualKeys": [
+            "nasser|y",
+            "menon|p"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Nasser, Y.",
+          "Menon, P."
+        ],
+        "title": "Safety review clustering for drug discovery: case SDE-APAC-004",
+        "year": "2023",
+        "journal": "In Ibrahim, Z. & Rossi, L. (Eds.), Advanced Topics in Therapeutic Modeling (pp. 43-58). Open Metrics Press",
+        "pages": "43-58",
+        "publisher": "Open Metrics Press",
+        "bookTitle": "Advanced Topics in Therapeutic Modeling",
+        "editor": "Ibrahim, Z. &. R."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "dc147dd8-f7ac-4f91-bf20-a6781b6c6560",
+      "raw": "Clark, M. & Suzuki, H. (2013). Response prediction benchmarks for safety monitoring: case SDE-APAC-005. In Petrov, I. & de Silva, M. (Eds.), Methods in Translational Drug Analytics (pp. 49-64). Meridian Academic.",
+      "caseIds": [
+        "SDE-APAC-005"
+      ],
+      "caseId": "SDE-APAC-005",
+      "familyId": "apa_book_chapter",
+      "familyName": "APA book chapter",
+      "edgeTags": [
+        "apa",
+        "chapter",
+        "editors",
+        "book_title"
+      ],
+      "expectedStyle": "apa",
+      "detectedStyle": "apa",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "clark|m",
+            "suzuki|h"
+          ],
+          "actualKeys": [
+            "clark|m",
+            "suzuki|h"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Clark, M.",
+          "Suzuki, H."
+        ],
+        "title": "Response prediction benchmarks for safety monitoring: case SDE-APAC-005",
+        "year": "2013",
+        "journal": "In Petrov, I. & de Silva, M. (Eds.), Methods in Translational Drug Analytics (pp. 49-64). Meridian Academic",
+        "pages": "49-64",
+        "publisher": "Meridian Academic",
+        "bookTitle": "Methods in Translational Drug Analytics",
+        "editor": "Petrov, I. &. D. S."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "2a3a63c5-55b7-41ac-ad4f-0ab9ab47c0c2",
+      "raw": "Navarro, I. & Berg, N. (2015). Dose response ranking for translational pharmacology: case SDE-APAC-006. In Santos, L. & O'Rourke, N. (Eds.), Practical Evidence Design for Clinical AI (pp. 55-70). Blue Harbor Research.",
+      "caseIds": [
+        "SDE-APAC-006"
+      ],
+      "caseId": "SDE-APAC-006",
+      "familyId": "apa_book_chapter",
+      "familyName": "APA book chapter",
+      "edgeTags": [
+        "apa",
+        "chapter",
+        "editors",
+        "book_title"
+      ],
+      "expectedStyle": "apa",
+      "detectedStyle": "apa",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "navarro|i",
+            "berg|n"
+          ],
+          "actualKeys": [
+            "navarro|i",
+            "berg|n"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Navarro, I.",
+          "Berg, N."
+        ],
+        "title": "Dose response ranking for translational pharmacology: case SDE-APAC-006",
+        "year": "2015",
+        "journal": "In Santos, L. & O'Rourke, N. (Eds.), Practical Evidence Design for Clinical AI (pp. 55-70). Blue Harbor Research",
+        "pages": "55-70",
+        "publisher": "Blue Harbor Research",
+        "bookTitle": "Practical Evidence Design for Clinical AI",
+        "editor": "Santos, L. & O'Rourke"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "82d3b900-a376-4c04-92f4-1dc7f05c639b",
+      "raw": "Mahmoud, T. & Thompson, R. (2017). Trial design routing for preclinical analytics: case SDE-APAC-007. In Khan, A. & van Dalen, P. (Eds.), Advanced Topics in Therapeutic Modeling (pp. 61-76). Open Metrics Press.",
+      "caseIds": [
+        "SDE-APAC-007"
+      ],
+      "caseId": "SDE-APAC-007",
+      "familyId": "apa_book_chapter",
+      "familyName": "APA book chapter",
+      "edgeTags": [
+        "apa",
+        "chapter",
+        "editors",
+        "book_title"
+      ],
+      "expectedStyle": "apa",
+      "detectedStyle": "apa",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "mahmoud|t",
+            "thompson|r"
+          ],
+          "actualKeys": [
+            "mahmoud|t",
+            "thompson|r"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Mahmoud, T.",
+          "Thompson, R."
+        ],
+        "title": "Trial design routing for preclinical analytics: case SDE-APAC-007",
+        "year": "2017",
+        "journal": "In Khan, A. & van Dalen, P. (Eds.), Advanced Topics in Therapeutic Modeling (pp. 61-76). Open Metrics Press",
+        "pages": "61-76",
+        "publisher": "Open Metrics Press",
+        "bookTitle": "Advanced Topics in Therapeutic Modeling",
+        "editor": "Khan, A. &. V. D."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "fe17c5d3-c606-44b9-9900-266adc09264a",
+      "raw": "Menon, P. & Farouk, D. (2019). Biomarker evidence mapping for pharmacovigilance triage: case SDE-APAC-008. In Rossi, L. & Al-Harbi, S. (Eds.), Methods in Translational Drug Analytics (pp. 67-82). Meridian Academic.",
+      "caseIds": [
+        "SDE-APAC-008"
+      ],
+      "caseId": "SDE-APAC-008",
+      "familyId": "apa_book_chapter",
+      "familyName": "APA book chapter",
+      "edgeTags": [
+        "apa",
+        "chapter",
+        "editors",
+        "book_title"
+      ],
+      "expectedStyle": "apa",
+      "detectedStyle": "apa",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "menon|p",
+            "farouk|d"
+          ],
+          "actualKeys": [
+            "menon|p",
+            "farouk|d"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Menon, P.",
+          "Farouk, D."
+        ],
+        "title": "Biomarker evidence mapping for pharmacovigilance triage: case SDE-APAC-008",
+        "year": "2019",
+        "journal": "In Rossi, L. & Al-Harbi, S. (Eds.), Methods in Translational Drug Analytics (pp. 67-82). Meridian Academic",
+        "pages": "67-82",
+        "publisher": "Meridian Academic",
+        "bookTitle": "Methods in Translational Drug Analytics",
+        "editor": "Rossi, L. &. A. H."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "f851f59c-06a3-4189-a378-660dd60a4889",
+      "raw": "Suzuki, H. & Novak, P. (2021). Safety review clustering for drug discovery: case SDE-APAC-009. In de Silva, M. & Weber, J. (Eds.), Practical Evidence Design for Clinical AI (pp. 73-88). Blue Harbor Research.",
+      "caseIds": [
+        "SDE-APAC-009"
+      ],
+      "caseId": "SDE-APAC-009",
+      "familyId": "apa_book_chapter",
+      "familyName": "APA book chapter",
+      "edgeTags": [
+        "apa",
+        "chapter",
+        "editors",
+        "book_title"
+      ],
+      "expectedStyle": "apa",
+      "detectedStyle": "apa",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "suzuki|h",
+            "novak|p"
+          ],
+          "actualKeys": [
+            "suzuki|h",
+            "novak|p"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Suzuki, H.",
+          "Novak, P."
+        ],
+        "title": "Safety review clustering for drug discovery: case SDE-APAC-009",
+        "year": "2021",
+        "journal": "In de Silva, M. & Weber, J. (Eds.), Practical Evidence Design for Clinical AI (pp. 73-88). Blue Harbor Research",
+        "pages": "73-88",
+        "publisher": "Blue Harbor Research",
+        "bookTitle": "Practical Evidence Design for Clinical AI",
+        "editor": "de Silva, M. &. W."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "c7683921-66f3-40b4-9efd-a92cf85758e6",
+      "raw": "Berg, N. & Adams, R. (2023). Response prediction benchmarks for safety monitoring: case SDE-APAC-010. In O'Rourke, N. & Mendes, C. (Eds.), Advanced Topics in Therapeutic Modeling (pp. 79-94). Open Metrics Press.",
+      "caseIds": [
+        "SDE-APAC-010"
+      ],
+      "caseId": "SDE-APAC-010",
+      "familyId": "apa_book_chapter",
+      "familyName": "APA book chapter",
+      "edgeTags": [
+        "apa",
+        "chapter",
+        "editors",
+        "book_title"
+      ],
+      "expectedStyle": "apa",
+      "detectedStyle": "apa",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "berg|n",
+            "adams|r"
+          ],
+          "actualKeys": [
+            "berg|n",
+            "adams|r"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Berg, N.",
+          "Adams, R."
+        ],
+        "title": "Response prediction benchmarks for safety monitoring: case SDE-APAC-010",
+        "year": "2023",
+        "journal": "In O'Rourke, N. & Mendes, C. (Eds.), Advanced Topics in Therapeutic Modeling (pp. 79-94). Open Metrics Press",
+        "pages": "79-94",
+        "publisher": "Open Metrics Press",
+        "bookTitle": "Advanced Topics in Therapeutic Modeling",
+        "editor": "O'Rourke, N. &. M."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "fdb8c97e-62aa-455c-8e90-eb7976f03f1f",
+      "raw": "Farouk, Dina and Zoe Ibrahim. \"Dose response ranking for translational pharmacology: case SDE-CNB-001.\" In Practical Evidence Design for Clinical AI, edited by Mendes, Clara and Tom Nguyen, 33-48. Amsterdam: Blue Harbor Research, 2015.",
+      "caseIds": [
+        "SDE-CNB-001"
+      ],
+      "caseId": "SDE-CNB-001",
+      "familyId": "chicago_nb_chapter",
+      "familyName": "Chicago notes-bibliography chapter",
+      "edgeTags": [
+        "chicago_nb",
+        "chapter",
+        "edited_book"
+      ],
+      "expectedStyle": "chicago-nb",
+      "detectedStyle": "chicago",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "farouk|d",
+            "ibrahim|z"
+          ],
+          "actualKeys": [
+            "farouk|d",
+            "ibrahim|z"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Farouk, D.",
+          "Ibrahim, Z."
+        ],
+        "title": "Dose response ranking for translational pharmacology: case SDE-CNB-001",
+        "year": "2015",
+        "pages": "33-48",
+        "publisher": "Blue Harbor Research",
+        "bookTitle": "Practical Evidence Design for Clinical AI",
+        "editor": "Mendes, C. A. T. N."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "c4f40045-7143-4863-924b-85aff11af589",
+      "raw": "Novak, Pavel and Ivan Petrov. \"Trial design routing for preclinical analytics: case SDE-CNB-002.\" In Advanced Topics in Therapeutic Modeling, edited by Brooks, Ethan and Omar Saeed, 41-56. London: Open Metrics Press, 2017.",
+      "caseIds": [
+        "SDE-CNB-002"
+      ],
+      "caseId": "SDE-CNB-002",
+      "familyId": "chicago_nb_chapter",
+      "familyName": "Chicago notes-bibliography chapter",
+      "edgeTags": [
+        "chicago_nb",
+        "chapter",
+        "edited_book"
+      ],
+      "expectedStyle": "chicago-nb",
+      "detectedStyle": "chicago",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "novak|p",
+            "petrov|i"
+          ],
+          "actualKeys": [
+            "novak|p",
+            "petrov|i"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Novak, P.",
+          "Petrov, I."
+        ],
+        "title": "Trial design routing for preclinical analytics: case SDE-CNB-002",
+        "year": "2017",
+        "pages": "41-56",
+        "publisher": "Open Metrics Press",
+        "bookTitle": "Advanced Topics in Therapeutic Modeling",
+        "editor": "Brooks, E. A. O. S."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "ffe5ecc9-cdea-4053-b9b8-f19d03e7b4a2",
+      "raw": "Adams, Ruth and Lena Santos. \"Biomarker evidence mapping for pharmacovigilance triage: case SDE-CNB-003.\" In Methods in Translational Drug Analytics, edited by Haddad, Leila and Mira Costa, 49-64. Singapore: Meridian Academic, 2019.",
+      "caseIds": [
+        "SDE-CNB-003"
+      ],
+      "caseId": "SDE-CNB-003",
+      "familyId": "chicago_nb_chapter",
+      "familyName": "Chicago notes-bibliography chapter",
+      "edgeTags": [
+        "chicago_nb",
+        "chapter",
+        "edited_book"
+      ],
+      "expectedStyle": "chicago-nb",
+      "detectedStyle": "chicago",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "adams|r",
+            "santos|l"
+          ],
+          "actualKeys": [
+            "adams|r",
+            "santos|l"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Adams, R.",
+          "Santos, L."
+        ],
+        "title": "Biomarker evidence mapping for pharmacovigilance triage: case SDE-CNB-003",
+        "year": "2019",
+        "pages": "49-64",
+        "publisher": "Meridian Academic",
+        "bookTitle": "Methods in Translational Drug Analytics",
+        "editor": "Haddad, L. A. M. C."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "09bafb64-3a7b-4b09-8c03-44130486d966",
+      "raw": "Tanaka, Mika and Amina Khan. \"Safety review clustering for drug discovery: case SDE-CNB-004.\" In Practical Evidence Design for Clinical AI, edited by Patel, Rina and Elena Kovacs, 57-72. Toronto: Blue Harbor Research, 2021.",
+      "caseIds": [
+        "SDE-CNB-004"
+      ],
+      "caseId": "SDE-CNB-004",
+      "familyId": "chicago_nb_chapter",
+      "familyName": "Chicago notes-bibliography chapter",
+      "edgeTags": [
+        "chicago_nb",
+        "chapter",
+        "edited_book"
+      ],
+      "expectedStyle": "chicago-nb",
+      "detectedStyle": "chicago",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "tanaka|m",
+            "khan|a"
+          ],
+          "actualKeys": [
+            "tanaka|m",
+            "khan|a"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Tanaka, M.",
+          "Khan, A."
+        ],
+        "title": "Safety review clustering for drug discovery: case SDE-CNB-004",
+        "year": "2021",
+        "pages": "57-72",
+        "publisher": "Blue Harbor Research",
+        "bookTitle": "Practical Evidence Design for Clinical AI",
+        "editor": "Patel, R. A. E. K."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "0b35010b-ddf7-4710-9ec1-c085f3484532",
+      "raw": "Ibrahim, Zoe and Luca Rossi. \"Response prediction benchmarks for safety monitoring: case SDE-CNB-005.\" In Advanced Topics in Therapeutic Modeling, edited by Nguyen, Tom and Yara Nasser, 65-80. Amsterdam: Open Metrics Press, 2023.",
+      "caseIds": [
+        "SDE-CNB-005"
+      ],
+      "caseId": "SDE-CNB-005",
+      "familyId": "chicago_nb_chapter",
+      "familyName": "Chicago notes-bibliography chapter",
+      "edgeTags": [
+        "chicago_nb",
+        "chapter",
+        "edited_book"
+      ],
+      "expectedStyle": "chicago-nb",
+      "detectedStyle": "chicago",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "ibrahim|z",
+            "rossi|l"
+          ],
+          "actualKeys": [
+            "ibrahim|z",
+            "rossi|l"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Ibrahim, Z.",
+          "Rossi, L."
+        ],
+        "title": "Response prediction benchmarks for safety monitoring: case SDE-CNB-005",
+        "year": "2023",
+        "pages": "65-80",
+        "publisher": "Open Metrics Press",
+        "bookTitle": "Advanced Topics in Therapeutic Modeling",
+        "editor": "Nguyen, T. A. Y. N."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "4fe9a96d-f799-4f06-aea0-86a65032f696",
+      "raw": "Petrov, Ivan and Marta de Silva. \"Dose response ranking for translational pharmacology: case SDE-CNB-006.\" In Methods in Translational Drug Analytics, edited by Saeed, Omar and Mason Clark, 73-88. London: Meridian Academic, 2013.",
+      "caseIds": [
+        "SDE-CNB-006"
+      ],
+      "caseId": "SDE-CNB-006",
+      "familyId": "chicago_nb_chapter",
+      "familyName": "Chicago notes-bibliography chapter",
+      "edgeTags": [
+        "chicago_nb",
+        "chapter",
+        "edited_book"
+      ],
+      "expectedStyle": "chicago-nb",
+      "detectedStyle": "chicago",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": false,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "authors",
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 5,
+        "authorComparison": {
+          "match": false,
+          "expectedKeys": [
+            "petrov|i",
+            "de silva|m"
+          ],
+          "actualKeys": [
+            "petrov|i",
+            "silva|m"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Petrov, I.",
+          "Silva, M. D."
+        ],
+        "title": "Dose response ranking for translational pharmacology: case SDE-CNB-006",
+        "year": "2013",
+        "pages": "73-88",
+        "publisher": "Meridian Academic",
+        "bookTitle": "Methods in Translational Drug Analytics",
+        "editor": "Saeed, O. A. M. C."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "1d3fb220-7ba6-4531-82b6-09f738107841",
+      "raw": "Santos, Lena and Nora O'Rourke. \"Trial design routing for preclinical analytics: case SDE-CNB-007.\" In Practical Evidence Design for Clinical AI, edited by Costa, Mira and Iris Navarro, 81-96. Singapore: Blue Harbor Research, 2015.",
+      "caseIds": [
+        "SDE-CNB-007"
+      ],
+      "caseId": "SDE-CNB-007",
+      "familyId": "chicago_nb_chapter",
+      "familyName": "Chicago notes-bibliography chapter",
+      "edgeTags": [
+        "chicago_nb",
+        "chapter",
+        "edited_book"
+      ],
+      "expectedStyle": "chicago-nb",
+      "detectedStyle": "chicago",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "santos|l",
+            "o rourke|n"
+          ],
+          "actualKeys": [
+            "santos|l",
+            "o rourke|n"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Santos, L.",
+          "O'Rourke, N."
+        ],
+        "title": "Trial design routing for preclinical analytics: case SDE-CNB-007",
+        "year": "2015",
+        "pages": "81-96",
+        "publisher": "Blue Harbor Research",
+        "bookTitle": "Practical Evidence Design for Clinical AI",
+        "editor": "Costa, M. A. I. N."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "654de6ee-11d7-4e3b-857d-200235fed6ed",
+      "raw": "Khan, Amina and Pieter van Dalen. \"Biomarker evidence mapping for pharmacovigilance triage: case SDE-CNB-008.\" In Advanced Topics in Therapeutic Modeling, edited by Kovacs, Elena and Tariq Mahmoud, 89-104. Toronto: Open Metrics Press, 2017.",
+      "caseIds": [
+        "SDE-CNB-008"
+      ],
+      "caseId": "SDE-CNB-008",
+      "familyId": "chicago_nb_chapter",
+      "familyName": "Chicago notes-bibliography chapter",
+      "edgeTags": [
+        "chicago_nb",
+        "chapter",
+        "edited_book"
+      ],
+      "expectedStyle": "chicago-nb",
+      "detectedStyle": "chicago",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": false,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "authors",
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 5,
+        "authorComparison": {
+          "match": false,
+          "expectedKeys": [
+            "khan|a",
+            "van dalen|p"
+          ],
+          "actualKeys": [
+            "khan|a",
+            "dalen|p"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Khan, A.",
+          "Dalen, P. V."
+        ],
+        "title": "Biomarker evidence mapping for pharmacovigilance triage: case SDE-CNB-008",
+        "year": "2017",
+        "pages": "89-104",
+        "publisher": "Open Metrics Press",
+        "bookTitle": "Advanced Topics in Therapeutic Modeling",
+        "editor": "Kovacs, E. A. T. M."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "2ddd30ed-cdff-4aa5-8da5-5fae0f673931",
+      "raw": "Rossi, Luca and Sara Al-Harbi. \"Safety review clustering for drug discovery: case SDE-CNB-009.\" In Methods in Translational Drug Analytics, edited by Nasser, Yara and Priya Menon, 97-112. Amsterdam: Meridian Academic, 2019.",
+      "caseIds": [
+        "SDE-CNB-009"
+      ],
+      "caseId": "SDE-CNB-009",
+      "familyId": "chicago_nb_chapter",
+      "familyName": "Chicago notes-bibliography chapter",
+      "edgeTags": [
+        "chicago_nb",
+        "chapter",
+        "edited_book"
+      ],
+      "expectedStyle": "chicago-nb",
+      "detectedStyle": "chicago",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "rossi|l",
+            "al harbi|s"
+          ],
+          "actualKeys": [
+            "rossi|l",
+            "al harbi|s"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Rossi, L.",
+          "Al-Harbi, S."
+        ],
+        "title": "Safety review clustering for drug discovery: case SDE-CNB-009",
+        "year": "2019",
+        "pages": "97-112",
+        "publisher": "Meridian Academic",
+        "bookTitle": "Methods in Translational Drug Analytics",
+        "editor": "Nasser, Y. A. P. M."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "39da2980-125e-423e-96ab-e551039b18db",
+      "raw": "de Silva, Marta and Jonas Weber. \"Response prediction benchmarks for safety monitoring: case SDE-CNB-010.\" In Practical Evidence Design for Clinical AI, edited by Clark, Mason and Hana Suzuki, 105-120. London: Blue Harbor Research, 2021.",
+      "caseIds": [
+        "SDE-CNB-010"
+      ],
+      "caseId": "SDE-CNB-010",
+      "familyId": "chicago_nb_chapter",
+      "familyName": "Chicago notes-bibliography chapter",
+      "edgeTags": [
+        "chicago_nb",
+        "chapter",
+        "edited_book"
+      ],
+      "expectedStyle": "chicago-nb",
+      "detectedStyle": "chicago",
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "chapter",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": true,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": true,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 7,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "de silva|m",
+            "weber|j"
+          ],
+          "actualKeys": [
+            "de silva|m",
+            "weber|j"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "de Silva, M.",
+          "Weber, J."
+        ],
+        "title": "Response prediction benchmarks for safety monitoring: case SDE-CNB-010",
+        "year": "2021",
+        "pages": "105-120",
+        "publisher": "Blue Harbor Research",
+        "bookTitle": "Practical Evidence Design for Clinical AI",
+        "editor": "Clark, M. A. H. S."
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "62b94499-0bd9-4bc6-8a90-728e8e6d5d4a",
+      "raw": "Saeed, Omar, et al.. \"Dose response ranking for translational pharmacology: case SDE-MLJ-001.\" Computational Therapeutics, vol. 19, no. 4, 2023, pp. 1007-1026, doi:10.7001/mlj.131.",
+      "caseIds": [
+        "SDE-MLJ-001"
+      ],
+      "caseId": "SDE-MLJ-001",
+      "familyId": "mla_journal",
+      "familyName": "MLA journal",
+      "edgeTags": [
+        "mla",
+        "journal",
+        "quoted_title"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": false,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": true,
+          "locator": true,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "authors"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": false,
+          "expectedKeys": [
+            "saeed|o",
+            "clark|m",
+            "suzuki|h"
+          ],
+          "actualKeys": [
+            "saeed|o",
+            "et al"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Saeed, O.",
+          "et al."
+        ],
+        "title": "Dose response ranking for translational pharmacology: case SDE-MLJ-001",
+        "year": "2023",
+        "journal": "Computational Therapeutics",
+        "volume": "19",
+        "issue": "4",
+        "pages": "1007-1026",
+        "doi": "10.7001/mlj.131"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "c09b154f-0be3-4e3b-b5b8-1f0d3eaab788",
+      "raw": "Costa, Mira, et al.. \"Trial design routing for preclinical analytics: case SDE-MLJ-002.\" Applied Bioinformatics Review, vol. 21, no. 2, 2013, pp. 1014-1034, doi:10.7001/mlj.132.",
+      "caseIds": [
+        "SDE-MLJ-002"
+      ],
+      "caseId": "SDE-MLJ-002",
+      "familyId": "mla_journal",
+      "familyName": "MLA journal",
+      "edgeTags": [
+        "mla",
+        "journal",
+        "quoted_title"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": false,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": true,
+          "locator": true,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "authors"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": false,
+          "expectedKeys": [
+            "costa|m",
+            "navarro|i",
+            "berg|n"
+          ],
+          "actualKeys": [
+            "costa|m",
+            "et al"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Costa, M.",
+          "et al."
+        ],
+        "title": "Trial design routing for preclinical analytics: case SDE-MLJ-002",
+        "year": "2013",
+        "journal": "Applied Bioinformatics Review",
+        "volume": "21",
+        "issue": "2",
+        "pages": "1014-1034",
+        "doi": "10.7001/mlj.132"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "1767081d-47af-46b4-81dc-483d6740cf48",
+      "raw": "Kovacs, Elena, et al.. \"Biomarker evidence mapping for pharmacovigilance triage: case SDE-MLJ-003.\" Molecular Design Letters, vol. 8, no. 4, 2015, pp. 1021-1042, doi:10.7001/mlj.133.",
+      "caseIds": [
+        "SDE-MLJ-003"
+      ],
+      "caseId": "SDE-MLJ-003",
+      "familyId": "mla_journal",
+      "familyName": "MLA journal",
+      "edgeTags": [
+        "mla",
+        "journal",
+        "quoted_title"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": false,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": true,
+          "locator": true,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "authors"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": false,
+          "expectedKeys": [
+            "kovacs|e",
+            "mahmoud|t",
+            "thompson|r"
+          ],
+          "actualKeys": [
+            "kovacs|e",
+            "et al"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Kovacs, E.",
+          "et al."
+        ],
+        "title": "Biomarker evidence mapping for pharmacovigilance triage: case SDE-MLJ-003",
+        "year": "2015",
+        "journal": "Molecular Design Letters",
+        "volume": "8",
+        "issue": "4",
+        "pages": "1021-1042",
+        "doi": "10.7001/mlj.133"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "ba154523-1ea6-4945-ab56-60171a950883",
+      "raw": "Nasser, Yara, et al.. \"Safety review clustering for drug discovery: case SDE-MLJ-004.\" Precision Therapy Analytics, vol. 10, no. 2, 2017, pp. 1028-1050, doi:10.7001/mlj.134.",
+      "caseIds": [
+        "SDE-MLJ-004"
+      ],
+      "caseId": "SDE-MLJ-004",
+      "familyId": "mla_journal",
+      "familyName": "MLA journal",
+      "edgeTags": [
+        "mla",
+        "journal",
+        "quoted_title"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": false,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": true,
+          "locator": true,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "authors"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": false,
+          "expectedKeys": [
+            "nasser|y",
+            "menon|p",
+            "farouk|d"
+          ],
+          "actualKeys": [
+            "nasser|y",
+            "et al"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Nasser, Y.",
+          "et al."
+        ],
+        "title": "Safety review clustering for drug discovery: case SDE-MLJ-004",
+        "year": "2017",
+        "journal": "Precision Therapy Analytics",
+        "volume": "10",
+        "issue": "2",
+        "pages": "1028-1050",
+        "doi": "10.7001/mlj.134"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "6d620ce5-2166-4c9e-ac22-f261c9d79ec2",
+      "raw": "Clark, Mason, et al.. \"Response prediction benchmarks for safety monitoring: case SDE-MLJ-005.\" Translational Modeling Quarterly, vol. 12, no. 4, 2019, pp. 1035-1058, doi:10.7001/mlj.135.",
+      "caseIds": [
+        "SDE-MLJ-005"
+      ],
+      "caseId": "SDE-MLJ-005",
+      "familyId": "mla_journal",
+      "familyName": "MLA journal",
+      "edgeTags": [
+        "mla",
+        "journal",
+        "quoted_title"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": false,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": true,
+          "locator": true,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "authors"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": false,
+          "expectedKeys": [
+            "clark|m",
+            "suzuki|h",
+            "novak|p"
+          ],
+          "actualKeys": [
+            "clark|m",
+            "et al"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Clark, M.",
+          "et al."
+        ],
+        "title": "Response prediction benchmarks for safety monitoring: case SDE-MLJ-005",
+        "year": "2019",
+        "journal": "Translational Modeling Quarterly",
+        "volume": "12",
+        "issue": "4",
+        "pages": "1035-1058",
+        "doi": "10.7001/mlj.135"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "214441c0-07c1-49ed-8473-d55cd0299c7b",
+      "raw": "Navarro, Iris, et al.. \"Dose response ranking for translational pharmacology: case SDE-MLJ-006.\" Computational Therapeutics, vol. 14, no. 2, 2021, pp. 1042-1058, doi:10.7001/mlj.136.",
+      "caseIds": [
+        "SDE-MLJ-006"
+      ],
+      "caseId": "SDE-MLJ-006",
+      "familyId": "mla_journal",
+      "familyName": "MLA journal",
+      "edgeTags": [
+        "mla",
+        "journal",
+        "quoted_title"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": false,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": true,
+          "locator": true,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "authors"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": false,
+          "expectedKeys": [
+            "navarro|i",
+            "berg|n",
+            "adams|r"
+          ],
+          "actualKeys": [
+            "navarro|i",
+            "et al"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Navarro, I.",
+          "et al."
+        ],
+        "title": "Dose response ranking for translational pharmacology: case SDE-MLJ-006",
+        "year": "2021",
+        "journal": "Computational Therapeutics",
+        "volume": "14",
+        "issue": "2",
+        "pages": "1042-1058",
+        "doi": "10.7001/mlj.136"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "d823dce9-918d-43dd-8d3b-3095c0711b57",
+      "raw": "Mahmoud, Tariq, et al.. \"Trial design routing for preclinical analytics: case SDE-MLJ-007.\" Applied Bioinformatics Review, vol. 16, no. 4, 2023, pp. 1049-1066, doi:10.7001/mlj.137.",
+      "caseIds": [
+        "SDE-MLJ-007"
+      ],
+      "caseId": "SDE-MLJ-007",
+      "familyId": "mla_journal",
+      "familyName": "MLA journal",
+      "edgeTags": [
+        "mla",
+        "journal",
+        "quoted_title"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": false,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": true,
+          "locator": true,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "authors"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": false,
+          "expectedKeys": [
+            "mahmoud|t",
+            "thompson|r",
+            "tanaka|m"
+          ],
+          "actualKeys": [
+            "mahmoud|t",
+            "et al"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Mahmoud, T.",
+          "et al."
+        ],
+        "title": "Trial design routing for preclinical analytics: case SDE-MLJ-007",
+        "year": "2023",
+        "journal": "Applied Bioinformatics Review",
+        "volume": "16",
+        "issue": "4",
+        "pages": "1049-1066",
+        "doi": "10.7001/mlj.137"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "d64c2dbb-be83-4278-9f68-c8a9fdc2cd54",
+      "raw": "Menon, Priya, et al.. \"Biomarker evidence mapping for pharmacovigilance triage: case SDE-MLJ-008.\" Molecular Design Letters, vol. 18, no. 2, 2013, pp. 1056-1074, doi:10.7001/mlj.138.",
+      "caseIds": [
+        "SDE-MLJ-008"
+      ],
+      "caseId": "SDE-MLJ-008",
+      "familyId": "mla_journal",
+      "familyName": "MLA journal",
+      "edgeTags": [
+        "mla",
+        "journal",
+        "quoted_title"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": false,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": true,
+          "locator": true,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "authors"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": false,
+          "expectedKeys": [
+            "menon|p",
+            "farouk|d",
+            "ibrahim|z"
+          ],
+          "actualKeys": [
+            "menon|p",
+            "et al"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Menon, P.",
+          "et al."
+        ],
+        "title": "Biomarker evidence mapping for pharmacovigilance triage: case SDE-MLJ-008",
+        "year": "2013",
+        "journal": "Molecular Design Letters",
+        "volume": "18",
+        "issue": "2",
+        "pages": "1056-1074",
+        "doi": "10.7001/mlj.138"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "06ae44b3-2e34-4952-a223-11fec91523f0",
+      "raw": "Suzuki, Hana, et al.. \"Safety review clustering for drug discovery: case SDE-MLJ-009.\" Precision Therapy Analytics, vol. 20, no. 4, 2015, pp. 1063-1082, doi:10.7001/mlj.139.",
+      "caseIds": [
+        "SDE-MLJ-009"
+      ],
+      "caseId": "SDE-MLJ-009",
+      "familyId": "mla_journal",
+      "familyName": "MLA journal",
+      "edgeTags": [
+        "mla",
+        "journal",
+        "quoted_title"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": false,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": true,
+          "locator": true,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "authors"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": false,
+          "expectedKeys": [
+            "suzuki|h",
+            "novak|p",
+            "petrov|i"
+          ],
+          "actualKeys": [
+            "suzuki|h",
+            "et al"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Suzuki, H.",
+          "et al."
+        ],
+        "title": "Safety review clustering for drug discovery: case SDE-MLJ-009",
+        "year": "2015",
+        "journal": "Precision Therapy Analytics",
+        "volume": "20",
+        "issue": "4",
+        "pages": "1063-1082",
+        "doi": "10.7001/mlj.139"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "64f6a74c-af44-4843-b06b-754df66241ee",
+      "raw": "Berg, Nils, et al.. \"Response prediction benchmarks for safety monitoring: case SDE-MLJ-010.\" Translational Modeling Quarterly, vol. 22, no. 2, 2017, pp. 1070-1090, doi:10.7001/mlj.140.",
+      "caseIds": [
+        "SDE-MLJ-010"
+      ],
+      "caseId": "SDE-MLJ-010",
+      "familyId": "mla_journal",
+      "familyName": "MLA journal",
+      "edgeTags": [
+        "mla",
+        "journal",
+        "quoted_title"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": false,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": true,
+          "locator": true,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "authors"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": false,
+          "expectedKeys": [
+            "berg|n",
+            "adams|r",
+            "santos|l"
+          ],
+          "actualKeys": [
+            "berg|n",
+            "et al"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Berg, N.",
+          "et al."
+        ],
+        "title": "Response prediction benchmarks for safety monitoring: case SDE-MLJ-010",
+        "year": "2017",
+        "journal": "Translational Modeling Quarterly",
+        "volume": "22",
+        "issue": "2",
+        "pages": "1070-1090",
+        "doi": "10.7001/mlj.140"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "8f3e7623-0847-405e-9274-8895c9559aeb",
+      "raw": "Novak, Pavel. Dose response ranking for translational pharmacology: case SDE-MLB-001. Blue Harbor Research, 2021.",
+      "caseIds": [
+        "SDE-MLB-001"
+      ],
+      "caseId": "SDE-MLB-001",
+      "familyId": "mla_book",
+      "familyName": "MLA book",
+      "edgeTags": [
+        "mla",
+        "book",
+        "publisher"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "book",
+      "actualReferenceType": "book",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "novak|p"
+          ],
+          "actualKeys": [
+            "novak|p"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Novak, P."
+        ],
+        "title": "Dose response ranking for translational pharmacology: case SDE-MLB-001",
+        "year": "2021",
+        "publisher": "Blue Harbor Research"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "3c67966d-c0d7-43f0-b32f-0d7a66662e3a",
+      "raw": "Adams, Ruth. Trial design routing for preclinical analytics: case SDE-MLB-002. Open Metrics Press, 2023.",
+      "caseIds": [
+        "SDE-MLB-002"
+      ],
+      "caseId": "SDE-MLB-002",
+      "familyId": "mla_book",
+      "familyName": "MLA book",
+      "edgeTags": [
+        "mla",
+        "book",
+        "publisher"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "book",
+      "actualReferenceType": "book",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "adams|r"
+          ],
+          "actualKeys": [
+            "adams|r"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Adams, R."
+        ],
+        "title": "Trial design routing for preclinical analytics: case SDE-MLB-002",
+        "year": "2023",
+        "publisher": "Open Metrics Press"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "c5921d25-8297-44f7-975e-660744ca881b",
+      "raw": "Tanaka, Mika. Biomarker evidence mapping for pharmacovigilance triage: case SDE-MLB-003. Meridian Academic, 2013.",
+      "caseIds": [
+        "SDE-MLB-003"
+      ],
+      "caseId": "SDE-MLB-003",
+      "familyId": "mla_book",
+      "familyName": "MLA book",
+      "edgeTags": [
+        "mla",
+        "book",
+        "publisher"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "book",
+      "actualReferenceType": "book",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "tanaka|m"
+          ],
+          "actualKeys": [
+            "tanaka|m"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Tanaka, M."
+        ],
+        "title": "Biomarker evidence mapping for pharmacovigilance triage: case SDE-MLB-003",
+        "year": "2013",
+        "publisher": "Meridian Academic"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "8a270684-7b44-4039-af3a-ab4346714f1f",
+      "raw": "Ibrahim, Zoe. Safety review clustering for drug discovery: case SDE-MLB-004. Blue Harbor Research, 2015.",
+      "caseIds": [
+        "SDE-MLB-004"
+      ],
+      "caseId": "SDE-MLB-004",
+      "familyId": "mla_book",
+      "familyName": "MLA book",
+      "edgeTags": [
+        "mla",
+        "book",
+        "publisher"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "book",
+      "actualReferenceType": "book",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "ibrahim|z"
+          ],
+          "actualKeys": [
+            "ibrahim|z"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Ibrahim, Z."
+        ],
+        "title": "Safety review clustering for drug discovery: case SDE-MLB-004",
+        "year": "2015",
+        "publisher": "Blue Harbor Research"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "4663720b-77ac-48a6-bc21-91ed058e2d6f",
+      "raw": "Petrov, Ivan. Response prediction benchmarks for safety monitoring: case SDE-MLB-005. Open Metrics Press, 2017.",
+      "caseIds": [
+        "SDE-MLB-005"
+      ],
+      "caseId": "SDE-MLB-005",
+      "familyId": "mla_book",
+      "familyName": "MLA book",
+      "edgeTags": [
+        "mla",
+        "book",
+        "publisher"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "book",
+      "actualReferenceType": "book",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "petrov|i"
+          ],
+          "actualKeys": [
+            "petrov|i"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Petrov, I."
+        ],
+        "title": "Response prediction benchmarks for safety monitoring: case SDE-MLB-005",
+        "year": "2017",
+        "publisher": "Open Metrics Press"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "6823d121-37dd-4e0d-b967-6bfb7f4c0e98",
+      "raw": "Santos, Lena. Dose response ranking for translational pharmacology: case SDE-MLB-006. Meridian Academic, 2019.",
+      "caseIds": [
+        "SDE-MLB-006"
+      ],
+      "caseId": "SDE-MLB-006",
+      "familyId": "mla_book",
+      "familyName": "MLA book",
+      "edgeTags": [
+        "mla",
+        "book",
+        "publisher"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "book",
+      "actualReferenceType": "book",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "santos|l"
+          ],
+          "actualKeys": [
+            "santos|l"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Santos, L."
+        ],
+        "title": "Dose response ranking for translational pharmacology: case SDE-MLB-006",
+        "year": "2019",
+        "publisher": "Meridian Academic"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "59dd67d4-1e49-4b80-87e7-e341ac7e5549",
+      "raw": "Khan, Amina. Trial design routing for preclinical analytics: case SDE-MLB-007. Blue Harbor Research, 2021.",
+      "caseIds": [
+        "SDE-MLB-007"
+      ],
+      "caseId": "SDE-MLB-007",
+      "familyId": "mla_book",
+      "familyName": "MLA book",
+      "edgeTags": [
+        "mla",
+        "book",
+        "publisher"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "book",
+      "actualReferenceType": "book",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "khan|a"
+          ],
+          "actualKeys": [
+            "khan|a"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Khan, A."
+        ],
+        "title": "Trial design routing for preclinical analytics: case SDE-MLB-007",
+        "year": "2021",
+        "publisher": "Blue Harbor Research"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "cc595401-678f-48d4-bd3d-9a15967e13eb",
+      "raw": "Rossi, Luca. Biomarker evidence mapping for pharmacovigilance triage: case SDE-MLB-008. Open Metrics Press, 2023.",
+      "caseIds": [
+        "SDE-MLB-008"
+      ],
+      "caseId": "SDE-MLB-008",
+      "familyId": "mla_book",
+      "familyName": "MLA book",
+      "edgeTags": [
+        "mla",
+        "book",
+        "publisher"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "book",
+      "actualReferenceType": "book",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "rossi|l"
+          ],
+          "actualKeys": [
+            "rossi|l"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Rossi, L."
+        ],
+        "title": "Biomarker evidence mapping for pharmacovigilance triage: case SDE-MLB-008",
+        "year": "2023",
+        "publisher": "Open Metrics Press"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "67e2ea92-cf3d-4128-aa4b-6878cf2cecd0",
+      "raw": "de Silva, Marta. Safety review clustering for drug discovery: case SDE-MLB-009. Meridian Academic, 2013.",
+      "caseIds": [
+        "SDE-MLB-009"
+      ],
+      "caseId": "SDE-MLB-009",
+      "familyId": "mla_book",
+      "familyName": "MLA book",
+      "edgeTags": [
+        "mla",
+        "book",
+        "publisher"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "book",
+      "actualReferenceType": "book",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "de silva|m"
+          ],
+          "actualKeys": [
+            "de silva|m"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "de Silva, M."
+        ],
+        "title": "Safety review clustering for drug discovery: case SDE-MLB-009",
+        "year": "2013",
+        "publisher": "Meridian Academic"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "53f5f8a9-2bb8-4aae-a678-d2a1d6697e9c",
+      "raw": "O'Rourke, Nora. Response prediction benchmarks for safety monitoring: case SDE-MLB-010. Blue Harbor Research, 2015.",
+      "caseIds": [
+        "SDE-MLB-010"
+      ],
+      "caseId": "SDE-MLB-010",
+      "familyId": "mla_book",
+      "familyName": "MLA book",
+      "edgeTags": [
+        "mla",
+        "book",
+        "publisher"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "book",
+      "actualReferenceType": "book",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": true,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": null,
+          "edition": false
+        },
+        "mismatches": [
+          "edition"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "o rourke|n"
+          ],
+          "actualKeys": [
+            "o rourke|n"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "O'Rourke, N."
+        ],
+        "title": "Response prediction benchmarks for safety monitoring: case SDE-MLB-010",
+        "year": "2015",
+        "publisher": "Blue Harbor Research"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "b6dc6ea2-5732-478d-93a9-ceb99fec8975",
+      "raw": "Weber, Jonas. \"Dose response ranking for translational pharmacology: case SDE-MLT-001.\" North Coast University, 2019. PhD dissertation.",
+      "caseIds": [
+        "SDE-MLT-001"
+      ],
+      "caseId": "SDE-MLT-001",
+      "familyId": "mla_thesis",
+      "familyName": "MLA thesis",
+      "edgeTags": [
+        "mla",
+        "thesis",
+        "institution"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "thesis",
+      "actualReferenceType": "thesis",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": true,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": false,
+          "edition": null
+        },
+        "mismatches": [
+          "url"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "weber|j"
+          ],
+          "actualKeys": [
+            "weber|j"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Weber, J."
+        ],
+        "title": "Dose response ranking for translational pharmacology: case SDE-MLT-001",
+        "year": "2019",
+        "institution": "North Coast University"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "0fb6f771-e3de-4212-a139-14ee32fca36b",
+      "raw": "Mendes, Clara. \"Trial design routing for preclinical analytics: case SDE-MLT-002.\" Open Therapeutics School of Pharmacy, 2021. PhD dissertation.",
+      "caseIds": [
+        "SDE-MLT-002"
+      ],
+      "caseId": "SDE-MLT-002",
+      "familyId": "mla_thesis",
+      "familyName": "MLA thesis",
+      "edgeTags": [
+        "mla",
+        "thesis",
+        "institution"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "thesis",
+      "actualReferenceType": "thesis",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": true,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": false,
+          "edition": null
+        },
+        "mismatches": [
+          "url"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "mendes|c"
+          ],
+          "actualKeys": [
+            "mendes|c"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Mendes, C."
+        ],
+        "title": "Trial design routing for preclinical analytics: case SDE-MLT-002",
+        "year": "2021",
+        "institution": "Open Therapeutics School of Pharmacy"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "bbb28586-60b8-4fe7-8be8-36e7d45df56f",
+      "raw": "Brooks, Ethan. \"Biomarker evidence mapping for pharmacovigilance triage: case SDE-MLT-003.\" Redwood University, 2023. PhD dissertation.",
+      "caseIds": [
+        "SDE-MLT-003"
+      ],
+      "caseId": "SDE-MLT-003",
+      "familyId": "mla_thesis",
+      "familyName": "MLA thesis",
+      "edgeTags": [
+        "mla",
+        "thesis",
+        "institution"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "thesis",
+      "actualReferenceType": "thesis",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": true,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": false,
+          "edition": null
+        },
+        "mismatches": [
+          "url"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "brooks|e"
+          ],
+          "actualKeys": [
+            "brooks|e"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Brooks, E."
+        ],
+        "title": "Biomarker evidence mapping for pharmacovigilance triage: case SDE-MLT-003",
+        "year": "2023",
+        "institution": "Redwood University"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "2d48c6c2-10b5-4f28-8e2f-6cf27cf49852",
+      "raw": "Haddad, Leila. \"Safety review clustering for drug discovery: case SDE-MLT-004.\" North Coast University, 2013. PhD dissertation.",
+      "caseIds": [
+        "SDE-MLT-004"
+      ],
+      "caseId": "SDE-MLT-004",
+      "familyId": "mla_thesis",
+      "familyName": "MLA thesis",
+      "edgeTags": [
+        "mla",
+        "thesis",
+        "institution"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "thesis",
+      "actualReferenceType": "thesis",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": true,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": false,
+          "edition": null
+        },
+        "mismatches": [
+          "url"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "haddad|l"
+          ],
+          "actualKeys": [
+            "haddad|l"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Haddad, L."
+        ],
+        "title": "Safety review clustering for drug discovery: case SDE-MLT-004",
+        "year": "2013",
+        "institution": "North Coast University"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "2fc8f418-37fd-4ce0-8675-f4225e007fb2",
+      "raw": "Patel, Rina. \"Response prediction benchmarks for safety monitoring: case SDE-MLT-005.\" Open Therapeutics School of Pharmacy, 2015. PhD dissertation.",
+      "caseIds": [
+        "SDE-MLT-005"
+      ],
+      "caseId": "SDE-MLT-005",
+      "familyId": "mla_thesis",
+      "familyName": "MLA thesis",
+      "edgeTags": [
+        "mla",
+        "thesis",
+        "institution"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "thesis",
+      "actualReferenceType": "thesis",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": true,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": false,
+          "edition": null
+        },
+        "mismatches": [
+          "url"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "patel|r"
+          ],
+          "actualKeys": [
+            "patel|r"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Patel, R."
+        ],
+        "title": "Response prediction benchmarks for safety monitoring: case SDE-MLT-005",
+        "year": "2015",
+        "institution": "Open Therapeutics School of Pharmacy"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "d89376f4-8cf0-4053-a16b-bbca95511c63",
+      "raw": "Nguyen, Tom. \"Dose response ranking for translational pharmacology: case SDE-MLT-006.\" Redwood University, 2017. PhD dissertation.",
+      "caseIds": [
+        "SDE-MLT-006"
+      ],
+      "caseId": "SDE-MLT-006",
+      "familyId": "mla_thesis",
+      "familyName": "MLA thesis",
+      "edgeTags": [
+        "mla",
+        "thesis",
+        "institution"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "thesis",
+      "actualReferenceType": "thesis",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": true,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": false,
+          "edition": null
+        },
+        "mismatches": [
+          "url"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "nguyen|t"
+          ],
+          "actualKeys": [
+            "nguyen|t"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Nguyen, T."
+        ],
+        "title": "Dose response ranking for translational pharmacology: case SDE-MLT-006",
+        "year": "2017",
+        "institution": "Redwood University"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "7a970772-aafa-4d25-9061-bf34fdbbd59b",
+      "raw": "Saeed, Omar. \"Trial design routing for preclinical analytics: case SDE-MLT-007.\" North Coast University, 2019. PhD dissertation.",
+      "caseIds": [
+        "SDE-MLT-007"
+      ],
+      "caseId": "SDE-MLT-007",
+      "familyId": "mla_thesis",
+      "familyName": "MLA thesis",
+      "edgeTags": [
+        "mla",
+        "thesis",
+        "institution"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "thesis",
+      "actualReferenceType": "thesis",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": true,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": false,
+          "edition": null
+        },
+        "mismatches": [
+          "url"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "saeed|o"
+          ],
+          "actualKeys": [
+            "saeed|o"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Saeed, O."
+        ],
+        "title": "Trial design routing for preclinical analytics: case SDE-MLT-007",
+        "year": "2019",
+        "institution": "North Coast University"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "3f139a06-5bf5-4ef6-8f14-7a43f9262916",
+      "raw": "Costa, Mira. \"Biomarker evidence mapping for pharmacovigilance triage: case SDE-MLT-008.\" Open Therapeutics School of Pharmacy, 2021. PhD dissertation.",
+      "caseIds": [
+        "SDE-MLT-008"
+      ],
+      "caseId": "SDE-MLT-008",
+      "familyId": "mla_thesis",
+      "familyName": "MLA thesis",
+      "edgeTags": [
+        "mla",
+        "thesis",
+        "institution"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "thesis",
+      "actualReferenceType": "thesis",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": true,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": false,
+          "edition": null
+        },
+        "mismatches": [
+          "url"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "costa|m"
+          ],
+          "actualKeys": [
+            "costa|m"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Costa, M."
+        ],
+        "title": "Biomarker evidence mapping for pharmacovigilance triage: case SDE-MLT-008",
+        "year": "2021",
+        "institution": "Open Therapeutics School of Pharmacy"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "fd0c1655-f792-46b8-9b5c-a4b5e852bd34",
+      "raw": "Kovacs, Elena. \"Safety review clustering for drug discovery: case SDE-MLT-009.\" Redwood University, 2023. PhD dissertation.",
+      "caseIds": [
+        "SDE-MLT-009"
+      ],
+      "caseId": "SDE-MLT-009",
+      "familyId": "mla_thesis",
+      "familyName": "MLA thesis",
+      "edgeTags": [
+        "mla",
+        "thesis",
+        "institution"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "thesis",
+      "actualReferenceType": "thesis",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": true,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": false,
+          "edition": null
+        },
+        "mismatches": [
+          "url"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "kovacs|e"
+          ],
+          "actualKeys": [
+            "kovacs|e"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Kovacs, E."
+        ],
+        "title": "Safety review clustering for drug discovery: case SDE-MLT-009",
+        "year": "2023",
+        "institution": "Redwood University"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "d2622b9c-7431-4522-8c23-880b82751b25",
+      "raw": "Nasser, Yara. \"Response prediction benchmarks for safety monitoring: case SDE-MLT-010.\" North Coast University, 2013. PhD dissertation.",
+      "caseIds": [
+        "SDE-MLT-010"
+      ],
+      "caseId": "SDE-MLT-010",
+      "familyId": "mla_thesis",
+      "familyName": "MLA thesis",
+      "edgeTags": [
+        "mla",
+        "thesis",
+        "institution"
+      ],
+      "expectedStyle": "mla",
+      "detectedStyle": "mla",
+      "expectedReferenceType": "thesis",
+      "actualReferenceType": "thesis",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": true,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": false,
+          "edition": null
+        },
+        "mismatches": [
+          "url"
+        ],
+        "totalComparable": 5,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "nasser|y"
+          ],
+          "actualKeys": [
+            "nasser|y"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Nasser, Y."
+        ],
+        "title": "Response prediction benchmarks for safety monitoring: case SDE-MLT-010",
+        "year": "2013",
+        "institution": "North Coast University"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "mla_mixed",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "3a606025-6e60-4a45-87b8-9fd963acc20b",
+      "raw": "[182] Precision Molecule Institute, \"Trial design routing for preclinical analytics: case SDE-IEW-002,\" Adaptive Methods Portal, ver. 3.1, 2015. [Online]. Available: https://stress.example.org/iew/182",
+      "caseIds": [
+        "SDE-IEW-002"
+      ],
+      "caseId": "SDE-IEW-002",
+      "familyId": "ieee_website_manual",
+      "familyName": "IEEE website manual",
+      "edgeTags": [
+        "ieee",
+        "website",
+        "manual",
+        "versioned"
+      ],
+      "expectedStyle": "ieee",
+      "detectedStyle": "apa",
+      "expectedReferenceType": "website",
+      "actualReferenceType": "website",
+      "splitStatus": "identified",
+      "styleMatch": false,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": true,
+          "edition": null
+        },
+        "mismatches": [],
+        "totalComparable": 4,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "precision molecule institute"
+          ],
+          "actualKeys": [
+            "precision molecule institute"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Precision Molecule Institute"
+        ],
+        "title": "Trial design routing for preclinical analytics: case SDE-IEW-002",
+        "year": "2015",
+        "url": "https://stress.example.org/iew/182",
+        "institution": "Adaptive Methods Portal",
+        "edition": "ver. 3.1"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers",
+          "structural_numbering"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "institutional_heuristic_raw",
+        "selectionReason": "institutional_heuristic_scored_higher",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "a547aab0-48e8-4110-bbb6-37df6d3aac75",
+      "raw": "[186] Adaptive Medicines Taskforce, \"Dose response ranking for translational pharmacology: case SDE-IEW-006,\" Pharmacology Standards Network, ver. 3.5, 2023. [Online]. Available: https://stress.example.org/iew/186",
+      "caseIds": [
+        "SDE-IEW-006"
+      ],
+      "caseId": "SDE-IEW-006",
+      "familyId": "ieee_website_manual",
+      "familyName": "IEEE website manual",
+      "edgeTags": [
+        "ieee",
+        "website",
+        "manual",
+        "versioned"
+      ],
+      "expectedStyle": "ieee",
+      "detectedStyle": "apa",
+      "expectedReferenceType": "website",
+      "actualReferenceType": "website",
+      "splitStatus": "identified",
+      "styleMatch": false,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": true,
+          "edition": null
+        },
+        "mismatches": [],
+        "totalComparable": 4,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "adaptive medicines taskforce"
+          ],
+          "actualKeys": [
+            "adaptive medicines taskforce"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Adaptive Medicines Taskforce"
+        ],
+        "title": "Dose response ranking for translational pharmacology: case SDE-IEW-006",
+        "year": "2023",
+        "url": "https://stress.example.org/iew/186",
+        "institution": "Pharmacology Standards Network",
+        "edition": "ver. 3.5"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers",
+          "structural_numbering"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "institutional_heuristic_raw",
+        "selectionReason": "institutional_heuristic_scored_higher",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "425226ca-69ec-45a0-957c-4b37e509c7cb",
+      "raw": "[187] Clinical Design Observatory, \"Trial design routing for preclinical analytics: case SDE-IEW-007,\" Drug Evidence Hub, ver. 4.6, 2013. [Online]. Available: https://stress.example.org/iew/187",
+      "caseIds": [
+        "SDE-IEW-007"
+      ],
+      "caseId": "SDE-IEW-007",
+      "familyId": "ieee_website_manual",
+      "familyName": "IEEE website manual",
+      "edgeTags": [
+        "ieee",
+        "website",
+        "manual",
+        "versioned"
+      ],
+      "expectedStyle": "ieee",
+      "detectedStyle": "apa",
+      "expectedReferenceType": "website",
+      "actualReferenceType": "website",
+      "splitStatus": "identified",
+      "styleMatch": false,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": true,
+          "edition": null
+        },
+        "mismatches": [],
+        "totalComparable": 4,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "clinical design observatory"
+          ],
+          "actualKeys": [
+            "clinical design observatory"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Clinical Design Observatory"
+        ],
+        "title": "Trial design routing for preclinical analytics: case SDE-IEW-007",
+        "year": "2013",
+        "url": "https://stress.example.org/iew/187",
+        "institution": "Drug Evidence Hub",
+        "edition": "ver. 4.6"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers",
+          "structural_numbering"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "institutional_heuristic_raw",
+        "selectionReason": "institutional_heuristic_scored_higher",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "1205b045-a6a8-4714-ae84-e998f646fad6",
+      "raw": "[189] Therapeutic Signals Lab, \"Safety review clustering for drug discovery: case SDE-IEW-009,\" Pharmacology Standards Network, ver. 2.8, 2017. [Online]. Available: https://stress.example.org/iew/189",
+      "caseIds": [
+        "SDE-IEW-009"
+      ],
+      "caseId": "SDE-IEW-009",
+      "familyId": "ieee_website_manual",
+      "familyName": "IEEE website manual",
+      "edgeTags": [
+        "ieee",
+        "website",
+        "manual",
+        "versioned"
+      ],
+      "expectedStyle": "ieee",
+      "detectedStyle": "apa",
+      "expectedReferenceType": "website",
+      "actualReferenceType": "website",
+      "splitStatus": "identified",
+      "styleMatch": false,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": true,
+          "edition": null
+        },
+        "mismatches": [],
+        "totalComparable": 4,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "therapeutic signals lab"
+          ],
+          "actualKeys": [
+            "therapeutic signals lab"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Therapeutic Signals Lab"
+        ],
+        "title": "Safety review clustering for drug discovery: case SDE-IEW-009",
+        "year": "2017",
+        "url": "https://stress.example.org/iew/189",
+        "institution": "Pharmacology Standards Network",
+        "edition": "ver. 2.8"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers",
+          "structural_numbering"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "institutional_heuristic_raw",
+        "selectionReason": "institutional_heuristic_scored_higher",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "1ff7f5dc-0d14-48e9-b4c4-b72cf20d5c48",
+      "raw": "[190] Open Pharmacology Consortium, \"Response prediction benchmarks for safety monitoring: case SDE-IEW-010,\" Drug Evidence Hub, ver. 3.9, 2019. [Online]. Available: https://stress.example.org/iew/190",
+      "caseIds": [
+        "SDE-IEW-010"
+      ],
+      "caseId": "SDE-IEW-010",
+      "familyId": "ieee_website_manual",
+      "familyName": "IEEE website manual",
+      "edgeTags": [
+        "ieee",
+        "website",
+        "manual",
+        "versioned"
+      ],
+      "expectedStyle": "ieee",
+      "detectedStyle": "apa",
+      "expectedReferenceType": "website",
+      "actualReferenceType": "website",
+      "splitStatus": "identified",
+      "styleMatch": false,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": null,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": null,
+          "issue": null,
+          "locator": null,
+          "doi": null,
+          "url": true,
+          "edition": null
+        },
+        "mismatches": [],
+        "totalComparable": 4,
+        "matchedComparable": 4,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "open pharmacology consortium"
+          ],
+          "actualKeys": [
+            "open pharmacology consortium"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Open Pharmacology Consortium"
+        ],
+        "title": "Response prediction benchmarks for safety monitoring: case SDE-IEW-010",
+        "year": "2019",
+        "url": "https://stress.example.org/iew/190",
+        "institution": "Drug Evidence Hub",
+        "edition": "ver. 3.9"
+      },
+      "split": {
+        "confidence": 0.88,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers",
+          "structural_numbering"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "institutional_heuristic_raw",
+        "selectionReason": "institutional_heuristic_scored_higher",
+        "authorParserMode": "inverted_or_generic",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "74445943-d086-40da-a87d-2ca1e73e9f76",
+      "raw": "201. Farouk D, Ibrahim Z, Rossi L, Al-Harbi S: Dose response ranking for translational pharmacology: case SDE-VJM-001.\nComputational Therapeutics. 2021, 14:1185-01\n10.7001/vjm.201",
+      "caseIds": [
+        "SDE-VJM-001"
+      ],
+      "caseId": "SDE-VJM-001",
+      "familyId": "vancouver_colon_multiline",
+      "familyName": "Vancouver colon-led multiline journal",
+      "edgeTags": [
+        "vancouver",
+        "journal",
+        "colon_led",
+        "multiline"
+      ],
+      "expectedStyle": "vancouver",
+      "detectedStyle": "vancouver",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": false,
+          "locator": false,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "issue",
+          "locator"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "farouk|d",
+            "ibrahim|z",
+            "rossi|l",
+            "al harbi|s"
+          ],
+          "actualKeys": [
+            "farouk|d",
+            "ibrahim|z",
+            "rossi|l",
+            "al harbi|s"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Farouk, D.",
+          "Ibrahim, Z.",
+          "Rossi, L.",
+          "Al-Harbi, S."
+        ],
+        "title": "Dose response ranking for translational pharmacology: case SDE-VJM-001",
+        "year": "2021",
+        "journal": "Computational Therapeutics",
+        "volume": "14",
+        "pages": "01-1185",
+        "doi": "10.7001/vjm.201"
+      },
+      "split": {
+        "confidence": 0.85,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers",
+          "structural_numbering"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "vancouver_compact_array",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "1708e859-b56a-4bf1-b4b0-c9ab15dce3b0",
+      "raw": "202. Novak P, Petrov I, de Silva M, Weber J: Trial design routing for preclinical analytics: case SDE-VJM-002.\nApplied Bioinformatics Review. 2023, 16:1190-01\n10.7001/vjm.202",
+      "caseIds": [
+        "SDE-VJM-002"
+      ],
+      "caseId": "SDE-VJM-002",
+      "familyId": "vancouver_colon_multiline",
+      "familyName": "Vancouver colon-led multiline journal",
+      "edgeTags": [
+        "vancouver",
+        "journal",
+        "colon_led",
+        "multiline"
+      ],
+      "expectedStyle": "vancouver",
+      "detectedStyle": "vancouver",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": false,
+          "locator": false,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "issue",
+          "locator"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "novak|p",
+            "petrov|i",
+            "de silva|m",
+            "weber|j"
+          ],
+          "actualKeys": [
+            "novak|p",
+            "petrov|i",
+            "de silva|m",
+            "weber|j"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Novak, P.",
+          "Petrov, I.",
+          "de Silva, M.",
+          "Weber, J."
+        ],
+        "title": "Trial design routing for preclinical analytics: case SDE-VJM-002",
+        "year": "2023",
+        "journal": "Applied Bioinformatics Review",
+        "volume": "16",
+        "pages": "01-1190",
+        "doi": "10.7001/vjm.202"
+      },
+      "split": {
+        "confidence": 0.85,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers",
+          "structural_numbering"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "vancouver_compact_array",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "fc62c55b-f68f-46c8-beba-234032d3df1d",
+      "raw": "203. Adams R, Santos L, O'Rourke N, Mendes C: Biomarker evidence mapping for pharmacovigilance triage: case SDE-VJM-003.\nMolecular Design Letters. 2013, 18:1195-07\n10.7001/vjm.203",
+      "caseIds": [
+        "SDE-VJM-003"
+      ],
+      "caseId": "SDE-VJM-003",
+      "familyId": "vancouver_colon_multiline",
+      "familyName": "Vancouver colon-led multiline journal",
+      "edgeTags": [
+        "vancouver",
+        "journal",
+        "colon_led",
+        "multiline"
+      ],
+      "expectedStyle": "vancouver",
+      "detectedStyle": "vancouver",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": false,
+          "locator": false,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "issue",
+          "locator"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 6,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "adams|r",
+            "santos|l",
+            "o rourke|n",
+            "mendes|c"
+          ],
+          "actualKeys": [
+            "adams|r",
+            "santos|l",
+            "o rourke|n",
+            "mendes|c"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Adams, R.",
+          "Santos, L.",
+          "O'Rourke, N.",
+          "Mendes, C."
+        ],
+        "title": "Biomarker evidence mapping for pharmacovigilance triage: case SDE-VJM-003",
+        "year": "2013",
+        "journal": "Molecular Design Letters",
+        "volume": "18",
+        "pages": "07-1195",
+        "doi": "10.7001/vjm.203"
+      },
+      "split": {
+        "confidence": 0.85,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers",
+          "structural_numbering"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "vancouver_compact_array",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "23fa0d9c-baa6-4682-a488-cd483c7570cd",
+      "raw": "204. Tanaka M, Khan A, van Dalen P, Brooks E: Safety review clustering for drug discovery: case SDE-VJM-004.\nPrecision Therapy Analytics. 2015, 20:1200-13\n10.7001/vjm.204",
+      "caseIds": [
+        "SDE-VJM-004"
+      ],
+      "caseId": "SDE-VJM-004",
+      "familyId": "vancouver_colon_multiline",
+      "familyName": "Vancouver colon-led multiline journal",
+      "edgeTags": [
+        "vancouver",
+        "journal",
+        "colon_led",
+        "multiline"
+      ],
+      "expectedStyle": "vancouver",
+      "detectedStyle": "vancouver",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": false,
+          "locator": true,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "issue"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "tanaka|m",
+            "khan|a",
+            "van dalen|p",
+            "brooks|e"
+          ],
+          "actualKeys": [
+            "tanaka|m",
+            "khan|a",
+            "van dalen|p",
+            "brooks|e"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Tanaka, M.",
+          "Khan, A.",
+          "van Dalen, P.",
+          "Brooks, E."
+        ],
+        "title": "Safety review clustering for drug discovery: case SDE-VJM-004",
+        "year": "2015",
+        "journal": "Precision Therapy Analytics",
+        "volume": "20",
+        "pages": "1200-13",
+        "doi": "10.7001/vjm.204"
+      },
+      "split": {
+        "confidence": 0.85,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers",
+          "structural_numbering"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "vancouver_compact_array",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "ba28bcf8-d10e-44ac-ad1a-5b5cfacfd642",
+      "raw": "205. Ibrahim Z, Rossi L, Al-Harbi S, Haddad L: Response prediction benchmarks for safety monitoring: case SDE-VJM-005.\nTranslational Modeling Quarterly. 2017, 22:1205-19\n10.7001/vjm.205",
+      "caseIds": [
+        "SDE-VJM-005"
+      ],
+      "caseId": "SDE-VJM-005",
+      "familyId": "vancouver_colon_multiline",
+      "familyName": "Vancouver colon-led multiline journal",
+      "edgeTags": [
+        "vancouver",
+        "journal",
+        "colon_led",
+        "multiline"
+      ],
+      "expectedStyle": "vancouver",
+      "detectedStyle": "vancouver",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": false,
+          "locator": true,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "issue"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "ibrahim|z",
+            "rossi|l",
+            "al harbi|s",
+            "haddad|l"
+          ],
+          "actualKeys": [
+            "ibrahim|z",
+            "rossi|l",
+            "al harbi|s",
+            "haddad|l"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Ibrahim, Z.",
+          "Rossi, L.",
+          "Al-Harbi, S.",
+          "Haddad, L."
+        ],
+        "title": "Response prediction benchmarks for safety monitoring: case SDE-VJM-005",
+        "year": "2017",
+        "journal": "Translational Modeling Quarterly",
+        "volume": "22",
+        "pages": "1205-19",
+        "doi": "10.7001/vjm.205"
+      },
+      "split": {
+        "confidence": 0.85,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers",
+          "structural_numbering"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "vancouver_compact_array",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "8d0f5311-b16c-44ba-8f0f-b457c8141ebe",
+      "raw": "206. Petrov I, de Silva M, Weber J, Patel R: Dose response ranking for translational pharmacology: case SDE-VJM-006.\nComputational Therapeutics. 2019, 9:1210-25\n10.7001/vjm.206",
+      "caseIds": [
+        "SDE-VJM-006"
+      ],
+      "caseId": "SDE-VJM-006",
+      "familyId": "vancouver_colon_multiline",
+      "familyName": "Vancouver colon-led multiline journal",
+      "edgeTags": [
+        "vancouver",
+        "journal",
+        "colon_led",
+        "multiline"
+      ],
+      "expectedStyle": "vancouver",
+      "detectedStyle": "vancouver",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": false,
+          "locator": true,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "issue"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "petrov|i",
+            "de silva|m",
+            "weber|j",
+            "patel|r"
+          ],
+          "actualKeys": [
+            "petrov|i",
+            "de silva|m",
+            "weber|j",
+            "patel|r"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Petrov, I.",
+          "de Silva, M.",
+          "Weber, J.",
+          "Patel, R."
+        ],
+        "title": "Dose response ranking for translational pharmacology: case SDE-VJM-006",
+        "year": "2019",
+        "journal": "Computational Therapeutics",
+        "volume": "9",
+        "pages": "1210-25",
+        "doi": "10.7001/vjm.206"
+      },
+      "split": {
+        "confidence": 0.85,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers",
+          "structural_numbering"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "vancouver_compact_array",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "459e4031-a53f-478c-b45b-f9f7b2394677",
+      "raw": "207. Santos L, O'Rourke N, Mendes C, Nguyen T: Trial design routing for preclinical analytics: case SDE-VJM-007.\nApplied Bioinformatics Review. 2021, 11:1215-31\n10.7001/vjm.207",
+      "caseIds": [
+        "SDE-VJM-007"
+      ],
+      "caseId": "SDE-VJM-007",
+      "familyId": "vancouver_colon_multiline",
+      "familyName": "Vancouver colon-led multiline journal",
+      "edgeTags": [
+        "vancouver",
+        "journal",
+        "colon_led",
+        "multiline"
+      ],
+      "expectedStyle": "vancouver",
+      "detectedStyle": "vancouver",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": false,
+          "locator": true,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "issue"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "santos|l",
+            "o rourke|n",
+            "mendes|c",
+            "nguyen|t"
+          ],
+          "actualKeys": [
+            "santos|l",
+            "o rourke|n",
+            "mendes|c",
+            "nguyen|t"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Santos, L.",
+          "O'Rourke, N.",
+          "Mendes, C.",
+          "Nguyen, T."
+        ],
+        "title": "Trial design routing for preclinical analytics: case SDE-VJM-007",
+        "year": "2021",
+        "journal": "Applied Bioinformatics Review",
+        "volume": "11",
+        "pages": "1215-31",
+        "doi": "10.7001/vjm.207"
+      },
+      "split": {
+        "confidence": 0.85,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers",
+          "structural_numbering"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "vancouver_compact_array",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "271b2e39-1466-4138-9fd0-93d2a2aa89c2",
+      "raw": "208. Khan A, van Dalen P, Brooks E, Saeed O: Biomarker evidence mapping for pharmacovigilance triage: case SDE-VJM-008.\nMolecular Design Letters. 2023, 13:1220-31\n10.7001/vjm.208",
+      "caseIds": [
+        "SDE-VJM-008"
+      ],
+      "caseId": "SDE-VJM-008",
+      "familyId": "vancouver_colon_multiline",
+      "familyName": "Vancouver colon-led multiline journal",
+      "edgeTags": [
+        "vancouver",
+        "journal",
+        "colon_led",
+        "multiline"
+      ],
+      "expectedStyle": "vancouver",
+      "detectedStyle": "vancouver",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": false,
+          "locator": true,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "issue"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "khan|a",
+            "van dalen|p",
+            "brooks|e",
+            "saeed|o"
+          ],
+          "actualKeys": [
+            "khan|a",
+            "van dalen|p",
+            "brooks|e",
+            "saeed|o"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Khan, A.",
+          "van Dalen, P.",
+          "Brooks, E.",
+          "Saeed, O."
+        ],
+        "title": "Biomarker evidence mapping for pharmacovigilance triage: case SDE-VJM-008",
+        "year": "2023",
+        "journal": "Molecular Design Letters",
+        "volume": "13",
+        "pages": "1220-31",
+        "doi": "10.7001/vjm.208"
+      },
+      "split": {
+        "confidence": 0.85,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers",
+          "structural_numbering"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "vancouver_compact_array",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "3a7fb9c5-9f27-402e-9b49-80491378b98c",
+      "raw": "209. Rossi L, Al-Harbi S, Haddad L, Costa M: Safety review clustering for drug discovery: case SDE-VJM-009.\nPrecision Therapy Analytics. 2013, 15:1225-37\n10.7001/vjm.209",
+      "caseIds": [
+        "SDE-VJM-009"
+      ],
+      "caseId": "SDE-VJM-009",
+      "familyId": "vancouver_colon_multiline",
+      "familyName": "Vancouver colon-led multiline journal",
+      "edgeTags": [
+        "vancouver",
+        "journal",
+        "colon_led",
+        "multiline"
+      ],
+      "expectedStyle": "vancouver",
+      "detectedStyle": "vancouver",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": false,
+          "locator": true,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "issue"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "rossi|l",
+            "al harbi|s",
+            "haddad|l",
+            "costa|m"
+          ],
+          "actualKeys": [
+            "rossi|l",
+            "al harbi|s",
+            "haddad|l",
+            "costa|m"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "Rossi, L.",
+          "Al-Harbi, S.",
+          "Haddad, L.",
+          "Costa, M."
+        ],
+        "title": "Safety review clustering for drug discovery: case SDE-VJM-009",
+        "year": "2013",
+        "journal": "Precision Therapy Analytics",
+        "volume": "15",
+        "pages": "1225-37",
+        "doi": "10.7001/vjm.209"
+      },
+      "split": {
+        "confidence": 0.85,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers",
+          "structural_numbering"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "vancouver_compact_array",
+        "rejectedCandidates": []
+      }
+    },
+    {
+      "citationId": "e16b2157-94fd-4714-b0be-601d75eed579",
+      "raw": "210. de Silva M, Weber J, Patel R, Kovacs E: Response prediction benchmarks for safety monitoring: case SDE-VJM-010.\nTranslational Modeling Quarterly. 2015, 17:1230-43\n10.7001/vjm.210",
+      "caseIds": [
+        "SDE-VJM-010"
+      ],
+      "caseId": "SDE-VJM-010",
+      "familyId": "vancouver_colon_multiline",
+      "familyName": "Vancouver colon-led multiline journal",
+      "edgeTags": [
+        "vancouver",
+        "journal",
+        "colon_led",
+        "multiline"
+      ],
+      "expectedStyle": "vancouver",
+      "detectedStyle": "vancouver",
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "journal",
+      "splitStatus": "identified",
+      "styleMatch": true,
+      "referenceTypeMatch": true,
+      "fieldChecks": {
+        "checks": {
+          "authors": true,
+          "title": true,
+          "year": true,
+          "journal": true,
+          "conferenceTitle": null,
+          "bookTitle": null,
+          "publisher": null,
+          "institution": null,
+          "volume": true,
+          "issue": false,
+          "locator": true,
+          "doi": true,
+          "url": null,
+          "edition": null
+        },
+        "mismatches": [
+          "issue"
+        ],
+        "totalComparable": 8,
+        "matchedComparable": 7,
+        "authorComparison": {
+          "match": true,
+          "expectedKeys": [
+            "de silva|m",
+            "weber|j",
+            "patel|r",
+            "kovacs|e"
+          ],
+          "actualKeys": [
+            "de silva|m",
+            "weber|j",
+            "patel|r",
+            "kovacs|e"
+          ]
+        }
+      },
+      "rawParsed": null,
+      "canonical": {
+        "authors": [
+          "de Silva, M.",
+          "Weber, J.",
+          "Patel, R.",
+          "Kovacs, E."
+        ],
+        "title": "Response prediction benchmarks for safety monitoring: case SDE-VJM-010",
+        "year": "2015",
+        "journal": "Translational Modeling Quarterly",
+        "volume": "17",
+        "pages": "1230-43",
+        "doi": "10.7001/vjm.210"
+      },
+      "split": {
+        "confidence": 0.85,
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_book_tail_markers",
+          "profile_conference_tail_markers",
+          "structural_numbering"
+        ],
+        "method": "structural",
+        "fallbackUsed": false
+      },
+      "extraction": {
+        "method": "deterministic",
+        "fallbackUsed": false,
+        "extractorPath": "deterministic",
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "no_competing_candidate",
+        "authorParserMode": "vancouver_compact_array",
+        "rejectedCandidates": []
+      }
+    }
+  ]
+}

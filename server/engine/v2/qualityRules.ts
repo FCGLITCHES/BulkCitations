@@ -267,6 +267,7 @@ export function analyzeParsedAuthorStrings(authors: string[] | undefined): {
     const normalized = normalizeWhitespace(author);
     if (!normalized) continue;
     const isCompactVancouver = looksLikeCompactVancouverAuthorString(normalized);
+    const looksLikeInvertedInitialsAuthor = /^[^,]+,\s*(?:[\p{Lu}]\.\s*){1,6}$/u.test(normalized);
     const hasContentLeak = looksLikeAuthorContentLeak(normalized);
 
     if (isCompactVancouver) compactVancouverCount += 1;
@@ -275,7 +276,7 @@ export function analyzeParsedAuthorStrings(authors: string[] | undefined): {
       mergedBlobCount += 1;
     }
     if (/^[A-Z](?:\.?\s*[A-Z]){0,5}\.?$/i.test(normalized.replace(/\s+/g, ''))) initialsOnlyCount += 1;
-    if (!isCompactVancouver && /(?:^|[\s,])\p{L}\.?$/u.test(normalized)) singleCharacterTailCount += 1;
+    if (!isCompactVancouver && !looksLikeInvertedInitialsAuthor && /(?:^|[\s,])\p{L}\.?$/u.test(normalized)) singleCharacterTailCount += 1;
 
     const initialsCount = (normalized.match(/[\p{Lu}](?=\.|\b)/gu) ?? []).length;
     if (initialsCount >= 2) richness += 1.2;

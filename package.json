@@ -18,6 +18,7 @@
     "stress:v2": "tsx scripts/stressV2.ts",
     "stress:sde:generate": "tsx scripts/generateSdeStress250.ts",
     "stress:sde": "tsx scripts/stressSdeV2.ts",
+    "report:real-ready": "tsx scripts/reportRealReadyCorpus.ts",
     "baseline:v2:freeze": "tsx scripts/v2PhaseBaseline.ts freeze",
     "baseline:v2:check": "tsx scripts/v2PhaseBaseline.ts check",
     "benchmark": "tsx scripts/benchmark.ts",
