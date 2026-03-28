@@ -36,7 +36,13 @@ import {
   proceedingsSignal,
   sanitizeParsedReference,
 } from './qualityRules.js';
-import { getOpenAiExtractTimeoutMs, tryConsumeLlmCall } from './llmConfig.js';
+import {
+  getMaxExtractConcurrentFallbackCalls,
+  getMaxExtractFallbackCallsForBatch,
+  getOpenAiExtractModel,
+  getOpenAiExtractTimeoutMs,
+  tryConsumeLlmCall,
+} from './llmConfig.js';
 import { assessCandidatePlausibility } from './fieldPlausibility.js';
 import { buildContainerHints, resolveWinnerContainer } from './containerHints.js';
 import {
@@ -119,7 +125,7 @@ const VANCOUVER_COMPACT_JOURNAL_PATTERN = /^(?:\[\d+\]\s*|\d+\.\s*)?(?<authors>[
 const AUTHOR_COLON_VANCOUVER_PATTERN = /^(?:\[\d+\]\s*|\d+\.\s*)?(?<authors>.+?):\s+(?<title>.+?)\.\s+(?<journal>.+?)\.\s+(?<year>(?:1[5-9]\d{2}|20\d{2}))\s*[,;]\s*(?<volume>\d+)(?:\((?<issue>[A-Za-z0-9-]+)\))?:\s*(?<pages>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?)\.?(?:\s+(?<tail>.+))?$/i;
 const APA_THESIS_PATTERN = /^(?<author>.+?)\s*\((?<year>(?:1[5-9]\d{2}|20\d{2}))\)\.\s*(?<title>.+?)\s*[\[(](?<descriptor>(?:doctoral|phd|master'?s?)\s+(?:dissertation|thesis),\s*(?<institution>[^)\]]+))[\])]\.?\s*(?<url>(?:https?:\/\/|www\.)\S+)?$/i;
 const MLA_THESIS_PATTERN = /^(?<author>.+?)\.\s+"(?<title>[^"]+?)"\.?\s+(?<institution>.+?),\s*(?<year>(?:1[5-9]\d{2}|20\d{2}))\.\s*(?<descriptor>(?:phd|doctoral|master'?s?)\s+(?:dissertation|thesis))\.?(?:\s+(?<url>(?:https?:\/\/|www\.)\S+))?$/i;
-const THESIS_DESCRIPTOR_PATTERN = /\b(?:doctoral|phd|master'?s?)\s+(?:dissertation|thesis)\b/i;
+const THESIS_DESCRIPTOR_PATTERN = /\b(?:(?:doctoral|phd|master'?s?)\s+)?(?:dissertation|thesis)\b/i;
 const AUTO_STYLE_CANDIDATES: CitationStyle[] = ['apa', 'mla', 'harvard', 'chicago', 'ieee', 'vancouver'];
 
 let grobidCooldownUntil = 0;
@@ -908,9 +914,36 @@ function looksLikeAuthorEchoTitle(parsed: ParsedReference): boolean {
 function looksLikeLocatorOnlyTitle(value: string | undefined): boolean {
   const normalized = normalizeWhitespace(value ?? '').replace(/^[:;,.()\[\]\s-]+/, '');
   if (!normalized) return false;
-  const compact = normalized.replace(/^article\s+/i, '');
-  return compact.split(/\s+/).length <= 2
-    && (isLocatorLike(compact) || /^[A-Za-z]?\d{2,}$/i.test(compact));
+  const compact = normalizeWhitespace(
+    normalized
+      .replace(/^article\s+/i, '')
+      .replace(/^(?:pp?\.?|pages?|doi)\s*/i, '')
+      .replace(/\bdoi\b\.?$/i, '')
+      .replace(/[()]/g, ' ')
+      .trim(),
+  );
+  if (!compact) return false;
+  if (/^(?:pp?\.?\s*)?[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?(?:\.\s*doi\.?)?$/i.test(normalized)) {
+    return true;
+  }
+  const compactTokens = compact
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((token) => !/^(?:pp?\.?|pages?|doi)$/i.test(token));
+  return compactTokens.length <= 3
+    && compactTokens.every((token) => isLocatorLike(token) || /^[A-Za-z]?\d{2,}[A-Za-z.-]*$/i.test(token));
+}
+
+function looksLikeSerialVenueTail(value: string | undefined): boolean {
+  const normalized = normalizeWhitespace(value ?? '');
+  if (!normalized) return false;
+  if (/\b(?:journal|proceedings|conference|symposium|workshop|endoscopy|science signaling)\b/i.test(normalized)) {
+    return true;
+  }
+  if (/\bpp?\.?\s*[A-Za-z]?\d/i.test(normalized)) return true;
+  if (/\bvol\.?\s*\d+/i.test(normalized)) return true;
+  if (/^\d+(?:\([A-Za-z0-9-]+\))?(?::[A-Za-z]?\d+(?:[-–][A-Za-z]?\d+)?)?$/i.test(normalized)) return true;
+  return /^[^.;]+,\s*\d+(?:\([A-Za-z0-9-]+\))?(?:,\s*pp?\.?\s*[A-Za-z]?\d+(?:[-–][A-Za-z]?\d+)?)?$/i.test(normalized);
 }
 
 function extractLeadAuthorFromQuotedLead(value: string): string[] | undefined {
@@ -1604,6 +1637,7 @@ function buildBookTailCandidate(normalized: string, inputStyle: string): {
   }
 
   if (!authorLead || !titleLead) return null;
+  if (/[."]\s+in\s+[A-Z]/i.test(titleLead) || /\bproceedings of the\b/i.test(titleLead)) return null;
 
   const { title, edition } = extractBookTitleLead(titleLead);
   if (!title) return null;
@@ -2288,6 +2322,39 @@ function buildSentenceThesisCandidate(normalized: string, inputStyle: string): P
       .replace(/\bdoi:\s*/i, '')
       .replace(DOI_PATTERN, ''),
   ));
+
+  const simpleSentenceMatch = working.match(
+    /^(?:\[\d+\]\s*)?(?<author>.+?)\.\s+(?<title>.+?)\.\s+(?<institution>.+?),\s*(?<year>(?:1[5-9]\d{2}|20\d{2}))\.\s*(?<descriptor>(?:(?:doctoral|phd|master'?s?)\s+)?(?:dissertation|thesis))$/i,
+  );
+  if (simpleSentenceMatch?.groups) {
+    const authorParse = parseAuthorsForStyle([normalizeWhitespace(simpleSentenceMatch.groups.author ?? '')], inputStyle === 'auto' ? null : inputStyle);
+    const authors = authorParse.authors.map((author) => renderAuthor(author)).filter(Boolean);
+    const title = stripTrailingPeriod(simpleSentenceMatch.groups.title ?? '');
+    const institution = cleanContainerTitle(simpleSentenceMatch.groups.institution ?? '');
+    const year = normalizeParsedYear(simpleSentenceMatch.groups.year);
+    if (authors.length > 0 && title && institution && year) {
+      const parsed: ParsedReference = {
+        authors,
+        title,
+        year,
+        institution,
+        url: url ? cleanTrailingUrl(url) : undefined,
+        doi: doi ? normalizeDoiValue(doi) : undefined,
+        parseWarnings: ['sentence-thesis-heuristic'],
+      };
+
+      return {
+        branch: 'deterministic_raw',
+        normalized,
+        parsed,
+        referenceType: 'thesis',
+        warnings: [...(parsed.parseWarnings ?? []), ...authorParse.warningFlags],
+        styleUsed: inputStyle === 'auto' ? null : inputStyle as CitationStyle,
+        styleConfidence: 0.95,
+      };
+    }
+  }
+
   const descriptorMatch = working.match(THESIS_DESCRIPTOR_PATTERN);
   if (!descriptorMatch || descriptorMatch.index == null) return null;
 
@@ -2425,6 +2492,9 @@ function buildAuthorYearPublisherTailCandidate(normalized: string, inputStyle: s
   const publisher = cleanContainerTitle(bodySegments[bodySegments.length - 1] ?? '');
   const title = stripTrailingPeriod(bodySegments.slice(0, -1).join('. '));
   if (!publisher || !title) return null;
+  if (looksLikeSerialVenueTail(publisher)) return null;
+  if (/\b(?:vol\.?|no\.?|issue|pp?\.?)\b/i.test(title)) return null;
+  if (/[."]\s+in\s+[A-Z]/i.test(title) || /\bproceedings of the\b/i.test(title)) return null;
 
   const authorParse = parseAuthorsForStyle([authorLead], inputStyle === 'auto' ? null : inputStyle);
   const authors = authorParse.authors.map((author) => renderAuthor(author)).filter(Boolean);
@@ -2847,6 +2917,37 @@ function buildAuthorsFromInSourceLead(value: string): string[] | undefined {
   const normalized = stripTrailingPeriod(normalizeWhitespace(value).replace(/^\[\d+\]\s*/, ''));
   if (!normalized) return undefined;
 
+  const compactAuthorLead = normalizeWhitespace(
+    normalized
+      .replace(/\s*,?\s+(?:and|&)\s+/i, ', ')
+      .replace(/\s*,\s*,/g, ', ')
+      .replace(/,\s*$/, ''),
+  );
+  const compactAuthorSegments = compactAuthorLead
+    .split(/\s*,\s*/)
+    .map((segment) => normalizeWhitespace(segment))
+    .filter(Boolean);
+  if (
+    compactAuthorSegments.length >= 3
+    && compactAuthorSegments.length <= 10
+    && /^[\p{Lu}]\.?$/u.test(compactAuthorSegments[1] ?? '')
+    && compactAuthorSegments.every((segment, index) => (
+      index === 0
+        ? /^[\p{Lu}][\p{L}'’-]+$/u.test(segment)
+        : /^(?:[\p{Lu}]\.?|[\p{Lu}]\.?\s+[\p{Lu}][\p{L}'’-]+(?:\s+[\p{Lu}][\p{L}'’-]+){0,2}|[\p{Lu}][\p{L}'’-]+(?:\s+[\p{Lu}][\p{L}'’-]+){0,3})$/u.test(segment)
+    ))
+  ) {
+    return compactAuthorSegments.reduce<string[]>((authors, segment, index) => {
+      if (index === 0 && compactAuthorSegments[index + 1] && /^[\p{Lu}]\.?$/u.test(compactAuthorSegments[index + 1] ?? '')) {
+        authors.push(normalizeWhitespace(`${segment}, ${compactAuthorSegments[index + 1]}`));
+        return authors;
+      }
+      if (index === 1 && /^[\p{Lu}]\.?$/u.test(segment)) return authors;
+      authors.push(segment);
+      return authors;
+    }, []).filter(Boolean);
+  }
+
   const explicitLeadAndTail = normalized.match(/^([^,]+,\s*[^,]+),\s*(?:and|&)\s+(.+)$/i);
   if (explicitLeadAndTail) {
     return [
@@ -2909,11 +3010,20 @@ function buildInSourceCandidate(input: string, inputStyle: string): ParsedSelect
     .filter((segment) => segment && segment.toLowerCase() !== 'in');
   if (segments.length === 0) return null;
 
-  const conferenceLike = segments.some((segment) => CONFERENCE_SIGNAL_PATTERN.test(segment));
+  const conferenceLike = segments.some((segment) => CONFERENCE_SIGNAL_PATTERN.test(segment))
+    || (
+      /\bIn:?\s+/i.test(normalized)
+      && !locator
+      && segments.length <= 3
+      && segments.some((segment) => /^©/.test(segment) || looksLikePublisherSegment(segment))
+    );
   const authors = buildAuthorsFromInSourceLead(authorLead);
 
   if (conferenceLike) {
-    const publisher = looksLikePublisherSegment(segments[segments.length - 1]) ? cleanContainerTitle(segments.pop()) : undefined;
+    const trailingSegment = segments[segments.length - 1];
+    const publisher = trailingSegment && (/^©/.test(trailingSegment) || looksLikePublisherSegment(trailingSegment))
+      ? cleanContainerTitle(segments.pop())
+      : undefined;
     const conferenceTitle = normalizeConferenceContainer(segments);
     if (!conferenceTitle) return null;
 
@@ -3701,6 +3811,148 @@ function shouldAllowLlmFallback(
   return true;
 }
 
+function summarizeStrictFallbackCoverage(
+  parsed: ParsedReference,
+  referenceType: string,
+  authorParse: ReturnType<typeof parseAuthorsForStyle>,
+  fieldConfidence: Record<string, number>,
+) {
+  const referenceTypeReady = referenceType !== 'unknown';
+  const titleReady = hasParsedFallbackField(parsed, 'title');
+  const yearReady = hasParsedFallbackField(parsed, 'year');
+  const venueReady = hasParsedVenue(parsed, referenceType);
+  const authors = authorParse.authors ?? [];
+  const authorCount = authors.length;
+  const firstAuthorConfidence = fieldConfidence.authors ?? 0;
+  const malformedAuthorBlob = authorParse.warningFlags.length > 0 || authorParse.rejectedCandidates.length > 0;
+  const firstAuthorReady = authorCount > 0
+    && !malformedAuthorBlob
+    && firstAuthorConfidence >= V2_THRESHOLD_POLICY.extract.llmCriticalFieldFloor;
+  const coreChecks = {
+    referenceType: referenceTypeReady,
+    title: titleReady,
+    year: yearReady,
+    firstAuthor: firstAuthorReady,
+    venue: venueReady,
+  };
+  const corePassedCount = Object.values(coreChecks).filter(Boolean).length;
+  return {
+    coreChecks,
+    corePassedCount,
+    strictNearPass: corePassedCount >= 3,
+    strictLocallyReady: corePassedCount === 5,
+    authorCount,
+    firstAuthorConfidence,
+    malformedAuthorBlob,
+  };
+}
+
+function getLlmFallbackTrigger(
+  parsed: ParsedReference,
+  referenceType: string,
+  fieldConfidence: Record<string, number>,
+  authorParse: ReturnType<typeof parseAuthorsForStyle>,
+  splitArtifact?: V2SplitArtifact,
+) {
+  const coverage = summarizeStrictFallbackCoverage(parsed, referenceType, authorParse, fieldConfidence);
+  const noContaminationRisk = (splitArtifact?.contaminationFlags?.length ?? 0) === 0;
+  const noAuthors = coverage.authorCount === 0;
+  const malformedAuthorBlob = coverage.malformedAuthorBlob;
+  const weakFirstAuthor = coverage.firstAuthorConfidence < V2_THRESHOLD_POLICY.extract.llmCriticalFieldFloor;
+  const weakVenue = !coverage.coreChecks.venue;
+  const weakReferenceType = !coverage.coreChecks.referenceType;
+  const strictNearPass = coverage.strictNearPass && noContaminationRisk;
+
+  let reason: string | null = null;
+  if (strictNearPass && noAuthors) reason = 'missing_authors';
+  else if (strictNearPass && malformedAuthorBlob) reason = 'malformed_authors';
+  else if (strictNearPass && weakFirstAuthor) reason = 'weak_first_author';
+  else if (strictNearPass && weakVenue) reason = 'weak_venue';
+  else if (strictNearPass && weakReferenceType) reason = 'weak_reference_type';
+  else if (strictNearPass && coverage.corePassedCount < 5) reason = 'multi_field_low_confidence';
+
+  return {
+    ...coverage,
+    noAuthors,
+    weakVenue,
+    weakReferenceType,
+    strictNearPass,
+    noContaminationRisk,
+    shouldTrigger: reason !== null && !coverage.strictLocallyReady,
+    reason,
+  };
+}
+
+function listImprovedStrictFields(
+  beforeCoverage: ReturnType<typeof summarizeStrictFallbackCoverage>,
+  afterCoverage: ReturnType<typeof summarizeStrictFallbackCoverage>,
+) {
+  const fields: string[] = [];
+  for (const field of ['referenceType', 'title', 'year', 'firstAuthor', 'venue'] as const) {
+    if (!beforeCoverage.coreChecks[field] && afterCoverage.coreChecks[field]) fields.push(field);
+  }
+  return fields;
+}
+
+function shouldAcceptLlmFallbackResult(params: {
+  beforeParsed: ParsedReference;
+  beforeReferenceType: string;
+  beforeFieldConfidence: Record<string, number>;
+  beforeAuthorParse: ReturnType<typeof parseAuthorsForStyle>;
+  afterParsed: ParsedReference;
+  afterReferenceType: string;
+  afterFieldConfidence: Record<string, number>;
+  afterAuthorParse: ReturnType<typeof parseAuthorsForStyle>;
+}) {
+  const beforeCoverage = summarizeStrictFallbackCoverage(
+    params.beforeParsed,
+    params.beforeReferenceType,
+    params.beforeAuthorParse,
+    params.beforeFieldConfidence,
+  );
+  const afterCoverage = summarizeStrictFallbackCoverage(
+    params.afterParsed,
+    params.afterReferenceType,
+    params.afterAuthorParse,
+    params.afterFieldConfidence,
+  );
+  const beforePlausibility = assessCandidatePlausibility(params.beforeParsed, params.beforeReferenceType);
+  const afterPlausibility = assessCandidatePlausibility(params.afterParsed, params.afterReferenceType);
+  const fieldsImproved = listImprovedStrictFields(beforeCoverage, afterCoverage);
+
+  if (afterCoverage.authorCount === 0) {
+    return { accept: false, reason: 'authors_still_empty', fieldsImproved, strictPassDelta: afterCoverage.corePassedCount - beforeCoverage.corePassedCount };
+  }
+  if (afterCoverage.malformedAuthorBlob) {
+    return { accept: false, reason: 'authors_still_malformed', fieldsImproved, strictPassDelta: afterCoverage.corePassedCount - beforeCoverage.corePassedCount };
+  }
+  if (afterPlausibility.title.penalty > beforePlausibility.title.penalty) {
+    return { accept: false, reason: 'title_plausibility_worsened', fieldsImproved, strictPassDelta: afterCoverage.corePassedCount - beforeCoverage.corePassedCount };
+  }
+  if (afterPlausibility.venue.penalty > beforePlausibility.venue.penalty) {
+    return { accept: false, reason: 'venue_plausibility_worsened', fieldsImproved, strictPassDelta: afterCoverage.corePassedCount - beforeCoverage.corePassedCount };
+  }
+  if (
+    params.beforeReferenceType !== 'unknown'
+    && params.afterReferenceType !== params.beforeReferenceType
+    && !areReferenceTypesMergeCompatible(params.beforeReferenceType, params.afterReferenceType)
+  ) {
+    return { accept: false, reason: 'reference_type_less_coherent', fieldsImproved, strictPassDelta: afterCoverage.corePassedCount - beforeCoverage.corePassedCount };
+  }
+
+  const strictPassDelta = afterCoverage.corePassedCount - beforeCoverage.corePassedCount;
+  if (strictPassDelta <= 0) {
+    return { accept: false, reason: 'no_strict_gain', fieldsImproved, strictPassDelta };
+  }
+
+  return {
+    accept: true,
+    reason: fieldsImproved.length > 0 ? `improved:${fieldsImproved.join('|')}` : 'strict_gain',
+    fieldsImproved,
+    strictPassDelta,
+  };
+}
+
 function splitContaminationPenalty(splitArtifact?: V2SplitArtifact): number {
   if (!splitArtifact) return 0;
 
@@ -3739,7 +3991,7 @@ async function extractWithLlm(input: string): Promise<z.infer<typeof llmExtracti
   if (!apiKey) return null;
 
   const baseUrl = (process.env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1').replace(/\/$/, '');
-  const model = process.env.OPENAI_EXTRACT_MODEL ?? 'gpt-4o-mini';
+  const model = getOpenAiExtractModel();
 
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
@@ -4119,6 +4371,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       : selection.selectionReason;
     const selectedAuthorParse = attemptAuthorParse.get(selectedBase.id)
       ?? parseAuthorsForStyle(selectedBase.parsed.authors ?? [], selectedBase.styleUsed ?? inputStyle);
+    const selectedStyle = selectedBase.styleUsed ?? deterministic.styleUsed ?? (inputStyle === 'auto' ? null : inputStyle);
 
     const mergeCompatibleAlternates = preparedAttempts
       .filter((attempt) => attempt.candidate && attempt.candidate.id !== selectedBase.id)
@@ -4201,64 +4454,126 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     let llmApplied = false;
     let llmAttempted = false;
     let llmCapReached = false;
+    let llmFallbackAccepted = false;
+    let llmFallbackSkippedByBudget = false;
+    let llmFallbackReason: string | undefined;
+    let llmFallbackFieldsImproved: string[] = [];
+    let llmFallbackStrictPassDelta = 0;
     const llmWarnings: string[] = [];
-
+    const llmTrigger = getLlmFallbackTrigger(
+      mergedSelection,
+      selectedReferenceType,
+      selectedFieldConfidence,
+      selectedAuthorParse,
+      splitArtifact,
+    );
     const weakSelection =
+      llmTrigger.shouldTrigger
+      || 
       needsLlmFallback(mergedSelection, selectedFieldConfidence, selectedReferenceType)
       || ((attemptScore.get(selectedBase.id) ?? deterministicScore) - contaminationScorePenalty) < V2_THRESHOLD_POLICY.extract.weakSelectionScore
       || selectedAuthorParse.warningFlags.length > 0
       || selectedAuthorParse.rejectedCandidates.length > 0
       || splitContaminationFlags.length > 0;
-    const allowLlmFallback = shouldAllowLlmFallback(
+    const batchAllowsLlmFallback = shouldAllowLlmFallback(
       mergedSelection,
       selectedReferenceType,
       (attemptScore.get(selectedBase.id) ?? deterministicScore) - contaminationScorePenalty,
       batchSize,
       options?.executionMode,
     );
+    const allowLlmFallback = llmTrigger.shouldTrigger
+      && (
+        batchAllowsLlmFallback
+        || ['missing_authors', 'malformed_authors', 'weak_first_author', 'weak_venue', 'weak_reference_type'].includes(llmTrigger.reason ?? '')
+      );
+    const batchFallbackCap = getMaxExtractFallbackCallsForBatch(batchSize);
+    const fallbackRateExceeded = (options?.llmBudget?.extractCalls ?? 0) >= batchFallbackCap;
 
     if (llmEnabled && weakSelection && allowLlmFallback) {
       llmAttempted = true;
-      if (!tryConsumeLlmCall(options?.llmBudget, 'extract')) {
+      llmFallbackReason = llmTrigger.reason ?? 'multi_field_low_confidence';
+      if (fallbackRateExceeded) {
         llmCapReached = true;
+        llmFallbackSkippedByBudget = true;
+        rejectedCandidates.push('llm_batch_budget_cap_reached');
+        llmWarnings.push('llm_batch_budget_cap_reached');
+      } else if (!tryConsumeLlmCall(options?.llmBudget, 'extract')) {
+        llmCapReached = true;
+        llmFallbackSkippedByBudget = true;
         rejectedCandidates.push('llm_cap_reached');
         llmWarnings.push('llm_cap_reached');
       } else {
         try {
           const llm = await extractWithLlm(selectedBase.normalized);
           if (llm) {
+            const beforeParsed = { ...mergedSelection };
+            const beforeReferenceType = selectedReferenceType;
+            const beforeFieldConfidence = { ...selectedFieldConfidence };
+            const beforeAuthorParse = parseAuthorsForStyle(mergedSelection.authors ?? [], selectedStyle);
             const merged = mergeLlmWithDeterministic({ parsed: mergedSelection, referenceType: selectedReferenceType }, llm);
-            const sanitizedHybrid = sanitizeParsedReference(merged.parsed, merged.referenceType);
-            mergedSelection = normalizeAuthorOptionalWebsiteParse(sanitizedHybrid.parsed, sanitizedHybrid.referenceType);
-            let hybridContainer = resolveWinnerContainer(mergedSelection, sanitizedHybrid.referenceType);
-            mergedSelection = hybridContainer.parsed;
+            let candidateSelection = normalizeAuthorOptionalWebsiteParse(
+              sanitizeParsedReference(merged.parsed, merged.referenceType).parsed,
+              sanitizeParsedReference(merged.parsed, merged.referenceType).referenceType,
+            );
+            const candidateSanitized = sanitizeParsedReference(candidateSelection, merged.referenceType);
+            candidateSelection = normalizeAuthorOptionalWebsiteParse(candidateSanitized.parsed, candidateSanitized.referenceType);
+            let hybridContainer = resolveWinnerContainer(candidateSelection, candidateSanitized.referenceType);
+            candidateSelection = hybridContainer.parsed;
             const hybridResolution = resolveReferenceTypeFromEvidence({
-              claimedType: sanitizedHybrid.referenceType,
-              parsed: mergedSelection,
+              claimedType: candidateSanitized.referenceType,
+              parsed: candidateSelection,
               containerHints: hybridContainer.containerHints,
               detectTypeHint: deterministic.referenceType !== 'unknown' ? deterministic.referenceType : null,
             });
-            selectedReferenceType = hybridResolution.referenceType;
-            typeResolution = hybridResolution;
-            selectedFieldConfidence = {
+            const candidateReferenceType = hybridResolution.referenceType;
+            const candidateFieldConfidence = {
               ...merged.fieldConfidence,
-              ...applySplitPenaltyToFieldConfidence(buildFieldConfidence(mergedSelection, selectedReferenceType), splitPenalty),
+              ...applySplitPenaltyToFieldConfidence(buildFieldConfidence(candidateSelection, candidateReferenceType), splitPenalty),
             };
-            extractorPath = 'llm';
-            llmApplied = true;
-            llmWarnings.push('llm_fallback_applied');
+            const candidateAuthorParse = parseAuthorsForStyle(candidateSelection.authors ?? [], selectedStyle);
+            const acceptance = shouldAcceptLlmFallbackResult({
+              beforeParsed,
+              beforeReferenceType,
+              beforeFieldConfidence,
+              beforeAuthorParse,
+              afterParsed: candidateSelection,
+              afterReferenceType: candidateReferenceType,
+              afterFieldConfidence: candidateFieldConfidence,
+              afterAuthorParse: candidateAuthorParse,
+            });
+            llmFallbackFieldsImproved = acceptance.fieldsImproved;
+            llmFallbackStrictPassDelta = acceptance.strictPassDelta;
+            if (acceptance.accept) {
+              mergedSelection = candidateSelection;
+              selectedReferenceType = candidateReferenceType;
+              typeResolution = hybridResolution;
+              selectedFieldConfidence = candidateFieldConfidence;
+              extractorPath = 'llm';
+              llmApplied = true;
+              llmFallbackAccepted = true;
+              llmFallbackReason = acceptance.reason;
+              llmWarnings.push('llm_fallback_applied');
+            } else {
+              rejectedCandidates.push(`llm_rejected:${acceptance.reason}`);
+              llmWarnings.push(`llm_fallback_rejected:${acceptance.reason}`);
+              llmFallbackReason = acceptance.reason;
+            }
           } else {
             rejectedCandidates.push('llm_unavailable');
             llmWarnings.push('llm_fallback_unavailable');
+            llmFallbackReason = 'llm_unavailable';
           }
         } catch (error) {
           rejectedCandidates.push('llm_invalid_or_failed');
           llmWarnings.push(`llm_fallback_failed:${error instanceof Error ? error.message : String(error)}`);
+          llmFallbackReason = 'llm_invalid_or_failed';
         }
       }
     } else if (llmEnabled && weakSelection && !allowLlmFallback) {
       rejectedCandidates.push('llm_batch_gated');
       llmWarnings.push('llm_batch_gated');
+      llmFallbackReason = llmTrigger.reason ?? 'not_near_pass';
     }
 
     const currentSelectionScore = scoreCandidate(mergedSelection, selectedReferenceType);
@@ -4402,7 +4717,6 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
           : '';
     const selectedAuthorFingerprint = JSON.stringify(selectedBase.parsed.authors ?? []);
     const mergedAuthorFingerprint = JSON.stringify(mergedSelection.authors ?? []);
-    const selectedStyle = selectedBase.styleUsed ?? deterministic.styleUsed ?? (inputStyle === 'auto' ? null : inputStyle);
     const selectedStyleConfidence = selectedBase.styleConfidence ?? deterministic.styleConfidence;
     const finalAuthorParse = selectedAuthorFingerprint === mergedAuthorFingerprint
       ? selectedAuthorParse
@@ -4452,6 +4766,13 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
         ...finalAuthorParse.rejectedCandidates,
       ],
       llmCapReached,
+      llmFallbackAttempted: llmAttempted,
+      llmFallbackAccepted: llmFallbackAccepted,
+      llmFallbackReason,
+      llmFallbackSkippedByBudget,
+      llmFallbackFieldsImproved,
+      llmFallbackStrictPassDelta,
+      llmFallbackFirstAuthorConfidence: llmTrigger.firstAuthorConfidence,
       fieldConfidence: selectedFieldConfidence,
       warnings,
       debug: options?.debugEnabled
@@ -4497,6 +4818,23 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             llm_attempted: llmAttempted,
             llm_applied: llmApplied,
             llm_cap_reached: llmCapReached,
+            llm_fallback_reason: llmFallbackReason,
+            llm_fallback_skipped_by_budget: llmFallbackSkippedByBudget,
+            llm_fallback_fields_improved: llmFallbackFieldsImproved,
+            llm_fallback_strict_pass_delta: llmFallbackStrictPassDelta,
+            llm_fallback_first_author_confidence: llmTrigger.firstAuthorConfidence,
+            llm_trigger: {
+              shouldTrigger: llmTrigger.shouldTrigger,
+              reason: llmTrigger.reason,
+              authorCount: llmTrigger.authorCount,
+              noAuthors: llmTrigger.noAuthors,
+              malformedAuthorBlob: llmTrigger.malformedAuthorBlob,
+              weakVenue: llmTrigger.weakVenue,
+              weakReferenceType: llmTrigger.weakReferenceType,
+              strictNearPass: llmTrigger.strictNearPass,
+              corePassedCount: llmTrigger.corePassedCount,
+              batchFallbackCap,
+            },
             rejectedCandidates,
           }
         : undefined,

@@ -188,6 +188,13 @@ export interface ExtractorAdapter {
     authorWarningFlags?: string[];
     rejectedCandidates?: string[];
     llmCapReached?: boolean;
+    llmFallbackAttempted?: boolean;
+    llmFallbackAccepted?: boolean;
+    llmFallbackReason?: string;
+    llmFallbackSkippedByBudget?: boolean;
+    llmFallbackFieldsImproved?: string[];
+    llmFallbackStrictPassDelta?: number;
+    llmFallbackFirstAuthorConfidence?: number;
     debug?: Record<string, unknown>;
     fieldConfidence: Partial<Record<'authors' | 'title' | 'year' | 'journal' | 'volume' | 'issue' | 'pages' | 'doi' | 'publisher' | 'url', number>>;
     warnings: string[];

@@ -11,11 +11,11 @@ export default function ApiDocs() {
         <section className="pt-24 pb-32 px-8 overflow-hidden">
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
             <div className="lg:col-span-7 space-y-8">
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-4">
                 <h1 className="font-headline text-5xl md:text-7xl font-bold text-primary-container dark:text-blue-50 leading-tight tracking-tight">
                   Integrate High-Accuracy Citation Conversion into your Platform
                 </h1>
-                <p className="text-amber-700 dark:text-amber-400 font-bold tracking-widest uppercase text-xs">
+                <p className="text-amber-700 dark:text-amber-400 font-bold tracking-widest uppercase text-xs pt-4">
                   Coming Soon • Private Beta Q2 2026
                 </p>
               </div>

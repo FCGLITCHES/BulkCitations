@@ -13,20 +13,24 @@
   --card-foreground: hsl(222, 47%, 11%);
   --border: hsl(214, 32%, 91%);
   --input: hsl(214, 32%, 91%);
-  --primary: hsl(160, 84%, 39%);
-  --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: hsl(217, 33%, 17%);
-  --secondary-foreground: hsl(210, 40%, 98%);
-  --accent: hsl(160, 84%, 39%);
-  --accent-foreground: hsl(0, 0%, 100%);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(210, 40%, 98%);
-  --ring: hsl(160, 84%, 39%);
-  --radius: 0.5rem;
-  --surface: hsl(0, 0%, 100%);
-  --destructive-foreground: hsl(210, 40%, 98%);
-  --ring: hsl(160, 84%, 39%);
-  --radius: 0.5rem;
+  --primary: hsl(220, 100%, 6%);
+  /* New semantic tokens */
+  --surface: #f8f9fb;
+  --on-surface: #191c1e;
+  --on-surface-variant: #44474e;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f2f4f6;
+  --surface-container: #eceef0;
+  --surface-container-high: #e6e8ea;
+  --surface-container-highest: #e0e3e5;
+  --primary-container: #002147;
+  --on-primary-container: #708ab5;
+  --primary-fixed-dim: #aec7f6;
+  --secondary: #43664d;
+  --error: #ba1a1a;
+  --on-error: #ffffff;
+  --outline: #74777f;
+  --outline-variant: #c4c6cf;
 }
 
 .dark {
@@ -40,21 +44,24 @@
   --card-foreground: hsl(0, 0%, 98%);
   --border: hsl(0, 0%, 20%);
   --input: hsl(0, 0%, 20%);
-  --primary: hsl(160, 84%, 45%);
-  --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: hsl(0, 0%, 15%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(160, 84%, 45%);
-  --accent-foreground: hsl(0, 0%, 100%);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(160, 84%, 45%);
-  --radius: 0.5rem;
-  --surface: hsl(0, 0%, 11%);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(160, 84%, 45%);
-  --radius: 0.5rem;
+  --primary: hsl(220, 100%, 80%);
+  /* New semantic tokens - Dark Mode Overrides */
+  --surface: #191c1e;
+  --on-surface: #e1e2e4;
+  --on-surface-variant: #c4c6cf;
+  --surface-container-lowest: #0b0f11;
+  --surface-container-low: #1d2123;
+  --surface-container: #212527;
+  --surface-container-high: #2b3032;
+  --surface-container-highest: #363b3d;
+  --primary-container: #004786;
+  --on-primary-container: #d2e4ff;
+  --primary-fixed-dim: #aec7f6;
+  --secondary: #aad0b1;
+  --error: #ffb4ab;
+  --on-error: #690005;
+  --outline: #8e9199;
+  --outline-variant: #44474e;
 }
 
 @layer base {
@@ -71,6 +78,14 @@
     @apply font-sans antialiased bg-background text-foreground;
     min-height: 100dvh;
     overflow-x: hidden;
+  }
+
+  /* Disable transitions for instant theme switching */
+  .no-transitions,
+  .no-transitions *,
+  .no-transitions *:before,
+  .no-transitions *:after {
+    transition: none !important;
   }
 }
 

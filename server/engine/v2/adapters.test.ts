@@ -6,6 +6,9 @@ const { extractor, classifier } = createDefaultAdapters();
 
 describe('default extractor institutional heuristics', () => {
   afterEach(() => {
+    delete process.env.ENABLE_LLM_EXTRACTOR;
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.OPENAI_EXTRACT_MODEL;
     vi.unstubAllGlobals();
   });
 
@@ -462,6 +465,100 @@ describe('default extractor institutional heuristics', () => {
 });
 
 describe('style detection and source-type regressions', () => {
+  it('keeps numbered Vancouver journals out of year-anchored locator-title fallbacks', async () => {
+    const result = await extractor.extract(
+      '[267] Kurt B. Drug-induced stuttering associated with venlafaxineolanzapine combination: A rare pharmacodynamic interaction. Dusunen Adam: Journal of Psychiatry and Neurological Sciences. 2025;:277-278. doi:10.14744/dajpns.2025.00305',
+      'auto',
+      {},
+    );
+
+    expect(result.selectedBranch).not.toBe('year_anchored_fallback_raw');
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.title).toBe('Drug-induced stuttering associated with venlafaxineolanzapine combination: A rare pharmacodynamic interaction');
+    expect(result.parsed.journal).toBe('Dusunen Adam: Journal of Psychiatry and Neurological Sciences');
+    expect(result.parsed.year).toBe('2025');
+    expect(result.parsed.pages).toBe('277-278');
+    expect(result.parsed.doi).toBe('10.14744/dajpns.2025.00305');
+  });
+
+  it('keeps locator-only metadata out of MLA journal titles with article numbers', async () => {
+    const result = await extractor.extract(
+      'R., Rajalakshmi, Chinnappa A. Uthaiah, Ramya C. M., SubbaRao V. Madhunapantula, Paramahans V. Salimath, Praveen K., Srinath K. M., and Kishor M. R.. "Comparative assessment of cognitive impairment and oxidative stress markers among vitamin D insufficient elderly patients with and without type 2 diabetes mellitus (T2DM)." PLOS ONE, vol. 17, no. 6, 2022, pp. e0269394. doi: 10.1371/journal.pone.0269394',
+      'auto',
+      {},
+    );
+
+    expect(result.selectedBranch).not.toBe('year_anchored_fallback_raw');
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.title).toBe('Comparative assessment of cognitive impairment and oxidative stress markers among vitamin D insufficient elderly patients with and without type 2 diabetes mellitus (T2DM)');
+    expect(result.parsed.journal).toBe('PLOS ONE');
+    expect(result.parsed.volume).toBe('17');
+    expect(result.parsed.issue).toBe('6');
+    expect(result.parsed['article-number'] ?? result.parsed.pages).toBeTruthy();
+    expect(result.parsed.doi).toBe('10.1371/journal.pone.0269394');
+  });
+
+  it('keeps quoted conference containers out of book-tail selection when the venue is a proceedings container', async () => {
+    const result = await extractor.extract(
+      'Correia, C, N Almeida, F Portela, D Gomes, A Fernandes, A Rosa, and P Figueiredo. “ENDOSCOPIC DRAINAGE OF PANCREATIC AND PERI-PANCREATIC COLLECTIONS: A RETROSPECTIVE ANALYSIS.” In Endoscopy. © Georg Thieme Verlag KG, 2020. https://doi.org/10.1055/s-0040–1704732',
+      'auto',
+      { debugEnabled: true },
+    );
+
+    expect(result.debug?.winner_adapter_id).not.toBe('heuristic:book_tail');
+    expect(result.selectedBranch).not.toBe('year_anchored_fallback_raw');
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.title).toBe('ENDOSCOPIC DRAINAGE OF PANCREATIC AND PERI-PANCREATIC COLLECTIONS: A RETROSPECTIVE ANALYSIS');
+    expect(result.parsed.conferenceTitle).toBe('Endoscopy');
+    expect(result.parsed.doi).toBe('10.1055/s-0040-1704732');
+  });
+
+  it('parses numbered simple dissertation tails as theses with clean institution fields', async () => {
+    const result = await extractor.extract(
+      '[27] Φέρρα, Γκόλφω. Police interviews with children in Greece. National Documentation Centre (EKT), 2026. Dissertation. https://doi.org/10.12681/eadd/60873',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('thesis');
+    expect(result.parsed.title).toBe('Police interviews with children in Greece');
+    expect(result.parsed.institution).toBe('National Documentation Centre (EKT)');
+    expect(result.parsed.year).toBe('2026');
+    expect(result.parsed.doi).toBe('10.12681/eadd/60873');
+  });
+
+  it('rejects author-year-publisher-tail fallback for wrapped APA journals with volume and issue metadata', async () => {
+    const result = await extractor.extract(
+      'Foley, John F. (2013). IKK Goes BAD. Science Signaling, 6(260). https://doi.org/10.1126/scisignal.2004004',
+      'auto',
+      {},
+    );
+
+    expect(result.selectedBranch).not.toBe('year_anchored_fallback_raw');
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.title).toBe('IKK Goes BAD');
+    expect(result.parsed.journal).toBe('Science Signaling');
+    expect(result.parsed.volume).toBe('6');
+    expect(result.parsed.issue).toBe('260');
+    expect(result.parsed.doi).toBe('10.1126/scisignal.2004004');
+  });
+
+  it('keeps Harvard smart-punctuation journals out of publisher-tail fallback', async () => {
+    const result = await extractor.extract(
+      'Ceci, SJ and Bruck, M, 2009. Do IRBs Pass the Minimal Harm Test?. Perspectives on Psychological Science, 4(1), pp.28–29. https://doi.org/10.1111/j.1745–6924.2009.01084.x',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.title).toBe('Do IRBs Pass the Minimal Harm Test?');
+    expect(result.parsed.journal).toBe('Perspectives on Psychological Science');
+    expect(result.parsed.volume).toBe('4');
+    expect(result.parsed.issue).toBe('1');
+    expect(result.parsed.pages).toBe('28-29');
+    expect(result.parsed.doi).toBe('10.1111/j.1745-6924.2009.01084.x');
+  });
+
   it('detects MLA books as MLA instead of collapsing them into APA', async () => {
     const detection = await classifier.detectStyle(
       'Smith, John. The Craft of Testing. Routledge, 2019.',
@@ -989,6 +1086,78 @@ describe('style detection and source-type regressions', () => {
     expect(result.parsed.publisher).toBe('Springer Berlin Heidelberg');
     expect(result.parsed.year).toBe('2022');
     expect(result.parsed.doi).toBe('10.1007/978-3-662-64525-3');
+  });
+
+  it('skips IEEE LLM fallback when the per-batch budget cap is already reached', async () => {
+    process.env.ENABLE_LLM_EXTRACTOR = 'true';
+    process.env.OPENAI_API_KEY = 'test-key';
+    process.env.OPENAI_EXTRACT_MODEL = 'gpt-5.4-nano';
+    const fetchMock = vi.fn(() => {
+      throw new Error('fetch should not be called when the IEEE fallback budget is exhausted');
+    });
+    vi.stubGlobal('fetch', fetchMock as any);
+
+    const result = await extractor.extract(
+      '[12] "Key challenges for delivering clinical impact with artificial intelligence," BMC Medicine, vol. 17, no. 1, p. 195, 2019.',
+      'ieee',
+      {
+        batchSize: 50,
+        llmBudget: {
+          maxCalls: 90,
+          totalCalls: 8,
+          splitCalls: 0,
+          extractCalls: 8,
+          capReached: false,
+        },
+      },
+    );
+
+    expect(result.llmFallbackAttempted).toBe(true);
+    expect(result.llmFallbackSkippedByBudget).toBe(true);
+    expect(result.llmFallbackAccepted).toBe(false);
+    expect(['missing_authors', 'multi_field_low_confidence', 'weak_first_author']).toContain(result.llmFallbackReason);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('fails closed on invalid IEEE GPT-5.4 nano fallback output and keeps the deterministic parse', async () => {
+    process.env.ENABLE_LLM_EXTRACTOR = 'true';
+    process.env.OPENAI_API_KEY = 'test-key';
+    process.env.OPENAI_EXTRACT_MODEL = 'gpt-5.4-nano';
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      choices: [
+        {
+          message: {
+            content: '{"authors":[{"last":""}]}',
+          },
+        },
+      ],
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock as any);
+
+    const result = await extractor.extract(
+      '[183] "Dose response ranking for translational pharmacology: case SDE-IEW-003," Drug Evidence Hub, ver. 2.0, 2013. [Online]. Available: https://stress.example.org/iew/183',
+      'ieee',
+      {
+        batchSize: 50,
+        llmBudget: {
+          maxCalls: 90,
+          totalCalls: 0,
+          splitCalls: 0,
+          extractCalls: 0,
+          capReached: false,
+        },
+      },
+    );
+
+    expect(result.llmFallbackAttempted).toBe(true);
+    expect(result.llmFallbackAccepted).toBe(false);
+    expect(result.llmFallbackReason).toBe('llm_invalid_or_failed');
+    expect(result.extractorPath).toBe('deterministic');
+    expect(result.referenceType).toBe('website');
+    expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-IEW-003');
   });
 });
 

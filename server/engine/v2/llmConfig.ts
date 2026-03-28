@@ -2,8 +2,11 @@ import type { V2LlmBudget, V2PipelineContext } from './contracts.js';
 
 const DEFAULT_OPENAI_EXTRACT_TIMEOUT_MS = 8_000;
 const DEFAULT_OPENAI_SPLIT_TIMEOUT_MS = 12_000;
-const DEFAULT_V2_LLM_MAX_CALLS_SYNC = 25;
-const DEFAULT_V2_LLM_MAX_CALLS_ASYNC = 100;
+const DEFAULT_V2_LLM_MAX_CALLS_SYNC = 90;
+const DEFAULT_V2_LLM_MAX_CALLS_ASYNC = 150;
+const DEFAULT_V2_EXTRACT_FALLBACK_RATE = 0.15;
+const DEFAULT_V2_EXTRACT_FALLBACK_MAX_CALLS = 75;
+const DEFAULT_V2_EXTRACT_MAX_CONCURRENT = 6;
 
 export function readPositiveIntEnv(name: string, fallback: number): number {
   const parsed = Number.parseInt(process.env[name] ?? '', 10);
@@ -14,8 +17,30 @@ export function getOpenAiExtractTimeoutMs(): number {
   return readPositiveIntEnv('OPENAI_EXTRACT_TIMEOUT_MS', DEFAULT_OPENAI_EXTRACT_TIMEOUT_MS);
 }
 
+export function getOpenAiExtractModel(): string {
+  return process.env.OPENAI_EXTRACT_MODEL ?? 'gpt-5.4-nano';
+}
+
 export function getOpenAiSplitTimeoutMs(): number {
   return readPositiveIntEnv('OPENAI_SPLIT_TIMEOUT_MS', DEFAULT_OPENAI_SPLIT_TIMEOUT_MS);
+}
+
+export function getMaxExtractFallbackRatePerBatch(): number {
+  const parsed = Number.parseFloat(process.env.V2_EXTRACT_FALLBACK_RATE_PER_BATCH ?? '');
+  return Number.isFinite(parsed) && parsed > 0 && parsed <= 1 ? parsed : DEFAULT_V2_EXTRACT_FALLBACK_RATE;
+}
+
+export function getMaxExtractFallbackCallsPerBatch(): number {
+  return readPositiveIntEnv('V2_EXTRACT_FALLBACK_MAX_CALLS_PER_BATCH', DEFAULT_V2_EXTRACT_FALLBACK_MAX_CALLS);
+}
+
+export function getMaxExtractFallbackCallsForBatch(batchSize: number): number {
+  const rateCap = Math.ceil(Math.max(batchSize, 1) * getMaxExtractFallbackRatePerBatch());
+  return Math.min(rateCap, getMaxExtractFallbackCallsPerBatch());
+}
+
+export function getMaxExtractConcurrentFallbackCalls(): number {
+  return readPositiveIntEnv('V2_EXTRACT_MAX_CONCURRENT_FALLBACK_CALLS', DEFAULT_V2_EXTRACT_MAX_CONCURRENT);
 }
 
 export function createLlmBudget(executionMode: 'sync' | 'async'): V2LlmBudget {

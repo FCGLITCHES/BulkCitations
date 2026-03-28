@@ -348,7 +348,7 @@ function shouldMergeOcrSplitTokens(current: string, next: string): boolean {
     return true;
   }
 
-  if (/^[\p{Lu}]$/u.test(currentCore) && /^[\p{Lu}]{2,}$/u.test(nextCore)) {
+  if (/^[\p{Lu}]$/u.test(currentCore) && /^[\p{Lu}]{2,}$/u.test(nextCore) && nextCore.length <= 3) {
     return true;
   }
 
@@ -385,7 +385,9 @@ export function repairPdfCopyArtifacts(value: string): string {
     if (!changed) break;
   }
 
-  return working.join(' ');
+  return working
+    .join(' ')
+    .replace(/([:;])\s*([Aa])(?=[A-Z]{4,}\b)/g, '$1 $2 ');
 }
 
 export function fixUnicodeText(value: string): string {

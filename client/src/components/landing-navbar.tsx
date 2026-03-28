@@ -29,6 +29,10 @@ export function LandingNavbar() {
   const toggleTheme = () => {
     const nextTheme = !isDark;
     setIsDark(nextTheme);
+
+    // Disable transitions for instant switch
+    document.documentElement.classList.add("no-transitions");
+
     if (nextTheme) {
       document.documentElement.classList.add("dark");
       localStorage.theme = "dark";
@@ -36,6 +40,11 @@ export function LandingNavbar() {
       document.documentElement.classList.remove("dark");
       localStorage.theme = "light";
     }
+
+    // Remove the class after the transition is suppressed
+    requestAnimationFrame(() => {
+        document.documentElement.classList.remove("no-transitions");
+    });
   };
 
   const handleLogout = () => {
@@ -43,16 +52,17 @@ export function LandingNavbar() {
   };
 
   return (
-    <nav className="bg-white/80 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-200/20 dark:border-white/5 shadow-sm top-0 sticky z-50 transition-colors">
+    <nav className="bg-white/80 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-200/20 dark:border-white/5 shadow-sm top-0 sticky z-50">
       <div className="w-full px-4 py-3 sm:px-6 lg:px-8 max-w-screen-2xl mx-auto">
         <div className="flex items-center gap-3">
           {/* Logo — fixed left */}
           <div className="min-w-0 flex-1 md:w-40 md:flex-none">
             <Link
               href="/"
-              className="text-xl font-bold tracking-tight text-[#002147] dark:text-slate-50 font-headline"
+              className="flex items-center gap-2 group"
             >
-            BulkReferences
+              <span className="text-xl font-bold tracking-tight text-[#002147] dark:text-slate-50 font-headline whitespace-nowrap">BulkReferences</span>
+              <span className="px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/30 text-[9px] font-black uppercase tracking-widest text-[#002147] dark:text-blue-300 border border-blue-100 dark:border-blue-800/50">Beta</span>
             </Link>
           </div>
 

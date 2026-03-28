@@ -2,7 +2,7 @@ import { FormEvent, useDeferredValue, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useUserSession } from "@/hooks/use-user-session";
 import { LandingNavbar } from "@/components/landing-navbar";
-import { LandingFooter } from "@/components/landing-footer";
+import { AdminFooter } from "@/components/AdminFooter";
 
 type InstitutionOption = {
   id: string;
@@ -138,7 +138,7 @@ export default function InstitutionalLogin() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-surface-container border-0 border-b-2 border-transparent focus:border-primary-container focus:ring-0 rounded-lg transition-all font-body placeholder:text-outline/60 text-primary-container"
+                    className="w-full pl-12 pr-4 py-3 bg-surface-container-low border-0 border-b-2 border-transparent focus:border-primary-container focus:ring-0 rounded-lg transition-all font-body placeholder:text-outline/60 text-on-surface"
                     placeholder="Search for your institution (e.g. Oxford, MIT...)"
                   />
                 </div>
@@ -149,11 +149,9 @@ export default function InstitutionalLogin() {
                     {institutions.slice(0, 3).map((inst) => (
                       <button
                         key={inst.id}
-                        onClick={() => {
-                          setSelectedInstitutionId(inst.id);
-                          setSearchQuery(inst.name);
-                        }}
-                        className={`w-full p-3 text-left rounded-lg transition-colors border ${selectedInstitutionId === inst.id ? "bg-primary-container text-white border-transparent" : "bg-white border-outline-variant hover:bg-surface-container"}`}
+                        type="button"
+                        onClick={() => setSelectedInstitutionId(inst.id)}
+                        className={`w-full p-3 text-left rounded-lg transition-colors border ${selectedInstitutionId === inst.id ? "bg-primary-container text-white border-transparent" : "bg-surface-container-low border-outline-variant hover:bg-surface-container text-on-surface"}`}
                       >
                         <div className="font-bold">{inst.name}</div>
                         <div className="text-xs opacity-70">{inst.domains.join(", ")}</div>
@@ -209,7 +207,7 @@ export default function InstitutionalLogin() {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-surface-container border-0 border-b-2 border-transparent focus:border-primary-container focus:ring-0 rounded-lg transition-all font-body placeholder:text-outline/60 text-primary-container"
+                      className="w-full pl-12 pr-4 py-3 bg-surface-container-low border-0 border-b-2 border-transparent focus:border-primary-container focus:ring-0 rounded-lg transition-all font-body placeholder:text-outline/60 text-on-surface"
                       placeholder="name@university.edu"
                     />
                   </div>
@@ -220,7 +218,7 @@ export default function InstitutionalLogin() {
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-surface-container border-0 border-b-2 border-transparent focus:border-primary-container focus:ring-0 rounded-lg transition-all font-body placeholder:text-outline/60 text-primary-container"
+                      className="w-full pl-12 pr-4 py-3 bg-surface-container-low border-0 border-b-2 border-transparent focus:border-primary-container focus:ring-0 rounded-lg transition-all font-body placeholder:text-outline/60 text-on-surface"
                       placeholder="Institutional Password"
                     />
                   </div>
@@ -263,13 +261,12 @@ export default function InstitutionalLogin() {
         </div>
       </main>
 
-      {/* Footer (Shared) */}
-      <LandingFooter />
 
       {/* Decorative Corner Visual */}
       <div className="fixed bottom-0 right-0 p-8 opacity-10 pointer-events-none hidden lg:block">
         <span className="material-symbols-outlined text-9xl text-primary-container" style={{ fontVariationSettings: "'wght' 100" }}>history_edu</span>
       </div>
+      <AdminFooter />
     </div>
   );
 }

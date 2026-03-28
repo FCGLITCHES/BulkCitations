@@ -209,6 +209,13 @@ export interface ExtractionMetadata {
   typeResolutionReason?: string;
   authorParserMode?: string;
   rejectedCandidates?: string[];
+  llmFallbackAttempted?: boolean;
+  llmFallbackAccepted?: boolean;
+  llmFallbackReason?: string;
+  llmFallbackSkippedByBudget?: boolean;
+  llmFallbackFieldsImproved?: string[];
+  llmFallbackStrictPassDelta?: number;
+  llmFallbackFirstAuthorConfidence?: number;
 }
 
 export interface ValidationMetadata {

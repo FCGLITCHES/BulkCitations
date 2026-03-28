@@ -1,6 +1,6 @@
 import type { CanonicalCitation } from '@shared/schema';
 import type { ExtractorAdapter, V2Stage } from '../contracts.js';
-import { getOpenAiExtractTimeoutMs } from '../llmConfig.js';
+import { getMaxExtractConcurrentFallbackCalls, getOpenAiExtractTimeoutMs } from '../llmConfig.js';
 import { prepareWorkingChunk } from '../rawPdfCopy.js';
 import {
   getStageRuntimeTimeoutMs,
@@ -28,7 +28,7 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
       const defaultExtractConcurrency = grobidEnabled
         ? 1
         : llmEnabled
-          ? 6
+          ? getMaxExtractConcurrentFallbackCalls()
           : 12;
       const configuredExtractConcurrency = Number.parseInt(
         process.env.V2_EXTRACT_CONCURRENCY ?? String(defaultExtractConcurrency),
@@ -153,7 +153,15 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
             winnerCandidateId: result.winnerCandidateId,
             typeResolutionReason: result.typeResolutionReason,
             authorParserMode: result.authorParserMode ?? authorParseResult.parserMode,
+            llmFallbackAttempted: result.llmFallbackAttempted,
+            llmFallbackAccepted: result.llmFallbackAccepted,
+            llmFallbackReason: result.llmFallbackReason,
+            llmFallbackSkippedByBudget: result.llmFallbackSkippedByBudget,
+            llmFallbackFieldsImproved: result.llmFallbackFieldsImproved,
+            llmFallbackStrictPassDelta: result.llmFallbackStrictPassDelta,
+            llmFallbackFirstAuthorConfidence: result.llmFallbackFirstAuthorConfidence,
             rejectedCandidates: [
+              ...(result.rejectedCandidates ?? []),
               ...authorParseResult.rejectedCandidates,
             ],
           },
@@ -170,6 +178,13 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           typeResolutionReason: result.typeResolutionReason,
           extractorPath: result.extractorPath,
           authorParserMode: result.authorParserMode ?? authorParseResult.parserMode,
+          llmFallbackAttempted: result.llmFallbackAttempted,
+          llmFallbackAccepted: result.llmFallbackAccepted,
+          llmFallbackReason: result.llmFallbackReason,
+          llmFallbackSkippedByBudget: result.llmFallbackSkippedByBudget,
+          llmFallbackFieldsImproved: result.llmFallbackFieldsImproved,
+          llmFallbackStrictPassDelta: result.llmFallbackStrictPassDelta,
+          llmFallbackFirstAuthorConfidence: result.llmFallbackFirstAuthorConfidence,
           preparedWorkingChunk: {
             joinedText: preparedWorkingChunk.joinedText,
             fieldHints: preparedWorkingChunk.fieldHints,
@@ -181,7 +196,7 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           splitContaminationFlags: splitArtifact?.contaminationFlags ?? [],
           splitContaminationPenalty: result.debug?.split_contamination_penalty ?? 0,
           warningFlags: authorParseResult.warningFlags,
-          rejectedCandidates: authorParseResult.rejectedCandidates,
+          rejectedCandidates: [...(result.rejectedCandidates ?? []), ...authorParseResult.rejectedCandidates],
           selectedParsed: result.parsed,
           ...(verboseDebug ? (result.debug ?? {}) : {}),
         }, context.debugEnabled);
@@ -197,10 +212,17 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           typeResolutionReason: result.typeResolutionReason,
           extractorPath: result.extractorPath,
           authorParserMode: result.authorParserMode ?? authorParseResult.parserMode,
+          llmFallbackAttempted: result.llmFallbackAttempted,
+          llmFallbackAccepted: result.llmFallbackAccepted,
+          llmFallbackReason: result.llmFallbackReason,
+          llmFallbackSkippedByBudget: result.llmFallbackSkippedByBudget,
+          llmFallbackFieldsImproved: result.llmFallbackFieldsImproved,
+          llmFallbackStrictPassDelta: result.llmFallbackStrictPassDelta,
+          llmFallbackFirstAuthorConfidence: result.llmFallbackFirstAuthorConfidence,
           splitContaminationFlags: splitArtifact?.contaminationFlags ?? [],
           splitContaminationPenalty: result.debug?.split_contamination_penalty ?? 0,
           warningFlags: authorParseResult.warningFlags,
-          rejectedCandidates: authorParseResult.rejectedCandidates,
+          rejectedCandidates: [...(result.rejectedCandidates ?? []), ...authorParseResult.rejectedCandidates],
         });
 
         return addCitationStageLog(
@@ -227,7 +249,14 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
                 winnerCandidateId: result.winnerCandidateId,
                 typeResolutionReason: result.typeResolutionReason,
                 authorParserMode: result.authorParserMode ?? authorParseResult.parserMode,
-                rejectedCandidates: authorParseResult.rejectedCandidates,
+                llmFallbackAttempted: result.llmFallbackAttempted,
+                llmFallbackAccepted: result.llmFallbackAccepted,
+                llmFallbackReason: result.llmFallbackReason,
+                llmFallbackSkippedByBudget: result.llmFallbackSkippedByBudget,
+                llmFallbackFieldsImproved: result.llmFallbackFieldsImproved,
+                llmFallbackStrictPassDelta: result.llmFallbackStrictPassDelta,
+                llmFallbackFirstAuthorConfidence: result.llmFallbackFirstAuthorConfidence,
+                rejectedCandidates: [...(result.rejectedCandidates ?? []), ...authorParseResult.rejectedCandidates],
               },
             ),
           );
@@ -301,6 +330,9 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
               recoveredCount: isolation.recoveredCount,
               timeoutCount: isolation.timeoutCount,
               extractorPathsUsed: [...new Set(citations.map((citation) => citation.extraction?.extractorPath).filter(Boolean))],
+              llmFallbackAttemptedCount: citations.filter((citation) => citation.extraction?.llmFallbackAttempted).length,
+              llmFallbackAcceptedCount: citations.filter((citation) => citation.extraction?.llmFallbackAccepted).length,
+              llmFallbackBudgetSkippedCount: citations.filter((citation) => citation.extraction?.llmFallbackSkippedByBudget).length,
               llmBudget: context.llmBudget,
             },
           }

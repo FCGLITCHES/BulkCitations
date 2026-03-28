@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-11T04:37:38.538Z",
+  "timestamp": "2026-03-28T05:02:09.671Z",
   "totalCitations": 50,
   "styleDetection": {
     "correct": 49,
@@ -9,24 +9,24 @@
   "fieldAccuracy": {
     "authors": {
       "exact": 26,
-      "fuzzy90": 46,
+      "fuzzy90": 47,
       "total": 50,
       "exactPct": 52,
-      "fuzzy90Pct": 92
+      "fuzzy90Pct": 94
     },
     "year": {
-      "exact": 49,
-      "fuzzy90": 49,
+      "exact": 50,
+      "fuzzy90": 50,
       "total": 50,
-      "exactPct": 98,
-      "fuzzy90Pct": 98
+      "exactPct": 100,
+      "fuzzy90Pct": 100
     },
     "title": {
-      "exact": 45,
-      "fuzzy90": 47,
+      "exact": 46,
+      "fuzzy90": 48,
       "total": 49,
-      "exactPct": 92,
-      "fuzzy90Pct": 96
+      "exactPct": 94,
+      "fuzzy90Pct": 98
     },
     "volume": {
       "exact": 35,
@@ -64,7 +64,7 @@
       "fuzzy90Pct": 0
     }
   },
-  "overallAverage": 95,
+  "overallAverage": 96,
   "perfectCount": 20,
   "results": [
     {
@@ -1555,35 +1555,38 @@
             "Taylor, P."
           ],
           "actual": [
-            "Taylor, P. (n.d.). Cardiac outcomes. JAMA"
+            "Taylor, P"
           ],
           "exactMatch": false,
-          "fuzzyScore": 38,
+          "fuzzyScore": 100,
           "status": "fail"
         },
         {
           "field": "year",
           "expected": "n.d.",
-          "exactMatch": false,
-          "fuzzyScore": 0,
-          "status": "missing"
+          "actual": "n.d.",
+          "exactMatch": true,
+          "fuzzyScore": 100,
+          "status": "pass"
         },
         {
           "field": "title",
           "expected": "Cardiac outcomes",
-          "exactMatch": false,
-          "fuzzyScore": 0,
-          "status": "missing"
+          "actual": "Cardiac outcomes",
+          "exactMatch": true,
+          "fuzzyScore": 100,
+          "status": "pass"
         },
         {
           "field": "journal",
           "expected": "JAMA",
+          "actual": "Journal of the American Medical Association",
           "exactMatch": false,
-          "fuzzyScore": 0,
-          "status": "missing"
+          "fuzzyScore": 17,
+          "status": "fail"
         }
       ],
-      "overallScore": 10
+      "overallScore": 79
     },
     {
       "id": 24,

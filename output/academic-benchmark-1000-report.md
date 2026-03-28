@@ -1,6 +1,6 @@
 # Academic Benchmark Report
 
-Generated: 2026-03-28T00:07:12.316Z
+Generated: 2026-03-28T05:13:02.706Z
 Frozen corpus: 2026-03-27T12:11:27.113Z
 Corpus size: 1000 real citations
 IEEE slice: 159 citations per corpus run
@@ -19,6 +19,7 @@ This internal benchmark evaluates 1000 real-world academic references across jou
 - Identity contamination count: 9
 - Consistency: 100.00%
 - Average APA render similarity: 88.33%
+- LLM fallback attempt rate: 0.00%
 
 ## Internal Compatibility Reference (Secondary)
 
@@ -28,13 +29,42 @@ This internal benchmark evaluates 1000 real-world academic references across jou
 
 Footnote: The primary score uses strict citation-level pass/fail on core fields plus identity and output integrity. The secondary score is a frozen internal field-average reference for historical comparison only and must not be cited as the external readiness number.
 
+## Action Needed Reasons
+
+- Overall multi_field_low_confidence: 126
+- Overall malformed_authors: 63
+- Overall weak_venue: 63
+- Overall weak_first_author: 54
+- Overall weak_reference_type: 51
+- Overall missing_authors: 27
+- Overall empty_output: 24
+- Overall identity_contamination: 9
+
+- IEEE multi_field_low_confidence: 42
+- IEEE malformed_authors: 24
+- IEEE weak_first_author: 24
+- IEEE weak_reference_type: 21
+- IEEE weak_venue: 21
+- IEEE empty_output: 6
+- IEEE missing_authors: 6
+- IEEE identity_contamination: 0
+
+- Near-pass multi_field_low_confidence: 60
+- Near-pass malformed_authors: 45
+- Near-pass weak_first_author: 27
+- Near-pass weak_venue: 27
+- Near-pass weak_reference_type: 15
+- Near-pass empty_output: 0
+- Near-pass identity_contamination: 0
+- Near-pass missing_authors: 0
+
 ## Methodology
 
 - The corpus contains 1,000 real citations drawn from Crossref and frozen locally on the generation date shown above.
-- All benchmark runs use the deterministic v2 pipeline with enrichment, LLM extraction, and GROBID disabled for repeatability.
-- The primary score is strict citation-level external readiness: referenceType, year, title, firstAuthor, venue, non-empty output, and identity integrity must all pass.
-- The secondary score is a frozen legacy-comparable field average over title, firstAuthor, year, venue, volume, issue, pages, and doi when expected.
-- Identity contamination uses normalized Levenshtein ratio after normalization and is reported separately from count integrity and empty-output failures.
+- The primary score uses the deterministic v2 pipeline with enrichment, LLM extraction, and GROBID disabled for repeatability.
+- The secondary hybrid run enables GPT-5.4 nano extract fallback only; it is reported separately and must not replace the deterministic business-facing KPI.
+- Strict external readiness requires referenceType, year, title, firstAuthor, venue, non-empty output, and identity integrity to all pass.
+- The legacy-comparable score is a frozen field-average reference for internal comparison only.
 
 ## Batch results
 
@@ -47,11 +77,11 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 - Identity integrity: 98.90%
 - Identity contamination count: 3
 - Consistency: 100.00%
-- Mean batch time: 1491.04 ms
-- Median batch time: 1464.19 ms
-- P95 batch time: 1988.97 ms
-- Mean ms per citation: 29.82 ms
-- Throughput: 11.18 citations/sec
+- Mean batch time: 1763.95 ms
+- Median batch time: 1510.42 ms
+- P95 batch time: 2557.49 ms
+- Mean ms per citation: 35.28 ms
+- Throughput: 9.45 citations/sec
 
 ### Batch size 100
 
@@ -62,11 +92,11 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 - Identity integrity: 98.90%
 - Identity contamination count: 3
 - Consistency: 100.00%
-- Mean batch time: 2864.37 ms
-- Median batch time: 2860.90 ms
-- P95 batch time: 3381.42 ms
-- Mean ms per citation: 28.64 ms
-- Throughput: 11.64 citations/sec
+- Mean batch time: 3650.66 ms
+- Median batch time: 3797.78 ms
+- P95 batch time: 4476.63 ms
+- Mean ms per citation: 36.51 ms
+- Throughput: 9.13 citations/sec
 
 ### Batch size 200
 
@@ -77,11 +107,11 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 - Identity integrity: 98.90%
 - Identity contamination count: 3
 - Consistency: 100.00%
-- Mean batch time: 5816.61 ms
-- Median batch time: 5836.32 ms
-- P95 batch time: 6235.01 ms
-- Mean ms per citation: 29.08 ms
-- Throughput: 11.46 citations/sec
+- Mean batch time: 7440.05 ms
+- Median batch time: 7476.85 ms
+- P95 batch time: 8569.76 ms
+- Mean ms per citation: 37.20 ms
+- Throughput: 8.96 citations/sec
 
 ## IEEE failure breakdown
 
@@ -122,7 +152,7 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 - The benchmark uses a frozen 1,000-reference real-world corpus, making reruns auditable and institution-friendly.
 - Strict external readiness, internal legacy compatibility, and batch performance are separated instead of being collapsed into one misleading score.
 - book records performed best on the strict score at 74.00%.
-- The fastest operating point was the 100-citation batch at 11.64 citations/sec.
+- The fastest operating point was the 50-citation batch at 9.45 citations/sec.
 
 ## Weaknesses
 

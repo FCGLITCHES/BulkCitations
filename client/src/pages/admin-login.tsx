@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { LandingNavbar } from "@/components/landing-navbar";
-import { LandingFooter } from "@/components/landing-footer";
+import { AdminFooter } from "@/components/AdminFooter";
 
 type ViewMode = "login" | "request";
 
@@ -110,13 +110,13 @@ export default function AdminLogin() {
             <div className="flex bg-surface-container-low rounded-lg p-1 mb-8">
               <button
                 onClick={() => { setView("login"); setError(null); setSuccess(null); }}
-                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${view === "login" ? "bg-white text-primary-container shadow-sm" : "text-on-surface-variant hover:text-on-surface"}`}
+                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${view === "login" ? "bg-surface-container-lowest text-primary-container shadow-sm" : "text-on-surface-variant hover:text-on-surface"}`}
               >
                 Sign In
               </button>
               <button
                 onClick={() => { setView("request"); setError(null); setSuccess(null); }}
-                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${view === "request" ? "bg-white text-primary-container shadow-sm" : "text-on-surface-variant hover:text-on-surface"}`}
+                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${view === "request" ? "bg-surface-container-lowest text-primary-container shadow-sm" : "text-on-surface-variant hover:text-on-surface"}`}
               >
                 Request
               </button>
@@ -240,7 +240,7 @@ export default function AdminLogin() {
               <p className="text-[11px] text-on-surface-variant italic mb-4 px-4 leading-relaxed">
                 Approved admins are redirected immediately. Requests are reviewed by the security team.
               </p>
-              <Link href="/login" className="text-xs font-semibold uppercase tracking-widest text-[#002147] dark:text-blue-200 hover:opacity-70 transition-opacity">
+              <Link href="/login" className="text-xs font-semibold uppercase tracking-widest text-primary-container dark:text-blue-200 hover:opacity-70 transition-opacity">
                 Return to Public Portal
               </Link>
             </div>
@@ -253,8 +253,7 @@ export default function AdminLogin() {
           <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-secondary-container/10 dark:bg-secondary-container/20 rounded-full blur-[100px]"></div>
         </div>
       </main>
-
-      <LandingFooter />
+      <AdminFooter />
     </div>
   );
 }

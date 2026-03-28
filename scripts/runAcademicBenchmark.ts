@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -49,6 +50,18 @@ type FailureBreakdownCategory =
   | 'reference_type'
   | 'identity_contamination'
   | 'empty_output';
+
+type ActionNeededReasonCode =
+  | 'missing_authors'
+  | 'malformed_authors'
+  | 'weak_first_author'
+  | 'weak_venue'
+  | 'weak_reference_type'
+  | 'multi_field_low_confidence'
+  | 'empty_output'
+  | 'identity_contamination';
+
+type BenchmarkModeId = 'strict_deterministic' | 'production_hybrid_extract';
 
 type SliceMetrics = {
   count: number;
@@ -140,19 +153,28 @@ type OverallSummary = {
   averageRenderSimilarityPct: number;
 };
 
-export type AcademicBenchmarkReport = {
-  generatedAt: string;
-  corpusPath: string;
+type ActionNeededReasonCounts = {
+  overall: Record<ActionNeededReasonCode, number>;
+  ieee: Record<ActionNeededReasonCode, number>;
+  nearPass: Record<ActionNeededReasonCode, number>;
+};
+
+type FallbackRoutingSummary = {
+  attemptedCount: number;
+  acceptedCount: number;
+  rejectedCount: number;
+  budgetSkippedCount: number;
+  attemptRatePct: number;
+  acceptRatePct: number;
+  rejectedRatePct: number;
+};
+
+type BenchmarkModeSummary = {
+  mode: BenchmarkModeId;
+  llmExtractEnabled: boolean;
   corpusSize: number;
   ieeeCorpusCount: number;
   repeats: number;
-  methodology: {
-    source: string;
-    frozenAt: string;
-    groundTruth: string;
-    scope: string[];
-    notes: string[];
-  };
   strict_external: {
     essentialAccuracyPct: number;
     countIntegrityPct: number;
@@ -178,6 +200,10 @@ export type AcademicBenchmarkReport = {
   identityContaminationCount: number;
   identityContaminationByCategory: Record<IdentityContaminationCategory, number>;
   ieeeFailureBreakdown: Record<FailureBreakdownCategory, number>;
+  actionNeededReasonCounts: ActionNeededReasonCounts;
+  validationIssueCounts: Record<string, number>;
+  missingRequiredFieldCounts: Record<string, number>;
+  fallbackRouting: FallbackRoutingSummary;
   typeConfusionMatrix: Array<{
     expectedReferenceType: string;
     actualReferenceType: string;
@@ -221,6 +247,98 @@ export type AcademicBenchmarkReport = {
   batchRuns: BatchRunSummary[];
 };
 
+export type AcademicBenchmarkReport = {
+  generatedAt: string;
+  corpusPath: string;
+  corpusSize: number;
+  ieeeCorpusCount: number;
+  repeats: number;
+  methodology: {
+    source: string;
+    frozenAt: string;
+    groundTruth: string;
+    scope: string[];
+    notes: string[];
+  };
+  strict_external: {
+    essentialAccuracyPct: number;
+    countIntegrityPct: number;
+    nonEmptyOutputPct: number;
+    identityIntegrityPct: number;
+    identityContaminationCount: number;
+    identityContaminationByCategory: Record<IdentityContaminationCategory, number>;
+    averageRenderSimilarityPct: number;
+    consistencyPct: number;
+  };
+  legacy_comparable: {
+    methodologyVersion: string;
+    frozenAt: string;
+    fieldAveragePct: number;
+    includedFields: string[];
+    matchRules: Record<string, string>;
+    renderSimilarityIncluded: false;
+  };
+  overall: OverallSummary;
+  countIntegrityPct: number;
+  nonEmptyOutputPct: number;
+  identityIntegrityPct: number;
+  identityContaminationCount: number;
+  identityContaminationByCategory: Record<IdentityContaminationCategory, number>;
+  actionNeededReasonCounts: ActionNeededReasonCounts;
+  validationIssueCounts: Record<string, number>;
+  missingRequiredFieldCounts: Record<string, number>;
+  fallbackRouting: FallbackRoutingSummary;
+  ieeeFailureBreakdown: Record<FailureBreakdownCategory, number>;
+  typeConfusionMatrix: Array<{
+    expectedReferenceType: string;
+    actualReferenceType: string;
+    count: number;
+  }>;
+  selectorDiagnostics: {
+    selectorModes: Record<string, number>;
+    selectionModes: Record<string, number>;
+    topWinnerAdapters: Array<{ adapterId: string; count: number }>;
+    topSelectionReasons: Array<{ reason: string; count: number }>;
+  };
+  byBatchSize: BatchSizeSummary[];
+  bySourceType: Array<{
+    sourceType: string;
+    strictEssentialAccuracyPct: number;
+    legacyFieldAveragePct: number;
+    fieldAccuracyPct: number;
+    averageRenderSimilarityPct: number;
+    count: number;
+  }>;
+  byInputStyle: Array<{
+    inputStyle: string;
+    strictEssentialAccuracyPct: number;
+    legacyFieldAveragePct: number;
+    fieldAccuracyPct: number;
+    averageRenderSimilarityPct: number;
+    count: number;
+  }>;
+  byField: Array<{
+    field: string;
+    accuracyPct: number;
+    pass: number;
+    total: number;
+  }>;
+  sampleFailures: CitationFailure[];
+  strengths: string[];
+  weaknesses: string[];
+  pros: string[];
+  cons: string[];
+  recommendedExternalPilot: string[];
+  batchRuns: BatchRunSummary[];
+  production_hybrid_extract?: (BenchmarkModeSummary & {
+    available: boolean;
+    deltaFromStrictDeterministic: {
+      strictEssentialAccuracyPctChange: number;
+      ieeeStrictEssentialAccuracyPctChange: number;
+    };
+  }) | undefined;
+};
+
 function createIdentityBuckets(): Record<IdentityContaminationCategory, number> {
   return {
     shifted_prev: 0,
@@ -240,6 +358,19 @@ function createIeeeBreakdown(): Record<FailureBreakdownCategory, number> {
     reference_type: 0,
     identity_contamination: 0,
     empty_output: 0,
+  };
+}
+
+function createActionNeededReasonCounts(): Record<ActionNeededReasonCode, number> {
+  return {
+    missing_authors: 0,
+    malformed_authors: 0,
+    weak_first_author: 0,
+    weak_venue: 0,
+    weak_reference_type: 0,
+    multi_field_low_confidence: 0,
+    empty_output: 0,
+    identity_contamination: 0,
   };
 }
 
@@ -276,6 +407,10 @@ function incrementCount(map: Map<string, number>, key: string | null | undefined
   const normalized = cleanText(key ?? '');
   if (!normalized) return;
   map.set(normalized, (map.get(normalized) ?? 0) + 1);
+}
+
+function incrementRecordCount<T extends string>(record: Record<T, number>, key: T): void {
+  record[key] = (record[key] ?? 0) + 1;
 }
 
 function rankedCounts(map: Map<string, number>) {
@@ -554,6 +689,8 @@ function evaluateCitation(
     actualTitle,
     actualVenue: actualVenueValue,
     actualApa: output,
+    coreFieldPass: [referenceTypePassed, yearPassed, titlePassed, firstAuthorPassed, venuePassed].filter(Boolean).length,
+    coreFieldTotal: 5,
     fieldPass: strictChecks.filter((check) => check.passed).length,
     fieldTotal: strictChecks.length,
     fieldResults: strictChecks,
@@ -566,6 +703,47 @@ function evaluateCitation(
     renderSimilarityPct,
     mismatches,
   };
+}
+
+function classifyActionNeededReasons(
+  citation: any,
+  evaluation: ReturnType<typeof evaluateCitation>,
+  identityContaminationCategory: IdentityContaminationCategory | undefined,
+): ActionNeededReasonCode[] {
+  const reasons = new Set<ActionNeededReasonCode>();
+  const authors = Array.isArray(citation.authors?.value) ? citation.authors.value : [];
+  const validationCodes = new Set(
+    Array.isArray(citation.validationIssues)
+      ? citation.validationIssues.map((issue: any) => String(issue.code ?? '')).filter(Boolean)
+      : [],
+  );
+  const qualityFlags = new Set(Array.isArray(citation.quality?.flags) ? citation.quality.flags.map((flag: any) => String(flag)) : []);
+  const missingRequired = Array.isArray(citation.quality?.missingRequired)
+    ? citation.quality.missingRequired.map((field: any) => String(field))
+    : [];
+
+  if (!evaluation.outputPresent) reasons.add('empty_output');
+  if (identityContaminationCategory) reasons.add('identity_contamination');
+  if (authors.length === 0 || missingRequired.includes('authors')) reasons.add('missing_authors');
+  if (
+    qualityFlags.has('malformed_authors')
+    || validationCodes.has('connector_as_author')
+    || validationCodes.has('author_structure_unstable')
+    || validationCodes.has('initials_as_surname')
+  ) {
+    reasons.add('malformed_authors');
+  }
+  if (evaluation.mismatches.includes('firstAuthor') && authors.length > 0) reasons.add('weak_first_author');
+  if (evaluation.mismatches.includes('venue')) reasons.add('weak_venue');
+  if (evaluation.mismatches.includes('referenceType')) reasons.add('weak_reference_type');
+  if (
+    reasons.size === 0
+    || (evaluation.mismatches.filter((field) => ['referenceType', 'year', 'title', 'firstAuthor', 'venue'].includes(field)).length >= 2)
+  ) {
+    reasons.add('multi_field_low_confidence');
+  }
+
+  return [...reasons];
 }
 
 function sortSliceMap<T extends string>(map: Map<T, SliceMetrics>) {
@@ -616,6 +794,7 @@ function renderMarkdown(report: AcademicBenchmarkReport): string {
   lines.push(`- Identity contamination count: ${report.strict_external.identityContaminationCount}`);
   lines.push(`- Consistency: ${formatPercent(report.strict_external.consistencyPct)}`);
   lines.push(`- Average APA render similarity: ${formatPercent(report.strict_external.averageRenderSimilarityPct)}`);
+  lines.push(`- LLM fallback attempt rate: ${formatPercent(report.fallbackRouting.attemptRatePct)}`);
   lines.push('');
   lines.push('## Internal Compatibility Reference (Secondary)');
   lines.push('');
@@ -623,7 +802,32 @@ function renderMarkdown(report: AcademicBenchmarkReport): string {
   lines.push(`- Methodology version: ${report.legacy_comparable.methodologyVersion}`);
   lines.push(`- Frozen at: ${report.legacy_comparable.frozenAt}`);
   lines.push('');
+  if (report.production_hybrid_extract) {
+    lines.push('## Production Hybrid Extract (Secondary Internal Mode)');
+    lines.push('');
+    lines.push(`- Strict essential accuracy: ${formatPercent(report.production_hybrid_extract.strict_external.essentialAccuracyPct)}`);
+    lines.push(`- Legacy-comparable field average: ${formatPercent(report.production_hybrid_extract.legacy_comparable.fieldAveragePct)}`);
+    lines.push(`- Fallback attempt rate: ${formatPercent(report.production_hybrid_extract.fallbackRouting.attemptRatePct)}`);
+    lines.push(`- Fallback accept rate: ${formatPercent(report.production_hybrid_extract.fallbackRouting.acceptRatePct)}`);
+    lines.push(`- Deterministic strict delta: ${formatPercent(report.production_hybrid_extract.deltaFromStrictDeterministic.strictEssentialAccuracyPctChange)}`);
+    lines.push(`- IEEE strict delta: ${formatPercent(report.production_hybrid_extract.deltaFromStrictDeterministic.ieeeStrictEssentialAccuracyPctChange)}`);
+    lines.push('');
+  }
   lines.push('Footnote: The primary score uses strict citation-level pass/fail on core fields plus identity and output integrity. The secondary score is a frozen internal field-average reference for historical comparison only and must not be cited as the external readiness number.');
+  lines.push('');
+  lines.push('## Action Needed Reasons');
+  lines.push('');
+  for (const [reason, count] of Object.entries(report.actionNeededReasonCounts.overall).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))) {
+    lines.push(`- Overall ${reason}: ${count}`);
+  }
+  lines.push('');
+  for (const [reason, count] of Object.entries(report.actionNeededReasonCounts.ieee).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))) {
+    lines.push(`- IEEE ${reason}: ${count}`);
+  }
+  lines.push('');
+  for (const [reason, count] of Object.entries(report.actionNeededReasonCounts.nearPass).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))) {
+    lines.push(`- Near-pass ${reason}: ${count}`);
+  }
   lines.push('');
   lines.push('## Methodology');
   lines.push('');
@@ -716,8 +920,10 @@ function renderMarkdown(report: AcademicBenchmarkReport): string {
   return `${lines.join('\n')}\n`;
 }
 
-export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
+async function runAcademicBenchmarkMode(mode: BenchmarkModeId): Promise<BenchmarkModeSummary> {
   const corpus = JSON.parse(await readFile(CORPUS_PATH, 'utf8')) as BenchmarkCorpus;
+  const previousLlmExtractor = process.env.ENABLE_LLM_EXTRACTOR;
+  const previousGrobidExtractor = process.env.ENABLE_GROBID_EXTRACTOR;
   const batchRuns: BatchRunSummary[] = [];
   const bySourceType = new Map<BenchmarkSourceType, SliceMetrics>();
   const byInputStyle = new Map<BenchmarkInputStyle, SliceMetrics>();
@@ -732,9 +938,20 @@ export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
   const winnerAdapterCounts = new Map<string, number>();
   const selectionReasonCounts = new Map<string, number>();
   const ieeeCorpusCount = corpus.records.filter((record) => record.inputStyle === 'ieee').length;
+  const validationIssueCounts = new Map<string, number>();
+  const missingRequiredFieldCounts = new Map<string, number>();
+  const actionNeededReasonCounts: ActionNeededReasonCounts = {
+    overall: createActionNeededReasonCounts(),
+    ieee: createActionNeededReasonCounts(),
+    nearPass: createActionNeededReasonCounts(),
+  };
+  let llmFallbackAttemptedCount = 0;
+  let llmFallbackAcceptedCount = 0;
+  let llmFallbackRejectedCount = 0;
+  let llmFallbackBudgetSkippedCount = 0;
 
-  process.env.ENABLE_LLM_EXTRACTOR = '0';
   process.env.ENABLE_GROBID_EXTRACTOR = '0';
+  process.env.ENABLE_LLM_EXTRACTOR = mode === 'production_hybrid_extract' ? '1' : '0';
 
   for (const batchSize of BATCH_SIZES) {
     const batches = chunkRecords(corpus.records, batchSize);
@@ -847,6 +1064,26 @@ export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
           if (evaluation.outputPresent) nonEmptyOutputCount += 1;
           if (evaluation.identityPassed && evaluation.outputPresent) identityIntegrityCount += 1;
           if (evaluation.strictEssentialPassed) strictEssentialPass += 1;
+          if (citation.extraction?.llmFallbackAttempted) llmFallbackAttemptedCount += 1;
+          if (citation.extraction?.llmFallbackAccepted) llmFallbackAcceptedCount += 1;
+          if (citation.extraction?.llmFallbackAttempted && !citation.extraction?.llmFallbackAccepted) llmFallbackRejectedCount += 1;
+          if (citation.extraction?.llmFallbackSkippedByBudget) llmFallbackBudgetSkippedCount += 1;
+          if (Array.isArray(citation.validationIssues)) {
+            for (const issue of citation.validationIssues) incrementCount(validationIssueCounts, issue?.code);
+          }
+          if (Array.isArray(citation.quality?.missingRequired)) {
+            for (const field of citation.quality.missingRequired) incrementCount(missingRequiredFieldCounts, String(field));
+          }
+          if (citation.quality?.bucket === 'action_needed') {
+            const reasonCodes = classifyActionNeededReasons(citation, evaluation, identityContaminationCategory);
+            for (const reason of reasonCodes) {
+              incrementRecordCount(actionNeededReasonCounts.overall, reason);
+              if (record.inputStyle === 'ieee') incrementRecordCount(actionNeededReasonCounts.ieee, reason);
+              if (evaluation.coreFieldPass >= 3 && evaluation.outputPresent && evaluation.identityPassed) {
+                incrementRecordCount(actionNeededReasonCounts.nearPass, reason);
+              }
+            }
+          }
           legacyFieldPass += evaluation.legacyFieldPass;
           legacyFieldTotal += evaluation.legacyFieldTotal;
           allFieldPass += evaluation.fieldPass;
@@ -919,6 +1156,19 @@ export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
         for (const { record } of alignment.missing) {
           incrementCount(typeConfusionCounts, `${record.expected.referenceType}=>missing`);
           const evaluation = evaluateCitation(record, createEmptyCitation(record.rawInput), undefined);
+          incrementRecordCount(actionNeededReasonCounts.overall, 'empty_output');
+          incrementRecordCount(actionNeededReasonCounts.overall, 'multi_field_low_confidence');
+          incrementRecordCount(actionNeededReasonCounts.overall, 'missing_authors');
+          if (record.inputStyle === 'ieee') {
+            incrementRecordCount(actionNeededReasonCounts.ieee, 'empty_output');
+            incrementRecordCount(actionNeededReasonCounts.ieee, 'multi_field_low_confidence');
+            incrementRecordCount(actionNeededReasonCounts.ieee, 'missing_authors');
+          }
+          incrementCount(missingRequiredFieldCounts, 'authors');
+          incrementCount(missingRequiredFieldCounts, 'title');
+          incrementCount(missingRequiredFieldCounts, 'year');
+          incrementCount(missingRequiredFieldCounts, 'venue');
+          incrementCount(missingRequiredFieldCounts, 'referenceType');
           legacyFieldPass += evaluation.legacyFieldPass;
           legacyFieldTotal += evaluation.legacyFieldTotal;
           allFieldPass += evaluation.fieldPass;
@@ -1112,25 +1362,12 @@ export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
     'Have a librarian, writing center lead, or research support team manually inspect a stratified sample from the weakest source types and IEEE-style inputs.',
   ];
 
-  return {
-    generatedAt: new Date().toISOString(),
-    corpusPath: CORPUS_PATH,
+  const result: BenchmarkModeSummary = {
+    mode,
+    llmExtractEnabled: mode === 'production_hybrid_extract',
     corpusSize: corpus.records.length,
     ieeeCorpusCount,
     repeats: REPEATS,
-    methodology: {
-      source: 'Crossref public works metadata frozen into a local JSON corpus.',
-      frozenAt: corpus.generatedAt,
-      groundTruth: 'Canonical metadata fields plus APA bibliography output rendered from frozen CSL JSON.',
-      scope: Array.from(new Set(corpus.records.map((record) => record.sourceType))),
-      notes: [
-        'The corpus contains 1,000 real citations drawn from Crossref and frozen locally on the generation date shown above.',
-        'All benchmark runs use the deterministic v2 pipeline with enrichment, LLM extraction, and GROBID disabled for repeatability.',
-        'The primary score is strict citation-level external readiness: referenceType, year, title, firstAuthor, venue, non-empty output, and identity integrity must all pass.',
-        'The secondary score is a frozen legacy-comparable field average over title, firstAuthor, year, venue, volume, issue, pages, and doi when expected.',
-        'Identity contamination uses normalized Levenshtein ratio after normalization and is reported separately from count integrity and empty-output failures.',
-      ],
-    },
     strict_external: {
       essentialAccuracyPct: strictEssentialAccuracyPct,
       countIntegrityPct,
@@ -1165,6 +1402,18 @@ export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
     identityContaminationCount: Object.values(overallIdentityBuckets).reduce((sum, value) => sum + value, 0),
     identityContaminationByCategory: overallIdentityBuckets,
     ieeeFailureBreakdown,
+    actionNeededReasonCounts,
+    validationIssueCounts: Object.fromEntries(Array.from(validationIssueCounts.entries()).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))),
+    missingRequiredFieldCounts: Object.fromEntries(Array.from(missingRequiredFieldCounts.entries()).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))),
+    fallbackRouting: {
+      attemptedCount: llmFallbackAttemptedCount,
+      acceptedCount: llmFallbackAcceptedCount,
+      rejectedCount: llmFallbackRejectedCount,
+      budgetSkippedCount: llmFallbackBudgetSkippedCount,
+      attemptRatePct: toPercent(llmFallbackAttemptedCount, corpus.records.length),
+      acceptRatePct: toPercent(llmFallbackAcceptedCount, llmFallbackAttemptedCount),
+      rejectedRatePct: toPercent(llmFallbackRejectedCount, llmFallbackAttemptedCount),
+    },
     typeConfusionMatrix,
     selectorDiagnostics: {
       selectorModes: Object.fromEntries(Array.from(selectorModeCounts.entries()).sort((left, right) => left[0].localeCompare(right[0]))),
@@ -1188,6 +1437,76 @@ export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
     recommendedExternalPilot,
     batchRuns,
   };
+  if (previousLlmExtractor == null) delete process.env.ENABLE_LLM_EXTRACTOR;
+  else process.env.ENABLE_LLM_EXTRACTOR = previousLlmExtractor;
+  if (previousGrobidExtractor == null) delete process.env.ENABLE_GROBID_EXTRACTOR;
+  else process.env.ENABLE_GROBID_EXTRACTOR = previousGrobidExtractor;
+  return result;
+}
+
+export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
+  const deterministic = await runAcademicBenchmarkMode('strict_deterministic');
+  const hybridAvailable = Boolean(process.env.OPENAI_API_KEY);
+  const hybrid = hybridAvailable
+    ? await runAcademicBenchmarkMode('production_hybrid_extract')
+    : undefined;
+
+  return {
+    generatedAt: new Date().toISOString(),
+    corpusPath: CORPUS_PATH,
+    corpusSize: deterministic.corpusSize,
+    ieeeCorpusCount: deterministic.ieeeCorpusCount,
+    repeats: deterministic.repeats,
+    methodology: {
+      source: 'Crossref public works metadata frozen into a local JSON corpus.',
+      frozenAt: deterministic.overall.retrievalDate,
+      groundTruth: 'Canonical metadata fields plus APA bibliography output rendered from frozen CSL JSON.',
+      scope: Array.from(new Set(deterministic.bySourceType.map((entry) => entry.sourceType))),
+      notes: [
+        'The corpus contains 1,000 real citations drawn from Crossref and frozen locally on the generation date shown above.',
+        'The primary score uses the deterministic v2 pipeline with enrichment, LLM extraction, and GROBID disabled for repeatability.',
+        'The secondary hybrid run enables GPT-5.4 nano extract fallback only; it is reported separately and must not replace the deterministic business-facing KPI.',
+        'Strict external readiness requires referenceType, year, title, firstAuthor, venue, non-empty output, and identity integrity to all pass.',
+        'The legacy-comparable score is a frozen field-average reference for internal comparison only.',
+      ],
+    },
+    strict_external: deterministic.strict_external,
+    legacy_comparable: deterministic.legacy_comparable,
+    overall: deterministic.overall,
+    countIntegrityPct: deterministic.countIntegrityPct,
+    nonEmptyOutputPct: deterministic.nonEmptyOutputPct,
+    identityIntegrityPct: deterministic.identityIntegrityPct,
+    identityContaminationCount: deterministic.identityContaminationCount,
+    identityContaminationByCategory: deterministic.identityContaminationByCategory,
+    actionNeededReasonCounts: deterministic.actionNeededReasonCounts,
+    validationIssueCounts: deterministic.validationIssueCounts,
+    missingRequiredFieldCounts: deterministic.missingRequiredFieldCounts,
+    fallbackRouting: deterministic.fallbackRouting,
+    ieeeFailureBreakdown: deterministic.ieeeFailureBreakdown,
+    typeConfusionMatrix: deterministic.typeConfusionMatrix,
+    selectorDiagnostics: deterministic.selectorDiagnostics,
+    byBatchSize: deterministic.byBatchSize,
+    bySourceType: deterministic.bySourceType,
+    byInputStyle: deterministic.byInputStyle,
+    byField: deterministic.byField,
+    sampleFailures: deterministic.sampleFailures,
+    strengths: deterministic.strengths,
+    weaknesses: deterministic.weaknesses,
+    pros: deterministic.pros,
+    cons: deterministic.cons,
+    recommendedExternalPilot: deterministic.recommendedExternalPilot,
+    batchRuns: deterministic.batchRuns,
+    production_hybrid_extract: hybrid
+      ? {
+          ...hybrid,
+          available: true,
+          deltaFromStrictDeterministic: {
+            strictEssentialAccuracyPctChange: Number((hybrid.strict_external.essentialAccuracyPct - deterministic.strict_external.essentialAccuracyPct).toFixed(2)),
+            ieeeStrictEssentialAccuracyPctChange: Number((((hybrid.byInputStyle.find((entry) => entry.inputStyle === 'ieee')?.strictEssentialAccuracyPct ?? 0) - (deterministic.byInputStyle.find((entry) => entry.inputStyle === 'ieee')?.strictEssentialAccuracyPct ?? 0))).toFixed(2)),
+          },
+        }
+      : undefined,
+  };
 }
 
 async function main(): Promise<void> {
@@ -1201,6 +1520,14 @@ async function main(): Promise<void> {
     outputMarkdown: OUTPUT_MD,
     strict_external: report.strict_external,
     legacy_comparable: report.legacy_comparable,
+    production_hybrid_extract: report.production_hybrid_extract
+      ? {
+          strict_external: report.production_hybrid_extract.strict_external,
+          legacy_comparable: report.production_hybrid_extract.legacy_comparable,
+          fallbackRouting: report.production_hybrid_extract.fallbackRouting,
+          deltaFromStrictDeterministic: report.production_hybrid_extract.deltaFromStrictDeterministic,
+        }
+      : undefined,
     byBatchSize: report.byBatchSize,
   }, null, 2));
 }

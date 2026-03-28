@@ -1,80 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Navbar } from "@/components/navbar";
-import { AdminSectionTabs } from "@/components/AdminSectionTabs";
-import { 
-  ChevronRight, 
-  Users, 
-  Bot,
-  Filter,
-  Edit,
-  AlertCircle,
-  GitBranch,
-  MessageSquare,
-  ShieldCheck,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  Trash2,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useState } from "react";
+import { AdminHeader } from "./AdminHeader";
+import { AdminFooter } from "./AdminFooter";
+import type { CitationReport, ReportStatus } from "@shared/schema";
+import { adminFetch } from "@/lib/admin-api";
+import { removeReportsFromGroupedCaches, type GroupedReport } from "@/lib/admin-report-cache";
+import { useToast } from "@/hooks/use-toast";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useState } from "react";
-import type { CitationReport, ReportStatus } from "@shared/schema";
-import { adminFetch } from "@/lib/admin-api";
-import { removeReportsFromGroupedCaches, type GroupedReport } from "@/lib/admin-report-cache";
-import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 type SortKey = "freq" | "category" | "source" | "targetStyle";
 type SortDirection = "asc" | "desc";
-
-function StageBadge({ report }: { report: CitationReport }) {
-  const blame = report.likelyStageBlame;
-  if (!blame) {
-    return (
-      <Badge variant="outline" className="text-[10px]">
-        Unknown
-      </Badge>
-    );
-  }
-
-  const variant =
-    blame.confidence >= 0.8
-      ? "default"
-      : blame.confidence >= 0.5
-        ? "secondary"
-        : "outline";
-
-  return (
-    <Badge variant={variant} className="text-[10px] uppercase">
-      {blame.likelyStage}
-      <span className="ml-1 opacity-70">{Math.round(blame.confidence * 100)}%</span>
-    </Badge>
-  );
-}
 
 function getReportCategories(report: CitationReport, fallbackCategory: string): string[] {
   const values = report.failureCategories?.length
@@ -97,7 +39,6 @@ export default function AdminReportQueue() {
   const [sortKey, setSortKey] = useState<SortKey>("freq");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [selectedFingerprints, setSelectedFingerprints] = useState<Set<string>>(new Set());
-  const [showStageFocus, setShowStageFocus] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -107,6 +48,7 @@ export default function AdminReportQueue() {
       return adminFetch<GroupedReport[]>(`/api/reports/grouped?status=${statusFilter}`);
     },
   });
+
   const stats = groups?.reduce((acc, g) => {
     acc.total += g.totalCount;
     acc.groups += 1;
@@ -117,12 +59,9 @@ export default function AdminReportQueue() {
     const leftLatest = left.reports[0];
     const rightLatest = right.reports[0];
 
-    if (!leftLatest || !rightLatest) {
-      return 0;
-    }
+    if (!leftLatest || !rightLatest) return 0;
 
     let comparison = 0;
-
     if (sortKey === "freq") {
       comparison = left.totalCount - right.totalCount;
     } else if (sortKey === "category") {
@@ -140,18 +79,9 @@ export default function AdminReportQueue() {
     return sortDirection === "asc" ? comparison : -comparison;
   });
 
-  const selectedGroups = sortedGroups.filter((group) => selectedFingerprints.has(group.fingerprint));
-  const selectedReportIds = selectedGroups.flatMap((group) => group.reports.map((report) => report.id));
-  const allVisibleSelected = sortedGroups.length > 0 && sortedGroups.every((group) => selectedFingerprints.has(group.fingerprint));
-  const stageFocusEntries = Object.entries(
-    sortedGroups.reduce<Record<string, number>>((acc, group) => {
-      const latest = group.reports[0];
-      const stage = latest?.likelyStageBlame?.likelyStage ?? "unknown";
-      acc[stage] = (acc[stage] ?? 0) + group.totalCount;
-      return acc;
-    }, {}),
-  )
-    .sort((left, right) => right[1] - left[1]);
+  const selectedReportIds = sortedGroups
+    .filter((group) => selectedFingerprints.has(group.fingerprint))
+    .flatMap((group) => group.reports.map((report) => report.id));
 
   const deleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
@@ -164,386 +94,315 @@ export default function AdminReportQueue() {
       setSelectedFingerprints(new Set());
       removeReportsFromGroupedCaches(queryClient, ids);
       toast({
-        title: "Reports deleted",
-        description: `Removed ${data.deletedCount} report${data.deletedCount === 1 ? "" : "s"} from the queue.`,
+        title: "Reports resolved",
+        description: `Successfully resolved ${data.deletedCount} incident${data.deletedCount === 1 ? "" : "s"}.`,
       });
     },
     onError: (error) => {
       toast({
-        title: "Delete failed",
-        description: error instanceof Error ? error.message : "Failed to delete selected reports.",
+        title: "Resolution failed",
+        description: error instanceof Error ? error.message : "Failed to resolve selected reports.",
         variant: "destructive",
       });
     },
   });
 
-  function toggleSort(nextKey: SortKey) {
-    if (sortKey === nextKey) {
-      setSortDirection((current) => current === "asc" ? "desc" : "asc");
-      return;
-    }
-
-    setSortKey(nextKey);
-    setSortDirection(nextKey === "freq" ? "desc" : "asc");
+  function handleResolve(ids: string[]) {
+    if (ids.length === 0 || deleteMutation.isPending) return;
+    deleteMutation.mutate(ids);
   }
 
-  function SortHeader({ label, value }: { label: string; value: SortKey }) {
-    const isActive = sortKey === value;
-    const Icon = !isActive ? ArrowUpDown : sortDirection === "asc" ? ArrowUp : ArrowDown;
-
-    return (
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="h-8 px-2 -ml-2 font-semibold text-muted-foreground hover:text-foreground"
-        onClick={() => toggleSort(value)}
-      >
-        <span>{label}</span>
-        <Icon className="h-3.5 w-3.5" />
-      </Button>
-    );
-  }
-
-  function toggleFingerprint(fingerprint: string, checked: boolean | "indeterminate") {
+  function toggleFingerprint(fingerprint: string) {
     setSelectedFingerprints((current) => {
       const next = new Set(current);
-      if (checked === true) {
-        next.add(fingerprint);
-      } else {
-        next.delete(fingerprint);
-      }
+      if (next.has(fingerprint)) next.delete(fingerprint);
+      else next.add(fingerprint);
       return next;
     });
-  }
-
-  function toggleAllVisible(checked: boolean | "indeterminate") {
-    setSelectedFingerprints((current) => {
-      const next = new Set(current);
-      if (checked === true) {
-        for (const group of sortedGroups) {
-          next.add(group.fingerprint);
-        }
-      } else {
-        for (const group of sortedGroups) {
-          next.delete(group.fingerprint);
-        }
-      }
-      return next;
-    });
-  }
-
-  function handleDeleteSelected() {
-    if (selectedReportIds.length === 0 || deleteMutation.isPending) return;
-    const confirmed = window.confirm(
-      `Delete ${selectedReportIds.length} report${selectedReportIds.length === 1 ? "" : "s"} across ${selectedGroups.length} selected issue group${selectedGroups.length === 1 ? "" : "s"}? This cannot be undone.`,
-    );
-    if (!confirmed) return;
-    deleteMutation.mutate(selectedReportIds);
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <div className="mx-auto w-full max-w-[1600px] px-4 py-8 space-y-8 xl:px-6">
-        <div className="flex items-center gap-4 mb-2">
-           <Link href="/">
-             <Button variant="ghost" size="sm" className="gap-2">
-               <ChevronRight className="h-4 w-4 rotate-180" />
-               Back to Home
-             </Button>
-           </Link>
-        </div>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Failure Queue</h1>
-          <p className="text-muted-foreground mt-1">
-            Review and resolve citation parsing failures. Grouped by similarity.
-          </p>
-          <div className="mt-4">
-            <AdminSectionTabs />
-          </div>
-          <div className="mt-4">
-            <Button
-              type="button"
-              variant={showStageFocus ? "default" : "outline"}
-              size="sm"
-              className="gap-2"
-              onClick={() => setShowStageFocus((current) => !current)}
-            >
-              <AlertCircle className="h-4 w-4" />
-              {showStageFocus ? "Hide Stage Hotspots" : "Show Stage Hotspots"}
-            </Button>
-            <p className="mt-2 text-xs text-muted-foreground">
-              See where failures are clustering by stage, such as `extract - 4` or `enrich - 2`.
+    <div className="bg-surface font-body text-on-surface antialiased min-h-screen">
+      <AdminHeader />
+
+      <main className="pt-24 max-w-screen-2xl mx-auto px-8 pb-24">
+        {/* Header Section */}
+        <section className="mb-12 flex flex-col md:flex-row justify-between items-end gap-6">
+          <div>
+            <h1 className="font-headline text-4xl font-bold text-primary-container mb-2 tracking-tight">Failure Queue</h1>
+            <p className="text-on-surface-variant max-w-2xl leading-relaxed">
+              Review and resolve citation parsing failures reported by the system and scholarly community. 
+              Use these logs to calibrate ingestion algorithms and improve archival accuracy.
             </p>
           </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {selectedReportIds.length > 0 && (
-            <>
-              <Badge variant="secondary" className="h-9 px-3 text-xs">
-                {selectedReportIds.length} selected
-              </Badge>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                className="gap-2"
-                onClick={handleDeleteSelected}
-                disabled={deleteMutation.isPending}
-              >
-                <Trash2 className="h-4 w-4" />
-                {deleteMutation.isPending ? "Deleting..." : "Delete Selected"}
-              </Button>
-            </>
-          )}
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ReportStatus)}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="proposed">Proposed</SelectItem>
-              <SelectItem value="accepted">Accepted</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-              <SelectItem value="duplicate">Duplicates</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {showStageFocus && (
-        <Card className="border-amber-200/60 bg-amber-50/40 dark:bg-amber-950/10 dark:border-amber-900/40">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Review Focus By Stage</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {stageFocusEntries.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No stage blame data available for the current filter.</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {stageFocusEntries.map(([stage, count]) => (
-                  <Badge key={stage} variant="secondary" className="px-3 py-1 text-xs uppercase tracking-wide">
-                    {stage} - {count}
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-100 dark:border-blue-900">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-blue-600 dark:text-blue-400">Total Failures</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Unique Issues</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.groups}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Frequency</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.groups > 0 ? (stats.total / stats.groups).toFixed(1) : 0}
+          <div className="flex items-center gap-3">
+            <div className="flex rounded-lg border border-outline-variant/30 p-1 bg-surface-container-low">
+              {["pending", "proposed", "accepted", "rejected"].map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setStatusFilter(status as ReportStatus)}
+                  className={cn(
+                    "px-4 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all",
+                    statusFilter === status 
+                      ? "bg-primary-container text-white shadow-sm" 
+                      : "text-on-surface-variant hover:bg-surface-container"
+                  )}
+                >
+                  {status}
+                </button>
+              ))}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </section>
 
-      <Card className="overflow-hidden">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[52px]">
-                  <div className="flex items-center justify-center">
-                    <Checkbox
-                      checked={allVisibleSelected}
-                      onCheckedChange={toggleAllVisible}
-                      aria-label="Select all visible report groups"
-                    />
-                  </div>
-                </TableHead>
-                <TableHead className="w-[80px]">
-                  <SortHeader label="Freq" value="freq" />
-                </TableHead>
-                <TableHead>
-                  <SortHeader label="Category" value="category" />
-                </TableHead>
-                <TableHead>
-                  <SortHeader label="Source" value="source" />
-                </TableHead>
-              <TableHead>Original Citation</TableHead>
-              <TableHead>
-                <SortHeader label="Target Style" value="targetStyle" />
-              </TableHead>
-              <TableHead>Stage</TableHead>
-              <TableHead>Workflow</TableHead>
-              <TableHead className="text-right">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
-                    Loading failure queue...
-                  </TableCell>
-                </TableRow>
-              ) : groups?.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
-                    No reports found for this filter.
-                  </TableCell>
-                </TableRow>
+        {/* Key Metrics Bento */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-editorial border border-outline-variant/5">
+            <div className="flex items-center gap-3 mb-4 text-on-surface-variant">
+              <span className="material-symbols-outlined text-lg">error</span>
+              <span className="text-xs font-bold tracking-widest uppercase font-label">Total Failures</span>
+            </div>
+            <div className="font-headline text-4xl font-bold text-primary-container">
+              {isLoading ? "..." : stats.total.toLocaleString()}
+            </div>
+            <div className="mt-2 text-sm text-secondary flex items-center gap-1">
+              <span className="material-symbols-outlined text-sm">trending_down</span>
+              <span>Overall trend stabilizing</span>
+            </div>
+          </div>
+
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-editorial border border-outline-variant/5">
+            <div className="flex items-center gap-3 mb-4 text-on-surface-variant">
+              <span className="material-symbols-outlined text-lg">category</span>
+              <span className="text-xs font-bold tracking-widest uppercase font-label">Unique Issues</span>
+            </div>
+            <div className="font-headline text-4xl font-bold text-primary-container">
+              {isLoading ? "..." : stats.groups}
+            </div>
+            <div className="mt-2 text-sm text-on-surface-variant">
+              Categorized across {stats.groups > 0 ? Math.ceil(stats.groups / 5) : 0} workflows
+            </div>
+          </div>
+
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-editorial border border-outline-variant/5">
+            <div className="flex items-center gap-3 mb-4 text-on-surface-variant">
+              <span className="material-symbols-outlined text-lg">speed</span>
+              <span className="text-xs font-bold tracking-widest uppercase font-label">Avg. Frequency</span>
+            </div>
+            <div className="font-headline text-4xl font-bold text-primary-container">
+              {isLoading ? "..." : (stats.groups > 0 ? (stats.total / stats.groups).toFixed(1) : "0.0")}
+            </div>
+            <div className="mt-2 text-sm text-on-tertiary-fixed-variant flex items-center gap-1">
+              <span className="material-symbols-outlined text-sm">priority_high</span>
+              <span>Manual review recommended</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Data Table Section */}
+        <div className="bg-surface-container-lowest rounded-xl shadow-editorial overflow-hidden border border-outline-variant/5">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-surface-container-low text-on-surface-variant border-b border-outline-variant/10">
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest font-label cursor-pointer hover:text-primary-container transition-colors" onClick={() => {
+                    setSortKey("freq");
+                    setSortDirection(prev => prev === "desc" ? "asc" : "desc");
+                  }}>
+                    <div className="flex items-center gap-1">
+                      Freq
+                      {sortKey === "freq" && <span className="material-symbols-outlined text-sm">{sortDirection === "desc" ? "arrow_downward" : "arrow_upward"}</span>}
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest font-label">Category</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest font-label">Source</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest font-label">Original Citation</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest font-label">Target Style</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest font-label">Stage</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest font-label">Status</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest font-label text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/10">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-12 text-center text-on-surface-variant italic">
+                      Acquiring failure logs...
+                    </td>
+                  </tr>
+                ) : sortedGroups.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-12 text-center text-on-surface-variant italic">
+                      No matching failures found for this filter.
+                    </td>
+                  </tr>
                 ) : (
                   sortedGroups.map((group) => {
                     const latest = group.reports[0];
-                    return (
-                      <TableRow key={group.fingerprint} className="group hover:bg-muted/50">
-                        <TableCell>
-                          <div className="flex items-center justify-center">
-                            <Checkbox
-                              checked={selectedFingerprints.has(group.fingerprint)}
-                              onCheckedChange={(checked) => toggleFingerprint(group.fingerprint, checked)}
-                              aria-label={`Select report group ${latest.originalText}`}
-                            />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="font-bold">
-                            {group.totalCount}x
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {(() => {
-                            const categories = getReportCategories(latest, group.category);
-                            const primaryCategory = categories[0] ?? group.category;
+                    const categories = getReportCategories(latest, group.category);
+                    const blame = latest.likelyStageBlame;
 
-                            return (
-                              <TooltipProvider delayDuration={150}>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div className="inline-flex items-center gap-1.5">
-                                      <Badge variant="outline" className="capitalize border-border/70 bg-background/80">
-                                        {primaryCategory.replace("-", " ")}
-                                      </Badge>
-                                      {categories.length > 2 && (
-                                        <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                          +{categories.length - 1}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent className="max-w-xs text-xs">
-                                    <div className="space-y-1">
-                                      <p className="font-semibold">Reported categories</p>
-                                      <ul className="space-y-1">
-                                        {categories.map((category) => (
-                                          <li key={category} className="capitalize">
-                                            {category.replace("-", " ")}
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            );
-                          })()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5">
-                            {latest.source === "user" ? (
-                              <Users className="h-3.5 w-3.5 text-blue-500" />
-                            ) : latest.source === "user-edit" ? (
-                              <Edit className="h-3.5 w-3.5 text-orange-500" />
-                            ) : (
-                              <Bot className="h-3.5 w-3.5 text-purple-500" />
-                            )}
-                            <span className="text-xs capitalize">{latest.source.replace("-", " ")}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="max-w-md">
-                          <div className="truncate font-mono text-xs" title={latest.originalText}>
+                    return (
+                      <tr key={group.fingerprint} className={cn(
+                        "hover:bg-surface-container-low transition-colors group",
+                        selectedFingerprints.has(group.fingerprint) && "bg-primary-fixed/30"
+                      )}>
+                        <td className="px-6 py-5 font-bold text-primary-container">
+                          {group.totalCount}
+                        </td>
+                        <td className="px-6 py-5">
+                          <TooltipProvider delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="inline-flex items-center cursor-help">
+                                  <span className="bg-surface-container text-on-surface-variant px-2 py-1 rounded text-[10px] font-bold uppercase tracking-tight">
+                                    {categories.length > 1 ? `${categories.length} Issues` : categories[0].replace("-", " ")}
+                                  </span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-primary-container text-white border-none p-3 shadow-xl">
+                                <p className="text-[10px] font-bold uppercase tracking-widest mb-2 opacity-70">Identified Failures</p>
+                                <ul className="space-y-1">
+                                  {categories.map((c, i) => (
+                                    <li key={i} className="text-xs font-medium flex items-center gap-2">
+                                      <span className="h-1 w-1 rounded-full bg-secondary-fixed" />
+                                      {c.replace("-", " ")}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </td>
+                        <td className="px-6 py-5">
+                          {latest.source === "user" || latest.source === "user-edit" ? (
+                            <span className="material-symbols-outlined text-on-surface-variant opacity-60" title={latest.source}>person</span>
+                          ) : (
+                            <span className="material-symbols-outlined text-on-surface-variant opacity-60" title="Automated System">smart_toy</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-5 max-w-xs">
+                          <p className="text-sm truncate text-on-surface font-medium" title={latest.originalText}>
                             {latest.originalText}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="uppercase text-[10px]">
+                          </p>
+                        </td>
+                        <td className="px-6 py-5">
+                          <span className="text-[10px] font-bold font-mono text-on-surface-variant uppercase bg-surface-container/50 px-1.5 py-0.5 rounded">
                             {latest.outputStyle}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <StageBadge report={latest} />
-                            {latest.likelyStageBlame && latest.likelyStageBlame.confidence < 0.5 && (
-                              <span className="text-[10px] text-muted-foreground">uncertain</span>
+                          </span>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium text-on-surface capitalize">
+                              {blame?.likelyStage ?? "unassigned"}
+                            </span>
+                            {blame && (
+                              <span className="text-[10px] text-on-surface-variant/70 font-bold">
+                                {Math.round(blame.confidence * 100)}% Confidence
+                              </span>
                             )}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            {latest.assigneeName ? (
-                              <Badge variant="secondary" className="text-[10px]">
-                                <GitBranch className="mr-1 h-3 w-3" />
-                                {latest.assigneeName}
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-[10px]">
-                                Unassigned
-                              </Badge>
-                            )}
-                            {latest.truthId && (
-                              <Badge variant="outline" className="text-[10px]">
-                                <ShieldCheck className="mr-1 h-3 w-3" />
-                                Truth
-                              </Badge>
-                            )}
-                            {latest.regressionFixtureId && (
-                              <Badge variant="outline" className="text-[10px]">
-                                <AlertCircle className="mr-1 h-3 w-3" />
-                                Regression
-                              </Badge>
-                            )}
-                            {!!latest.reviewEvents?.length && (
-                              <Badge variant="outline" className="text-[10px]">
-                                <MessageSquare className="mr-1 h-3 w-3" />
-                                {latest.reviewEvents.length}
-                              </Badge>
-                            )}
+                        </td>
+                        <td className="px-6 py-5">
+                          <span className={cn(
+                            "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-tight whitespace-nowrap",
+                            latest.status === "pending" && "bg-error-container text-on-error-container",
+                            latest.status === "proposed" && "bg-tertiary-fixed text-on-tertiary-fixed",
+                            latest.status === "accepted" && "bg-secondary-container text-on-secondary-container",
+                            latest.status === "rejected" && "bg-surface-container-high text-on-surface-variant"
+                          )}>
+                            {latest.status.replace("-", " ")}
+                          </span>
+                        </td>
+                        <td className="px-6 py-5 text-right">
+                          <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Link href={`/admin/reports/${latest.id}`}>
+                              <button className="text-[10px] font-bold uppercase tracking-widest text-primary-container hover:underline">View Details</button>
+                            </Link>
+                            <button 
+                              onClick={() => handleResolve([latest.id])}
+                              disabled={deleteMutation.isPending}
+                              className={cn(
+                                "bg-signature-cta text-white px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest hover:shadow-lg transition-all",
+                                deleteMutation.isPending && "opacity-50 cursor-not-allowed"
+                              )}
+                            >
+                              Resolve
+                            </button>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Link href={`/admin/reports/${latest.id}`}>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <ChevronRight className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                      </tr>
                     );
                   })
                 )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-      </div>
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="px-6 py-6 border-t border-outline-variant/10 flex items-center justify-between text-xs font-bold text-on-surface-variant uppercase tracking-widest">
+            <span>Showing {sortedGroups.length} of {stats.groups} unique issues</span>
+            <div className="flex gap-4">
+              <button className="flex items-center gap-1 hover:text-primary-container transition-colors disabled:opacity-30" disabled>
+                <span className="material-symbols-outlined text-sm">chevron_left</span> Previous
+              </button>
+              <button className="flex items-center gap-1 hover:text-primary-container transition-colors disabled:opacity-30" disabled>
+                Next <span className="material-symbols-outlined text-sm">chevron_right</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* FAB Action - Positioned above ScrollToTop on the right */}
+      <TooltipProvider delayDuration={0}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button 
+              onClick={() => setSelectedFingerprints(new Set(sortedGroups.map(g => g.fingerprint)))}
+              className="fixed bottom-24 right-6 h-14 w-14 rounded-full bg-signature-cta text-white shadow-2xl flex items-center justify-center hover:scale-110 transition-transform z-50 group"
+            >
+              <span className="material-symbols-outlined transition-transform duration-300 group-hover:rotate-12" style={{ fontVariationSettings: "'FILL' 1" }}>
+                library_add_check
+              </span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="bg-primary-container text-white font-bold uppercase tracking-widest text-[10px] border-none">
+            Select All Visible
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      {/* Bulk Action Bar */}
+      {selectedReportIds.length > 0 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-primary-container text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-6 z-50 border border-on-primary/10 animate-in fade-in slide-in-from-bottom-4">
+          <span className="text-xs font-bold uppercase tracking-widest">
+            {selectedReportIds.length} incidents selected
+          </span>
+          <div className="h-4 w-px bg-on-primary/20" />
+          <div className="flex gap-4">
+            <button 
+              onClick={() => setSelectedFingerprints(new Set())}
+              className="text-[10px] font-bold uppercase tracking-widest hover:text-secondary-fixed transition-colors"
+            >
+              Deselect
+            </button>
+            <button 
+              onClick={() => handleResolve(selectedReportIds)}
+              disabled={deleteMutation.isPending}
+              className="bg-error text-white px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-error/80 transition-all flex items-center gap-2"
+            >
+              {deleteMutation.isPending ? "Resolving..." : (
+                <>
+                  <span className="material-symbols-outlined text-sm">delete_sweep</span>
+                  Bulk Resolve
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <AdminFooter />
     </div>
   );
 }

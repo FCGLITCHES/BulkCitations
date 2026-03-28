@@ -43,14 +43,26 @@ function titleLooksLikePureLocator(value: string): boolean {
 
   const compact = normalized
     .replace(/^article\s+/i, '')
+    .replace(/^(?:pp?\.?|pages?|doi)\s*/i, '')
+    .replace(/\bdoi\b\.?$/i, '')
     .replace(/[()]/g, '')
     .trim();
   if (!compact) return false;
 
+  if (/^(?:pp?\.?\s*)?[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?(?:\.\s*doi\.?)?$/i.test(normalized)) {
+    return true;
+  }
+  if (/^(?:pp?\.?\s*)?[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?\s+doi\.?$/i.test(normalized)) {
+    return true;
+  }
+
   if (/^[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?$/i.test(compact)) return true;
   if (/^[A-Z]\d+[a-z]?\d*$/i.test(compact)) return true;
 
-  const tokens = compact.split(/\s+/).filter(Boolean);
+  const tokens = compact
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((token) => !/^(?:pp?\.?|pages?|doi)$/i.test(token));
   if (tokens.length > 3) return false;
 
   return tokens.every((token) => /^[A-Za-z]?\d+[A-Za-z.-]*$/i.test(token));
@@ -136,6 +148,9 @@ export function assessTitle(parsed: ParsedReference): FieldPlausibilityAssessmen
   if (lower.startsWith('in ') && title.split(/\s+/).length > 5) {
     return implausible('title_starts_with_container', 0.8);
   }
+  if (/[."]\s+in\s+[A-Z]/i.test(title) || /\bproceedings of the\b/i.test(title)) {
+    return implausible('title_contains_container_phrase', 1.05);
+  }
   if (titleLooksLikePureLocator(title)) {
     return implausible('title_looks_like_locator', 1.2);
   }
@@ -166,7 +181,11 @@ export function assessVenue(
   if (lower.startsWith('in ') || includesAny(lower, [' pp.', '(pp.', ' vol.', ' no.', '©'])) {
     return implausible('venue_contaminated', 0.95);
   }
-  if (referenceType === 'conference' && looksWeakConferenceVenue(venue)) {
+  if (
+    referenceType === 'conference'
+    && looksWeakConferenceVenue(venue)
+    && !normalizeWhitespace(parsed.publisher ?? '')
+  ) {
     return implausible('weak_conference_venue', 0.6);
   }
 

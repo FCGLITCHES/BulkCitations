@@ -8,6 +8,10 @@
 - **Typography**: `Inter` for functional text, `Outfit` for headings and premium accents.
 - **Color Palette**: Sleek dark mode by default, HSL-tailored harmonious colors (Deep Indigo, Emerald Green for success, Ruby Red for errors). Use glassmorphism for overlays.
 - **Institutional Suite Branding**: Uses the "Digital Archivist" sub-brand with a specialized high-density academic theme featuring `Noto Serif` for primary headlines and an ivory/slate surface palette.
+- **Institutional Branding - New Tokens**:
+    - `boxShadow.editorial`: `0 4px 24px -4px rgba(25, 28, 30, 0.04)` (for a subtle, premium layered effect on metric cards).
+    - `backgroundImage.signature-cta`: A deep blue-to-navy linear gradient (from `#191C1E` to `#001F2A`) for primary action buttons.
+    - **Glassmorphism**: 80% opacity with 20px blur for main navigation headers and context overlays.
 
 ## Reusable Components
 - **CitationCard**: The primary unit for displaying a processed reference. Extends Radix `Card`.

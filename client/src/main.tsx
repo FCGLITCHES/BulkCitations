@@ -9,6 +9,9 @@ import Contact from './pages/contact';
 import AdminReportQueue from './components/AdminReportQueue';
 import AdminReportDetail from './components/AdminReportDetail';
 import AdminAnalytics from './components/AdminAnalytics';
+import AdminDashboard from './components/AdminDashboard';
+import AdminSystemHealth from './components/AdminSystemHealth';
+import AdminSettings from './components/AdminSettings';
 import Login from './pages/login';
 import AdminLogin from './pages/admin-login';
 import AdminApprove from './pages/admin-approve';
@@ -77,6 +80,30 @@ function AdminAnalyticsRoute() {
   );
 }
 
+function AdminDashboardRoute() {
+  return (
+    <RequireAdmin>
+      <AdminDashboard />
+    </RequireAdmin>
+  );
+}
+
+function AdminHealthRoute() {
+  return (
+    <RequireAdmin>
+      <AdminSystemHealth />
+    </RequireAdmin>
+  );
+}
+
+function AdminSettingsRoute() {
+  return (
+    <RequireAdmin>
+      <AdminSettings />
+    </RequireAdmin>
+  );
+}
+
 function AnalyticsRouteTracker() {
   const [location] = useLocation();
 
@@ -93,20 +120,6 @@ function AnalyticsRouteTracker() {
   }, [location]);
 
   return null;
-}
-
-function AdminDashboardRoute() {
-  const [, setLocation] = useLocation();
-
-  React.useEffect(() => {
-    setLocation("/admin/reports");
-  }, [setLocation]);
-
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 text-sm text-muted-foreground">
-      Opening admin dashboard...
-    </div>
-  );
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -133,6 +146,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/admin/dashboard" component={AdminDashboardRoute} />
         <Route path="/admin/reports" component={AdminQueueRoute} />
         <Route path="/admin/analytics" component={AdminAnalyticsRoute} />
+        <Route path="/admin/health" component={AdminHealthRoute} />
+        <Route path="/admin/settings" component={AdminSettingsRoute} />
         <Route path="/admin/reports/:id" component={AdminDetailRoute} />
       </Router>
     </QueryClientProvider>

@@ -87,8 +87,8 @@ export default function Login() {
 
             {/* Divider */}
             <div className="relative mb-8">
-              <div aria-hidden="true" class="absolute inset-0 flex items-center">
-                <div class="w-full border-t border-outline-variant/30"></div>
+              <div aria-hidden="true" className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-outline-variant/30"></div>
               </div>
               <div className="relative flex justify-center text-[10px] font-label uppercase tracking-widest">
                 <span className="bg-surface-container-lowest px-4 text-on-surface-variant">or continue with email</span>
@@ -191,7 +191,7 @@ export default function Login() {
             
             {/* Split switch to Institutional */}
             <div className="mt-6 pt-6 border-t border-outline-variant/20 text-center">
-               <Link href="/institutional-login" className="text-xs font-semibold uppercase tracking-widest text-[#002147] dark:text-blue-200 hover:opacity-70 transition-opacity">
+               <Link href="/institutional-login" className="text-xs font-semibold uppercase tracking-widest text-primary-container dark:text-blue-200 hover:opacity-70 transition-opacity">
                 Use Institutional Access
                </Link>
             </div>

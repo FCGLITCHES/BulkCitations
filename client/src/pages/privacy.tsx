@@ -1,11 +1,11 @@
+import { LandingNavbar } from "@/components/landing-navbar";
+import { LandingFooter } from "@/components/landing-footer";
 import { Card, CardContent } from "@/components/ui/card";
-import { Navbar } from "@/components/navbar";
-import { SiteFooter } from "@/components/site-footer";
 
 export default function Privacy() {
   return (
-    <div className="min-h-screen bg-background font-sans flex flex-col">
-      <Navbar />
+    <div className="bg-surface dark:bg-slate-950 font-body text-on-surface dark:text-slate-100 min-h-screen flex flex-col transition-colors">
+      <LandingNavbar />
 ...
       <main className="container mx-auto px-3 sm:px-4 py-8 sm:py-12 max-w-2xl overflow-x-hidden">
         <h2 className="text-2xl font-bold text-foreground mb-6">Privacy Policy</h2>
@@ -32,7 +32,7 @@ export default function Privacy() {
           </CardContent>
         </Card>
       </main>
-      <SiteFooter />
+      <LandingFooter />
     </div>
   );
 }

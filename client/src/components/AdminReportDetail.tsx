@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
-import { Navbar } from "@/components/navbar";
+import { AdminHeader } from "@/components/AdminHeader";
+import { AdminFooter } from "@/components/AdminFooter";
 import { AdminSectionTabs } from "@/components/AdminSectionTabs";
 import { 
   ArrowLeft, 
@@ -28,6 +29,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -329,13 +331,14 @@ export default function AdminReportDetail() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="mx-auto py-8 px-4 xl:px-6 max-w-[1650px] space-y-6">
+    <div className="bg-surface font-body text-on-surface antialiased min-h-screen">
+      <AdminHeader />
+
+      <main className="pt-24 mx-auto py-8 px-4 xl:px-6 max-w-[1650px] space-y-6">
         <div className="flex items-center gap-4 mb-2">
           <Link href="/admin/reports">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <ChevronRight className="h-4 w-4 rotate-180" />
+            <Button variant="ghost" size="sm" className="gap-2 text-primary-container bg-surface-container hover:bg-outline-variant/10">
+              <span className="material-symbols-outlined text-sm">arrow_back</span>
               Back to Queue
             </Button>
           </Link>
@@ -355,7 +358,6 @@ export default function AdminReportDetail() {
           )}
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <AdminSectionTabs />
           <Button
             type="button"
             variant={showDebugTrace ? "default" : "outline"}
@@ -363,7 +365,7 @@ export default function AdminReportDetail() {
             className="gap-2"
             onClick={() => setShowDebugTrace((current) => !current)}
           >
-            <Code className="h-4 w-4" />
+            <span className="material-symbols-outlined text-sm">code</span>
             {showDebugTrace ? "Hide Debug Trace" : "Show Debug Trace"}
           </Button>
         </div>
@@ -1119,6 +1121,8 @@ export default function AdminReportDetail() {
         </div>
         </div>
       </main>
+
+      <AdminFooter />
     </div>
   );
 }
