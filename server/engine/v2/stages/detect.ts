@@ -10,6 +10,7 @@ import {
   isVerboseDebugEnabled,
   logStructuredDebug,
 } from '../utils.js';
+import { V2_THRESHOLD_POLICY } from '../thresholdPolicy.js';
 
 function deriveDetectUncertainty(inputSignals: string[] | undefined) {
   const signals = new Set(inputSignals ?? []);
@@ -18,11 +19,13 @@ function deriveDetectUncertainty(inputSignals: string[] | undefined) {
   const penalty = uncertaintyFlags.reduce((sum, signal) => {
     switch (signal) {
       case 'mixed_style_markers':
+        return sum + V2_THRESHOLD_POLICY.detect.mixedStylePenalty;
       case 'ocr_noise_markers':
-        return sum + 0.12;
+        return sum + V2_THRESHOLD_POLICY.detect.ocrNoisePenalty;
       case 'long_prose_lines':
+        return sum + V2_THRESHOLD_POLICY.detect.longProsePenalty;
       case 'footnote_markers':
-        return sum + 0.06;
+        return sum + V2_THRESHOLD_POLICY.detect.footnotePenalty;
       default:
         return sum;
     }
@@ -65,7 +68,7 @@ export function createDetectStage(classifier: ClassifierAdapter): V2Stage {
           const result = await classifier.detectStyle(citation.raw);
           const detectUncertainty = deriveDetectUncertainty(context.inputProfile?.signals);
           const effectiveConfidence = Math.max(0, Number((result.confidence - detectUncertainty.penalty).toFixed(3)));
-          const lowConfidenceHint = effectiveConfidence < 0.55;
+          const lowConfidenceHint = effectiveConfidence < V2_THRESHOLD_POLICY.detect.lowConfidenceHint;
           const nextCitationBase = {
             ...citation,
             detectedStyle: createFieldValue(result.style, 'extracted', effectiveConfidence, 'detect'),

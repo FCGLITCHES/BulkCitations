@@ -9,8 +9,12 @@ import {
   normalizeKnownContainerName,
   normalizeProtectedTokenValue,
 } from './shared/citationSemantics.js';
-import fs from "fs";
-import path from "path";
+import {
+  readPatternCatalog,
+  type DynamicPatternDefinition,
+  validatePatternDefinition,
+  watchPatternCatalog,
+} from './v2/patternCatalog.js';
 
 interface DynamicPattern {
   id: string;
@@ -225,97 +229,80 @@ function recoverYear(badYear: string | undefined, rawInput: string): string | un
 
 export class CitationParser {
   private dynamicPatterns: DynamicPattern[] = [];
-  private patternsPath: string;
   private watchDebounce: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
-    this.patternsPath = path.resolve(process.cwd(), 'server', 'data', 'patterns.json');
     this.loadDynamicPatterns();
     this.watchPatternsFile();
   }
-
-  /** Dangerous regex constructs that risk catastrophic backtracking (ReDoS) */
-  private static readonly DANGEROUS_REGEX = /(\.\+\)\+|\.\*\)\*|\.\+\)\*|\.\*\)\+|\(\?=.*\(\?=)/;
 
   /**
    * Validate and compile a single pattern definition.
    * Returns null if invalid (schema or regex safety failure).
    */
-  private compilePattern(p: any, idx: number): DynamicPattern | null {
-    if (!p || typeof p.regex !== 'string' || typeof p.fields !== 'object') {
-      console.warn(`Pattern ${idx}: invalid schema — skipped`);
+  private compilePattern(pattern: DynamicPatternDefinition, idx: number): DynamicPattern | null {
+    const validationError = validatePatternDefinition(pattern);
+    if (validationError) {
+      console.warn(`Pattern ${pattern.id ?? idx}: ${validationError} — skipped`);
       return null;
     }
-    // Reject dangerous regex constructs
-    if (CitationParser.DANGEROUS_REGEX.test(p.regex)) {
-      console.warn(`Pattern ${p.id ?? idx}: rejected — contains dangerous backtracking construct`);
-      return null;
-    }
-    // Validate optional metadata
-    const priority = typeof p.priority === 'number' ? p.priority : 100;
-    const styles = Array.isArray(p.styles) && p.styles.every((s: any) => typeof s === 'string')
-      ? p.styles as string[]
+    const priority = typeof pattern.priority === 'number' ? pattern.priority : 100;
+    const styles = Array.isArray(pattern.styles) && pattern.styles.every((style) => typeof style === 'string')
+      ? pattern.styles
       : undefined;
 
     try {
       return {
-        id: p.id ?? `pattern_${idx}`,
-        regex: new RegExp(p.regex, 'i'),
-        fields: p.fields,
-        description: typeof p.description === 'string' ? p.description : undefined,
-        category: typeof p.category === 'string' ? p.category : undefined,
+        id: pattern.id ?? `pattern_${idx}`,
+        regex: new RegExp(pattern.regex, 'i'),
+        fields: pattern.fields,
+        description: typeof pattern.description === 'string' ? pattern.description : undefined,
+        category: typeof pattern.category === 'string' ? pattern.category : undefined,
         priority,
         styles,
       };
     } catch (e) {
-      console.warn(`Pattern ${p.id ?? idx}: regex compile failed — skipped`, e instanceof Error ? e.message : String(e));
+      console.warn(`Pattern ${pattern.id ?? idx}: regex compile failed — skipped`, e instanceof Error ? e.message : String(e));
       return null;
     }
   }
 
   private loadDynamicPatterns() {
     try {
-      if (fs.existsSync(this.patternsPath)) {
-        const rawData = fs.readFileSync(this.patternsPath, 'utf8');
-        const jsonPatterns = JSON.parse(rawData);
-        if (!Array.isArray(jsonPatterns)) {
-          console.warn("patterns.json: expected array — keeping last-known-good");
-          return;
-        }
-        const compiled: DynamicPattern[] = [];
-        for (let i = 0; i < jsonPatterns.length; i++) {
-          const p = this.compilePattern(jsonPatterns[i], i);
-          if (p) compiled.push(p);
-        }
-        if (compiled.length === 0 && this.dynamicPatterns.length > 0) {
-          console.warn("patterns.json: all patterns failed validation — keeping last-known-good");
-          return;
-        }
-        compiled.sort((a, b) => a.priority - b.priority);
-        this.dynamicPatterns = compiled;
-        console.log(`Loaded ${compiled.length} dynamic patterns`);
+      const catalog = readPatternCatalog();
+      if (!Array.isArray(catalog)) {
+        console.warn('patternCatalog.json: expected array — keeping last-known-good');
+        return;
       }
+      const compiled: DynamicPattern[] = [];
+      for (let i = 0; i < catalog.length; i++) {
+        const pattern = this.compilePattern(catalog[i], i);
+        if (pattern) compiled.push(pattern);
+      }
+      if (compiled.length === 0 && this.dynamicPatterns.length > 0) {
+        console.warn('patternCatalog.json: all patterns failed validation — keeping last-known-good');
+        return;
+      }
+      compiled.sort((a, b) => a.priority - b.priority);
+      this.dynamicPatterns = compiled;
+      console.log(`Loaded ${compiled.length} dynamic patterns from patternCatalog.json`);
     } catch (e) {
       console.warn("Failed to load dynamic patterns map — keeping last-known-good", e instanceof Error ? e.message : String(e));
     }
   }
 
-  /** Watch patterns.json for changes and hot-reload with debounce */
+  /** Watch patternCatalog.json for changes and hot-reload with debounce */
   private watchPatternsFile() {
     try {
-      if (!fs.existsSync(this.patternsPath)) return;
-      fs.watch(this.patternsPath, (eventType) => {
-        if (eventType !== 'change') return;
-        // Debounce: editors often fire multiple change events
+      watchPatternCatalog(() => {
         if (this.watchDebounce) clearTimeout(this.watchDebounce);
         this.watchDebounce = setTimeout(() => {
-          console.log("patterns.json changed — reloading...");
+          console.log('patternCatalog.json changed — reloading...');
           this.loadDynamicPatterns();
         }, 500);
       });
     } catch (e) {
-      // fs.watch may not be supported on all platforms; non-fatal
-      console.warn("Could not watch patterns.json for hot-reload", e);
+      console.warn('Could not watch patternCatalog.json for hot-reload', e);
     }
   }
 

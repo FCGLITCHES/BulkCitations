@@ -44,12 +44,18 @@ async function main(): Promise<void> {
     detectedStyle: result.detectedStyle,
     selectedBranch: result.selectedBranch,
     selectionReason: result.selectionReason,
+    selectorMode: result.selectorMode,
+    selectionMode: result.selectionMode,
+    winnerAdapterId: result.winnerAdapterId,
+    winnerCandidateId: result.winnerCandidateId,
+    typeResolutionReason: result.typeResolutionReason,
     extractorPath: result.extractorPath,
     referenceType: result.referenceType,
     parsed: result.parsed,
     warnings: result.warnings,
     fieldConfidence: result.fieldConfidence,
     canonicalAuthors: result.canonicalAuthors,
+    debug: result.debug,
   }, null, 2));
   process.exit(0);
 }

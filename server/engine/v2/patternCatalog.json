@@ -1,0 +1,98 @@
+[
+  {
+    "id": "volume-issue-hyphen",
+    "description": "Volume-N, Issue-N wording (e.g. Volume-7, Issue-6)",
+    "regex": "Volume[-\\s]+(\\d+)[,\\s]+Issue[-\\s]+(\\d+)",
+    "fields": { "volume": 1, "issue": 2 },
+    "priority": 90,
+    "category": "volume-issue"
+  },
+  {
+    "id": "volume-issue-no-label",
+    "description": "Bare Vol(Issue):pages or Vol(Issue), pages (e.g. 3(5), 3792-7)",
+    "regex": "\\b(\\d+)\\s*\\(\\s*(\\d+)\\s*\\)\\s*[,:]\\s*(\\d+(?:[-–]\\d+)?)",
+    "fields": { "volume": 1, "issue": 2, "pages": 3 },
+    "priority": 85,
+    "category": "volume-issue"
+  },
+  {
+    "id": "vol-issue-abbrev",
+    "description": "Vol. N, No. N or Vol N (No. N) variants",
+    "regex": "Vol\\.?\\s*(\\d+)(?:\\s*,?\\s*No\\.?\\s*(\\d+))?",
+    "fields": { "volume": 1, "issue": 2 },
+    "priority": 80,
+    "category": "volume-issue"
+  },
+  {
+    "id": "volume-issue-words",
+    "description": "Volume-N, Issue-N wording (additional variant)",
+    "regex": "Volume[- ](\\d+),?\\s*Issue[- ](\\d+)",
+    "fields": { "volume": 1, "issue": 2 },
+    "priority": 95,
+    "category": "volume-issue"
+  },
+  {
+    "id": "vol-issue-parens",
+    "description": "Vol. N(Issue) without pages",
+    "regex": "Vol\\.?\\s*(\\d+)\\((\\d+)\\)",
+    "fields": { "volume": 1, "issue": 2 },
+    "priority": 95,
+    "category": "volume-issue"
+  },
+  {
+    "id": "vol-no",
+    "description": "Vol. N, No. N variants",
+    "regex": "Vol\\.?\\s*(\\d+),\\s*[Nn]o\\.?\\s*(\\d+)",
+    "fields": { "volume": 1, "issue": 2 },
+    "priority": 95,
+    "category": "volume-issue"
+  },
+  {
+    "id": "simple-vol-issue-pages",
+    "description": "Volume(Issue), pages tail like 3(5), 3792-7",
+    "regex": "(\\d+)\\((\\d+)\\),\\s*(\\d{3,4})-(\\d+)",
+    "fields": { "volume": 1, "issue": 2, "pages": 3 },
+    "priority": 95,
+    "category": "volume-issue"
+  },
+  {
+    "id": "mla-chicago-vol-no-year",
+    "description": "Chicago or MLA volume/issue tails with trailing year",
+    "regex": "\\bvol\\.?\\s*\\d+(?:\\s*,\\s*no\\.?\\s*[^,]+)?\\s*,\\s*(\\d{4})(?:\\s*,|\\s*\\.)",
+    "fields": { "year": 1 },
+    "priority": 92,
+    "category": "year"
+  },
+  {
+    "id": "chicago-year-in-parenthesized-locator-tail",
+    "description": "Chicago tail with parenthesized year before locator",
+    "regex": "\\((\\d{4})\\)\\s*[:.,;]\\s*(?:[A-Za-z]?\\d+(?:[-–][A-Za-z]?\\d+)?|[A-Za-z]\\d{2,}|\\d{6,})",
+    "fields": { "year": 1 },
+    "priority": 91,
+    "category": "year"
+  },
+  {
+    "id": "uppercase-article-locator",
+    "description": "Uppercase or long article locator token",
+    "regex": "(?:Article|Art\\.?)\\s*(?:no\\.?\\s*)?([A-Za-z]\\d{2,}|\\d{6,})\\b",
+    "fields": { "article-number": 1 },
+    "priority": 89,
+    "category": "locator"
+  },
+  {
+    "id": "bare-article-locator",
+    "description": "Bare article locator token such as n71, b2535, or 2402039",
+    "regex": "(?:^|[\\s(,;:])([A-Za-z]\\d{2,}|\\d{6,})(?=$|[\\s),.;:])",
+    "fields": { "article-number": 1 },
+    "priority": 88,
+    "category": "locator"
+  },
+  {
+    "id": "trailing-year-parens",
+    "description": "Trailing (Year). at end of string",
+    "regex": "\\((\\d{4})\\)[.,]?\\s*$",
+    "fields": { "year": 1 },
+    "priority": 99,
+    "category": "year"
+  }
+]

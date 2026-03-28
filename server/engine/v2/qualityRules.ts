@@ -384,7 +384,17 @@ export function sanitizeParsedReference(
 
 function normalizeLinkValue(value: string | null | undefined): string | undefined {
   const normalized = normalizeWhitespace(value ?? '');
-  return normalized ? normalized.replace(/[)\],.;:]+$/g, '') : undefined;
+  if (!normalized) return undefined;
+
+  let trimmed = normalized.replace(/[\],.;:]+$/g, '');
+  while (trimmed.endsWith(')')) {
+    const candidate = trimmed.slice(0, -1);
+    const openCount = (candidate.match(/\(/g) ?? []).length;
+    const closeCount = (candidate.match(/\)/g) ?? []).length;
+    if (closeCount < openCount) break;
+    trimmed = candidate;
+  }
+  return trimmed || undefined;
 }
 
 function normalizeParsedDoi(value: string | null | undefined): string | undefined {
@@ -411,7 +421,17 @@ function stripLinkArtifactsFromTitle(
       .replace(TITLE_URL_OR_DOI_PATTERN, ' ')
       .replace(/\(\s*\)/g, ' ')
       .replace(/\[\s*\]/g, ' '),
-  ).replace(/^[\s,.;:()[\]{}"'-]+|[\s,.;:()[\]{}"'-]+$/g, '');
+  );
+
+  const normalizedBeforeStrip = normalized;
+  normalized = normalizedBeforeStrip.replace(/^[\s,.;:()[\]{}"'-]+|[\s,.;:()[\]{}"'-]+$/g, '');
+  if (!normalized.endsWith(')')) {
+    const openCount = (normalized.match(/\(/g) ?? []).length;
+    const closeCount = (normalized.match(/\)/g) ?? []).length;
+    if (openCount > closeCount && normalizedBeforeStrip.includes(`${normalized})`)) {
+      normalized = `${normalized}${')'.repeat(openCount - closeCount)}`;
+    }
+  }
 
   return normalized || undefined;
 }

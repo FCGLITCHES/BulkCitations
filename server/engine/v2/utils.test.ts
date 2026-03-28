@@ -155,6 +155,7 @@ describe('v2 author rescue utilities', () => {
     expect(fixUnicodeText('Research methods for applied psychology (2nd e d., pp. 164–177).')).toBe('Research methods for applied psychology (2nd ed., pp. 164-177).');
     expect(fixUnicodeText('A guide to research practice')).toBe('A guide to research practice');
     expect(fixUnicodeText('T cells in adaptive immunity')).toBe('T cells in adaptive immunity');
+    expect(fixUnicodeText('Nomofobia y el nivel productividad de las organizaciones')).toBe('Nomofobia y el nivel productividad de las organizaciones');
   });
 
   it('collapses split acronym-led group authors back into a literal institutional author', () => {

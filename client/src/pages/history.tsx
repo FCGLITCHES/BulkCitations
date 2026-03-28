@@ -179,7 +179,6 @@ export default function HistoryPage() {
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div>
                             <h1 className="text-4xl md:text-5xl font-bold font-headline text-primary-container dark:text-blue-50 leading-tight tracking-tight mb-2">Conversion History</h1>
-                            <p className="text-on-surface-variant dark:text-slate-400 max-w-xl">Review and manage your scholarly archives. Track citation health and re-export processed batches with clinical precision.</p>
                         </div>
                         {historyBatches.length > 0 && (
                             <div className="flex flex-wrap items-center gap-2">

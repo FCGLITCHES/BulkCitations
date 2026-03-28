@@ -11,18 +11,16 @@ export default function ApiDocs() {
         <section className="pt-24 pb-32 px-8 overflow-hidden">
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
             <div className="lg:col-span-7 space-y-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-container/10 dark:bg-blue-900/40 text-primary-container dark:text-blue-300 rounded-full text-xs font-bold tracking-widest uppercase">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-container opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-container"></span>
-                </span>
-                Coming Soon
+              <div className="flex flex-col gap-2">
+                <h1 className="font-headline text-5xl md:text-7xl font-bold text-primary-container dark:text-blue-50 leading-tight tracking-tight">
+                  Integrate High-Accuracy Citation Conversion into your Platform
+                </h1>
+                <p className="text-amber-700 dark:text-amber-400 font-bold tracking-widest uppercase text-xs">
+                  Coming Soon • Private Beta Q2 2026
+                </p>
               </div>
-              <h1 className="font-headline text-5xl md:text-7xl font-bold text-primary-container dark:text-blue-50 leading-tight tracking-tight">
-                Integrate High-Accuracy Citation Conversion into your Platform
-              </h1>
               <p className="text-xl text-on-surface-variant dark:text-slate-400 max-w-2xl leading-relaxed">
-                The Digital Archivist Business API provides institutional-grade bibliographic processing. Build seamless research workflows with our proprietary accuracy engine.
+                The BulkReferences Business API provides institutional-grade bibliographic processing. Build seamless research workflows with our proprietary accuracy engine.
               </p>
               <div className="flex flex-wrap gap-4 pt-4">
                 <a className="px-8 py-4 bg-primary-container dark:bg-primary-container text-white rounded-lg font-bold text-lg shadow-lg hover:bg-[#002f5f] transition-all flex items-center gap-2 group" href="#waitlist">

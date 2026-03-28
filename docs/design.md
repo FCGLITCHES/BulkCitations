@@ -7,6 +7,7 @@
 - **Animation**: Framer Motion for micro-interactions and smooth transitions.
 - **Typography**: `Inter` for functional text, `Outfit` for headings and premium accents.
 - **Color Palette**: Sleek dark mode by default, HSL-tailored harmonious colors (Deep Indigo, Emerald Green for success, Ruby Red for errors). Use glassmorphism for overlays.
+- **Institutional Suite Branding**: Uses the "Digital Archivist" sub-brand with a specialized high-density academic theme featuring `Noto Serif` for primary headlines and an ivory/slate surface palette.
 
 ## Reusable Components
 - **CitationCard**: The primary unit for displaying a processed reference. Extends Radix `Card`.

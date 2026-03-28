@@ -286,6 +286,11 @@ const OCR_JOINABLE_SHORT_WORDS = new Set([
   'up',
   'we',
 ]);
+const OCR_STANDALONE_SINGLE_LETTERS = new Set(['a', 'e', 'i', 'o', 'u', 'y']);
+
+function shortWordJoinKey(current: string, next: string): string {
+  return `${current}${next}`.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+}
 
 export function normalizeUnicodeText(value: string): string {
   return repairMojibake(value)
@@ -330,15 +335,15 @@ function shouldMergeOcrSplitTokens(current: string, next: string): boolean {
   }
 
   if (/^[\p{L}]$/u.test(currentCore) && /^[\p{L}]$/u.test(nextCore)) {
-    return OCR_JOINABLE_SHORT_WORDS.has(`${currentCore}${nextCore}`.toLowerCase());
+    return OCR_JOINABLE_SHORT_WORDS.has(shortWordJoinKey(currentCore, nextCore));
   }
 
   if (/^[\p{L}]$/u.test(currentCore) && /^[\p{Ll}][\p{L}\p{N}/:.-]{1,}$/u.test(nextCore)) {
     if (/^[A-Z]$/u.test(currentCore)) {
       return false;
     }
-    if (/^[ai]$/u.test(currentCore)) {
-      return OCR_JOINABLE_SHORT_WORDS.has(`${currentCore}${nextCore}`.toLowerCase());
+    if (OCR_STANDALONE_SINGLE_LETTERS.has(currentCore.toLowerCase())) {
+      return OCR_JOINABLE_SHORT_WORDS.has(shortWordJoinKey(currentCore, nextCore));
     }
     return true;
   }

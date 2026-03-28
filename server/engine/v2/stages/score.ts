@@ -13,6 +13,7 @@ import {
   getMissingExpectedFields,
   getMissingRequiredFields,
 } from '../qualityRules.js';
+import { V2_THRESHOLD_POLICY } from '../thresholdPolicy.js';
 
 const CONFIRMED_SPLIT_CODES = new Set([
   'header_bleed_confirmed',
@@ -34,7 +35,7 @@ const SUSPECTED_SPLIT_CODES = new Set([
   'oversized_chunk_suspected',
 ]);
 
-const CLEAN_UNRESOLVED_ACTIVE_READY_THRESHOLD = 0.83;
+const CLEAN_UNRESOLVED_ACTIVE_READY_THRESHOLD = V2_THRESHOLD_POLICY.score.cleanUnresolvedReadyThreshold;
 const DUPLICATE_AUTO_READY_THRESHOLD = CLEAN_UNRESOLVED_ACTIVE_READY_THRESHOLD;
 const CLEAN_UNRESOLVED_DUPLICATE_READY_THRESHOLD = CLEAN_UNRESOLVED_ACTIVE_READY_THRESHOLD;
 const GENERIC_VENUE_PATTERN = /^(?:journal|conference|proceedings|book|report|website|site|web(?:page)?)(?:\s+(?:vol(?:ume)?|issue|no|number|pp?|pages?|article|\d+))*$/i;
@@ -174,21 +175,21 @@ function keyFieldConfidenceReady(citation: CanonicalCitation, fieldScores: Recor
   return profile.required.every((field) => {
     switch (field) {
       case 'authors':
-        return fieldScores.authors >= 0.88;
+        return fieldScores.authors >= V2_THRESHOLD_POLICY.score.requiredFieldReadyFloor;
       case 'title':
-        return fieldScores.title >= 0.88;
+        return fieldScores.title >= V2_THRESHOLD_POLICY.score.requiredFieldReadyFloor;
       case 'year':
-        return fieldScores.year >= 0.88;
+        return fieldScores.year >= V2_THRESHOLD_POLICY.score.requiredFieldReadyFloor;
       case 'venue':
-        return getVenueScore(citation, fieldScores) >= 0.88;
+        return getVenueScore(citation, fieldScores) >= V2_THRESHOLD_POLICY.score.requiredFieldReadyFloor;
       case 'publisher':
-        return fieldScores.publisher >= 0.88;
+        return fieldScores.publisher >= V2_THRESHOLD_POLICY.score.requiredFieldReadyFloor;
       case 'institution':
-        return Math.max(fieldScores.institution, fieldScores.publisher) >= 0.88;
+        return Math.max(fieldScores.institution, fieldScores.publisher) >= V2_THRESHOLD_POLICY.score.requiredFieldReadyFloor;
       case 'bookTitle':
-        return fieldScores.bookTitle >= 0.88;
+        return fieldScores.bookTitle >= V2_THRESHOLD_POLICY.score.requiredFieldReadyFloor;
       case 'url':
-        return fieldScores.url >= 0.88;
+        return fieldScores.url >= V2_THRESHOLD_POLICY.score.requiredFieldReadyFloor;
       default:
         return true;
     }
@@ -198,7 +199,7 @@ function keyFieldConfidenceReady(citation: CanonicalCitation, fieldScores: Recor
 function localReadyWithoutCoverage(citation: CanonicalCitation, overall: number, fieldScores: Record<string, number>): boolean {
   if (!['report', 'book', 'website'].includes(citation.referenceType)) return false;
   if (!citation.resolution || !['provider_no_coverage', 'no_exact_match'].includes(citation.resolution.status)) return false;
-  return overall >= 0.9 && keyFieldConfidenceReady(citation, fieldScores);
+  return overall >= V2_THRESHOLD_POLICY.score.localReadyFloor && keyFieldConfidenceReady(citation, fieldScores);
 }
 
 function allowsLocalReadyOnResolutionMiss(citation: CanonicalCitation): boolean {
@@ -207,7 +208,7 @@ function allowsLocalReadyOnResolutionMiss(citation: CanonicalCitation): boolean 
 
 function localReadyWithoutResolution(citation: CanonicalCitation, overall: number, fieldScores: Record<string, number>): boolean {
   if (citation.resolution) return false;
-  return overall >= 0.9 && keyFieldConfidenceReady(citation, fieldScores);
+  return overall >= V2_THRESHOLD_POLICY.score.localReadyFloor && keyFieldConfidenceReady(citation, fieldScores);
 }
 
 function localReadyWithCleanUnresolvedResolution(
@@ -226,8 +227,11 @@ function localReadyWithCleanUnresolvedResolution(
   if (!titleLooksSubstantive(citation) || !venueLooksSubstantive(citation)) return false;
 
   const authorRequired = getRequirementProfile(citation.referenceType).required.includes('authors');
-  if (authorRequired && fieldScores.authors < 0.84) return false;
-  if (fieldScores.title < 0.88 || fieldScores.year < 0.88) return false;
+  if (authorRequired && fieldScores.authors < V2_THRESHOLD_POLICY.score.unresolvedAuthorFloor) return false;
+  if (
+    fieldScores.title < V2_THRESHOLD_POLICY.score.requiredFieldReadyFloor
+    || fieldScores.year < V2_THRESHOLD_POLICY.score.requiredFieldReadyFloor
+  ) return false;
 
   const threshold = citation.status === 'duplicate'
     ? CLEAN_UNRESOLVED_DUPLICATE_READY_THRESHOLD
@@ -254,8 +258,8 @@ function canIgnoreMissingVerifiedVenue(citation: CanonicalCitation): boolean {
   if (doiVerified(citation) || exactExternalTitleMatch(citation)) return true;
   return Boolean(
     citation.resolution?.acceptedCandidate?.title
-    && citation.title.confidence >= 0.88
-    && citation.year.confidence >= 0.88,
+    && citation.title.confidence >= V2_THRESHOLD_POLICY.score.requiredFieldReadyFloor
+    && citation.year.confidence >= V2_THRESHOLD_POLICY.score.requiredFieldReadyFloor,
   );
 }
 
@@ -378,10 +382,12 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   if (hasWeakProceedingsVenue) overall = Math.max(0, overall - 0.08);
   if (hasDroppedLocatorWarning) overall = Math.max(0, overall - 0.06);
   if (validationCodes.has('initials_as_surname')) overall = Math.max(0, overall - 0.08);
-  if (validationCodes.has('protected_title_token_corrupted') || validationCodes.has('protected_venue_token_corrupted')) overall = Math.min(overall, 0.45);
-  if (hasHardConflicts) overall = Math.min(overall, 0.52);
-  if (hasInsufficientEvidence) overall = Math.min(overall, 0.45);
-  if (hasAmbiguousMatch) overall = Math.min(overall, 0.84);
+  if (validationCodes.has('protected_title_token_corrupted') || validationCodes.has('protected_venue_token_corrupted')) {
+    overall = Math.min(overall, V2_THRESHOLD_POLICY.score.malformedAuthorCap);
+  }
+  if (hasHardConflicts) overall = Math.min(overall, V2_THRESHOLD_POLICY.score.conflictCap);
+  if (hasInsufficientEvidence) overall = Math.min(overall, V2_THRESHOLD_POLICY.score.malformedAuthorCap);
+  if (hasAmbiguousMatch) overall = Math.min(overall, V2_THRESHOLD_POLICY.score.unresolvedAuthorFloor);
   if (hasResolutionMiss && !allowsLocalReadyOnResolutionMiss(citation)) overall = Math.min(overall, 0.95);
   if (hasProviderError) overall = Math.max(0, overall - 0.03);
   if (isVerifiedResolution(citation)) overall = Math.min(1, overall + 0.03);
@@ -431,13 +437,13 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   }
 
   if (flags.includes('malformed_authors')) {
-    overall = Math.min(overall, 0.45);
+    overall = Math.min(overall, V2_THRESHOLD_POLICY.score.malformedAuthorCap);
   }
   if (missingRequired.length > 0) {
-    overall = Math.min(overall, 0.59);
+    overall = Math.min(overall, V2_THRESHOLD_POLICY.score.missingRequiredCap);
   }
   if (hasConfirmedSplit) {
-    overall = Math.min(overall, 0.49);
+    overall = Math.min(overall, V2_THRESHOLD_POLICY.score.confirmedSplitCap);
   }
 
   overall = Number(overall.toFixed(2));
@@ -474,7 +480,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
     || hasResolutionMiss
     || hasProviderError
     || hasProviderNoCoverage
-    || (overall >= 0.75 && overall < 0.9);
+    || (overall >= 0.75 && overall < V2_THRESHOLD_POLICY.score.localReadyFloor);
 
   let bucket: CitationQualityScore['bucket'] = 'worth_reviewing';
   let bucketReasons: string[] = [];
@@ -514,10 +520,10 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
       ...(hasResolutionMiss ? ['No exact external title match was accepted.'] : []),
       ...(hasProviderError ? ['External resolution encountered a provider error.'] : []),
       ...(hasProviderNoCoverage ? ['Providers may not cover this citation type well enough for verification.'] : []),
-      ...(overall >= 0.75 && overall < 0.9 ? ['Local quality is below the ready threshold.'] : []),
+      ...(overall >= 0.75 && overall < V2_THRESHOLD_POLICY.score.localReadyFloor ? ['Local quality is below the ready threshold.'] : []),
     ];
   } else {
-    bucket = overall >= 0.9 ? 'ready' : overall >= 0.75 ? 'worth_reviewing' : 'action_needed';
+    bucket = overall >= V2_THRESHOLD_POLICY.score.localReadyFloor ? 'ready' : overall >= 0.75 ? 'worth_reviewing' : 'action_needed';
     bucketReasons = bucket === 'ready'
       ? ['Citation passed local structural checks.']
       : bucket === 'worth_reviewing'
@@ -548,7 +554,7 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
 function fallbackQuality(citation: CanonicalCitation, message: string, timedOut: boolean): CitationQualityScore {
   const fieldScores = buildFieldScores(citation);
   return {
-    overall: 0.45,
+    overall: V2_THRESHOLD_POLICY.score.malformedAuthorCap,
     grade: 'F',
     fieldScores,
     flags: ['review', timedOut ? 'score_timeout' : 'score_error'],

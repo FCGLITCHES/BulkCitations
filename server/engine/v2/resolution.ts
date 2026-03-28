@@ -6,7 +6,6 @@ import type {
   ResolutionMetadata,
   ResolutionQueryEvidence,
 } from '@shared/schema';
-import { getProtectedContainerCorruptionReasons } from '@shared/referenceHealthHeuristics';
 import { isPlaceholderFieldValue } from '@shared/referencePlaceholders';
 import {
   classifyLocatorToken,
@@ -16,6 +15,7 @@ import {
 } from '../shared/citationSemantics.js';
 import type { ResolutionCandidateRecord } from './contracts.js';
 import { providerSourceTypeMatchesReferenceType } from './sourceTypes.js';
+import { getProtectedContainerCorruptionReasons } from './tokenGuards.js';
 import { normalizeDoiValue, normalizeWhitespace } from './utils.js';
 
 const PROTECTED_TOKEN_RULES = [

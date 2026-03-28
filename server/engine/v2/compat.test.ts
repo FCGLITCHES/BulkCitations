@@ -58,16 +58,23 @@ function buildBaseCitation(overrides: Record<string, unknown> = {}) {
   } as any;
 }
 
-function mapSingleCitation(citationOverrides: Record<string, unknown>, debug = false) {
-  const records = mapV2ResponseToLegacyRecords({
+function buildCompatResponse(
+  citationOverrides: Record<string, unknown> | Array<Record<string, unknown>>,
+  debug = false,
+) {
+  const overridesList = Array.isArray(citationOverrides) ? citationOverrides : [citationOverrides];
+  return {
     job_id: 'job-1',
-    processed_at: new Date().toISOString(),
-    citations: [buildBaseCitation(citationOverrides)],
+    processed_at: '2026-03-28T00:00:00.000Z',
+    citations: overridesList.map((overrides, index) => buildBaseCitation({
+      id: `citation-${index + 1}`,
+      ...overrides,
+    })),
     duplicates: [],
     groups: {},
     stats: {
-      input_count: 1,
-      unique_count: 1,
+      input_count: overridesList.length,
+      unique_count: overridesList.length,
       duplicate_count: 0,
       enriched_count: 0,
       avg_confidence: 0.71,
@@ -97,7 +104,11 @@ function mapSingleCitation(citationOverrides: Record<string, unknown>, debug = f
         }
       : undefined,
     pipeline_log: [],
-  } as any, {
+  } as any;
+}
+
+function mapSingleCitation(citationOverrides: Record<string, unknown>, debug = false) {
+  const records = mapV2ResponseToLegacyRecords(buildCompatResponse(citationOverrides, debug), {
     inputStyle: 'auto',
     outputStyle: 'apa',
   });
@@ -296,5 +307,128 @@ describe('legacy v2 compat health and confidence mapping', () => {
       warningCount: record.uiData.warnings?.length ?? 0,
       styleDetectionFailed: true,
     });
+  });
+});
+
+describe('legacy v2 compat snapshots', () => {
+  it('matches the golden legacy mapper output for representative non-debug records', () => {
+    const records = mapV2ResponseToLegacyRecords(buildCompatResponse([
+      {},
+      {
+        id: 'citation-2',
+        quality: {
+          overall: 0.42,
+          grade: 'F',
+          fieldScores: {
+            authors: 0.8,
+            title: 0.92,
+            year: 0.9,
+            journal: 0.2,
+            volume: 0.1,
+            issue: 0,
+            pages: 0,
+            doi: 0,
+            publisher: 0,
+            url: 0,
+          },
+          flags: ['placeholder_fields', 'review'],
+          missingRequired: [],
+          missingOptional: ['doi', 'pages', 'url'],
+          bucket: 'worth_reviewing',
+          bucketReasons: ['Placeholder or suspicious venue fields present'],
+        },
+        validationIssues: [
+          {
+            field: 'journal',
+            severity: 'warning',
+            code: 'placeholder_journal',
+            message: 'Journal/venue contains a placeholder value rather than a real source.',
+          },
+        ],
+      },
+      {
+        id: 'citation-3',
+        quality: {
+          overall: 0.33,
+          grade: 'F',
+          fieldScores: {
+            authors: 0.8,
+            title: 0.61,
+            year: 0.7,
+            journal: 0,
+            volume: 0,
+            issue: 0,
+            pages: 0,
+            doi: 0,
+            publisher: 0,
+            url: 0,
+          },
+          flags: ['review', 'protected_token_corruption'],
+          missingRequired: ['venue'],
+          missingOptional: [],
+          bucket: 'action_needed',
+          bucketReasons: ['Protected title or venue tokens were corrupted.'],
+        },
+        raw: 'Ronneberger, O., Fischer, P., and Brox, T. "U-Net: Convolutional Networks for Biomedical Image Segmentation."',
+        title: { value: 'U-Convolutional Networks for Biomedical Image Segmentation', confidence: 0.61, source: 'extracted' },
+        validationIssues: [
+          {
+            field: 'title',
+            severity: 'error',
+            code: 'protected_title_token_corrupted',
+            message: 'Protected title token U-Net was corrupted',
+          },
+        ],
+      },
+    ]), {
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+    });
+
+    expect(records).toMatchSnapshot();
+  });
+
+  it('matches the golden legacy mapper debug envelope output', () => {
+    const records = mapV2ResponseToLegacyRecords(buildCompatResponse({
+      extraction: {
+        method: 'hybrid',
+        fallbackUsed: true,
+        extractorPath: 'llm',
+        rejectedCandidates: ['llm_cap_reached'],
+      },
+      split: {
+        method: 'llm',
+        confidence: 0.67,
+        reasons: ['llm_multi_citation_resplit'],
+        fallbackUsed: true,
+      },
+      detectedStyle: { value: null, confidence: 0.2, source: 'detected' },
+      quality: {
+        overall: 0.51,
+        grade: 'F',
+        fieldScores: {
+          authors: 0.8,
+          title: 0.61,
+          year: 0.7,
+          journal: 0,
+          volume: 0,
+          issue: 0,
+          pages: 0,
+          doi: 0,
+          publisher: 0,
+          url: 0,
+        },
+        flags: ['review'],
+        missingRequired: [],
+        missingOptional: [],
+        bucket: 'worth_reviewing',
+        bucketReasons: ['Validation or rendering warnings are present'],
+      },
+    }, true), {
+      inputStyle: 'auto',
+      outputStyle: 'apa',
+    });
+
+    expect(records).toMatchSnapshot();
   });
 });

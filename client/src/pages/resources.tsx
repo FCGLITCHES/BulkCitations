@@ -6,22 +6,18 @@ export default function Resources() {
     <div className="bg-surface dark:bg-slate-950 font-body text-on-surface selection:bg-secondary-container selection:text-on-secondary-container min-h-screen flex flex-col">
       <LandingNavbar />
       
-      <main className="max-w-7xl mx-auto px-8 py-16 flex-grow">
+      <main className="max-w-7xl mx-auto px-4 sm:px-8 py-12 md:py-16 flex-grow">
         {/* Hero Section */}
-        <header className="mb-20 max-w-3xl">
-          <span className="text-on-primary-fixed-variant dark:text-blue-400 font-label tracking-widest text-[0.7rem] uppercase font-bold mb-4 block">Knowledge Base</span>
-          <h1 className="font-headline text-5xl md:text-6xl text-primary-container dark:text-blue-50 leading-[1.1] tracking-tight mb-6">
+        <header className="mb-12 max-w-3xl">
+          <h1 className="font-headline text-3xl sm:text-5xl md:text-6xl text-primary-container dark:text-blue-50 leading-[1.1] tracking-tight mb-6">
             Precision in Every Reference. <span className="italic text-outline dark:text-slate-400 font-normal">Expert Insights for Modern Scholars.</span>
           </h1>
-          <p className="text-on-surface-variant dark:text-slate-400 text-lg leading-relaxed max-w-2xl">
-            Deep dives into the mechanics of digital archiving, comparative studies of citation ecosystems, and technical guides for the rigorous academic.
-          </p>
         </header>
 
         {/* Bento Grid Highlights */}
         <section className="grid grid-cols-1 md:grid-cols-12 gap-8 mb-24">
           {/* Featured Comparison Card */}
-          <div className="md:col-span-8 bg-surface-container-lowest dark:bg-slate-900 vellum-shadow rounded-lg p-10 flex flex-col justify-between relative overflow-hidden group border border-outline-variant/10 dark:border-slate-800">
+          <div className="md:col-span-8 bg-surface-container-lowest dark:bg-slate-900 vellum-shadow rounded-lg p-6 sm:p-10 flex flex-col justify-between relative overflow-hidden group border border-outline-variant/10 dark:border-slate-800">
             <div className="relative z-10">
               <div className="flex gap-3 mb-6">
                 <span className="px-3 py-1 bg-primary-container/10 dark:bg-blue-900/40 text-primary-container dark:text-blue-300 text-[0.65rem] font-bold uppercase tracking-wider rounded-lg">Comparative Analysis</span>
@@ -46,7 +42,7 @@ export default function Resources() {
           </div>
 
           {/* Side Feature: Reference Health */}
-          <div className="md:col-span-4 bg-primary-container dark:bg-slate-900 text-white rounded-lg p-8 flex flex-col justify-end relative overflow-hidden border border-outline-variant/10">
+          <div className="md:col-span-4 bg-primary-container dark:bg-slate-900 text-white rounded-lg p-6 sm:p-8 flex flex-col justify-end relative overflow-hidden border border-outline-variant/10">
             <div className="absolute top-8 right-8 opacity-20">
               <span className="material-symbols-outlined text-6xl">clinical_notes</span>
             </div>
@@ -74,7 +70,7 @@ export default function Resources() {
         {/* Latest Resources List */}
         <section className="mb-24">
           <div className="flex justify-between items-end mb-12">
-            <h2 className="font-headline text-4xl text-primary-container dark:text-blue-50">Latest Resources</h2>
+            <h2 className="font-headline text-3xl sm:text-4xl text-primary-container dark:text-blue-50">Latest Resources</h2>
             <div className="flex gap-4">
               <button className="p-2 border border-outline-variant dark:border-slate-800 rounded-full hover:bg-surface-container dark:hover:bg-slate-800 transition-all">
                 <span className="material-symbols-outlined">chevron_left</span>
@@ -85,7 +81,7 @@ export default function Resources() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10">
             {/* Article 1 */}
             <article className="group">
               <div className="aspect-[4/3] rounded-lg overflow-hidden mb-6 bg-surface-container dark:bg-slate-800 relative border border-outline-variant/10">
@@ -146,7 +142,7 @@ export default function Resources() {
         </section>
 
         {/* Newsletter / CTA */}
-        <section className="signature-cta rounded-lg p-12 md:p-20 text-center relative overflow-hidden">
+        <section className="signature-cta rounded-lg p-8 sm:p-12 md:p-20 text-center relative overflow-hidden">
           <div className="relative z-10">
             <h2 className="font-headline text-4xl text-white mb-6">Stay Informed. <span className="italic font-normal opacity-80">Weekly Archival Updates.</span></h2>
             <p className="text-blue-100 max-w-xl mx-auto mb-10 text-lg">

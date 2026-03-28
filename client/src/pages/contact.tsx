@@ -1,11 +1,10 @@
 import { motion } from "framer-motion";
 import { Mail, Sparkles, MessageSquare, ArrowRight, Check } from "lucide-react";
-import { Navbar } from "@/components/navbar";
+import { LandingNavbar } from "@/components/landing-navbar";
+import { LandingFooter } from "@/components/landing-footer";
 import { ContactForm } from "@/components/contact-form";
-import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { SiteFooter } from "@/components/site-footer";
 
 export default function Contact() {
   const { toast } = useToast();
@@ -22,10 +21,10 @@ export default function Contact() {
   };
 
   return (
-    <div className="min-h-screen bg-background font-sans overflow-x-hidden flex flex-col">
-      <Navbar />
+    <div className="min-h-screen bg-surface dark:bg-slate-950 font-body text-on-surface antialiased flex flex-col transition-colors">
+      <LandingNavbar />
 
-      <main className="container mx-auto px-4 py-16 sm:py-24 max-w-5xl">
+      <main className="container mx-auto px-4 py-16 sm:py-24 max-w-6xl">
         <div className="text-center mb-16">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -62,43 +61,43 @@ export default function Contact() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              <Card 
-                className="border-border/50 bg-card hover:shadow-md transition-all cursor-pointer group active:scale-[0.98]"
+              <div 
+                className="bg-surface-container-lowest dark:bg-slate-900 border border-outline-variant/30 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer group active:scale-[0.98]"
                 onClick={copyEmail}
               >
-                <CardContent className="p-8 space-y-6">
+                <div className="p-8 space-y-6">
                   <div className="space-y-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary/20 transition-colors">
+                    <div className="w-12 h-12 rounded-xl bg-primary-container/10 dark:bg-blue-400/20 flex items-center justify-center text-primary-container dark:text-blue-400 group-hover:bg-primary-container/20 transition-colors">
                       {copied ? <Check className="h-6 w-6" /> : <Mail className="h-6 w-6" />}
                     </div>
                     <div className="space-y-2">
-                       <h4 className="font-bold text-lg text-foreground">Official Email</h4>
-                       <p className="text-muted-foreground group-hover:text-primary transition-colors">support@bulkreferences.com</p>
+                       <h4 className="font-bold text-lg text-primary-container dark:text-blue-50">Official Email</h4>
+                       <p className="text-on-surface-variant dark:text-slate-400 group-hover:text-primary-container dark:group-hover:text-blue-300 transition-colors">support@bulkreferences.com</p>
                     </div>
-                    <p className="text-xs text-secondary-foreground/60 leading-tight">
+                    <p className="text-xs text-on-surface-variant/70 leading-tight">
                        Click to copy email. We aim to respond within 24-48 hours.
                     </p>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </motion.div>
 
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="p-8 rounded-3xl bg-primary/10 border border-primary/10"
+              className="p-8 rounded-3xl bg-surface-container/30 dark:bg-slate-900/50 border border-outline-variant/30"
             >
-              <h4 className="font-extrabold flex items-center gap-2 mb-4 text-foreground text-xl">
-                <Sparkles className="h-5 w-5 text-primary" />
+              <h4 className="font-extrabold flex items-center gap-2 mb-4 text-primary-container dark:text-blue-50 text-xl">
+                <Sparkles className="h-5 w-5 text-primary-container dark:text-blue-400" />
                 Beta Feedback
               </h4>
-              <p className="text-muted-foreground leading-relaxed mb-6">
+              <p className="text-on-surface-variant dark:text-slate-400 leading-relaxed mb-6">
                 BulkReferences is currently in Beta. Your feedback is extremely valuable to us. 
                 Whether it's a small suggestion or a major bug report, every message helps 
                 improve the tool for the academic community.
               </p>
-              <div className="flex items-center gap-1.5 text-primary font-bold text-sm tracking-tight group cursor-default">
+              <div className="flex items-center gap-1.5 text-primary-container dark:text-blue-400 font-bold text-sm tracking-tight group cursor-default">
                  Handcrafted by a solo developer
                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
@@ -118,7 +117,7 @@ export default function Contact() {
         </div>
       </main>
 
-      <SiteFooter />
+      <LandingFooter />
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowRight, CheckCircle2, KeyRound, Mail, ShieldCheck, UserPlus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { LandingNavbar } from "@/components/landing-navbar";
+import { LandingFooter } from "@/components/landing-footer";
 
 type ViewMode = "login" | "request";
 
@@ -21,6 +22,7 @@ export default function AdminLogin() {
   const [isRequestPending, setIsRequestPending] = useState(false);
 
   useEffect(() => {
+    document.title = "Admin Access - BulkReferences";
     if (isInitialized && isAdmin) {
       setLocation("/admin/dashboard");
     }
@@ -86,265 +88,173 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[radial-gradient(circle_at_top_left,_rgba(174,199,246,0.34),_transparent_28%),linear-gradient(135deg,_#f8f9fb_0%,_#edf1f5_55%,_#e6ebf0_100%)] text-slate-950">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-7xl flex-col px-5 py-6 sm:px-8 lg:px-10">
-        <nav className="flex items-center justify-between rounded-full border border-slate-200/80 bg-white/75 px-5 py-3 shadow-sm backdrop-blur">
-          <Link href="/">
-            <span className="cursor-pointer font-headline text-xl font-black tracking-tight text-[#001b3d]">
-              BulkReferences
-            </span>
-          </Link>
-          <div className="flex items-center gap-4 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-            <span className="hidden sm:inline">Admin Portal</span>
-            <a href="/admin-login" className="text-[#002147] transition hover:opacity-70">
-              Easy link
-            </a>
-            <a href="/contact" className="text-[#002147] transition hover:opacity-70">
-              Support
-            </a>
+    <div className="bg-surface text-on-background min-h-screen flex flex-col transition-colors">
+      <LandingNavbar />
+
+      <main className="flex-grow flex items-center justify-center px-4 py-12 md:py-20 relative z-10">
+        <div className="w-full max-w-[440px] bg-surface-container-lowest rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+          <div className="px-8 py-10 md:px-12 md:py-14">
+            {/* Header Section */}
+            <div className="mb-10 text-center">
+              <h1 className="text-3xl font-bold text-primary-container dark:text-blue-50 mb-3 tracking-tight">
+                Admin Portal
+              </h1>
+              <p className="text-on-surface-variant text-sm font-body">
+                {view === "login" 
+                  ? "Approved admin access and dashboard tools." 
+                  : "Request restricted access to administrative systems."}
+              </p>
+            </div>
+
+            {/* View Switcher Tabs */}
+            <div className="flex bg-surface-container-low rounded-lg p-1 mb-8">
+              <button
+                onClick={() => { setView("login"); setError(null); setSuccess(null); }}
+                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${view === "login" ? "bg-white text-primary-container shadow-sm" : "text-on-surface-variant hover:text-on-surface"}`}
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => { setView("request"); setError(null); setSuccess(null); }}
+                className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${view === "request" ? "bg-white text-primary-container shadow-sm" : "text-on-surface-variant hover:text-on-surface"}`}
+              >
+                Request
+              </button>
+            </div>
+
+            {/* Status Messages */}
+            {error && (
+              <div className="mb-6 p-4 bg-error-container/20 border border-error/10 text-error text-sm rounded-lg">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-lg">
+                {success}
+              </div>
+            )}
+            {!isConfigured && (
+              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-lg">
+                `ADMIN_SESSION_SECRET` is missing. Admin access is disabled.
+              </div>
+            )}
+
+            {/* Forms */}
+            {view === "login" ? (
+              <form className="space-y-6" onSubmit={handleLoginSubmit}>
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider" htmlFor="identifier">Identifier</label>
+                  <input
+                    className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-outline-variant focus:ring-0 focus:border-primary-container dark:focus:border-blue-300 transition-all text-on-surface placeholder-slate-400"
+                    id="identifier"
+                    placeholder="Username or email"
+                    required
+                    value={loginIdentifier}
+                    onChange={(e) => setLoginIdentifier(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider" htmlFor="password">Password</label>
+                  <input
+                    className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-outline-variant focus:ring-0 focus:border-primary-container dark:focus:border-blue-300 transition-all text-on-surface placeholder-slate-400"
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    required
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                  />
+                </div>
+                <div className="pt-4">
+                  <button
+                    disabled={isLoginPending || !isConfigured}
+                    className="w-full bg-gradient-to-br from-[#000a1e] to-[#002147] text-white py-4 rounded-lg font-bold text-sm tracking-wide shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    type="submit"
+                  >
+                    {isLoginPending ? "Authenticating..." : "Enter Portal"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form className="space-y-6" onSubmit={handleRequestSubmit}>
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider" htmlFor="req-name">Full Name</label>
+                  <input
+                    className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-outline-variant focus:ring-0 focus:border-primary-container dark:focus:border-blue-300 transition-all text-on-surface placeholder-slate-400"
+                    id="req-name"
+                    placeholder="Jane Archivist"
+                    required
+                    value={requestName}
+                    onChange={(e) => setRequestName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider" htmlFor="req-user">Username</label>
+                  <input
+                    className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-outline-variant focus:ring-0 focus:border-primary-container dark:focus:border-blue-300 transition-all text-on-surface placeholder-slate-400"
+                    id="req-user"
+                    placeholder="archivist_01"
+                    required
+                    value={requestUsername}
+                    onChange={(e) => setRequestUsername(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider" htmlFor="req-email">Work Email</label>
+                  <input
+                    className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-outline-variant focus:ring-0 focus:border-primary-container dark:focus:border-blue-300 transition-all text-on-surface placeholder-slate-400"
+                    id="req-email"
+                    type="email"
+                    placeholder="you@bulkreferences.com"
+                    required
+                    value={requestEmail}
+                    onChange={(e) => setRequestEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider" htmlFor="req-pass">Create Password</label>
+                  <input
+                    className="w-full px-0 py-3 bg-transparent border-0 border-b-2 border-outline-variant focus:ring-0 focus:border-primary-container dark:focus:border-blue-300 transition-all text-on-surface placeholder-slate-400"
+                    id="req-pass"
+                    type="password"
+                    placeholder="••••••••"
+                    required
+                    value={requestPassword}
+                    onChange={(e) => setRequestPassword(e.target.value)}
+                  />
+                </div>
+                <div className="pt-4">
+                  <button
+                    disabled={isRequestPending || !isConfigured}
+                    className="w-full bg-gradient-to-br from-[#000a1e] to-[#002147] text-white py-4 rounded-lg font-bold text-sm tracking-wide shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    type="submit"
+                  >
+                    {isRequestPending ? "Submitting..." : "Submit Request"}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Footer */}
+            <div className="mt-8 pt-6 border-t border-outline-variant/20 text-center">
+              <p className="text-[11px] text-on-surface-variant italic mb-4 px-4 leading-relaxed">
+                Approved admins are redirected immediately. Requests are reviewed by the security team.
+              </p>
+              <Link href="/login" className="text-xs font-semibold uppercase tracking-widest text-[#002147] dark:text-blue-200 hover:opacity-70 transition-opacity">
+                Return to Public Portal
+              </Link>
+            </div>
           </div>
-        </nav>
+        </div>
 
-        <main className="flex flex-1 items-center py-10">
-          <div className="grid w-full gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-            <section className="relative overflow-hidden rounded-[2rem] border border-slate-200/70 bg-[#001329] px-7 py-8 text-white shadow-[0_30px_80px_-32px_rgba(0,18,43,0.55)] sm:px-10 sm:py-10">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(174,199,246,0.28),_transparent_35%),radial-gradient(circle_at_bottom_left,_rgba(194,233,201,0.18),_transparent_30%)]" />
-              <div className="relative space-y-8">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-200">
-                  <ShieldCheck className="h-4 w-4" />
-                  Restricted route: /adm1n
-                </div>
+        {/* Background Decorative elements */}
+        <div className="fixed inset-0 -z-0 overflow-hidden pointer-events-none opacity-40">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-container/5 dark:bg-primary-container/10 rounded-full blur-[120px]"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-secondary-container/10 dark:bg-secondary-container/20 rounded-full blur-[100px]"></div>
+        </div>
+      </main>
 
-                <div className="max-w-2xl space-y-4">
-                  <h1 className="font-headline text-4xl font-black tracking-tight text-white sm:text-5xl">
-                    The Digital Archivist
-                  </h1>
-                  <p className="max-w-xl text-sm leading-7 text-slate-300 sm:text-base">
-                    This portal is reserved for approved BulkReferences administrators. New admins can request access here, and the request is routed to <span className="font-semibold text-white">support@bulkreferences.com</span> for approval before dashboard access is granted.
-                  </p>
-                  <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
-                    Direct admin entry: /adm1n or /admin-login
-                  </p>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-white/10 bg-white/8 p-4">
-                    <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
-                      <UserPlus className="h-5 w-5" />
-                    </div>
-                    <p className="text-sm font-semibold text-white">1. Request access</p>
-                    <p className="mt-2 text-xs leading-6 text-slate-300">Create your admin profile with a work email, username, and password.</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/8 p-4">
-                    <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
-                      <Mail className="h-5 w-5" />
-                    </div>
-                    <p className="text-sm font-semibold text-white">2. Await approval</p>
-                    <p className="mt-2 text-xs leading-6 text-slate-300">The approval request is sent directly to the contact inbox for review.</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/8 p-4">
-                    <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
-                      <KeyRound className="h-5 w-5" />
-                    </div>
-                    <p className="text-sm font-semibold text-white">3. Enter dashboard</p>
-                    <p className="mt-2 text-xs leading-6 text-slate-300">Approved admins can sign in and reach the reporting dashboard immediately.</p>
-                  </div>
-                </div>
-
-                <div className="rounded-[1.5rem] border border-white/10 bg-white/6 p-5 backdrop-blur">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-300">Current session</p>
-                  <p className="mt-3 text-sm text-slate-200">
-                    {account
-                      ? `Signed in as ${account.name} (@${account.username}).`
-                      : "No active admin session detected."}
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            <section className="rounded-[2rem] border border-slate-200/70 bg-white/92 p-6 shadow-[0_24px_70px_-36px_rgba(25,28,31,0.28)] backdrop-blur sm:p-8">
-              <div className="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1 text-sm">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setView("login");
-                    setError(null);
-                    setSuccess(null);
-                  }}
-                  className={`rounded-full px-4 py-2 font-semibold transition ${view === "login" ? "bg-[#002147] text-white shadow-sm" : "text-slate-600"}`}
-                >
-                  Approved admin sign in
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setView("request");
-                    setError(null);
-                    setSuccess(null);
-                  }}
-                  className={`rounded-full px-4 py-2 font-semibold transition ${view === "request" ? "bg-[#002147] text-white shadow-sm" : "text-slate-600"}`}
-                >
-                  Request admin access
-                </button>
-              </div>
-
-              <div className="mt-8">
-                {view === "login" ? (
-                  <form className="space-y-6" onSubmit={handleLoginSubmit}>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Admin Sign In</p>
-                      <h2 className="mt-3 font-headline text-3xl font-black tracking-tight text-[#001b3d]">
-                        Access the dashboard
-                      </h2>
-                      <p className="mt-3 text-sm leading-7 text-slate-600">
-                        Sign in with your approved admin username or email and the password you created during the request step.
-                      </p>
-                    </div>
-
-                    <label className="block space-y-2">
-                      <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">Email or username</span>
-                      <input
-                        value={loginIdentifier}
-                        onChange={(event) => setLoginIdentifier(event.target.value)}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-[#002147] focus:bg-white"
-                        placeholder="archivist_id_01 or you@company.com"
-                        autoComplete="username"
-                      />
-                    </label>
-
-                    <label className="block space-y-2">
-                      <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">Secure password</span>
-                      <input
-                        value={loginPassword}
-                        onChange={(event) => setLoginPassword(event.target.value)}
-                        type="password"
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-[#002147] focus:bg-white"
-                        placeholder="••••••••••••"
-                        autoComplete="current-password"
-                      />
-                    </label>
-
-                    {!isConfigured && (
-                      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                        `ADMIN_SESSION_SECRET` is missing, so admin sign-in cannot be enabled yet.
-                      </div>
-                    )}
-
-                    {error && (
-                      <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                        {error}
-                      </div>
-                    )}
-
-                    {success && (
-                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                        {success}
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={isLoginPending || !isConfigured}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#000a1e_0%,#002147_100%)] px-4 py-4 text-sm font-bold text-white transition hover:translate-y-[-1px] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <span>{isLoginPending ? "Authenticating..." : "Authenticate session"}</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </button>
-                  </form>
-                ) : (
-                  <form className="space-y-5" onSubmit={handleRequestSubmit}>
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Admin Access Request</p>
-                      <h2 className="mt-3 font-headline text-3xl font-black tracking-tight text-[#001b3d]">
-                        Create a pending admin account
-                      </h2>
-                      <p className="mt-3 text-sm leading-7 text-slate-600">
-                        Your account stays locked until the request is approved by the BulkReferences team through the contact inbox.
-                      </p>
-                    </div>
-
-                    <label className="block space-y-2">
-                      <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">Full name</span>
-                      <input
-                        value={requestName}
-                        onChange={(event) => setRequestName(event.target.value)}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-[#002147] focus:bg-white"
-                        placeholder="Jane Archivist"
-                        autoComplete="name"
-                      />
-                    </label>
-
-                    <label className="block space-y-2">
-                      <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">Admin username</span>
-                      <input
-                        value={requestUsername}
-                        onChange={(event) => setRequestUsername(event.target.value)}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-[#002147] focus:bg-white"
-                        placeholder="archivist_id_01"
-                        autoComplete="username"
-                      />
-                    </label>
-
-                    <label className="block space-y-2">
-                      <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">Work email</span>
-                      <input
-                        value={requestEmail}
-                        onChange={(event) => setRequestEmail(event.target.value)}
-                        type="email"
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-[#002147] focus:bg-white"
-                        placeholder="you@bulkreferences.com"
-                        autoComplete="email"
-                      />
-                    </label>
-
-                    <label className="block space-y-2">
-                      <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">Create password</span>
-                      <input
-                        value={requestPassword}
-                        onChange={(event) => setRequestPassword(event.target.value)}
-                        type="password"
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-[#002147] focus:bg-white"
-                        placeholder="At least 10 characters"
-                        autoComplete="new-password"
-                      />
-                    </label>
-
-                    {error && (
-                      <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                        {error}
-                      </div>
-                    )}
-
-                    {success && (
-                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                        {success}
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={isRequestPending || !isConfigured}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#000a1e_0%,#002147_100%)] px-4 py-4 text-sm font-bold text-white transition hover:translate-y-[-1px] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <span>{isRequestPending ? "Submitting request..." : "Request admin approval"}</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </button>
-                  </form>
-                )}
-              </div>
-
-              <div className="mt-8 rounded-[1.5rem] border border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-600">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-600" />
-                  <p className="leading-7">
-                    After approval, admins are sent back here to sign in and are redirected into the protected dashboard.
-                  </p>
-                </div>
-              </div>
-            </section>
-          </div>
-        </main>
-      </div>
+      <LandingFooter />
     </div>
   );
 }

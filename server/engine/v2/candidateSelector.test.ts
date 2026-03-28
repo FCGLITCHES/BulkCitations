@@ -135,4 +135,104 @@ describe('candidate selector', () => {
     expect(vetoedEntry?.vetoed).toBe(true);
     expect(vetoedEntry?.vetoReasons).toContain('authors');
   });
+
+  it('vetoes journal claims that have no credible serial container evidence', () => {
+    const journalLikeReport = makeCandidate('legacy:year_anchored_fallback', 1, 'journal', {
+      authors: ['Clinical Design Observatory'],
+      title: 'Dose response ranking for translational pharmacology',
+      year: '2021',
+      journal: 'APAR-RPT-',
+      publisher: 'Blue Harbor Research',
+      url: 'https://stress.example.org/apar/021',
+    });
+    const report = makeCandidate('legacy:institutional_heuristic', 2, 'report', {
+      authors: ['Clinical Design Observatory'],
+      title: 'Dose response ranking for translational pharmacology',
+      year: '2021',
+      institution: 'Clinical Design Observatory',
+      publisher: 'Blue Harbor Research',
+      url: 'https://stress.example.org/apar/021',
+    }, {
+      branch: 'institutional_heuristic_raw',
+    });
+
+    const selection = selectExtractionCandidate([journalLikeReport, report], 'multi_candidate');
+
+    expect(selection.winner?.adapterId).toBe('legacy:institutional_heuristic');
+    expect(selection.adapterRegistry.find((entry) => entry.adapterId === 'legacy:year_anchored_fallback')?.vetoReasons).toContain('venue');
+  });
+
+  it('vetoes url-backed journal claims whose venue is only an institutional website label', () => {
+    const websiteMisreadAsJournal = makeCandidate('parser:auto:mla', 1, 'journal', {
+      authors: ['National Dosing Review Office'],
+      title: 'Dose response ranking for translational pharmacology',
+      year: '2013',
+      journal: 'Drug Evidence Hub, ver',
+      url: 'https://stress.example.org/iew/181',
+    });
+    const website = makeCandidate('legacy:institutional_heuristic', 2, 'website', {
+      authors: ['National Dosing Review Office'],
+      title: 'Dose response ranking for translational pharmacology',
+      year: '2013',
+      institution: 'Drug Evidence Hub',
+      edition: 'ver. 2.0',
+      url: 'https://stress.example.org/iew/181',
+    }, {
+      branch: 'institutional_heuristic_raw',
+    });
+
+    const selection = selectExtractionCandidate([websiteMisreadAsJournal, website], 'multi_candidate');
+
+    expect(selection.winner?.adapterId).toBe('legacy:institutional_heuristic');
+    expect(selection.adapterRegistry.find((entry) => entry.adapterId === 'parser:auto:mla')?.vetoReasons).toContain('venue');
+  });
+
+  it('vetoes book claims whose publisher is really a place-prefixed metadata tail', () => {
+    const malformedBook = makeCandidate('parser:auto:harvard', 1, 'book', {
+      authors: ['Global Trial Methods Unit'],
+      title: 'Trial design routing for preclinical analytics: case SDE-APAR-002 (Report No',
+      year: '2023',
+      publisher: 'APAR-RPT-002). Amsterdam: Open Metrics Press',
+      url: 'https://stress.example.org/apar/022',
+    });
+    const report = makeCandidate('legacy:institutional_heuristic', 2, 'report', {
+      authors: ['Global Trial Methods Unit'],
+      title: 'Trial design routing for preclinical analytics: case SDE-APAR-002',
+      year: '2023',
+      institution: 'Global Trial Methods Unit',
+      publisher: 'Open Metrics Press',
+      edition: 'Report No. APAR-RPT-002',
+      url: 'https://stress.example.org/apar/022',
+    }, {
+      branch: 'institutional_heuristic_raw',
+    });
+
+    const selection = selectExtractionCandidate([malformedBook, report], 'multi_candidate');
+
+    expect(selection.winner?.adapterId).toBe('legacy:institutional_heuristic');
+    expect(selection.adapterRegistry.find((entry) => entry.adapterId === 'parser:auto:harvard')?.vetoReasons).toContain('publisher');
+  });
+
+  it('vetoes journal claims whose venue is really a publisher-year tail', () => {
+    const malformedJournal = makeCandidate('parser:selected_style:vancouver', 1, 'journal', {
+      authors: ['UN Women'],
+      title: "Progress of the world's women 2019-2020: families in a changing world",
+      year: '2019',
+      journal: 'New York: UN Women; 2019',
+    });
+    const report = makeCandidate('legacy:institutional_heuristic', 2, 'report', {
+      authors: ['UN Women'],
+      title: "Progress of the world's women 2019-2020: families in a changing world",
+      year: '2019',
+      institution: 'UN Women',
+      publisher: 'UN Women',
+    }, {
+      branch: 'institutional_heuristic_raw',
+    });
+
+    const selection = selectExtractionCandidate([malformedJournal, report], 'multi_candidate');
+
+    expect(selection.winner?.adapterId).toBe('legacy:institutional_heuristic');
+    expect(selection.adapterRegistry.find((entry) => entry.adapterId === 'parser:selected_style:vancouver')?.vetoReasons).toContain('venue');
+  });
 });

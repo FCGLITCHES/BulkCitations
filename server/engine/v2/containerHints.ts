@@ -6,6 +6,10 @@ import type {
 import { bestVenueFromParsed, proceedingsSignal } from './qualityRules.js';
 import { normalizeWhitespace } from './utils.js';
 
+const REPORT_PUBLISHER_SIGNAL = /\b(?:organization|agency|administration|department|ministry|office|commission|council|bank|foundation|university|institute|society|association|bureau|federal reserve|inter-american development bank|world health organization|un women|openai)\b/i;
+const REPORT_TITLE_SIGNAL = /\b(?:report|guideline|working paper|policy brief|technical note|white paper|manual|handbook|statement|case study)\b/i;
+const BOOK_TITLE_SIGNAL = /\b(?:handbook|manual|guide|style guide|textbook|companion)\b/i;
+
 function stripLeadingDecoration(value: string): string {
   let cleaned = normalizeWhitespace(value);
   if (!cleaned) return cleaned;
@@ -39,6 +43,9 @@ function inferContainerKind(
   venue: string,
 ): { kind: ExtractionContainerHints['containerKindHint']; confidence: number } {
   const lowerVenue = venue.toLowerCase();
+  const locator = normalizeWhitespace(parsed.pages ?? parsed['article-number'] ?? '');
+  const publisherOrInstitution = normalizeWhitespace(parsed.institution ?? parsed.publisher ?? '');
+  const title = normalizeWhitespace(parsed.title ?? '');
 
   if (
     parsed.conferenceTitle
@@ -57,7 +64,46 @@ function inferContainerKind(
   }
 
   if (referenceType === 'thesis' && parsed.institution) {
-    return { kind: 'thesis', confidence: 0.82 };
+    return { kind: 'thesis', confidence: 0.96 };
+  }
+
+  if (
+    parsed.url
+    && !venue
+    && !parsed.volume
+    && !parsed.issue
+    && !locator
+    && !parsed.bookTitle
+    && !parsed.conferenceTitle
+    && (referenceType === 'website' || !publisherOrInstitution)
+  ) {
+    return { kind: 'website', confidence: referenceType === 'website' ? 0.96 : 0.9 };
+  }
+
+  if (
+    referenceType === 'book'
+    && !venue
+    && !parsed.volume
+    && !parsed.issue
+    && !locator
+    && !parsed.bookTitle
+    && !parsed.conferenceTitle
+    && (parsed.edition || BOOK_TITLE_SIGNAL.test(title) || publisherOrInstitution)
+  ) {
+    return { kind: 'book', confidence: 0.92 };
+  }
+
+  if (
+    publisherOrInstitution
+    && !venue
+    && !parsed.volume
+    && !parsed.issue
+    && !locator
+    && !parsed.bookTitle
+    && !parsed.conferenceTitle
+    && (referenceType === 'report' || REPORT_PUBLISHER_SIGNAL.test(publisherOrInstitution) || REPORT_TITLE_SIGNAL.test(title))
+  ) {
+    return { kind: 'report', confidence: referenceType === 'report' ? 0.94 : 0.88 };
   }
 
   if (referenceType === 'report' && (parsed.institution || parsed.publisher)) {

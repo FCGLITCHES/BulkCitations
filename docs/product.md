@@ -43,6 +43,7 @@ Researchers and publishers waste thousands of hours manually fixing broken citat
 
 ## Core Pages
 - **Home**: Workspace and conversion interface.
+- **Institutional Login**: Branded as "Digital Archivist Institutional Suite", providing SSO and verified domain access.
 - **History**: Conversion archive and job management.
 - **Prices**: Tiered plans for individuals and enterprise.
 - **Resources**: High-velocity archiving insights.

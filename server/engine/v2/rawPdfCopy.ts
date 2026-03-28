@@ -14,11 +14,12 @@ import type {
   V2WorkingChunkFieldHint,
   V2WorkingChunkFieldHintType,
 } from './contracts.js';
+import { V2_THRESHOLD_POLICY } from './thresholdPolicy.js';
 import { compactUriDoiSpacing, normalizeDoiValue, normalizeUnicodeText, normalizeWhitespace } from './utils.js';
 
-export const OPENER_THRESHOLD = 0.58;
-export const OVERSIZED_WORKING_CHUNK_CHARS = 800;
-export const OVERSIZED_WORKING_CHUNK_LINES = 12;
+export const OPENER_THRESHOLD = V2_THRESHOLD_POLICY.split.openerThreshold;
+export const OVERSIZED_WORKING_CHUNK_CHARS = V2_THRESHOLD_POLICY.split.oversizedWorkingChunkChars;
+export const OVERSIZED_WORKING_CHUNK_LINES = V2_THRESHOLD_POLICY.split.oversizedWorkingChunkLines;
 
 const NUMERIC_CITATION_MARKER_PATTERN = /^(?:\[\d+\]|\d+[.)])\s+/;
 const SURNAME_INITIAL_OPENER_PATTERN = /^[\p{Lu}][\p{L}\p{M}'’.-]+,\s+[A-Z](?:[.\-\s]*[A-Z])*\.?(?:\s|,|&)/u;

@@ -776,6 +776,93 @@ describe('style detection and source-type regressions', () => {
     expect(result.parsed.year).toBe('2019');
   });
 
+  it('extracts IEEE conference abstracts without a place as conferences instead of chapters', async () => {
+    const reference = '122. S Razavi, E Masangkay, N Chelikam, U Kelly-Tolley, L Pierce, R Malek, and A Padiar, "E-158 Safety of cerebral angiography in private outpatient clinical setting," in Electronic Poster Abstracts, pp. A114-A115, 2020. doi: 10.1136/neurintsurg-2020-snis.190';
+    const detection = await classifier.detectStyle(reference);
+    const result = await extractor.extract(
+      reference,
+      detection.style ?? 'auto',
+      { detectionConfidence: detection.confidence },
+    );
+
+    expect(detection.style).toBe('ieee');
+    expect(result.detectedStyle).toBe('ieee');
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.title).toBe('E-158 Safety of cerebral angiography in private outpatient clinical setting');
+    expect(result.parsed.conferenceTitle).toBe('Electronic Poster Abstracts');
+    expect(result.parsed.pages).toBe('A114-A115');
+    expect(result.parsed.year).toBe('2020');
+    expect(result.parsed.doi).toBe('10.1136/neurintsurg-2020-snis.190');
+    expect(result.canonicalAuthors?.[0]).toMatchObject({ last: 'Razavi', initials: 'S.' });
+    expect(result.canonicalAuthors?.[3]).toMatchObject({ last: 'Kelly-Tolley', initials: 'U.' });
+  });
+
+  it('detects full-name IEEE journal references as IEEE and preserves compound surnames', async () => {
+    const reference = 'Alenka Erjavec Škerget, "Poroke med krvnimi sorodniki: genetske in / ali pravne ovire," Pomurska obzorja, vol. 1, no. 1, pp. 29-34, 2022. doi: 10.18690/pomurska-obzorja.1.1.29-34.2014';
+    const detection = await classifier.detectStyle(reference);
+    const result = await extractor.extract(
+      reference,
+      detection.style ?? 'auto',
+      { detectionConfidence: detection.confidence },
+    );
+
+    expect(detection.style).toBe('ieee');
+    expect(result.detectedStyle).toBe('ieee');
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.title).toBe('Poroke med krvnimi sorodniki: genetske in / ali pravne ovire');
+    expect(result.parsed.journal).toBe('Pomurska obzorja');
+    expect(result.parsed.volume).toBe('1');
+    expect(result.parsed.issue).toBe('1');
+    expect(result.parsed.pages).toBe('29-34');
+    expect(result.parsed.year).toBe('2022');
+    expect(result.canonicalAuthors?.[0]).toMatchObject({ last: 'Erjavec Škerget' });
+  });
+
+  it('extracts IEEE journals with full-name single authors and empty volume slots without collapsing the surname', async () => {
+    const reference = '482. Alberto Morales Ospina, "Nomofobia y el nivel productividad de las organizaciones," Libros IC, vol. , pp. 107-122, 2022. doi: 10.15765/librosic.v1i1.12';
+    const detection = await classifier.detectStyle(reference);
+    const result = await extractor.extract(
+      reference,
+      detection.style ?? 'auto',
+      { detectionConfidence: detection.confidence },
+    );
+
+    expect(detection.style).toBe('ieee');
+    expect(result.detectedStyle).toBe('ieee');
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.title).toBe('Nomofobia y el nivel productividad de las organizaciones');
+    expect(result.parsed.journal).toBe('Libros IC');
+    expect(result.parsed.pages).toBe('107-122');
+    expect(result.parsed.year).toBe('2022');
+    expect(result.parsed.doi).toBe('10.15765/librosic.v1i1.12');
+    expect(result.canonicalAuthors?.[0]).toMatchObject({ last: 'Morales Ospina' });
+  });
+
+  it('extracts IEEE journals with nested quoted titles without swallowing the title tail into the venue', async () => {
+    const reference = 'Philip J. W. Roberts and P. Reid Matthews, "Closure to " Dynamics of Jets in Two-Layer Stratified Fluids " by Philip J. W. Roberts and P. Reid Matthews (September, 1984, Vol. 110, No. 4)," Journal of Hydraulic Engineering, vol. 112, no. 11, pp. 1110-1113, 1986. doi: 10.1061/(asce)0733-9429(1986)112:11(1110)';
+    const detection = await classifier.detectStyle(reference);
+    const result = await extractor.extract(
+      reference,
+      detection.style ?? 'auto',
+      { detectionConfidence: detection.confidence },
+    );
+
+    expect(detection.style).toBe('ieee');
+    expect(result.detectedStyle).toBe('ieee');
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.title).toBe('Closure to " Dynamics of Jets in Two-Layer Stratified Fluids " by Philip J. W. Roberts and P. Reid Matthews (September, 1984, Vol. 110, No. 4)');
+    expect(result.parsed.journal).toBe('Journal of Hydraulic Engineering');
+    expect(result.parsed.volume).toBe('112');
+    expect(result.parsed.issue).toBe('11');
+    expect(result.parsed.pages).toBe('1110-1113');
+    expect(result.parsed.year).toBe('1986');
+    expect(result.parsed.doi).toBe('10.1061/(asce)0733-9429(1986)112:11(1110)');
+    expect(result.canonicalAuthors ?? []).toMatchObject([
+      { last: 'Roberts', initials: 'P. J. W.' },
+      { last: 'Matthews', initials: 'P. R.' },
+    ]);
+  });
+
   it('treats MLA website references with bare www URLs as websites instead of journals', async () => {
     const result = await extractor.extract(
       'OpenAI. "GPT-5.1 system card." OpenAI Research, www.openai.com/research/gpt-5-1. Accessed 27 Mar. 2026.',

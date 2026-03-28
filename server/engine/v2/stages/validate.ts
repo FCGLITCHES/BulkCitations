@@ -2,7 +2,7 @@ import type { CanonicalCitation, ValidationIssue, ValidationMetadata } from '@sh
 import {
   getProtectedContainerCorruptionReasons,
   getProtectedTitleCorruptionReasons,
-} from '@shared/referenceHealthHeuristics';
+} from '../tokenGuards.js';
 import type { V2Stage } from '../contracts.js';
 import {
   getStageIsolationConcurrency,
@@ -15,7 +15,6 @@ import {
   attachCitationDebug,
   createStageDiagnostic,
   logStructuredDebug,
-  normalizeDoiValue,
   normalizeWhitespace,
 } from '../utils.js';
 import {
@@ -28,45 +27,17 @@ import {
 } from '../qualityRules.js';
 import { OVERSIZED_CHUNK_CHARS, OVERSIZED_CHUNK_LINES } from './split.js';
 import { isGroupAuthor, normalizeGroupAuthor } from '../../shared/citationSemantics.js';
+import { buildReferenceSignatureIssues } from '../contaminationDetector.js';
 
 const DOI_PATTERN = /^10\.\d{4,}\/\S+$/i;
 const PAGE_PATTERN = /^[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?$/;
 const CURRENT_YEAR = new Date().getFullYear();
-const DOI_CLUSTER_PATTERN = /(?:https?:\/\/(?:dx\.)?doi\.org\/)?10\.\d{4,}\/\S+/gi;
-const YEAR_CLUSTER_PATTERN = /(?:\(|\[)(?:19|20)\d{2}[a-z]?(?:\)|\])/gi;
-const EMBEDDED_REFERENCE_START_PATTERN = /[A-Z][\p{L}'’.-]+,\s+[A-Z][^()]{0,40}\(\d{4}[a-z]?\)/gu;
-
 function isVerifiedResolution(citation: CanonicalCitation): boolean {
   return citation.resolution?.status === 'verified' || citation.resolution?.status === 'verified_with_year_tolerance';
 }
 
 function normalized(value: string | null | undefined): string {
   return normalizeWhitespace((value ?? '').toLowerCase());
-}
-
-function hasEmbeddedReferenceStart(value: string | null | undefined): boolean {
-  const raw = value ?? '';
-  if (!raw) return false;
-
-  for (const match of raw.matchAll(EMBEDDED_REFERENCE_START_PATTERN)) {
-    if ((match.index ?? 0) > 0) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-function countDistinctDoiClusters(value: string): number {
-  return new Set(
-    [...value.matchAll(DOI_CLUSTER_PATTERN)]
-      .map((match) => normalizeDoiValue(match[0] ?? ''))
-      .filter(Boolean),
-  ).size;
-}
-
-function countYearClusters(value: string): number {
-  return [...value.matchAll(YEAR_CLUSTER_PATTERN)].length;
 }
 
 function buildPlausibilityIssues(citation: CanonicalCitation): ValidationIssue[] {
@@ -328,56 +299,6 @@ function buildResidualArtifactIssues(citation: CanonicalCitation): ValidationIss
   return issues;
 }
 
-function buildReferenceSignatureIssues(citation: CanonicalCitation): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  const title = citation.title.value ?? '';
-  const venue = citation.conferenceTitle.value ?? citation.bookTitle.value ?? citation.journal.value ?? citation.publisher.value ?? '';
-  const doiClusters = countDistinctDoiClusters(citation.raw);
-  const yearClusters = countYearClusters(citation.raw);
-
-  if (hasEmbeddedReferenceStart(title)) {
-    issues.push({
-      field: 'title',
-      severity: 'error',
-      code: 'embedded_reference_start_in_title',
-      message: 'Title appears to contain the start of a second reference.',
-      extracted: title,
-    });
-  }
-
-  if (hasEmbeddedReferenceStart(venue)) {
-    issues.push({
-      field: citation.referenceType === 'conference' ? 'conferenceTitle' : citation.referenceType === 'chapter' ? 'bookTitle' : 'journal',
-      severity: 'error',
-      code: 'embedded_reference_start_in_venue',
-      message: 'Venue field appears to contain the start of a second reference.',
-      extracted: venue,
-    });
-  }
-
-  if (doiClusters >= 2) {
-    issues.push({
-      field: 'raw',
-      severity: 'error',
-      code: 'multiple_doi_clusters',
-      message: 'Raw citation contains multiple DOI clusters and likely includes more than one reference.',
-      extracted: doiClusters,
-    });
-  }
-
-  if (yearClusters >= 2) {
-    issues.push({
-      field: 'raw',
-      severity: 'error',
-      code: 'multiple_year_anchor_clusters',
-      message: 'Raw citation contains multiple year-anchor clusters and likely includes more than one reference.',
-      extracted: yearClusters,
-    });
-  }
-
-  return issues;
-}
-
 function buildSplitContaminationIssues(citation: CanonicalCitation, splitArtifact?: {
   cleanedChunk: string;
   contaminationFlags: string[];
@@ -612,7 +533,16 @@ export async function validateCitationOffline(
 ): Promise<{ issues: ValidationIssue[]; metadata: ValidationMetadata }> {
   const issues = dedupeIssues([
     ...buildSplitContaminationIssues(citation, splitArtifact),
-    ...buildReferenceSignatureIssues(citation),
+    ...buildReferenceSignatureIssues({
+      raw: citation.raw,
+      title: citation.title.value,
+      venue: citation.conferenceTitle.value ?? citation.bookTitle.value ?? citation.journal.value ?? citation.publisher.value,
+      venueField: citation.referenceType === 'conference'
+        ? 'conferenceTitle'
+        : citation.referenceType === 'chapter'
+          ? 'bookTitle'
+          : 'journal',
+    }),
     ...buildProtectedTokenIssues(citation),
     ...buildResidualArtifactIssues(citation),
     ...buildPlausibilityIssues(citation),

@@ -753,6 +753,8 @@ function applyResolutionPayload(
     conflictFields = merged.conflictFields;
   }
 
+  const providerNoCoverage = payload.status === 'provider_no_coverage';
+
   return {
     citation: {
       ...nextCitation,
@@ -774,9 +776,15 @@ function applyResolutionPayload(
           ? 'fetched'
           : payload.status === 'provider_error'
             ? 'error'
-            : 'no_match',
+            : providerNoCoverage
+              ? 'skipped'
+              : 'no_match',
         resolutionProviderId,
-        sourceMode === 'cache' ? 'cache' : providerKeyFromPayload(payload),
+        sourceMode === 'cache'
+          ? 'cache'
+          : providerNoCoverage
+            ? 'skipped'
+            : providerKeyFromPayload(payload),
         payload.acceptedCandidate,
         sourceMode === 'cache' ? { cached: true } : sourceMode === 'shared' ? { shared: true } : undefined,
         sourceMode === 'cache',
@@ -1082,7 +1090,7 @@ export function createEnrichStage(
               }),
               rejectedReasons: ['parse_too_sparse'],
             },
-            enrichment: buildEnrichmentFromResolution('no_match', resolutionProvider.id, 'unverifiable'),
+            enrichment: buildEnrichmentFromResolution('skipped', resolutionProvider.id, 'skipped'),
           }, 'enrich', {
             status: 'insufficient_evidence',
             providerOrder: [],
@@ -1115,7 +1123,7 @@ export function createEnrichStage(
               }),
               rejectedReasons: ['local_only_author_optional_reference'],
             },
-            enrichment: buildEnrichmentFromResolution('no_match', resolutionProvider.id, 'unverifiable'),
+            enrichment: buildEnrichmentFromResolution('skipped', resolutionProvider.id, 'skipped'),
           }, 'enrich', {
             status: 'provider_no_coverage',
             providerOrder: [],

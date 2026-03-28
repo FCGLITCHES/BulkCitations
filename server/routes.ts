@@ -26,13 +26,13 @@ import {
   type ConversionResponse,
   type DuplicateGroup,
 } from "@shared/schema";
-import { processReferences, reformatReferences, initCSLStyles } from "./engine/index";
+import { reformatReferences, initCSLStyles } from "./engine/index";
 import { runAssertions } from "./engine/strictRenderer.js";
 import { processV2Conversion } from "./engine/v2/index.js";
 import { mapV2ResponseToLegacyRecords } from "./engine/v2/compat.js";
-import { applyTruthToLegacyReference } from "./engine/shared/truthResolver.js";
 import { attachReferencePayloads } from "./engine/shared/referencePayloads.js";
 import { runSanityCheck } from "./engine/stages/sanityCheck.js";
+import { clusterCitations } from "../shared/clustering.js";
 import { getAuthorityData } from "../shared/authorityLookup";
 import { calculateConfidence } from "../shared/confidence";
 import { computeRulesScore } from "../shared/computeRulesScore";
@@ -713,45 +713,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const useV2Engine = validatedData.engineVersion !== 'v1';
 
       if (!useV2Engine) {
-        const pipelineResult = await processReferences(incomingReferences, {
+        const sourceContent = String(validatedData.content ?? '').trim() || incomingReferences.join("\n\n");
+        const { response: v1CompatResponse } = await processV2Conversion({
+          sourceType: 'text',
+          content: sourceContent,
           inputStyle: validatedData.inputStyle,
           outputStyle: validatedData.outputStyle,
-          enrichWithAuthority: shouldAttemptValidation,
-          isPro: true,
+          enrich: shouldAttemptValidation,
+          dedup: false,
+          group: false,
+          debug: false,
+        }, {
+          executionMode: 'sync',
         });
 
-        const truthAdjustedStorageData = await Promise.all(
-          pipelineResult.storageData.map(async (record) => {
-            const adjustedUiData = attachReferencePayloads(
-              await applyTruthToLegacyReference(record._uiData, validatedData.outputStyle),
-            );
-            return {
-              ...record,
-              parsedData: adjustedUiData.parsedData,
-              convertedText: adjustedUiData.convertedText,
-              referenceType: adjustedUiData.referenceType,
-              confidenceScore: adjustedUiData.confidence?.score ?? record.confidenceScore,
-              workKey: adjustedUiData.workKey ?? record.workKey,
-              _uiData: adjustedUiData,
-            };
-          }),
-        );
+        const legacyRecords = mapV2ResponseToLegacyRecords(v1CompatResponse, {
+          inputStyle: validatedData.inputStyle,
+          outputStyle: validatedData.outputStyle,
+        });
 
         const storedRefs = await storage.createReferences(
-          truthAdjustedStorageData.map(({ _uiData, ...record }) => record)
+          legacyRecords.map((record) => record.storageData)
         );
 
-        const convertResults: ConvertedReference[] = truthAdjustedStorageData.map((record, idx) => attachReferencePayloads({
-          ...record._uiData,
+        const convertResults: ConvertedReference[] = legacyRecords.map((record, idx) => attachReferencePayloads({
+          ...record.uiData,
           id: storedRefs[idx].id.toString(),
         }));
+        const clusters = clusterCitations(convertResults);
 
         const response: ConversionResponse = {
           convertedReferences: convertResults,
-          clusters: pipelineResult.clusters,
-          duplicateGroups: [],
+          clusters,
+          duplicateGroups: undefined,
           engineVersion: 'v1',
-          errors: pipelineResult.errors.length > 0 ? pipelineResult.errors : undefined,
+          errors: undefined,
         };
 
         return res.json(response);

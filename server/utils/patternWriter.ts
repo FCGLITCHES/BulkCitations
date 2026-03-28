@@ -1,18 +1,16 @@
 /**
- * Pattern Writer — Safely append new patterns to patterns.json
+ * Pattern Writer — Safely append new patterns to patternCatalog.json
  *
  * Used by the admin accept flow when the fix type is "dynamic-pattern".
  * Validates regex safety, checks for duplicates, and writes atomically.
  */
 
-import fs from "fs";
-import path from "path";
 import type { ProposedPattern } from "@shared/schema";
-
-const PATTERNS_PATH = path.resolve(process.cwd(), "server", "data", "patterns.json");
-
-/** Dangerous regex constructs that risk catastrophic backtracking (ReDoS) */
-const DANGEROUS_REGEX = /(.+)\+\)+|(.+)\*\)*|(.+)\+\)*|(.+)\*\)+|(\?=.*\(\?=)/;
+import {
+  readPatternCatalog,
+  validatePatternDefinition,
+  writePatternCatalog,
+} from "../engine/v2/patternCatalog.js";
 
 export interface PatternWriteResult {
   success: boolean;
@@ -21,14 +19,10 @@ export interface PatternWriteResult {
 }
 
 /**
- * Read all patterns from patterns.json.
+ * Read all patterns from patternCatalog.json.
  */
 export function readPatterns(): any[] {
-  if (!fs.existsSync(PATTERNS_PATH)) return [];
-  const raw = fs.readFileSync(PATTERNS_PATH, "utf8");
-  const parsed = JSON.parse(raw);
-  if (!Array.isArray(parsed)) return [];
-  return parsed;
+  return readPatternCatalog();
 }
 
 /**
@@ -46,17 +40,8 @@ export function validatePattern(pattern: ProposedPattern): string | null {
     return "Pattern must have at least one field mapping";
   }
 
-  // Check for dangerous regex
-  if (DANGEROUS_REGEX.test(pattern.regex)) {
-    return "Regex contains dangerous backtracking construct — rejected for safety";
-  }
-
-  // Try to compile the regex
-  try {
-    new RegExp(pattern.regex, "i");
-  } catch (e) {
-    return `Regex compilation failed: ${e instanceof Error ? e.message : "unknown error"}`;
-  }
+  const validationError = validatePatternDefinition(pattern);
+  if (validationError) return validationError;
 
   // Check for duplicate IDs
   const existing = readPatterns();
@@ -68,7 +53,7 @@ export function validatePattern(pattern: ProposedPattern): string | null {
 }
 
 /**
- * Append a new pattern to patterns.json.
+ * Append a new pattern to patternCatalog.json.
  * The parser's file watcher will hot-reload it automatically.
  */
 export function writePattern(pattern: ProposedPattern): PatternWriteResult {
@@ -93,14 +78,11 @@ export function writePattern(pattern: ProposedPattern): PatternWriteResult {
 
     existing.push(entry);
 
-    // Write atomically: write to tmp file, then rename
-    const tmpPath = PATTERNS_PATH + ".tmp";
     try {
-      fs.writeFileSync(tmpPath, JSON.stringify(existing, null, 2) + "\n", "utf8");
-      fs.renameSync(tmpPath, PATTERNS_PATH);
+      writePatternCatalog(existing);
     } catch (err) {
       if (process.env.VERCEL) {
-        return { success: false, error: "Dynamic patterns cannot be written on Vercel (read-only filesystem). Please update patterns.json in the repository." };
+        return { success: false, error: "Dynamic patterns cannot be written on Vercel (read-only filesystem). Please update patternCatalog.json in the repository." };
       }
       throw err;
     }
@@ -115,7 +97,7 @@ export function writePattern(pattern: ProposedPattern): PatternWriteResult {
 }
 
 /**
- * Remove a pattern by ID from patterns.json.
+ * Remove a pattern by ID from patternCatalog.json.
  * Used to roll back a mistakenly accepted pattern.
  */
 export function removePattern(patternId: string): PatternWriteResult {
@@ -128,10 +110,8 @@ export function removePattern(patternId: string): PatternWriteResult {
 
     existing.splice(index, 1);
 
-    const tmpPath = PATTERNS_PATH + ".tmp";
     try {
-      fs.writeFileSync(tmpPath, JSON.stringify(existing, null, 2) + "\n", "utf8");
-      fs.renameSync(tmpPath, PATTERNS_PATH);
+      writePatternCatalog(existing);
     } catch (err) {
       if (process.env.VERCEL) {
         return { success: false, error: "Dynamic patterns cannot be modified on Vercel (read-only filesystem)." };

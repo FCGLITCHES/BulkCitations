@@ -98,18 +98,18 @@ export function ContactForm({ className }: { className?: string }) {
   }
 
   return (
-    <Card className={cn("shadow-lg border-border/60", className)}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5 text-primary" />
+    <div className={cn("space-y-6", className)}>
+      <div className="mb-6">
+        <h3 className="text-2xl font-bold flex items-center gap-2 text-foreground">
+          <MessageSquare className="h-6 w-6 text-primary" />
           Get in Touch
-        </CardTitle>
-        <CardDescription>
+        </h3>
+        <p className="text-muted-foreground mt-2">
           Request features, report bugs, or share recommendations.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
+        </p>
+      </div>
+
+      <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
@@ -222,9 +222,8 @@ export function ContactForm({ className }: { className?: string }) {
                 </>
               )}
             </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+        </form>
+      </Form>
+    </div>
   );
 }

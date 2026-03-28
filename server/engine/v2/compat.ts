@@ -7,16 +7,16 @@ import type {
   ReferenceType,
   V2ConversionResponse,
 } from '@shared/schema';
+import { canonicalToParsedReference, canonicalReferenceTypeToParsed } from './utils.js';
+import { computeWorkKey } from '../../utils/workKey.js';
+import { hasAuthorInitialsOnly } from '../../utils/authorResolution.js';
+import { attachReferencePayloads } from '../shared/referencePayloads.js';
 import {
   getProtectedContainerCorruptionReasons,
   getProtectedTitleCorruptionReasons,
   hasInventedPlaceholderVenue,
   hasMalformedAuthorShape,
-} from '@shared/referenceHealthHeuristics';
-import { canonicalToParsedReference, canonicalReferenceTypeToParsed } from './utils.js';
-import { computeWorkKey } from '../../utils/workKey.js';
-import { hasAuthorInitialsOnly } from '../../utils/authorResolution.js';
-import { attachReferencePayloads } from '../shared/referencePayloads.js';
+} from './tokenGuards.js';
 
 function friendlyQualityFlag(flag: string): string | null {
   switch (flag) {

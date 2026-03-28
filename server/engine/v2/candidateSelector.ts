@@ -31,6 +31,11 @@ type CandidateRecord = {
 };
 
 type CoverageTuple = [number, number, number];
+const INSTITUTIONAL_CONTAINER_SIGNAL = /\b(?:organization|agency|administration|department|ministry|office|commission|council|bank|foundation|university|institute|society|association|bureau|hub|portal|observatory|network|unit|office)\b/i;
+const REPORT_METADATA_SIGNAL = /\b(?:report\s+no\.?|working paper|technical note|policy brief|white paper)\b/i;
+const VERSION_VENUE_SIGNAL = /\b(?:ver\.?|version)\b/i;
+const PLACE_PUBLISHER_VENUE_SIGNAL = /:\s*[^.;]+\b(?:press|publisher|organization|agency|department|ministry|office|commission|council|bank|foundation|university|institute|society|association|hub|portal|observatory|network|unit)\b/i;
+const YEAR_TAIL_VENUE_SIGNAL = /;\s*(?:1[5-9]\d{2}|20\d{2})$/i;
 
 function normalizeKey(value: string | null | undefined): string | null {
   const normalized = normalizeWhitespace((value ?? '').toLowerCase())
@@ -76,29 +81,33 @@ function getCandidateProfile(referenceType: CanonicalReferenceType) {
   if (referenceType === 'unknown') {
     return {
       required: ['title', 'year'] as const,
-      expected: ['authors', 'venue'] as const,
-      optional: ['doi', 'locator', 'publisher'] as const,
+      expected: ['authors'] as const,
+      optional: ['doi'] as const,
     };
   }
   return getRequirementProfile(referenceType);
 }
 
-function hasField(parsed: ParsedReference, field: string): boolean {
+function hasField(candidate: SelectableExtractionCandidate, field: string): boolean {
+  const parsed = candidate.parsed;
   switch (field) {
     case 'authors':
-      return (parsed.authors?.length ?? 0) > 0;
+      if (candidate.claimedType === 'website' && Boolean(bestVenueFromParsed(parsed))) return false;
+      return (parsed.authors?.length ?? 0) > 0 && candidate.plausibility.authors.plausible;
     case 'title':
-      return Boolean(normalizeWhitespace(parsed.title ?? ''));
+      return Boolean(normalizeWhitespace(parsed.title ?? '')) && candidate.plausibility.title.plausible;
     case 'year':
-      return Boolean(normalizeWhitespace(parsed.year ?? ''));
+      return Boolean(normalizeWhitespace(parsed.year ?? '')) && candidate.plausibility.year.plausible;
     case 'venue':
-      return Boolean(normalizeWhitespace(bestVenueFromParsed(parsed) ?? ''));
+      return Boolean(normalizeWhitespace(bestVenueFromParsed(parsed) ?? '')) && candidate.plausibility.venue.plausible;
     case 'locator':
-      return Boolean(normalizeWhitespace(parsed.pages ?? parsed['article-number'] ?? '')) && isLocatorLike(parsed.pages ?? parsed['article-number']);
+      return Boolean(normalizeWhitespace(parsed.pages ?? parsed['article-number'] ?? ''))
+        && isLocatorLike(parsed.pages ?? parsed['article-number'])
+        && candidate.plausibility.locator.plausible;
     case 'publisher':
-      return Boolean(normalizeWhitespace(parsed.publisher ?? parsed.institution ?? ''));
+      return Boolean(normalizeWhitespace(parsed.publisher ?? parsed.institution ?? '')) && candidate.plausibility.publisher.plausible;
     case 'institution':
-      return Boolean(normalizeWhitespace(parsed.institution ?? ''));
+      return Boolean(normalizeWhitespace(parsed.institution ?? '')) && candidate.plausibility.publisher.plausible;
     case 'edition':
       return Boolean(normalizeWhitespace(parsed.edition ?? ''));
     case 'url':
@@ -118,11 +127,12 @@ function hasField(parsed: ParsedReference, field: string): boolean {
   }
 }
 
-function coverageTuple(parsed: ParsedReference, referenceType: CanonicalReferenceType): CoverageTuple {
-  const profile = getCandidateProfile(referenceType);
-  const requiredCoveredCount = profile.required.filter((field) => hasField(parsed, field)).length;
-  const expectedCoveredCount = profile.expected.filter((field) => hasField(parsed, field)).length;
-  const optionalCoveredCount = profile.optional.filter((field) => hasField(parsed, field)).length;
+function coverageTuple(candidate: SelectableExtractionCandidate): CoverageTuple {
+  const { parsed, claimedType } = candidate;
+  const profile = getCandidateProfile(claimedType);
+  const requiredCoveredCount = profile.required.filter((field) => hasField(candidate, field)).length;
+  const expectedCoveredCount = profile.expected.filter((field) => hasField(candidate, field)).length;
+  const optionalCoveredCount = profile.optional.filter((field) => hasField(candidate, field)).length;
   return [requiredCoveredCount, expectedCoveredCount, optionalCoveredCount];
 }
 
@@ -214,11 +224,71 @@ function buildBreakdown(
   }
 
   const [requiredCoveredCount, expectedCoveredCount, optionalCoveredCount] = coverageTuple(
-    attempt.candidate.parsed,
-    attempt.candidate.claimedType,
+    attempt.candidate,
   );
   const profile = getCandidateProfile(attempt.candidate.claimedType);
-  const vetoReasons = profile.required.filter((field) => !hasField(attempt.candidate!.parsed, field));
+  const vetoReasons = profile.required.filter((field) => !hasField(attempt.candidate!, field));
+  const hasCredibleVenue = hasField(attempt.candidate, 'venue');
+  const hasCredibleLocator = hasField(attempt.candidate, 'locator');
+  const hasExplicitSerialStructure = hasField(attempt.candidate, 'volume')
+    || hasField(attempt.candidate, 'issue')
+    || hasCredibleLocator;
+  const venueValue = normalizeWhitespace(bestVenueFromParsed(attempt.candidate.parsed) ?? '');
+  const hasInstitutionalVenueOnly = Boolean(venueValue) && INSTITUTIONAL_CONTAINER_SIGNAL.test(venueValue);
+  const venueLooksPublisherTail = PLACE_PUBLISHER_VENUE_SIGNAL.test(venueValue) || YEAR_TAIL_VENUE_SIGNAL.test(venueValue);
+  const urlBackedNonSerialVenue = Boolean(normalizeWhitespace(attempt.candidate.parsed.url ?? ''))
+    && !hasExplicitSerialStructure
+    && (
+      hasInstitutionalVenueOnly
+      || VERSION_VENUE_SIGNAL.test(venueValue)
+      || venueLooksPublisherTail
+      || attempt.candidate.containerHints.containerKindHint === 'website'
+      || attempt.candidate.containerHints.containerKindHint === 'report'
+    );
+  const hasSerialStructure = hasExplicitSerialStructure
+    || (hasCredibleVenue && !urlBackedNonSerialVenue && !venueLooksPublisherTail);
+  const titleLooksLikeReportMetadata = REPORT_METADATA_SIGNAL.test(
+    normalizeWhitespace(attempt.candidate.parsed.title ?? ''),
+  );
+  const venueLooksMetadataLike = !attempt.candidate.plausibility.venue.plausible
+    || VERSION_VENUE_SIGNAL.test(venueValue)
+    || venueLooksPublisherTail;
+
+  if (
+    attempt.candidate.claimedType === 'journal'
+    && !hasSerialStructure
+    && (
+      Boolean(normalizeWhitespace(attempt.candidate.parsed.publisher ?? attempt.candidate.parsed.institution ?? ''))
+      || Boolean(normalizeWhitespace(attempt.candidate.parsed.url ?? ''))
+      || hasInstitutionalVenueOnly
+      || venueLooksMetadataLike
+      || titleLooksLikeReportMetadata
+    )
+  ) {
+    vetoReasons.push('venue');
+  }
+
+  if (
+    attempt.candidate.claimedType === 'conference'
+    && !hasCredibleVenue
+    && !hasCredibleLocator
+  ) {
+    vetoReasons.push('venue');
+  }
+
+  if (
+    attempt.candidate.claimedType === 'book'
+    && (
+      !hasField(attempt.candidate, 'publisher')
+      || (
+        !hasField(attempt.candidate, 'edition')
+        && !attempt.candidate.containerHints.publisherTailPresent
+        && attempt.candidate.containerHints.containerKindHint !== 'book'
+      )
+    )
+  ) {
+    vetoReasons.push('publisher');
+  }
 
   return {
     vetoed: vetoReasons.length > 0,

@@ -1,6 +1,6 @@
 import { formatCSLData, initCSLStyles, parsedReferenceToCSL } from '../../cslConverter.js';
 import { sanitizeStructuredLocatorContainers } from '../../shared/structuredLocatorCleanup.js';
-import { fixFormatting, runAssertions } from '../../strictRenderer.js';
+import { fixFormatting, runAssertions } from '../renderPolicy.js';
 import type { V2Stage } from '../contracts.js';
 import {
   runStageTasksSequentiallyWithIsolation,

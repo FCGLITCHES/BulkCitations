@@ -16,10 +16,11 @@ import {
   OVERSIZED_WORKING_CHUNK_LINES,
   splitRawReferenceBlock,
 } from '../rawPdfCopy.js';
+import { V2_THRESHOLD_POLICY } from '../thresholdPolicy.js';
 
 export const OVERSIZED_CHUNK_CHARS = OVERSIZED_WORKING_CHUNK_CHARS;
 export const OVERSIZED_CHUNK_LINES = OVERSIZED_WORKING_CHUNK_LINES;
-export const SUSPECTED_MULTI_CITATION_CHARS = 2000;
+export const SUSPECTED_MULTI_CITATION_CHARS = V2_THRESHOLD_POLICY.split.suspectedMultiCitationChars;
 
 const splitArraySchema = z.array(z.string().trim().min(1));
 const SECONDARY_BOUNDARY_PATTERN = /(?<=\.)\s+(?=[A-Z][A-Za-z'’.-]+,\s+[A-Z][^()]{0,40}\(\d{4}\))/g;

@@ -174,7 +174,7 @@ export function buildPatternExportArtifact(pattern: ProposedPattern, generatedBy
   };
 
   return {
-    filePath: path.resolve(process.cwd(), 'server', 'data', 'patterns.json'),
+    filePath: path.resolve(process.cwd(), 'server', 'engine', 'v2', 'patternCatalog.json'),
     content: JSON.stringify(entry, null, 2),
     generatedAt: new Date().toISOString(),
     generatedBy,
