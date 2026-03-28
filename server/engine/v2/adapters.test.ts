@@ -935,6 +935,50 @@ describe('style detection and source-type regressions', () => {
     expect(result.canonicalAuthors?.[0]).toMatchObject({ last: 'Morales Ospina' });
   });
 
+  it('keeps all-caps IEEE personal authors as people instead of literal group authors', async () => {
+    const reference = 'ANNE A. GERSHON, "Varicella vaccine: its past, present and future," The Pediatric Infectious Disease Journal, vol. 14, no. 9, pp. 742-744, 1995. doi: 10.1097/00006454-199509000-00003';
+    const detection = await classifier.detectStyle(reference);
+    const result = await extractor.extract(
+      reference,
+      detection.style ?? 'auto',
+      { detectionConfidence: detection.confidence },
+    );
+
+    expect(detection.style).toBe('ieee');
+    expect(result.detectedStyle).toBe('ieee');
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.title).toBe('Varicella vaccine: its past, present and future');
+    expect(result.parsed.journal).toBe('The Pediatric Infectious Disease Journal');
+    expect(result.parsed.year).toBe('1995');
+    expect(result.parsed.doi).toBe('10.1097/00006454-199509000-00003');
+    expect(result.canonicalAuthors?.[0]).toMatchObject({ last: 'GERSHON', initials: 'A. A.' });
+  });
+
+  it('does not merge adjacent comma-separated IEEE full-name authors into one malformed first author', async () => {
+    const reference = '2. Tashtaev Sharof Djumabaevich, Khudoiberganov Zokir Karimovich, Xudaykulov Zafar Beknazarovich, Adilov Nuriddin Sagdullaevich, and Mamasoliev Saidmurod Tirkashevich, "role and significance of physical culture and sport in the sphere of education," International journal of health sciences, vol. , pp. 14419-14427, 2022. doi: 10.53730/ijhs.v6ns1.8707';
+    const detection = await classifier.detectStyle(reference);
+    const result = await extractor.extract(
+      reference,
+      detection.style ?? 'auto',
+      { detectionConfidence: detection.confidence },
+    );
+
+    expect(detection.style).toBe('ieee');
+    expect(result.detectedStyle).toBe('ieee');
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.title).toBe('role and significance of physical culture and sport in the sphere of education');
+    expect(result.parsed.journal).toBe('International journal of health sciences');
+    expect(result.parsed.year).toBe('2022');
+    expect(result.parsed.doi).toBe('10.53730/ijhs.v6ns1.8707');
+    expect(result.canonicalAuthors ?? []).toMatchObject([
+      { last: 'Djumabaevich', initials: 'T. S.' },
+      { last: 'Karimovich', initials: 'K. Z.' },
+      { last: 'Beknazarovich', initials: 'X. Z.' },
+      { last: 'Sagdullaevich', initials: 'A. N.' },
+      { last: 'Tirkashevich', initials: 'M. S.' },
+    ]);
+  });
+
   it('extracts IEEE journals with nested quoted titles without swallowing the title tail into the venue', async () => {
     const reference = 'Philip J. W. Roberts and P. Reid Matthews, "Closure to " Dynamics of Jets in Two-Layer Stratified Fluids " by Philip J. W. Roberts and P. Reid Matthews (September, 1984, Vol. 110, No. 4)," Journal of Hydraulic Engineering, vol. 112, no. 11, pp. 1110-1113, 1986. doi: 10.1061/(asce)0733-9429(1986)112:11(1110)';
     const detection = await classifier.detectStyle(reference);
@@ -997,6 +1041,7 @@ describe('style detection and source-type regressions', () => {
     expect(result.referenceType).toBe('thesis');
     expect(result.parsed.title).toBe('Σύνθεση και μελέτη νέων βιοδραστικών λιπιδίων');
     expect(result.parsed.institution).toBe('National Documentation Centre (EKT)');
+    expect(result.parsed.publisher).toBe('National Documentation Centre (EKT)');
     expect(result.parsed.year).toBe('2014');
     expect(result.parsed.doi).toBe('10.12681/eadd/21756');
   });
@@ -1011,6 +1056,7 @@ describe('style detection and source-type regressions', () => {
     expect(result.referenceType).toBe('thesis');
     expect(result.parsed.title).toBe('Towards the total synthesis of trichoether A');
     expect(result.parsed.institution).toBe('Nanyang Technological University');
+    expect(result.parsed.publisher).toBe('Nanyang Technological University');
     expect(result.parsed.year).toBe('2021');
     expect(result.parsed.doi).toBe('10.32657/10356/151700');
   });
@@ -1024,9 +1070,28 @@ describe('style detection and source-type regressions', () => {
 
     expect(result.referenceType).toBe('report');
     expect(result.parsed.title).toBe("Quake'n and Shake'n...Forever! Long-Run Effects of Natural Disasters: A Case Study on the 1970 Ancash Earthquake");
+    expect(result.parsed.authors).toEqual(['Miller, S. J.', 'Caruso, G.']);
     expect(result.parsed.publisher).toBe('Inter-American Development Bank');
     expect(result.parsed.year).toBe('2014');
     expect(result.parsed.doi).toBe('10.18235/0011658');
+  });
+
+  it('keeps institutional subdivision report authors as one group instead of splitting the tail into a fake person', async () => {
+    const result = await extractor.extract(
+      'Nuclear Regulatory Commission, Washington, DC (United States). Div. of Reactor Controls and Human Factors (1995). Non-Power Reactor Operator Licensing Examiner Standards. Revision 1. Office of Scientific and Technical Information (OSTI). https://doi.org/10.2172/87065',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('report');
+    expect(result.parsed.authors).toEqual([
+      'Nuclear Regulatory Commission, Washington, DC (United States). Div. of Reactor Controls and Human Factors',
+    ]);
+    expect(result.parsed.institution).toBe('Nuclear Regulatory Commission, Washington, DC (United States). Div. of Reactor Controls and Human Factors');
+    expect(result.parsed.publisher).toBe('Office of Scientific and Technical Information (OSTI)');
+    expect(result.parsed.title).toBe('Non-Power Reactor Operator Licensing Examiner Standards. Revision 1');
+    expect(result.parsed.year).toBe('1995');
+    expect(result.parsed.doi).toBe('10.2172/87065');
   });
 
   it('classifies Vancouver institutional publisher tails as reports instead of journals', async () => {
@@ -1131,12 +1196,12 @@ describe('style detection and source-type regressions', () => {
     });
   });
 
-  it('skips IEEE LLM fallback when the per-batch budget cap is already reached', async () => {
+  it('keeps strong IEEE deterministic parses on the fast path even when fallback budget metadata is present', async () => {
     process.env.ENABLE_LLM_EXTRACTOR = 'true';
     process.env.OPENAI_API_KEY = 'test-key';
     process.env.OPENAI_EXTRACT_MODEL = 'gpt-5.4-nano';
     const fetchMock = vi.fn(() => {
-      throw new Error('fetch should not be called when the IEEE fallback budget is exhausted');
+      throw new Error('fetch should not be called when the IEEE fallback route is not needed');
     });
     vi.stubGlobal('fetch', fetchMock as any);
 
@@ -1155,10 +1220,11 @@ describe('style detection and source-type regressions', () => {
       },
     );
 
-    expect(result.llmFallbackAttempted).toBe(true);
-    expect(result.llmFallbackSkippedByBudget).toBe(true);
+    expect(result.llmFallbackAttempted).toBe(false);
+    expect(result.llmFallbackSkippedByBudget).toBe(false);
     expect(result.llmFallbackAccepted).toBe(false);
-    expect(result.llmFallbackReason).toBe('weak_first_author');
+    expect(result.llmFallbackReason).toBeUndefined();
+    expect(result.extractorPath).toBe('deterministic');
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -1201,6 +1267,7 @@ describe('style detection and source-type regressions', () => {
     expect(result.extractorPath).toBe('deterministic');
     expect(result.referenceType).toBe('website');
     expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-IEW-003');
+    expect(fetchMock).toHaveBeenCalled();
   });
 });
 

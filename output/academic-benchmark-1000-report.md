@@ -1,6 +1,6 @@
 # Academic Benchmark Report
 
-Generated: 2026-03-28T06:06:53.330Z
+Generated: 2026-03-28T07:41:18.268Z
 Frozen corpus: 2026-03-27T12:11:27.113Z
 Corpus size: 1000 real citations
 IEEE slice: 159 citations per corpus run
@@ -12,57 +12,48 @@ This internal benchmark evaluates 1000 real-world academic references across jou
 
 ## External Readiness Score (Primary)
 
-- Strict essential accuracy: 65.00%
+- Strict essential accuracy: 71.20%
 - Count integrity: 99.20%
 - Non-empty output rate: 99.20%
 - Identity integrity: 98.90%
 - Identity contamination count: 9
 - Consistency: 100.00%
-- Average APA render similarity: 88.33%
+- Average APA render similarity: 88.89%
 - LLM fallback attempt rate: 0.00%
 
 ## Internal Compatibility Reference (Secondary)
 
-- Legacy-comparable field average: 88.31%
+- Legacy-comparable field average: 91.85%
 - Methodology version: 1.0
 - Frozen at: 2026-03-27
-
-## Production Hybrid Extract (Secondary Internal Mode)
-
-- Strict essential accuracy: 65.00%
-- Legacy-comparable field average: 88.31%
-- Fallback attempt rate: 94.50%
-- Fallback accept rate: 0.00%
-- Deterministic strict delta: 0.00%
-- IEEE strict delta: 0.00%
 
 Footnote: The primary score uses strict citation-level pass/fail on core fields plus identity and output integrity. The secondary score is a frozen internal field-average reference for historical comparison only and must not be cited as the external readiness number.
 
 ## Action Needed Reasons
 
-- Overall multi_field_low_confidence: 126
-- Overall malformed_authors: 63
-- Overall weak_venue: 63
-- Overall weak_first_author: 54
-- Overall weak_reference_type: 51
+- Overall multi_field_low_confidence: 117
+- Overall malformed_authors: 66
+- Overall weak_first_author: 51
+- Overall weak_venue: 51
+- Overall weak_reference_type: 48
 - Overall missing_authors: 27
 - Overall empty_output: 24
 - Overall identity_contamination: 9
 
-- IEEE multi_field_low_confidence: 42
-- IEEE malformed_authors: 24
-- IEEE weak_first_author: 24
-- IEEE weak_reference_type: 21
-- IEEE weak_venue: 21
+- IEEE multi_field_low_confidence: 33
+- IEEE malformed_authors: 21
+- IEEE weak_first_author: 21
+- IEEE weak_reference_type: 12
+- IEEE weak_venue: 12
 - IEEE empty_output: 6
 - IEEE missing_authors: 6
 - IEEE identity_contamination: 0
 
 - Near-pass multi_field_low_confidence: 60
-- Near-pass malformed_authors: 45
-- Near-pass weak_first_author: 27
-- Near-pass weak_venue: 27
-- Near-pass weak_reference_type: 15
+- Near-pass malformed_authors: 54
+- Near-pass weak_first_author: 30
+- Near-pass weak_venue: 24
+- Near-pass weak_reference_type: 18
 - Near-pass empty_output: 0
 - Near-pass identity_contamination: 0
 - Near-pass missing_authors: 0
@@ -79,95 +70,95 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 
 ### Batch size 50
 
-- Strict essential accuracy: 65.00%
-- Legacy field average: 88.31%
+- Strict essential accuracy: 71.20%
+- Legacy field average: 91.85%
 - Count integrity: 99.20%
 - Non-empty output rate: 99.20%
 - Identity integrity: 98.90%
 - Identity contamination count: 3
 - Consistency: 100.00%
-- Mean batch time: 1818.55 ms
-- Median batch time: 1539.64 ms
-- P95 batch time: 2830.58 ms
-- Mean ms per citation: 36.37 ms
-- Throughput: 9.16 citations/sec
+- Mean batch time: 1776.79 ms
+- Median batch time: 1469.32 ms
+- P95 batch time: 2636.11 ms
+- Mean ms per citation: 35.54 ms
+- Throughput: 9.38 citations/sec
 
 ### Batch size 100
 
-- Strict essential accuracy: 65.00%
-- Legacy field average: 88.31%
+- Strict essential accuracy: 71.20%
+- Legacy field average: 91.85%
 - Count integrity: 99.20%
 - Non-empty output rate: 99.20%
 - Identity integrity: 98.90%
 - Identity contamination count: 3
 - Consistency: 100.00%
-- Mean batch time: 3506.69 ms
-- Median batch time: 3586.47 ms
-- P95 batch time: 4365.79 ms
-- Mean ms per citation: 35.07 ms
-- Throughput: 9.51 citations/sec
+- Mean batch time: 3459.17 ms
+- Median batch time: 3596.11 ms
+- P95 batch time: 4280.24 ms
+- Mean ms per citation: 34.59 ms
+- Throughput: 9.64 citations/sec
 
 ### Batch size 200
 
-- Strict essential accuracy: 65.00%
-- Legacy field average: 88.31%
+- Strict essential accuracy: 71.20%
+- Legacy field average: 91.85%
 - Count integrity: 99.20%
 - Non-empty output rate: 99.20%
 - Identity integrity: 98.90%
 - Identity contamination count: 3
 - Consistency: 100.00%
-- Mean batch time: 7132.77 ms
-- Median batch time: 7204.15 ms
-- P95 batch time: 7725.40 ms
-- Mean ms per citation: 35.66 ms
-- Throughput: 9.35 citations/sec
+- Mean batch time: 7119.80 ms
+- Median batch time: 7168.28 ms
+- P95 batch time: 7668.92 ms
+- Mean ms per citation: 35.60 ms
+- Throughput: 9.36 citations/sec
 
 ## IEEE failure breakdown
 
-- author_order: 99
-- venue_abbreviation: 9
+- author_order: 60
+- venue_abbreviation: 12
 - locator_misclassified: 3
 - doi_parse: 0
-- reference_type: 78
+- reference_type: 72
 - identity_contamination: 0
 - empty_output: 6
 
 ## Selector diagnostics
 
-- selection mode full_scoring: 978
-- selection mode single_survivor: 1044
-- selection mode unanimous_diversity_guard: 954
-- top winner adapter heuristic:ieee_quoted_reference: 603
-- top winner adapter parser:selected_style:apa: 252
-- top winner adapter heuristic:author_year_publisher_tail: 222
+- selection mode full_scoring: 915
+- selection mode single_survivor: 1122
+- selection mode unanimous_diversity_guard: 939
+- top winner adapter heuristic:ieee_quoted_reference: 627
 - top winner adapter heuristic:quoted_title_journal_locator: 222
+- top winner adapter heuristic:harvard_sentence_journal: 219
+- top winner adapter parser:selected_style:apa: 219
 - top winner adapter heuristic:vancouver_compact_journal: 201
 
 ## Type confusion matrix
 
-- journal -> journal: 1488
-- conference -> conference: 336
+- journal -> journal: 1584
+- conference -> conference: 351
 - book -> book: 258
-- chapter -> chapter: 171
-- journal -> book: 114
+- chapter -> chapter: 177
+- thesis -> thesis: 144
 - report -> report: 102
-- thesis -> thesis: 96
-- chapter -> book: 60
-- chapter -> conference: 42
-- conference -> chapter: 42
+- chapter -> conference: 60
+- chapter -> book: 39
+- conference -> chapter: 39
+- conference -> journal: 30
 
 ## Strengths
 
 - The benchmark uses a frozen 1,000-reference real-world corpus, making reruns auditable and institution-friendly.
 - Strict external readiness, internal legacy compatibility, and batch performance are separated instead of being collapsed into one misleading score.
-- book records performed best on the strict score at 74.00%.
-- The fastest operating point was the 100-citation batch at 9.51 citations/sec.
+- thesis records performed best on the strict score at 84.00%.
+- The fastest operating point was the 100-citation batch at 9.64 citations/sec.
 
 ## Weaknesses
 
 - chapter is the weakest strict source type and should stay in the next remediation wave.
-- HARVARD is the lowest-performing input style on the strict score.
-- pages is the lowest-accuracy field and remains the clearest parser-recovery target.
+- APA is the lowest-performing input style on the strict score.
+- venue is the lowest-accuracy field and remains the clearest parser-recovery target.
 - Identity contamination currently accounts for 9 strict failures across the benchmarked runs.
 
 ## Pros
@@ -196,46 +187,46 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 - journal-0033-10-1002-chin-200104012 [batch 50, repeat 1] mismatches: referenceType, year, title, firstAuthor, venue, volume, issue, pages, doi, output; render similarity: 0.00%; winner: missing; mode: missing
   Expected: Brooker, M. H., Berg, R. W., von Barner, J. H., & Bjerrum, N. J. (2001). ChemInform Abstract: Matrix‐Isolated Al 2 OF 6 2‐ Ion in Molten and Solid LiF/NaF/KF. ChemInform, 32(4), chin.200104012. https://doi.org/10.1002/chin.200104012
   Actual: 
-- journal-0267-10-14744-dajpns-2025-00305 [batch 50, repeat 1] mismatches: title, firstAuthor, pages; render similarity: 53.00%; winner: legacy:year_anchored_fallback; mode: single_survivor
-  Expected: Kurt, B. (2025). Drug-induced stuttering associated with venlafaxineolanzapine combination: A rare pharmacodynamic interaction. Dusunen Adam: Journal of Psychiatry and Neurological Sciences, 277–278. https://doi.org/10.14744/dajpns.2025.00305
-  Actual: Psychiatry, K. B. D. I. S. A. W. V. C. A. R. P. I. D. A. J. O., & Sciences, N. (2025). 277-278. doi. Dusunen Adam: Journal of Psychiatry, Neurological Sciences. 2025;277-278.
-- journal-0407-10-1371-journal-pone-0269394 [batch 50, repeat 1] mismatches: title, pages; render similarity: 64.00%; winner: legacy:year_anchored_fallback; mode: single_survivor
-  Expected: R., R., Uthaiah, C. A., C. M., R., Madhunapantula, S. V., Salimath, P. V., K., P., M., S. K., & M. R., K. (2022). Comparative assessment of cognitive impairment and oxidative stress markers among vitamin D insufficient elderly patients with and without type 2 diabetes mellitus (T2DM). PLOS ONE, 17(6), e0269394. https://doi.org/10.1371/journal.pone.0269394
-  Actual: R., R., Rajalakshmi, C. A. U., M., R. C., Madhunapantula, S. V., Salimath, P. V., K., P., Srinath K., M., impairment, A. K. M. R. ". A. O. C., with, O. S. M. A. V. D. I. E. P., without type 2 diabetes mellitus (T2DM)." PLoS, O. N. E., 17, V., & 6, N. (2022). pp. e0269394. doi. PLoS ONE, 17(6), 10.
+- thesis-0017-10-47749-t-unicamp-2012-899614 [batch 50, repeat 1] mismatches: referenceType, year, title, firstAuthor, venue, doi, identity; render similarity: 36.00%; identity: shifted_prev; winner: parser:selected_style:mla; mode: single_survivor
+  Expected: de Oliveira, W. (2021). Simulação para a avaliação do desempenho do sistema de proteção de distância de uma linha de transmissão de 500 KV [Doctoral dissertation, Universidade Estadual de Campinas]. https://doi.org/10.47749/t/unicamp.2012.899614
+  Actual: Qiao, M., & Jindrich, D. L. (2014). Compensations during Unsteady Locomotion. Integrative and Comparative Biology, 54(6), 1109-1121.
 - journal-0150-10-1111-j-1467-8705-1974-tb01519-x [batch 50, repeat 1] mismatches: firstAuthor; render similarity: 75.00%; winner: heuristic:quoted_title_journal_locator; mode: unanimous_diversity_guard
   Expected: EVERETT, B. (1974). A Visit to Burnt Norton. Critical Quarterly, 16(3), 199–224. https://doi.org/10.1111/j.1467-8705.1974.tb01519.x
   Actual: BARBARA. EVERETT. (1974). A Visit to Burnt Norton. Critical Quarterly, 16(3), 199-224.
-- conference-0126-10-1055-s-0040-1704732 [batch 50, repeat 1] mismatches: referenceType, venue; render similarity: 79.00%; winner: heuristic:book_tail; mode: single_survivor
-  Expected: Correia, C., Almeida, N., Portela, F., Gomes, D., Fernandes, A., Rosa, A., & Figueiredo, P. (2020). ENDOSCOPIC DRAINAGE OF PANCREATIC AND PERI-PANCREATIC COLLECTIONS: A RETROSPECTIVE ANALYSIS. Endoscopy. https://doi.org/10.1055/s-0040-1704732
-  Actual: Correia, C., N Almeida, F. P., D Gomes, A. F., & A Rosa, P. F. (2020). ENDOSCOPIC DRAINAGE OF PANCREATIC AND PERI-PANCREATIC Collections: ARETROSPECTIVE Analysis." in Endoscopy. Georg Thieme Verlag KG.
-- thesis-0027-10-12681-eadd-60873 [batch 50, repeat 1] mismatches: referenceType, venue; render similarity: 79.00%; winner: parser:selected_style:vancouver; mode: unanimous_diversity_guard
-  Expected: Φέρρα, Γ. (2026). Police interviews with children in Greece [Doctoral dissertation, National Documentation Centre (EKT)]. https://doi.org/10.12681/eadd/60873
-  Actual: Φέρρα, & Γκόλφω. (2026). Police interviews with children in Greece. National Documentation Centre (EKT), 2026. Dissertation.
-- journal-0397-10-1126-scisignal-2004004 [batch 50, repeat 1] mismatches: referenceType, volume, issue; render similarity: 80.00%; winner: heuristic:author_year_publisher_tail; mode: full_scoring
-  Expected: Foley, J. F. (2013). IKK Goes BAD. Science Signaling, 6(260). https://doi.org/10.1126/scisignal.2004004
-  Actual: Foley, J. F. (2013). IKK Goes BAD. Science Signaling, 6(260).
-- conference-0149-10-26678-abcm-cobem2023-cob2023-0316 [batch 50, repeat 1] mismatches: title, venue; render similarity: 81.00%; winner: parser:selected_style:vancouver; mode: full_scoring
-  Expected: Paschoalinoto, N. W., Ferrer, J., Bordinassi, E. C., Seriacopi, V., de Farias, A., Otavio dos Santos, M., & Batalha, G. (2025). DEVELOPING A MQL VALVE FOR Ti-6Al-4V ALLOY MILLING WITH DIFFERENT CUTTING OIL AND GRAPHITE MIXING RATIO. Proceedings of the 27th International Congress of Mechanical Engineering. https://doi.org/10.26678/abcm.cobem2023.cob2023-0316
-  Actual: Paschoalinoto, N. W., Jorge Ferrer, E. C. B., Vanessa Seriacopi, A. D. F., & Marcelo Otavio dos Santos, G. B. (2025). DEVELOPING AMQL VALVE FOR Ti-6Al-4V ALLOY MILLING WITH DIFFERENT CUTTING OIL AND GRAPHITE MIXING RATIO." Proceedings of the 27th International Congress of Mechanical Engineering, 2025. In Proceedings of the 27th International Congress of Mechanical Engineering, ABCM. https://doi.org/10.26678/abcm.cobem2023.cob2023-0316.
-- report-0025-10-2172-87065 [batch 50, repeat 1] mismatches: firstAuthor; render similarity: 82.00%; winner: heuristic:author_year_publisher_tail; mode: full_scoring
-  Expected: Nuclear Regulatory Commission, Washington, DC (United States). Div. of Reactor Controls and Human Factors. (1995). Non-Power Reactor Operator Licensing Examiner Standards. Revision 1. Office of Scientific and Technical Information (OSTI). https://doi.org/10.2172/87065
-  Actual: Nuclear Regulatory Commission, & Factors, H. (1995). Non-Power Reactor Operator Licensing Examiner Standards. Revision 1. Office of Scientific and Technical Information (OSTI).
-- thesis-0011-10-4995-thesis-10251-110969 [batch 50, repeat 1] mismatches: referenceType, firstAuthor, venue; render similarity: 82.00%; winner: parser:selected_style:vancouver; mode: unanimous_diversity_guard
-  Expected: Cortés López, V. (2018). Innovations in non-destructive techniques for fruit quality control applied to manipulation and inspection lines [Doctoral dissertation, Universitat Politecnica de Valencia]. https://doi.org/10.4995/thesis/10251/110969
-  Actual: López, C., & Victoria. (2018). Innovations in non-destructive techniques for fruit quality control applied to manipulation and inspection lines. Universitat Politecnica de Valencia, 2018. Dissertation.
-- journal-0118-10-1111-j-1745-6924-2009-01084-x [batch 50, repeat 1] mismatches: referenceType, title, firstAuthor, venue, volume, issue, pages; render similarity: 84.00%; winner: heuristic:author_year_publisher_tail; mode: single_survivor
-  Expected: Ceci, S. J., & Bruck, M. (2009). Do IRBs Pass the Minimal Harm Test? Perspectives on Psychological Science, 4(1), 28–29. https://doi.org/10.1111/j.1745-6924.2009.01084.x
-  Actual: Ceci, S., & Bruck, M. (2009). Do IRBs Pass the Minimal Harm Test?. Perspectives on Psychological Science, 4(1), pp. 28-29.
+- conference-0137-10-1115-detc97-dac-3769 [batch 50, repeat 1] mismatches: venue, pages; render similarity: 78.00%; winner: parser:selected_style:apa; mode: full_scoring
+  Expected: Srikanth, K., Liou, F. W., & Balakrishnan, S. N. (1997). Fuzzy Tolerance Analysis of 3-D Mechanical Assemblies. Volume 2: 23rd Design Automation Conference, V002T29A056. https://doi.org/10.1115/detc97/dac-3769
+  Actual: Srikanth, K., Liou, F. W., & Balakrishnan, S. N. (1997). Fuzzy Tolerance Analysis of 3-D Mechanical Assemblies. In Volume 2: 23rd Design Automation Conference, 1997, T29A056. American Society of Mechanical Engineers. American Society of Mechanical Engineers. https://doi.org/10.1115/detc97/dac-3769.
+- conference-0037-10-14201-0aq0321341349 [batch 50, repeat 1] mismatches: referenceType, venue; render similarity: 82.00%; winner: parser:auto:harvard; mode: full_scoring
+  Expected: Deluigi, R., Cuccu, M., & Mondin, F. (2023). Visual Art, a Pedagogical Tool of Plural Knowledge. Interculturalidad, Inclusión y Equidad En Educación, 341–349. https://doi.org/10.14201/0aq0321341349
+  Actual: Deluigi, R., Cuccu, M., & Mondin, F. (2023). Visual Art, a Pedagogical Tool of Plural Knowledge. In Interculturalidad (pp. 341-349). In Interculturalidad, inclusión y equidad en educación (pp. 341-349). Ediciones Universidad de Salamanca. https://doi.org/10.14201/0aq0321341349.
 - thesis-0025-10-11606-d-6-1967-tde-20251106-162329 [batch 50, repeat 1] mismatches: title, venue; render similarity: 84.00%; winner: parser:selected_style:apa; mode: full_scoring
   Expected: Usarralde de Adlerstein, M. N. (2025). Repercusiones orales de la diabetes sacarina [Doctoral dissertation, Universidade de São Paulo. Agência de Bibliotecas e Coleções Digitais]. https://doi.org/10.11606/d.6.1967.tde-20251106-162329
   Actual: Usarralde de Adlerstein, M. N. (2025). Repercusiones orales de la diabetes sacarina [Doctoral dissertation, Universidade de São Paulo. In Agência de Bibliotecas e Coleções Digitais]. Agência de Bibliotecas e Coleções Digitais].
-- chapter-0009-10-30525-978-9934-26-226-5-11 [batch 50, repeat 1] mismatches: referenceType, title, venue, pages; render similarity: 86.00%; winner: heuristic:book_tail; mode: single_survivor
-  Expected: Iliuk, I. A., Baranova, I. V., & Postovitenko, K. P. (2022). Post-infectiou cough hypersensitivity syndrom: modern problem solving. In NEW TRENDS AND UNSOLVED ISSUES IN MEDICINE (pp. 44–48). Izdevnieciba “Baltija Publishing.” https://doi.org/10.30525/978-9934-26-226-5-11
-  Actual: Iliuk, I. (2022). A., I. V. Baranova, and K. P. Postovitenko. "Post-infectiou cough hypersensitivity syndrom: modern problem solving." In NEW TRENDS AND UNSOLVED ISSUES IN MEDICINE, 44-48. Izdevnieciba "Baltija Publishing.".
-- journal-0124-10-1093-cvr-22-10-686 [batch 50, repeat 1] mismatches: referenceType, title, venue, volume, issue, pages; render similarity: 86.00%; winner: heuristic:author_year_publisher_tail; mode: full_scoring
-  Expected: DOERING, C. W., JALIL, J. E., JANICKI, J. S., PICK, R., AGHILI, S., ABRAHAMS, C., & WEBER, K. T. (1988). Collagen network remodelling and diastolic stiffness of the rat left ventricle with pressure overload hypertrophy. Cardiovascular Research, 22(10), 686–695. https://doi.org/10.1093/cvr/22.10.686
-  Actual: DOERING, J. E., PICK, ABRAHAMS S,WEBER C, K. T. (1988). Collagen network remodelling and diastolic stiffness of the rat left ventricle with pressure overload hypertrophy. Cardiovascular Research, 22(10), pp. 686-695.
-- journal-0002-10-53730-ijhs-v6ns1-8707 [batch 50, repeat 1] mismatches: firstAuthor; render similarity: 87.00%; winner: heuristic:ieee_quoted_reference; mode: single_survivor
-  Expected: Djumabaevich, T. S., Karimovich, K. Z., Beknazarovich, X. Z., Sagdullaevich, A. N., & Tirkashevich, M. S. (2022). role and significance of physical culture and sport in the sphere of education. International Journal of Health Sciences, 14419–14427. https://doi.org/10.53730/ijhs.v6ns1.8707
-  Actual: Sharof Djumabaevich, T., Zokir Karimovich, K., Zafar Beknazarovich, X., Nuriddin Sagdullaevich, A., & Saidmurod Tirkashevich, M. (2022). role and significance of physical culture and sport in the sphere of education. International Journal of Health Sciences, 14419-14427.
+- report-0007-10-54067-acpf-154-fr [batch 50, repeat 1] mismatches: referenceType; render similarity: 84.00%; winner: parser:auto:harvard; mode: single_survivor
+  Expected: Ndoye, A., Dia, M., & Dia, K. (2024). AAgWa Crop Production Forecasts Briefs No. 154. AKADEMIYA2063. https://doi.org/10.54067/acpf.154/fr
+  Actual: Ndoye, A., ïssatou, D., & Dia, K. (2024). AAgWa Crop Production Forecasts Briefs No. 154. AKADEMIYA2063.
+- journal-0118-10-1111-j-1745-6924-2009-01084-x [batch 50, repeat 1] mismatches: firstAuthor; render similarity: 85.00%; winner: heuristic:harvard_sentence_journal; mode: single_survivor
+  Expected: Ceci, S. J., & Bruck, M. (2009). Do IRBs Pass the Minimal Harm Test? Perspectives on Psychological Science, 4(1), 28–29. https://doi.org/10.1111/j.1745-6924.2009.01084.x
+  Actual: Ceci, S., & Bruck, M. (2009). Do IRBs Pass the Minimal Harm Test? Perspectives on Psychological Science, 4(1), 28-29.
+- journal-0588-10-12685-bul-7-1998-654 [batch 50, repeat 1] mismatches: issue; render similarity: 86.00%; winner: heuristic:ieee_quoted_reference; mode: unanimous_diversity_guard
+  Expected: Burkhahlter, S. (1998). Entretien: L’ethnothérapie - une expérience de métissage culturel. SGMOIK-Bulletin, 7, 12–14. https://doi.org/10.12685/bul.7.1998.654
+  Actual: Burkhahlter, & Sarah. (1998). Entretien: L'ethnothérapie -une expérience de métissage culturel. SGMOIK-Bulletin, /, 7(7 (): 12-14. https://doi.org), 12-14.
+- journal-0171-10-47191-jefms-v5-i9-30 [batch 50, repeat 1] mismatches: title, firstAuthor, venue, volume, issue; render similarity: 87.00%; winner: parser:selected_style:vancouver; mode: single_survivor
+  Expected: Department of Economics, Faculty of Social Sciences, Niger Delta University, Wilberforce Island, P.M.B. 071, Yenagoa, Bayelsa State, Nigeria. (2022). Naira to Dollar Exchange Rate Fluctuations and Nigeria’s Balance of Payment. JOURNAL OF ECONOMICS, FINANCE AND MANAGEMENT STUDIES, 5(9). https://doi.org/10.47191/jefms/v5-i9-30
+  Actual: Department of Economics, Sciences, F. O. S., Niger Delta University, & Island, W. P. M. B. (2022). 071, Yenagoa, Bayelsa State, Nigeria. Naira to Dollar Exchange Rate Fluctuations and Nigeria's Balance of Payment. JOURNAL OF ECONOMICS, FINANCE AND MANAGEMENT STUDIES. 2022;5(9).
+- conference-0022-10-2991-assehr-k-220704-137 [batch 50, repeat 1] mismatches: referenceType; render similarity: 88.00%; winner: parser:selected_style:harvard; mode: unanimous_diversity_guard
+  Expected: Wang, R. (2022). People’s Cognition of the Influence of Violence in Video Games. Advances in Social Science, Education and Humanities Research. https://doi.org/10.2991/assehr.k.220704.137
+  Actual: Wang, R. (2022). People's Cognition of the Influence of Violence in Video Games. In Advances in Social Science, Education and Humanities Research. Atlantis Press.
+- journal-0025-10-1134-s0036023619070088 [batch 50, repeat 1] mismatches: firstAuthor; render similarity: 89.00%; winner: heuristic:apa_journal; mode: single_survivor
+  Expected: Folomeikin, Yu. I., Karachevtsev, F. N., & Stolyarova, V. L. (2019). Production of Ceramics Based on the Y2O3–ZrO2–HfO2 System for Casting Molds. Russian Journal of Inorganic Chemistry, 64(7), 934–940. https://doi.org/10.1134/s0036023619070088
+  Actual: Karachevtsev, F. N., & Stolyarova, V. L. (2019). Production of Ceramics Based on the Y2O3-ZrO2-HfO2 System for Casting Molds. Russian Journal of Inorganic Chemistry, 64(7), 934-940.
+- report-0001-10-55277-researchhub-uc1gvo5u [batch 50, repeat 1] mismatches: referenceType; render similarity: 89.00%; winner: heuristic:author_year_publisher_tail; mode: full_scoring
+  Expected: Hart, S. (2026). [Free Download] Digital-Forensics-in-Cybersecurity Exam Dumps (March 2026) PDF Practice. ResearchHub Technologies, Inc. https://doi.org/10.55277/researchhub.uc1gvo5u
+  Actual: Hart, S. (2026). Free Download] Digital-Forensics-in-Cybersecurity Exam Dumps (March 2026) PDF Practice. ResearchHub Technologies, Inc.
+- journal-0230-10-3390-healthcare12090874 [batch 50, repeat 1] mismatches: venue; render similarity: 89.00%; winner: parser:selected_style:mla; mode: single_survivor
+  Expected: Gobbens, R. J. J., & van der Ploeg, T. (2024). The Prediction of Quality of Life by Frailty and Disability among Dutch Community-Dwelling People Aged 75 Years or Older. Healthcare, 12(9), 874. https://doi.org/10.3390/healthcare12090874
+  Actual: Gobbens, R. J. J., & Ploeg, T. V. D. (2024). The Prediction of Quality of Life by Frailty and Disability among Dutch Community-Dwelling People Aged 75 Years or Older. Healthcare, Vol, 12(9), 874.
+- chapter-0114-10-1007-978-3-030-81776-3-11 [batch 50, repeat 1] mismatches: referenceType, venue, pages; render similarity: 89.00%; winner: heuristic:vancouver_publisher_year_source; mode: single_survivor
+  Expected: von Rüden, C., Bühren, V., & Perl, M. (2021). Nail Osteosynthesis of Proximal Tibia Fractures. In Strategies in Fracture Treatments (pp. 97–104). Springer International Publishing. https://doi.org/10.1007/978-3-030-81776-3_11
+  Actual: von Rüden, C., Bühren, V., & Perl, M. (2021). Nail Osteosynthesis of Proximal Tibia Fractures. In: Strategies in Fracture Treatments. Springer International Publishing.
 

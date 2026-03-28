@@ -628,6 +628,14 @@ function splitAuthorBlob(author: string): string[] {
     .trim());
   if (!normalized) return [];
   if (isGroupAuthor(normalized) && !normalized.includes(',')) return [normalized];
+  if (
+    isGroupAuthor(normalized)
+    && normalized.includes(',')
+    && /[.()]/.test(normalized)
+    && /\b(?:commission|department|ministry|office|administration|agency|bureau|council|division|div\.|directorate|university|institute|laboratory|lab|human factors|reactor controls)\b/i.test(normalized)
+  ) {
+    return [normalized];
+  }
 
   const commaTokens = normalized.split(/\s*,\s*/).map((token) => token.trim()).filter(Boolean);
   const repairedGroupTokens = repairGroupAuthorFragments(commaTokens);

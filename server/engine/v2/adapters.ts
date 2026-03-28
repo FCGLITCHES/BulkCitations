@@ -975,6 +975,14 @@ function looksLikeFullNameToken(token: string, index: number, length: number): b
   return /^(?:[\p{Lu}][\p{L}'’-]+|d'[\p{Lu}][\p{L}'’-]+)$/u.test(token);
 }
 
+function looksLikeFullNameOrInitialToken(token: string, index: number, length: number): boolean {
+  if (!token) return false;
+  if (/^(?:[\p{Lu}]\.){1,4}$/u.test(token) || /^[\p{Lu}]\.?$/u.test(token)) {
+    return true;
+  }
+  return looksLikeFullNameToken(token, index, length);
+}
+
 function stripLeadingAuthorConjunction(segment: string): string {
   return normalizeWhitespace(segment.replace(/^(?:and|&)\s+/i, ''));
 }
@@ -1008,6 +1016,7 @@ function splitIeeeAuthorSegments(value: string): string[] {
   if (
     normalized.length >= 4
     && normalized.length <= 10
+    && (normalized[0]?.split(/\s+/).filter(Boolean).length ?? 0) === 1
     && looksLikeSurnameLeadSegment(normalized[0] ?? '')
     && looksLikeGivenNameSegment(normalized[1] ?? '')
     && normalized.slice(2).every((segment) => looksLikeFullNameAuthorSegment(segment))
@@ -1025,9 +1034,11 @@ function normalizeIeeeFullNameAuthorSegment(segment: string): string {
   const normalized = stripLeadingAuthorConjunction(
     normalizeWhitespace(segment.replace(/^[,;]+|[,;]+$/g, '').replace(/[.;]+$/g, '')),
   );
-  if (!normalized || normalized.includes(',') || isGroupAuthor(normalized)) return normalized;
+  if (!normalized || normalized.includes(',')) return normalized;
 
   const tokens = normalized.split(/\s+/).filter(Boolean);
+  const hasInitialToken = tokens.some((token) => /^(?:[\p{Lu}]\.){1,4}$/u.test(token) || /^[\p{Lu}]\.?$/u.test(token));
+  if (isGroupAuthor(normalized) && !hasInitialToken) return normalized;
   if (
     tokens.length === 3
     && /^[\p{Lu}]\.?$/u.test(tokens[0] ?? '')
@@ -1037,8 +1048,28 @@ function normalizeIeeeFullNameAuthorSegment(segment: string): string {
     return `${tokens[2]}, ${tokens[0]} ${tokens[1]}`;
   }
   if (tokens.length < 2) return normalized;
-  if (tokens.some((token) => /[.]/.test(token) || /^[\p{Lu}]$/u.test(token))) return normalized;
-  if (!tokens.every((token, index) => looksLikeFullNameToken(token, index, tokens.length))) return normalized;
+  if (parseInitialsFirstAuthor(normalized)) return normalized;
+  if (!tokens.every((token, index) => looksLikeFullNameOrInitialToken(token, index, tokens.length))) return normalized;
+
+  const lastToken = tokens[tokens.length - 1] ?? '';
+  const middleToken = tokens[1] ?? '';
+  const lastLooksPatronymic = /(?:ovich|evich|vich|ich|ovna|evna)$/i.test(lastToken);
+  const middleIsInitial = /^(?:[\p{Lu}]\.){1,4}$/u.test(middleToken) || /^[\p{Lu}]\.?$/u.test(middleToken);
+
+  if (
+    tokens.length === 3
+    && middleIsInitial
+  ) {
+    return `${tokens[2]}, ${tokens[0]} ${tokens[1]}`;
+  }
+
+  if (
+    tokens.length === 3
+    && lastLooksPatronymic
+    && tokens.every((token, index) => looksLikeFullNameOrInitialToken(token, index, tokens.length))
+  ) {
+    return `${tokens[2]}, ${tokens[0]} ${tokens[1]}`;
+  }
 
   if (
     tokens.length === 3
@@ -2433,6 +2464,7 @@ function buildSentenceThesisCandidate(normalized: string, inputStyle: string): P
         title,
         year,
         institution,
+        publisher: institution,
         url: url ? cleanTrailingUrl(url) : undefined,
         doi: doi ? normalizeDoiValue(doi) : undefined,
         parseWarnings: ['sentence-thesis-heuristic'],
@@ -2509,6 +2541,7 @@ function buildSentenceThesisCandidate(normalized: string, inputStyle: string): P
     title,
     year,
     institution,
+    publisher: institution,
     url: url ? cleanTrailingUrl(url) : undefined,
     doi: doi ? normalizeDoiValue(doi) : undefined,
     parseWarnings: ['sentence-thesis-heuristic'],
@@ -2591,7 +2624,20 @@ function buildAuthorYearPublisherTailCandidate(normalized: string, inputStyle: s
   if (/\b(?:vol\.?|no\.?|issue|pp?\.?)\b/i.test(title)) return null;
   if (/[."]\s+in\s+[A-Z]/i.test(title) || /\bproceedings of the\b/i.test(title)) return null;
 
-  const authorParse = parseAuthorsForStyle([authorLead], inputStyle === 'auto' ? null : inputStyle);
+  const institutionalAuthorLead = looksLikeInstitutionalLead(authorLead)
+    || (
+      /[.()]/.test(authorLead)
+      && /\b(?:commission|department|ministry|office|administration|agency|bureau|council|division|div\.|directorate|university|institute|laboratory|lab)\b/i.test(authorLead)
+    );
+
+  const authorParse = institutionalAuthorLead
+    ? {
+        authors: [parseAuthorToCanonical(normalizeInstitutionalAuthor(authorLead))],
+        parserMode: 'institutional_literal',
+        warningFlags: [] as string[],
+        rejectedCandidates: [] as string[],
+      }
+    : parseAuthorsForStyle([authorLead], inputStyle === 'auto' ? null : inputStyle);
   const authors = authorParse.authors.map((author) => renderAuthor(author)).filter(Boolean);
   if (authors.length === 0) return null;
 
@@ -2600,6 +2646,7 @@ function buildAuthorYearPublisherTailCandidate(normalized: string, inputStyle: s
     title,
     year,
     publisher,
+    institution: institutionalAuthorLead ? normalizeInstitutionalAuthor(authorLead) : undefined,
     url: url ? cleanTrailingUrl(url) : undefined,
     doi: doi ? normalizeDoiValue(doi) : undefined,
     parseWarnings: ['author-year-publisher-tail-heuristic'],
