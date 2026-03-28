@@ -19,7 +19,7 @@ export function AdminSectionTabs() {
   const [location] = useLocation();
 
   return (
-    <div className="inline-flex rounded-xl border border-border/70 bg-muted/30 p-1">
+    <div className="inline-flex rounded-xl border border-slate-200/70 bg-white/90 p-1 shadow-sm dark:border-slate-700/80 dark:bg-slate-900/90">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = tab.href === "/admin/reports"
@@ -31,10 +31,10 @@ export function AdminSectionTabs() {
             <button
               type="button"
               className={cn(
-                "inline-flex h-10 items-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors",
+                "inline-flex h-10 items-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors",
                 isActive
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "bg-slate-900 text-white shadow-sm dark:bg-blue-500 dark:text-slate-950"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white",
               )}
             >
               <Icon className="h-4 w-4" />

@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Moon, Sun } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 import { useUserSession } from "@/hooks/use-user-session";
 
 const NAV_LINKS = [
@@ -15,15 +16,35 @@ const NAV_LINKS = [
 export function LandingNavbar() {
   const [isDark, setIsDark] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [location] = useLocation();
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const [location, setLocation] = useLocation();
+  const {
+    isAdmin,
+    isInitialized: isAdminInitialized,
+    account: adminAccount,
+    logout: logoutAdmin,
+  } = useAuth();
   const { isAuthenticated, isInitialized, account, logout } = useUserSession();
+  const adminMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsDark(document.documentElement.classList.contains("dark"));
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (adminMenuRef.current && !adminMenuRef.current.contains(event.target as Node)) {
+        setShowAdminMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
+    setShowAdminMenu(false);
   }, [location]);
 
   const toggleTheme = () => {
@@ -50,6 +71,16 @@ export function LandingNavbar() {
   const handleLogout = () => {
     void logout();
   };
+
+  const handleAdminLogout = () => {
+    void logoutAdmin().finally(() => {
+      setLocation("/adm1n");
+    });
+  };
+
+  const adminLabel = adminAccount?.name?.trim() || adminAccount?.username || "Administrator";
+  const adminSubLabel = adminAccount?.email?.trim() || (adminAccount?.username ? `@${adminAccount.username}` : "Admin session");
+  const adminInitial = adminLabel.slice(0, 1).toUpperCase();
 
   return (
     <nav className="bg-white/80 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-200/20 dark:border-white/5 shadow-sm top-0 sticky z-50">
@@ -96,7 +127,52 @@ export function LandingNavbar() {
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
             <div className="hidden md:flex md:items-center md:gap-3">
-              {isInitialized && isAuthenticated ? (
+              {isAdminInitialized && isAdmin ? (
+                <>
+                  <div className="relative hidden xl:block" ref={adminMenuRef}>
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminMenu((open) => !open)}
+                      className="flex items-center gap-3 rounded-full border border-slate-200/80 bg-white/85 px-2 py-1.5 shadow-sm transition-colors hover:border-slate-300 hover:bg-white dark:border-slate-800 dark:bg-slate-900/80 dark:hover:border-slate-700"
+                    >
+                      <div className="text-right min-w-0">
+                        <div className="truncate max-w-[12rem] text-xs font-semibold text-[#002147] dark:text-slate-100">
+                          {adminLabel}
+                        </div>
+                        <div className="truncate max-w-[12rem] text-[11px] text-slate-600 dark:text-slate-300">
+                          {adminSubLabel}
+                        </div>
+                      </div>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#002147] text-xs font-black uppercase tracking-wider text-white">
+                        {adminInitial}
+                      </div>
+                    </button>
+                    {showAdminMenu && (
+                      <div className="absolute right-0 mt-2 w-52 rounded-[5px] border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-800 dark:bg-slate-950">
+                        <Link
+                          href="/admin/dashboard"
+                          className="block rounded-[5px] px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900"
+                        >
+                          Admin Dashboard
+                        </Link>
+                        <Link
+                          href="/admin/settings"
+                          className="mt-1 block rounded-[5px] px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900"
+                        >
+                          Settings
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={handleAdminLogout}
+                          className="mt-1 block w-full rounded-[5px] px-3 py-2 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
+                        >
+                          Sign Out
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : isInitialized && isAuthenticated ? (
                 <>
                   <Link
                     href="/history"
@@ -107,7 +183,7 @@ export function LandingNavbar() {
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="bg-primary-container dark:bg-primary-container text-white px-5 py-2 rounded-lg font-body font-medium hover:bg-[#002f5f] dark:hover:bg-[#002f5f] transition-colors duration-150 text-sm tracking-wide whitespace-nowrap"
+                    className="bg-primary-container dark:bg-primary-container text-white px-5 py-2 rounded-[5px] font-body font-medium hover:bg-[#002f5f] dark:hover:bg-[#002f5f] transition-colors duration-150 text-sm tracking-wide whitespace-nowrap"
                   >
                     Logout
                   </button>
@@ -116,7 +192,7 @@ export function LandingNavbar() {
                 <>
                   <Link
                     href="/login"
-                    className="bg-primary-container dark:bg-primary-container text-white px-5 py-2 rounded-lg font-body font-medium hover:bg-[#002f5f] dark:hover:bg-[#002f5f] transition-colors duration-150 text-sm tracking-wide whitespace-nowrap"
+                    className="bg-primary-container dark:bg-primary-container text-white px-5 py-2 rounded-[5px] font-body font-medium hover:bg-[#002f5f] dark:hover:bg-[#002f5f] transition-colors duration-150 text-sm tracking-wide whitespace-nowrap"
                   >
                     Sign In
                   </Link>
@@ -177,7 +253,24 @@ export function LandingNavbar() {
             </div>
 
             <div className="mt-3 pt-3">
-              {isInitialized && isAuthenticated ? (
+              {isAdminInitialized && isAdmin ? (
+                <div className="flex flex-col gap-3">
+                  <Link
+                    href="/admin/dashboard"
+                    className="rounded-2xl border border-slate-200/80 bg-white/80 px-4 py-3 text-left dark:border-slate-800 dark:bg-slate-900/80"
+                  >
+                    <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">{adminLabel}</div>
+                    <div className="mt-1 text-xs text-slate-600 dark:text-slate-300">{adminSubLabel}</div>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleAdminLogout}
+                    className="bg-[#002147] text-white px-5 py-3 rounded-[5px] font-body font-medium hover:bg-[#001634] transition-colors duration-150 text-sm tracking-wide whitespace-nowrap"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : isInitialized && isAuthenticated ? (
                 <div className="flex flex-col gap-3">
                   <Link
                     href="/history"
@@ -188,7 +281,7 @@ export function LandingNavbar() {
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="bg-primary-container dark:bg-primary-container text-white px-5 py-3 rounded-2xl font-body font-medium hover:bg-[#002f5f] dark:hover:bg-[#002f5f] transition-colors duration-150 text-sm tracking-wide whitespace-nowrap"
+                    className="bg-primary-container dark:bg-primary-container text-white px-5 py-3 rounded-[5px] font-body font-medium hover:bg-[#002f5f] dark:hover:bg-[#002f5f] transition-colors duration-150 text-sm tracking-wide whitespace-nowrap"
                   >
                     Logout
                   </button>
@@ -197,7 +290,7 @@ export function LandingNavbar() {
                 <div className="flex flex-col gap-3">
                   <Link
                     href="/login"
-                    className="bg-primary-container dark:bg-primary-container text-center text-white px-5 py-3 rounded-2xl font-body font-medium hover:bg-[#002f5f] dark:hover:bg-[#002f5f] transition-colors duration-150 text-sm tracking-wide whitespace-nowrap"
+                    className="bg-primary-container dark:bg-primary-container text-center text-white px-5 py-3 rounded-[5px] font-body font-medium hover:bg-[#002f5f] dark:hover:bg-[#002f5f] transition-colors duration-150 text-sm tracking-wide whitespace-nowrap"
                   >
                     Sign In
                   </Link>

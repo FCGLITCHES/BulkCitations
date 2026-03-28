@@ -1074,6 +1074,28 @@ describe('style detection and source-type regressions', () => {
     expect(result.parsed.doi).toBe('10.1007/978-3-642-15387-7_69');
   });
 
+  it('extracts real chicago in-source chapters with mixed inverted author leads and bare page spans', async () => {
+    const result = await extractor.extract(
+      'Iliuk, I. A., I. V. Baranova, and K. P. Postovitenko. "Post-infectiou cough hypersensitivity syndrom: modern problem solving." In NEW TRENDS AND UNSOLVED ISSUES IN MEDICINE, 44-48. Izdevnieciba “Baltija Publishing”, 2022. https://doi.org/10.30525/978-9934-26-226-5-11',
+      'chicago',
+      {},
+    );
+
+    expect(result.selectedBranch).toBe('in_source_heuristic_raw');
+    expect(result.referenceType).toBe('chapter');
+    expect(result.parsed.title).toBe('Post-infectiou cough hypersensitivity syndrom: modern problem solving');
+    expect(result.parsed.bookTitle).toBe('NEW TRENDS AND UNSOLVED ISSUES IN MEDICINE');
+    expect(result.parsed.pages).toBe('44-48');
+    expect(result.parsed.publisher).toBe('Izdevnieciba "Baltija Publishing"');
+    expect(result.parsed.year).toBe('2022');
+    expect(result.parsed.doi).toBe('10.30525/978-9934-26-226-5-11');
+    expect(result.canonicalAuthors).toMatchObject([
+      { last: 'Iliuk', initials: 'I. A.' },
+      { last: 'Baranova', initials: 'I. V.' },
+      { last: 'Postovitenko', initials: 'K. P.' },
+    ]);
+  });
+
   it('extracts numbered full-name IEEE books with publisher-year tails', async () => {
     const result = await extractor.extract(
       '[11] Miriam Goebel-Stengel and Andreas Stengel, Ratgeber Reizdarmsyndrom: Behandlungsmöglichkeiten und was Sie selbst tun können. Springer Berlin Heidelberg, 2022. doi: 10.1007/978-3-662-64525-3',
@@ -1088,6 +1110,27 @@ describe('style detection and source-type regressions', () => {
     expect(result.parsed.doi).toBe('10.1007/978-3-662-64525-3');
   });
 
+  it('extracts real IEEE proceedings references with mixed full-name author leads without falling back to year-anchored blobs', async () => {
+    const result = await extractor.extract(
+      'Paschoalinoto, Nelson Wilson, Jorge Ferrer, Ed Claudio Bordinassi, Vanessa Seriacopi, Adalto de Farias, Marcelo Otavio dos Santos, and Gilmar Batalha. "DEVELOPING A MQL VALVE FOR Ti-6Al-4V ALLOY MILLING WITH DIFFERENT CUTTING OIL AND GRAPHITE MIXING RATIO." Proceedings of the 27th International Congress of Mechanical Engineering, 2025. ABCM. https://doi.org/10.26678/abcm.cobem2023.cob2023-0316',
+      'auto',
+      {},
+    );
+
+    expect(result.detectedStyle).toBe('ieee');
+    expect(result.selectedBranch).not.toBe('year_anchored_fallback_raw');
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.title).toBe('DEVELOPING A MQL VALVE FOR Ti-6Al-4V ALLOY MILLING WITH DIFFERENT CUTTING OIL AND GRAPHITE MIXING RATIO');
+    expect(result.parsed.conferenceTitle).toBe('Proceedings of the 27th International Congress of Mechanical Engineering');
+    expect(result.parsed.publisher).toBe('ABCM');
+    expect(result.parsed.year).toBe('2025');
+    expect(result.parsed.doi).toBe('10.26678/abcm.cobem2023.cob2023-0316');
+    expect(result.canonicalAuthors?.[0]).toMatchObject({
+      last: 'Paschoalinoto',
+      initials: 'N. W.',
+    });
+  });
+
   it('skips IEEE LLM fallback when the per-batch budget cap is already reached', async () => {
     process.env.ENABLE_LLM_EXTRACTOR = 'true';
     process.env.OPENAI_API_KEY = 'test-key';
@@ -1098,8 +1141,8 @@ describe('style detection and source-type regressions', () => {
     vi.stubGlobal('fetch', fetchMock as any);
 
     const result = await extractor.extract(
-      '[12] "Key challenges for delivering clinical impact with artificial intelligence," BMC Medicine, vol. 17, no. 1, p. 195, 2019.',
-      'ieee',
+      'Paschoalinoto, Nelson Wilson, Jorge Ferrer, Ed Claudio Bordinassi, Vanessa Seriacopi, Adalto de Farias, Marcelo Otavio dos Santos, and Gilmar Batalha. "DEVELOPING A MQL VALVE FOR Ti-6Al-4V ALLOY MILLING WITH DIFFERENT CUTTING OIL AND GRAPHITE MIXING RATIO." Proceedings of the 27th International Congress of Mechanical Engineering, 2025. ABCM. https://doi.org/10.26678/abcm.cobem2023.cob2023-0316',
+      'auto',
       {
         batchSize: 50,
         llmBudget: {
@@ -1115,7 +1158,7 @@ describe('style detection and source-type regressions', () => {
     expect(result.llmFallbackAttempted).toBe(true);
     expect(result.llmFallbackSkippedByBudget).toBe(true);
     expect(result.llmFallbackAccepted).toBe(false);
-    expect(['missing_authors', 'multi_field_low_confidence', 'weak_first_author']).toContain(result.llmFallbackReason);
+    expect(result.llmFallbackReason).toBe('weak_first_author');
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

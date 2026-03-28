@@ -156,6 +156,7 @@ describe('v2 author rescue utilities', () => {
     expect(fixUnicodeText('A guide to research practice')).toBe('A guide to research practice');
     expect(fixUnicodeText('T cells in adaptive immunity')).toBe('T cells in adaptive immunity');
     expect(fixUnicodeText('Nomofobia y el nivel productividad de las organizaciones')).toBe('Nomofobia y el nivel productividad de las organizaciones');
+    expect(fixUnicodeText('DEVELOPING A MQL VALVE')).toBe('DEVELOPING A MQL VALVE');
   });
 
   it('collapses split acronym-led group authors back into a literal institutional author', () => {

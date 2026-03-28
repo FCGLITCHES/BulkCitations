@@ -80,6 +80,7 @@ export function normalizeKnownContainerName(value: string): string {
     .replace(/\bPlo\s*S\b/gi, 'PLoS')
     .replace(/\bPloS\b/g, 'PLoS')
     .replace(/\bPLOS\b/g, 'PLoS')
+    .replace(/\bPLoS ONE\b/gi, 'PLOS ONE')
     .replace(/\bPlo\s+S\b/gi, 'PLoS')
     .replace(/\bPlo\s+Medicine\b/gi, 'PLoS Medicine')
     .replace(/\bArti-ficial\b/gi, 'Artificial')

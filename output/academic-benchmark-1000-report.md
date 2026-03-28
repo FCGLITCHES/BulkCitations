@@ -1,6 +1,6 @@
 # Academic Benchmark Report
 
-Generated: 2026-03-28T05:13:02.706Z
+Generated: 2026-03-28T06:06:53.330Z
 Frozen corpus: 2026-03-27T12:11:27.113Z
 Corpus size: 1000 real citations
 IEEE slice: 159 citations per corpus run
@@ -26,6 +26,15 @@ This internal benchmark evaluates 1000 real-world academic references across jou
 - Legacy-comparable field average: 88.31%
 - Methodology version: 1.0
 - Frozen at: 2026-03-27
+
+## Production Hybrid Extract (Secondary Internal Mode)
+
+- Strict essential accuracy: 65.00%
+- Legacy-comparable field average: 88.31%
+- Fallback attempt rate: 94.50%
+- Fallback accept rate: 0.00%
+- Deterministic strict delta: 0.00%
+- IEEE strict delta: 0.00%
 
 Footnote: The primary score uses strict citation-level pass/fail on core fields plus identity and output integrity. The secondary score is a frozen internal field-average reference for historical comparison only and must not be cited as the external readiness number.
 
@@ -77,11 +86,11 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 - Identity integrity: 98.90%
 - Identity contamination count: 3
 - Consistency: 100.00%
-- Mean batch time: 1763.95 ms
-- Median batch time: 1510.42 ms
-- P95 batch time: 2557.49 ms
-- Mean ms per citation: 35.28 ms
-- Throughput: 9.45 citations/sec
+- Mean batch time: 1818.55 ms
+- Median batch time: 1539.64 ms
+- P95 batch time: 2830.58 ms
+- Mean ms per citation: 36.37 ms
+- Throughput: 9.16 citations/sec
 
 ### Batch size 100
 
@@ -92,11 +101,11 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 - Identity integrity: 98.90%
 - Identity contamination count: 3
 - Consistency: 100.00%
-- Mean batch time: 3650.66 ms
-- Median batch time: 3797.78 ms
-- P95 batch time: 4476.63 ms
-- Mean ms per citation: 36.51 ms
-- Throughput: 9.13 citations/sec
+- Mean batch time: 3506.69 ms
+- Median batch time: 3586.47 ms
+- P95 batch time: 4365.79 ms
+- Mean ms per citation: 35.07 ms
+- Throughput: 9.51 citations/sec
 
 ### Batch size 200
 
@@ -107,11 +116,11 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 - Identity integrity: 98.90%
 - Identity contamination count: 3
 - Consistency: 100.00%
-- Mean batch time: 7440.05 ms
-- Median batch time: 7476.85 ms
-- P95 batch time: 8569.76 ms
-- Mean ms per citation: 37.20 ms
-- Throughput: 8.96 citations/sec
+- Mean batch time: 7132.77 ms
+- Median batch time: 7204.15 ms
+- P95 batch time: 7725.40 ms
+- Mean ms per citation: 35.66 ms
+- Throughput: 9.35 citations/sec
 
 ## IEEE failure breakdown
 
@@ -152,7 +161,7 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 - The benchmark uses a frozen 1,000-reference real-world corpus, making reruns auditable and institution-friendly.
 - Strict external readiness, internal legacy compatibility, and batch performance are separated instead of being collapsed into one misleading score.
 - book records performed best on the strict score at 74.00%.
-- The fastest operating point was the 50-citation batch at 9.45 citations/sec.
+- The fastest operating point was the 100-citation batch at 9.51 citations/sec.
 
 ## Weaknesses
 

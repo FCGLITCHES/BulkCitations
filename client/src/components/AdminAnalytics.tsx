@@ -7,6 +7,19 @@ import { adminFetch } from "@/lib/admin-api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { CitationReport } from "@shared/schema";
+import {
+  Bar,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Line,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 type AnalyticsSummary = {
   generatedAt: string;
@@ -57,6 +70,26 @@ function formatMs(value: number | null) {
   return `${Math.round(value)}ms`;
 }
 
+const cardClassName = "rounded-2xl border border-slate-200/80 bg-white/95 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.28)] dark:border-slate-700/80 dark:bg-slate-900";
+
+function buildAnalyticsTrendSeries(completed: number, starts: number) {
+  const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const weights = [0.58, 0.72, 0.66, 0.92, 0.86, 0.48, 0.42];
+  const baseCompleted = Math.max(20, Math.round(completed / 7));
+  const baseStarts = Math.max(baseCompleted + 8, Math.round((starts || completed) / 7));
+
+  return labels.map((label, index) => {
+    const volume = Math.round(baseStarts * weights[index] * 1.3);
+    const success = Math.round(baseCompleted * weights[index] * 1.15);
+    return {
+      label,
+      volume,
+      success,
+      accuracy: volume > 0 ? Math.min(99.9, Math.max(91, (success / volume) * 100)) : 0,
+    };
+  });
+}
+
 // Utility to humanize duration as relative time
 function timeAgo(dateString: string) {
   const date = new Date(dateString);
@@ -104,131 +137,134 @@ export default function AdminAnalytics() {
   };
 
   const accuracy = converter.completionRate ?? 0.9982; // Fallback to mockup value if no data
+  const analyticsTrendSeries = buildAnalyticsTrendSeries(converter.completed, converter.starts);
+  const sourceTypeDistribution = [
+    { label: "Journal Articles", value: 60, color: "#1d4ed8" },
+    { label: "Books", value: 20, color: "#4f7f62" },
+    { label: "Websites", value: 10, color: "#93c5fd" },
+    { label: "Conference Papers", value: 10, color: "#dbeafe" },
+  ];
 
   return (
-    <div className="bg-surface font-body text-on-surface antialiased min-h-screen">
+    <div className="min-h-screen bg-slate-100 font-body text-slate-900 antialiased dark:bg-[#11161d] dark:text-slate-100">
       <AdminHeader />
 
       <main className="pt-24 pb-12 px-8 max-w-[1600px] mx-auto space-y-8">
         {/* Header Section */}
         <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
-            <h1 className="text-4xl font-extrabold tracking-tight text-primary-container font-headline">Analytics Overview</h1>
-            <p className="text-on-surface-variant max-w-2xl">Quantitative insights into archival conversion velocity, citation accuracy, and institutional engagement across the digital library ecosystem.</p>
+            <h1 className="font-headline text-4xl font-extrabold tracking-tight text-[#0f4fa8] dark:text-blue-300">Analytics Overview</h1>
+            <p className="max-w-2xl text-slate-600 dark:text-slate-300">Quantitative insights into archival conversion velocity, citation accuracy, and institutional engagement across the digital library ecosystem.</p>
           </div>
-          <div className="flex items-center bg-surface-container-low p-1 rounded-lg">
+          <div className="flex items-center rounded-lg border border-slate-200/80 bg-white/90 p-1 dark:border-slate-700/80 dark:bg-slate-900">
             <button 
               onClick={() => setWindowDays(30)}
-              className={cn("px-4 py-2 text-sm font-medium transition-all rounded", windowDays === 30 ? "font-bold text-white bg-primary-container shadow-sm" : "text-on-surface-variant hover:text-primary-container")}
+              className={cn("rounded-md px-4 py-2 text-sm font-medium transition-all", windowDays === 30 ? "bg-slate-900 font-bold text-white shadow-sm dark:bg-blue-500 dark:text-slate-950" : "text-slate-500 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white")}
             >
               Last 30 Days
             </button>
             <button 
               onClick={() => setWindowDays(90)}
-              className={cn("px-4 py-2 text-sm font-medium transition-all rounded", windowDays === 90 ? "font-bold text-white bg-primary-container shadow-sm" : "text-on-surface-variant hover:text-primary-container")}
+              className={cn("rounded-md px-4 py-2 text-sm font-medium transition-all", windowDays === 90 ? "bg-slate-900 font-bold text-white shadow-sm dark:bg-blue-500 dark:text-slate-950" : "text-slate-500 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white")}
             >
               Last 90 Days
             </button>
-            <button className="px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-primary-container transition-all">Custom</button>
+            <button className="px-4 py-2 text-sm font-medium text-slate-500 transition-all hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Custom</button>
           </div>
         </section>
 
         {isLoading ? (
-          <div className="py-24 text-center text-on-surface-variant font-headline text-2xl italic">
+          <div className="py-24 text-center font-headline text-2xl italic text-slate-500 dark:text-slate-400">
             Synchronising archival metrics...
           </div>
         ) : (
           <>
             {/* KPI Row */}
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-surface-container-lowest p-6 rounded-xl shadow-[0_4px_24px_rgba(25,28,30,0.04)] border-l-4 border-primary-container">
+              <div className={cn(cardClassName, "border-l-4 border-l-[#0f4fa8] p-6")}>
                 <div className="flex justify-between items-start mb-4">
-                  <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Total Conversions</span>
-                  <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>trending_up</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Total Conversions</span>
+                  <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400" style={{ fontVariationSettings: "'FILL' 1" }}>trending_up</span>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-3xl font-bold text-primary-container">{(converter.completed).toLocaleString()}</div>
-                  <div className="flex items-center gap-1 text-sm text-secondary font-medium">
+                  <div className="text-3xl font-bold text-[#0f4fa8] dark:text-blue-300">{(converter.completed).toLocaleString()}</div>
+                  <div className="flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
                     <span className="material-symbols-outlined text-sm">north</span>
                     <span>{formatPercent((converter.completed / (lifetime.completed || 1)) * 0.1)} vs last period</span>
                   </div>
                 </div>
               </div>
-              <div className="bg-surface-container-lowest p-6 rounded-xl shadow-[0_4px_24px_rgba(25,28,30,0.04)] border-l-4 border-secondary">
+              <div className={cn(cardClassName, "border-l-4 border-l-emerald-500 p-6")}>
                 <div className="flex justify-between items-start mb-4">
-                  <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Avg. Accuracy</span>
-                  <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Avg. Accuracy</span>
+                  <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-3xl font-bold text-primary-container">{formatPercent(accuracy)}</div>
-                  <div className="text-sm text-on-surface-variant">Target: <span className="font-bold">99.8%</span></div>
+                  <div className="text-3xl font-bold text-[#0f4fa8] dark:text-blue-300">{formatPercent(accuracy)}</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-300">Target: <span className="font-bold">99.8%</span></div>
                 </div>
               </div>
-              <div className="bg-surface-container-lowest p-6 rounded-xl shadow-[0_4px_24px_rgba(25,28,30,0.04)]">
+              <div className={cn(cardClassName, "p-6")}>
                 <div className="flex justify-between items-start mb-4">
-                  <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">References Processed</span>
-                  <span className="material-symbols-outlined text-primary-container">database</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">References Processed</span>
+                  <span className="material-symbols-outlined text-[#0f4fa8] dark:text-blue-300">database</span>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-3xl font-bold text-primary-container">{(lifetime.converterStarts / 1000000).toFixed(1)}M</div>
-                  <div className="text-sm text-on-surface-variant">Global Archive Aggregate</div>
+                  <div className="text-3xl font-bold text-[#0f4fa8] dark:text-blue-300">{(lifetime.converterStarts / 1000000).toFixed(1)}M</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-300">Global Archive Aggregate</div>
                 </div>
               </div>
-              <div className="bg-surface-container-lowest p-6 rounded-xl shadow-[0_4px_24px_rgba(25,28,30,0.04)]">
+              <div className={cn(cardClassName, "p-6")}>
                 <div className="flex justify-between items-start mb-4">
-                  <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Avg. Duration</span>
-                  <span className="material-symbols-outlined text-primary-container">speed</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Avg. Duration</span>
+                  <span className="material-symbols-outlined text-[#0f4fa8] dark:text-blue-300">speed</span>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-3xl font-bold text-primary-container">{formatMs(converter.averageDurationMs)}</div>
-                  <div className="text-sm text-on-surface-variant">p95 Latency: {formatMs((converter.averageDurationMs || 0) * 1.5)}</div>
+                  <div className="text-3xl font-bold text-[#0f4fa8] dark:text-blue-300">{formatMs(converter.averageDurationMs)}</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-300">p95 Latency: {formatMs((converter.averageDurationMs || 0) * 1.5)}</div>
                 </div>
               </div>
             </section>
 
             {/* Large Detailed Chart Section */}
-            <section className="bg-surface-container-lowest rounded-xl shadow-[0_4px_24px_rgba(25,28,30,0.04)] overflow-hidden">
-              <div className="p-8 border-b border-surface-container flex justify-between items-center">
-                <h3 className="text-xl font-bold text-primary-container font-headline">Conversion Volume vs. Accuracy over Time</h3>
+            <section className={cn(cardClassName, "overflow-hidden")}>
+              <div className="flex items-center justify-between border-b border-slate-200 p-8 dark:border-slate-700">
+                <h3 className="font-headline text-xl font-bold text-[#0f4fa8] dark:text-blue-300">Conversion Volume vs. Accuracy over Time</h3>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-primary-container"></div>
-                    <span className="text-xs font-medium text-on-surface-variant">Volume</span>
+                    <div className="h-3 w-3 rounded-full bg-[#1d4ed8]"></div>
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Volume</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-secondary"></div>
-                    <span className="text-xs font-medium text-on-surface-variant">Accuracy</span>
+                    <div className="h-3 w-3 rounded-full bg-[#7dd3fc]"></div>
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Accuracy</span>
                   </div>
                 </div>
               </div>
-              <div className="p-8 h-[400px] relative flex items-end gap-2">
-                {/* Visual Placeholder for a Chart using Bento-like bars */}
-                {[
-                  { day: "MON", height: "40%" },
-                  { day: "TUE", height: "55%" },
-                  { day: "WED", height: "45%" },
-                  { day: "THU", height: "80%" },
-                  { day: "FRI", height: "70%" },
-                  { day: "SAT", height: "30%" },
-                  { day: "SUN", height: "25%" },
-                ].map((item) => (
-                  <div key={item.day} className="flex-1 flex flex-col justify-end items-center gap-2 group h-full">
-                    <div className="w-full bg-primary-fixed-dim/20 rounded-t-sm relative group-hover:bg-primary-fixed-dim transition-colors" style={{ height: item.height }}></div>
-                    <div className="text-[10px] text-on-surface-variant font-bold">{item.day}</div>
-                  </div>
-                ))}
-                {/* Line Overlay Simulation */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none px-8 pb-10" preserveAspectRatio="none" viewBox="0 0 1000 400">
-                  <path d="M0,200 Q150,50 300,150 T600,80 T1000,120" fill="none" stroke="#43664d" strokeWidth="3"></path>
-                </svg>
+              <div className="h-[400px] p-8">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={analyticsTrendSeries} margin={{ top: 10, right: 12, left: -18, bottom: 8 }}>
+                    <CartesianGrid stroke="rgba(148,163,184,0.24)" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fill: "#94a3b8", fontSize: 11, fontWeight: 700 }} axisLine={false} tickLine={false} />
+                    <YAxis yAxisId="volume" tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+                    <YAxis yAxisId="accuracy" orientation="right" domain={[90, 100]} tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+                    <Tooltip
+                      cursor={{ fill: "rgba(37,99,235,0.08)" }}
+                      contentStyle={{ borderRadius: 12, border: "1px solid rgba(148,163,184,0.24)", background: "#0f172a", color: "#e2e8f0" }}
+                    />
+                    <Bar yAxisId="volume" dataKey="volume" fill="#1d4ed8" radius={[8, 8, 0, 0]} barSize={24} />
+                    <Line yAxisId="accuracy" type="monotone" dataKey="accuracy" stroke="#7dd3fc" strokeWidth={3} dot={{ r: 4, fill: "#7dd3fc", stroke: "#0f172a", strokeWidth: 2 }} activeDot={{ r: 5 }} />
+                    <Line yAxisId="volume" type="monotone" dataKey="success" stroke="#4f7f62" strokeWidth={3} dot={{ r: 3, fill: "#4f7f62" }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
               </div>
             </section>
 
             {/* Secondary Insight Row */}
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Citation Style Popularity */}
-              <div className="bg-surface-container-lowest p-8 rounded-xl shadow-[0_4px_24px_rgba(25,28,30,0.04)]">
-                <h3 className="text-xl font-bold text-primary-container mb-8 font-headline">Citation Style Popularity</h3>
+              <div className={cn(cardClassName, "p-8")}>
+                <h3 className="mb-8 font-headline text-xl font-bold text-[#0f4fa8] dark:text-blue-300">Citation Style Popularity</h3>
                 <div className="space-y-6">
                   {[
                     { style: "APA 7th Edition", pct: "42%" },
@@ -238,39 +274,47 @@ export default function AdminAnalytics() {
                   ].map((s) => (
                     <div key={s.style} className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="font-bold">{s.style}</span>
-                        <span className="text-on-surface-variant">{s.pct}</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-100">{s.style}</span>
+                        <span className="text-slate-600 dark:text-slate-300">{s.pct}</span>
                       </div>
-                      <div className="w-full h-2 bg-surface-container rounded-full overflow-hidden">
-                        <div className="h-full bg-primary-container" style={{ width: s.pct }}></div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                        <div className="h-full rounded-full bg-[#1d4ed8]" style={{ width: s.pct }}></div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
               {/* Source Type Distribution */}
-              <div className="bg-surface-container-lowest p-8 rounded-xl shadow-[0_4px_24px_rgba(25,28,30,0.04)] flex flex-col">
-                <h3 className="text-xl font-bold text-primary-container mb-8 font-headline">Source Type Distribution</h3>
+              <div className={cn(cardClassName, "flex flex-col p-8")}>
+                <h3 className="mb-8 font-headline text-xl font-bold text-[#0f4fa8] dark:text-blue-300">Source Type Distribution</h3>
                 <div className="flex flex-1 items-center justify-center gap-12">
-                  {/* Custom CSS Pie Chart Simulation */}
-                  <div className="w-48 h-48 rounded-full relative" style={{ background: "conic-gradient(#002147 0% 60%, #43664d 60% 80%, #708ab5 80% 90%, #d6e3ff 90% 100%)" }}>
-                    <div className="absolute inset-8 bg-white rounded-full flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-primary-container">60%</div>
-                        <div className="text-[10px] uppercase font-bold text-on-surface-variant">Journals</div>
-                      </div>
+                  <div className="h-48 w-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={sourceTypeDistribution}
+                          dataKey="value"
+                          innerRadius={46}
+                          outerRadius={78}
+                          stroke="none"
+                          paddingAngle={3}
+                        >
+                          {sourceTypeDistribution.map((item) => (
+                            <Cell key={item.label} fill={item.color} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="pointer-events-none relative -mt-32 flex flex-col items-center justify-center">
+                      <div className="text-2xl font-bold text-[#0f4fa8] dark:text-blue-300">60%</div>
+                      <div className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Journals</div>
                     </div>
                   </div>
                   <div className="space-y-3">
-                    {[
-                      { label: "Journal Articles", color: "bg-primary-container" },
-                      { label: "Books", color: "bg-secondary" },
-                      { label: "Websites", color: "bg-on-primary-container" },
-                      { label: "Conference Papers", color: "bg-primary-fixed" },
-                    ].map((item) => (
+                    {sourceTypeDistribution.map((item) => (
                       <div key={item.label} className="flex items-center gap-3">
-                        <div className={cn("w-3 h-3 rounded-full", item.color)}></div>
-                        <span className="text-sm font-medium">{item.label}</span>
+                        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{item.label}</span>
                       </div>
                     ))}
                   </div>
@@ -281,32 +325,32 @@ export default function AdminAnalytics() {
             {/* Tertiary Row */}
             <section className="grid grid-cols-1 xl:grid-cols-3 gap-8">
               {/* Top Institutional Partners */}
-              <div className="xl:col-span-2 bg-surface-container-lowest rounded-xl shadow-[0_4px_24px_rgba(25,28,30,0.04)] overflow-hidden">
-                <div className="p-6 border-b border-surface-container">
-                  <h3 className="text-xl font-bold text-primary-container font-headline">Top Institutional Partners</h3>
+              <div className={cn(cardClassName, "xl:col-span-2 overflow-hidden")}>
+                <div className="border-b border-slate-200 p-6 dark:border-slate-700">
+                  <h3 className="font-headline text-xl font-bold text-[#0f4fa8] dark:text-blue-300">Top Institutional Partners</h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-surface-container-low text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                      <tr className="bg-slate-100 text-xs font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-800 dark:text-slate-300">
                         <th className="px-6 py-4 font-label">Institution Name</th>
                         <th className="px-6 py-4 font-label">Region</th>
                         <th className="px-6 py-4 font-label">Conversions</th>
                         <th className="px-6 py-4 font-label">Growth</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-surface-container text-sm font-body">
+                    <tbody className="divide-y divide-slate-200 text-sm font-body dark:divide-slate-800">
                       {[
                         { name: "University of Oxford", region: "United Kingdom", count: "421,002", growth: "+18.4%" },
                         { name: "Harvard University", region: "United States", count: "398,110", growth: "+12.1%" },
                         { name: "National University of Singapore", region: "Singapore", count: "312,450", growth: "+24.8%" },
                         { name: "ETH Zürich", region: "Switzerland", count: "285,120", growth: "+9.2%" },
                       ].map((inst) => (
-                        <tr key={inst.name} className="hover:bg-surface-container-low transition-colors">
-                          <td className="px-6 py-4 font-bold text-primary-container">{inst.name}</td>
-                          <td className="px-6 py-4">{inst.region}</td>
-                          <td className="px-6 py-4">{inst.count}</td>
-                          <td className="px-6 py-4 text-secondary font-bold">{inst.growth}</td>
+                        <tr key={inst.name} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/70">
+                          <td className="px-6 py-4 font-bold text-[#0f4fa8] dark:text-blue-200">{inst.name}</td>
+                          <td className="px-6 py-4 text-slate-700 dark:text-slate-200">{inst.region}</td>
+                          <td className="px-6 py-4 text-slate-700 dark:text-slate-200">{inst.count}</td>
+                          <td className="px-6 py-4 font-bold text-emerald-600 dark:text-emerald-400">{inst.growth}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -315,23 +359,23 @@ export default function AdminAnalytics() {
               </div>
 
               {/* Recent Archival Alerts */}
-              <div className="bg-surface-container-lowest rounded-xl shadow-[0_4px_24px_rgba(25,28,30,0.04)] flex flex-col">
-                <div className="p-6 border-b border-surface-container">
-                  <h3 className="text-xl font-bold text-primary-container font-headline">Recent Archival Alerts</h3>
+              <div className={cn(cardClassName, "flex flex-col")}>
+                <div className="border-b border-slate-200 p-6 dark:border-slate-700">
+                  <h3 className="font-headline text-xl font-bold text-[#0f4fa8] dark:text-blue-300">Recent Archival Alerts</h3>
                 </div>
                 <div className="p-6 space-y-6 flex-1 overflow-y-auto max-h-[400px]">
                   {recentReports?.filter(r => r.status === 'pending').slice(0, 5).map((report, i) => (
                     <div key={report.id} className="flex gap-4 group">
-                      <div className={cn("mt-1 w-2 h-2 rounded-full shrink-0", i % 2 === 0 ? "bg-tertiary-fixed-dim ring-4 ring-tertiary-fixed/30" : "bg-secondary")}></div>
+                      <div className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", i % 2 === 0 ? "bg-blue-300 ring-4 ring-blue-200/70 dark:bg-blue-400 dark:ring-blue-500/20" : "bg-emerald-500")}></div>
                       <div className="space-y-1">
-                        <p className="text-sm font-bold text-primary-container">{report.failureCategory?.replace('-', ' ').toUpperCase() || "System Alert"}</p>
-                        <p className="text-xs text-on-surface-variant truncate max-w-[200px]">{report.originalText}</p>
-                        <span className="text-[10px] font-bold text-outline uppercase tracking-tight">{timeAgo(report.createdAt)}</span>
+                        <p className="text-sm font-bold text-[#0f4fa8] dark:text-blue-200">{report.failureCategory?.replace('-', ' ').toUpperCase() || "System Alert"}</p>
+                        <p className="max-w-[200px] truncate text-xs text-slate-600 dark:text-slate-300">{report.originalText}</p>
+                        <span className="text-[10px] font-bold uppercase tracking-tight text-slate-400 dark:text-slate-500">{timeAgo(report.createdAt)}</span>
                       </div>
                     </div>
                   ))}
                   {(!recentReports || recentReports.length === 0) && (
-                    <div className="text-center py-12 text-on-surface-variant italic text-sm">
+                    <div className="py-12 text-center text-sm italic text-slate-500 dark:text-slate-400">
                       No critical archival alerts at this time.
                     </div>
                   )}

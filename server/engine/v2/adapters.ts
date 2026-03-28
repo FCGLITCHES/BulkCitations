@@ -21,7 +21,9 @@ import {
   looksLikeAlternatingTokenArray,
   normalizeDoiValue,
   normalizeWhitespace,
+  parseAuthorToCanonical,
   parseAuthorsForStyle,
+  parseInitialsFirstAuthor,
   parsedReferenceTypeToCanonical,
 } from './utils.js';
 import { crossrefTypeFilterForSourceType } from './sourceTypes.js';
@@ -956,18 +958,73 @@ function extractLeadAuthorFromQuotedLead(value: string): string[] | undefined {
   return [`${surname}, ${given}`];
 }
 
+function looksLikeSurnameLeadSegment(segment: string): boolean {
+  const normalized = normalizeWhitespace(segment);
+  if (!normalized) return false;
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  return tokens.length >= 1
+    && tokens.length <= 3
+    && tokens.every((token) => /^(?:[\p{Lu}][\p{L}'’-]+|d'[\p{L}'’-]+)$/u.test(token));
+}
+
+function looksLikeFullNameToken(token: string, index: number, length: number): boolean {
+  if (!token) return false;
+  if (/^(?:da|de|del|della|der|di|dos|du|la|le|van|von)$/i.test(token)) {
+    return index > 0 && index < length - 1;
+  }
+  return /^(?:[\p{Lu}][\p{L}'’-]+|d'[\p{Lu}][\p{L}'’-]+)$/u.test(token);
+}
+
+function stripLeadingAuthorConjunction(segment: string): string {
+  return normalizeWhitespace(segment.replace(/^(?:and|&)\s+/i, ''));
+}
+
+function looksLikeGivenNameSegment(segment: string): boolean {
+  const normalized = normalizeWhitespace(segment);
+  if (!normalized || /[.]/.test(normalized)) return false;
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  return tokens.length >= 1
+    && tokens.length <= 4
+    && tokens.every((token, index) => looksLikeFullNameToken(token, index, tokens.length));
+}
+
+function looksLikeFullNameAuthorSegment(segment: string): boolean {
+  const normalized = normalizeWhitespace(segment);
+  if (!normalized || normalized.includes(',')) return false;
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  return tokens.length >= 2
+    && tokens.length <= 5
+    && tokens.every((token, index) => looksLikeFullNameToken(token, index, tokens.length));
+}
+
 function splitIeeeAuthorSegments(value: string): string[] {
-  return normalizeWhitespace(value)
+  const normalized = normalizeWhitespace(value)
     .replace(/,\s+and\s+/i, ', ')
     .replace(/\s+and\s+/gi, ', ')
     .split(/\s*,\s*/)
-    .map((segment) => normalizeWhitespace(segment))
-    .filter(Boolean)
-    .map((segment) => normalizeIeeeFullNameAuthorSegment(segment));
+    .map((segment) => stripLeadingAuthorConjunction(segment.replace(/[.;]+$/g, '')))
+    .filter(Boolean);
+
+  if (
+    normalized.length >= 4
+    && normalized.length <= 10
+    && looksLikeSurnameLeadSegment(normalized[0] ?? '')
+    && looksLikeGivenNameSegment(normalized[1] ?? '')
+    && normalized.slice(2).every((segment) => looksLikeFullNameAuthorSegment(segment))
+  ) {
+    return [
+      `${normalized[0]}, ${normalized[1]}`,
+      ...normalized.slice(2),
+    ].map((segment) => normalizeIeeeFullNameAuthorSegment(segment));
+  }
+
+  return normalized.map((segment) => normalizeIeeeFullNameAuthorSegment(segment));
 }
 
 function normalizeIeeeFullNameAuthorSegment(segment: string): string {
-  const normalized = normalizeWhitespace(segment.replace(/^[,;]+|[,;]+$/g, ''));
+  const normalized = stripLeadingAuthorConjunction(
+    normalizeWhitespace(segment.replace(/^[,;]+|[,;]+$/g, '').replace(/[.;]+$/g, '')),
+  );
   if (!normalized || normalized.includes(',') || isGroupAuthor(normalized)) return normalized;
 
   const tokens = normalized.split(/\s+/).filter(Boolean);
@@ -979,11 +1036,27 @@ function normalizeIeeeFullNameAuthorSegment(segment: string): string {
   ) {
     return `${tokens[2]}, ${tokens[0]} ${tokens[1]}`;
   }
-  if (tokens.length !== 3) return normalized;
+  if (tokens.length < 2) return normalized;
   if (tokens.some((token) => /[.]/.test(token) || /^[\p{Lu}]$/u.test(token))) return normalized;
-  if (!tokens.every((token) => /^[\p{Lu}][\p{L}'’-]+$/u.test(token))) return normalized;
+  if (!tokens.every((token, index) => looksLikeFullNameToken(token, index, tokens.length))) return normalized;
 
-  return `${tokens.slice(1).join(' ')}, ${tokens[0]}`;
+  if (
+    tokens.length === 3
+    && tokens.every((token) => /^(?:[\p{Lu}][\p{L}'’-]+|d'[\p{Lu}][\p{L}'’-]+)$/u.test(token))
+  ) {
+    return `${tokens[1]} ${tokens[2]}, ${tokens[0]}`;
+  }
+
+  let surnameStartIndex = tokens.length - 1;
+  while (surnameStartIndex > 1 && /^(?:da|de|del|della|der|di|dos|du|la|le|van|von)$/i.test(tokens[surnameStartIndex - 1] ?? '')) {
+    surnameStartIndex -= 1;
+  }
+
+  const givenTokens = tokens.slice(0, surnameStartIndex);
+  const surnameTokens = tokens.slice(surnameStartIndex);
+  if (givenTokens.length === 0 || surnameTokens.length === 0) return normalized;
+
+  return `${surnameTokens.join(' ')}, ${givenTokens.join(' ')}`;
 }
 
 function splitIeeeQuotedReference(normalized: string): {
@@ -1099,8 +1172,14 @@ function buildIeeeQuotedReferenceCandidate(normalized: string): ParsedSelectionC
   const parts = splitIeeeQuotedReference(normalized);
   if (!parts) return null;
 
-  const authorParse = parseAuthorsForStyle(splitIeeeAuthorSegments(parts.authorsLead), 'ieee');
-  const authors = authorParse.authors.map((author) => renderAuthor(author)).filter(Boolean);
+  const authors = splitIeeeAuthorSegments(parts.authorsLead)
+    .map((segment) => {
+      const normalizedSegment = normalizeWhitespace(segment);
+      return parseInitialsFirstAuthor(normalizedSegment)
+        ?? parseAuthorToCanonical(normalizedSegment);
+    })
+    .map((author) => renderAuthor(author))
+    .filter(Boolean);
   if (authors.length === 0 || !parts.title) return null;
 
   const strippedTail = stripIeeeTailSignals(parts.tail);
@@ -1118,10 +1197,25 @@ function buildIeeeQuotedReferenceCandidate(normalized: string): ParsedSelectionC
   );
   if (!year || !containerBeforeYear) return null;
 
-  if (/^in\b/i.test(containerBeforeYear)) {
-    const conferenceLead = normalizeIeeeContainerRemainder(containerBeforeYear.replace(/^in\s+/i, ''));
-    const splitConference = splitPossiblePlaceFromConferenceTitle(conferenceLead);
-    if (!splitConference.conferenceTitle || !pages) return null;
+  const conferenceLead = /^in\b/i.test(containerBeforeYear)
+    ? normalizeIeeeContainerRemainder(containerBeforeYear.replace(/^in\s+/i, ''))
+    : containerBeforeYear;
+  if (/^in\b/i.test(containerBeforeYear) || proceedingsSignal(conferenceLead)) {
+    const conferenceSegments = conferenceLead
+      .split(/\.\s+/)
+      .map((segment) => cleanContainerTitle(segment))
+      .filter(Boolean);
+    let publisher: string | undefined;
+    if (conferenceSegments.length >= 2) {
+      const trailingSegment = conferenceSegments[conferenceSegments.length - 1];
+      if (trailingSegment && (/^[A-Z]{2,10}$/.test(trailingSegment) || looksLikePublisherSegment(trailingSegment))) {
+        publisher = cleanContainerTitle(conferenceSegments.pop());
+      }
+    }
+    const splitConference = splitPossiblePlaceFromConferenceTitle(
+      normalizeIeeeContainerRemainder(conferenceSegments.join('. ')),
+    );
+    if (!splitConference.conferenceTitle) return null;
 
     const parsed: ParsedReference = {
       authors,
@@ -1129,7 +1223,8 @@ function buildIeeeQuotedReferenceCandidate(normalized: string): ParsedSelectionC
       conferenceTitle: splitConference.conferenceTitle,
       placeOfPublication: splitConference.placeOfPublication,
       year,
-      pages,
+      pages: pages || undefined,
+      publisher,
       doi: strippedTail.doi,
       url: strippedTail.url,
       parseWarnings: ['ieee-quoted-reference-heuristic'],
@@ -1140,7 +1235,7 @@ function buildIeeeQuotedReferenceCandidate(normalized: string): ParsedSelectionC
       normalized,
       parsed,
       referenceType: 'conference',
-      warnings: [...(parsed.parseWarnings ?? []), ...authorParse.warningFlags],
+      warnings: parsed.parseWarnings ?? [],
       styleUsed: 'ieee',
       styleConfidence: 0.96,
     };
@@ -1182,7 +1277,7 @@ function buildIeeeQuotedReferenceCandidate(normalized: string): ParsedSelectionC
     normalized,
     parsed,
     referenceType: 'journal',
-    warnings: [...(parsed.parseWarnings ?? []), ...authorParse.warningFlags],
+    warnings: parsed.parseWarnings ?? [],
     styleUsed: 'ieee',
     styleConfidence: 0.96,
   };
@@ -2917,6 +3012,29 @@ function buildAuthorsFromInSourceLead(value: string): string[] | undefined {
   const normalized = stripTrailingPeriod(normalizeWhitespace(value).replace(/^\[\d+\]\s*/, ''));
   if (!normalized) return undefined;
 
+  const leadingInvertedAuthor = normalized.match(
+    /^(?<first>[^,]+,\s*(?:[\p{Lu}]\.?\s*){1,6})(?:,\s*(?<rest>.+))$/u,
+  );
+  if (leadingInvertedAuthor?.groups) {
+    const first = normalizeWhitespace(leadingInvertedAuthor.groups.first ?? '');
+    const restSegments = normalizeWhitespace(leadingInvertedAuthor.groups.rest ?? '')
+      .replace(/\s*,?\s+(?:and|&)\s+/gi, ', ')
+      .split(/\s*,\s*/)
+      .map((segment) => stripLeadingAuthorConjunction(segment))
+      .filter(Boolean);
+    if (
+      first
+      && restSegments.length > 0
+      && restSegments.every((segment) => (
+        /^[\p{Lu}](?:\.?\s*[\p{Lu}])*\.?\s+[\p{L}]/u.test(segment)
+        || looksLikeFullNameAuthorSegment(segment)
+        || segment.includes(',')
+      ))
+    ) {
+      return [first, ...restSegments];
+    }
+  }
+
   const compactAuthorLead = normalizeWhitespace(
     normalized
       .replace(/\s*,?\s+(?:and|&)\s+/i, ', ')
@@ -2997,13 +3115,26 @@ function buildInSourceCandidate(input: string, inputStyle: string): ParsedSelect
   if (!year) return null;
 
   const doi = normalized.match(DOI_PATTERN)?.[0];
-  const locator = match.groups.tail?.match(IN_SOURCE_LOCATOR_PATTERN)?.groups?.pages;
+  const explicitLocator = match.groups.tail?.match(IN_SOURCE_LOCATOR_PATTERN)?.groups?.pages;
   const tailWithoutDoi = normalizeWhitespace((match.groups.tail ?? '')
     .replace(/\bdoi:\s*/i, '')
     .replace(DOI_PATTERN, '')
     .replace(URL_PATTERN, ''));
   const tailWithoutYear = tailWithoutDoi.replace(new RegExp(`[;,.\\s]+${year}[.]?$`), '');
-  const tailWithoutLocator = normalizeWhitespace(tailWithoutYear.replace(IN_SOURCE_LOCATOR_PATTERN, ''));
+  const bareLocatorMatch = tailWithoutYear.match(
+    /(?:^|,\s*)(?<pages>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?)(?=\.\s+[^.]+(?:\.[^.]+)*$)/i,
+  );
+  const locator = normalizeWhitespace(explicitLocator ?? bareLocatorMatch?.groups?.pages ?? '')
+    .replace(/\s*[-–]\s*/g, '-')
+    || undefined;
+  const tailWithoutLocator = normalizeWhitespace(
+    tailWithoutYear
+      .replace(IN_SOURCE_LOCATOR_PATTERN, '')
+      .replace(
+        /(?:^|,\s*)(?<pages>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?)(?=\.\s+[^.]+(?:\.[^.]+)*$)/i,
+        '',
+      ),
+  );
   const segments = splitSentenceSegments(tailWithoutLocator)
     .flatMap((segment) => segment.split(/\s*,\s*/))
     .map((segment) => cleanContainerTitle(segment))

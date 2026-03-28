@@ -349,7 +349,7 @@ function shouldMergeOcrSplitTokens(current: string, next: string): boolean {
   }
 
   if (/^[\p{Lu}]$/u.test(currentCore) && /^[\p{Lu}]{2,}$/u.test(nextCore) && nextCore.length <= 3) {
-    return true;
+    return !OCR_STANDALONE_SINGLE_LETTERS.has(currentCore.toLowerCase());
   }
 
   return false;
@@ -707,6 +707,22 @@ function looksLikeSurnameToken(token: string): boolean {
   return /^[\p{L}'’-]+(?:\s+[\p{L}'’-]+){0,3}$/u.test(normalized);
 }
 
+function looksLikeMixedInvertedAndFullNameArray(tokens: string[]): boolean {
+  const normalizedTokens = normalizeAuthorTokens(tokens);
+  if (normalizedTokens.length < 3) return false;
+  const [first, ...rest] = normalizedTokens;
+  if (!first || !first.includes(',')) return false;
+  if (rest.some((token) => token.includes(','))) return false;
+
+  const [surname, given] = first.split(',').map((part) => normalizeWhitespace(part));
+  if (!looksLikeSurnameToken(surname) || !looksLikeGivenNamesToken(given ?? '')) return false;
+
+  return rest.every((token) => {
+    const normalized = normalizeWhitespace(token);
+    return normalized.split(/\s+/).length >= 2 && looksLikeGivenNamesToken(normalized);
+  });
+}
+
 export function looksLikeSurnameGivenAlternatingArray(tokens: string[]): boolean {
   const normalizedTokens = normalizeAuthorTokens(tokens);
   if (normalizedTokens.length < 4 || normalizedTokens.length % 2 !== 0) return false;
@@ -852,6 +868,9 @@ export function parseAuthorsForStyle(
 
   const expandedAuthors = expandAuthorBlobs(authors);
   const rawStrings = expandedAuthors.filter((author): author is string => typeof author === 'string').map((author) => fixUnicodeText(author));
+  const ieeeFullNameMixedArray = normalizedStyle === 'ieee'
+    && rawStrings.length === expandedAuthors.length
+    && looksLikeMixedInvertedAndFullNameArray(rawStrings);
   const compactVancouverArray = rawStrings.length === expandedAuthors.length
     && rawStrings.filter((author) => !/^et\s+al\.?$/i.test(author)).length >= 2
     && rawStrings.every((author) => /^et\s+al\.?$/i.test(author) || Boolean(parseCompactVancouverAuthor(author)) || isGroupAuthor(author));
@@ -882,7 +901,7 @@ export function parseAuthorsForStyle(
       rejectedCandidates: [],
     };
   }
-  if (rawStrings.length === expandedAuthors.length && looksLikeAlternatingTokenArray(rawStrings)) {
+  if (!ieeeFullNameMixedArray && rawStrings.length === expandedAuthors.length && looksLikeAlternatingTokenArray(rawStrings)) {
     return {
       authors: parseAlternatingTokenArray(rawStrings),
       parserMode: 'alternating_pairs',
@@ -890,7 +909,7 @@ export function parseAuthorsForStyle(
       rejectedCandidates: ['alternating_tokens_rewritten_before_canonicalization'],
     };
   }
-  if (rawStrings.length === expandedAuthors.length && looksLikeSurnameGivenAlternatingArray(rawStrings)) {
+  if (!ieeeFullNameMixedArray && rawStrings.length === expandedAuthors.length && looksLikeSurnameGivenAlternatingArray(rawStrings)) {
     return {
       authors: parseSurnameGivenAlternatingArray(rawStrings),
       parserMode: 'surname_given_pairs',

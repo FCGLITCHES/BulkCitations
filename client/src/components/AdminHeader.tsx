@@ -109,15 +109,12 @@ export function AdminHeader() {
             return (
               <Link key={link.href} href={link.href}>
                 <a className={cn(
-                  "text-xs cursor-pointer uppercase tracking-widest px-1 py-1 relative group",
+                  "text-xs cursor-pointer uppercase tracking-widest px-2 py-1.5 relative rounded-md transition-colors",
                   isActive 
-                    ? "text-slate-900 dark:text-slate-100 font-black" 
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-bold"
+                    ? "bg-slate-900 text-white font-black dark:bg-blue-500 dark:text-slate-950" 
+                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white font-bold"
                 )}>
                   {link.label}
-                  {isActive && (
-                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-slate-900 dark:bg-slate-100 rounded-full" />
-                  )}
                 </a>
               </Link>
             );
