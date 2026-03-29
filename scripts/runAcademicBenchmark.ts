@@ -33,7 +33,7 @@ const CORPUS_PATH = path.resolve('scripts/data/academic-benchmark-corpus-1000.js
 const OUTPUT_JSON = path.resolve('output/academic-benchmark-1000-report.json');
 const OUTPUT_MD = path.resolve('output/academic-benchmark-1000-report.md');
 const BATCH_SIZES = [50, 100, 200] as const;
-const REPEATS = 3;
+const DEFAULT_REPEATS = 3;
 const LEGACY_METHODOLOGY_VERSION = '1.0';
 const METHODOLOGY_FROZEN_AT = '2026-03-27';
 
@@ -182,13 +182,23 @@ type ActionNeededReasonCounts = {
 };
 
 type FallbackRoutingSummary = {
-  attemptedCount: number;
-  acceptedCount: number;
+  llmEnabled: boolean;
+  llmUsedInRun: boolean;
+  directModelCallCount: number;
+  directAcceptedCount: number;
+  clusterReuseAcceptedCount: number;
+  acceptedCitationCount: number;
   rejectedCount: number;
   budgetSkippedCount: number;
-  attemptRatePct: number;
-  acceptRatePct: number;
+  acceptedWithFieldImprovementsCount: number;
+  acceptedWithOutputCount: number;
+  acceptedWithStrictPassLiftCount: number;
+  totalStrictPassDelta: number;
+  directModelCallRatePct: number;
+  directAcceptRatePct: number;
+  acceptedCitationRatePct: number;
   rejectedRatePct: number;
+  improvedFieldCounts: Record<string, number>;
 };
 
 type FallbackReasonCounts = {
@@ -446,6 +456,12 @@ function isAcademicBenchmarkLlmEnabled(): boolean {
 
 function isAcademicBenchmarkEnrichEnabled(): boolean {
   return isTruthyEnv(process.env.ACADEMIC_BENCHMARK_ENABLE_ENRICH);
+}
+
+function getAcademicBenchmarkRepeats(): number {
+  const parsed = Number.parseInt(process.env.ACADEMIC_BENCHMARK_REPEATS ?? '', 10);
+  if (Number.isFinite(parsed) && parsed >= 1) return parsed;
+  return DEFAULT_REPEATS;
 }
 
 function createSlice(): SliceMetrics {
@@ -993,19 +1009,43 @@ function renderMarkdown(report: AcademicBenchmarkReport): string {
   lines.push(`- Identity contamination count: ${report.strict_external.identityContaminationCount}`);
   lines.push(`- Consistency: ${formatPercent(report.strict_external.consistencyPct)}`);
   lines.push(`- Average APA render similarity: ${formatPercent(report.strict_external.averageRenderSimilarityPct)}`);
-  lines.push(`- LLM fallback attempt rate: ${formatPercent(report.fallbackRouting.attemptRatePct)}`);
+  lines.push(`- Direct LLM call rate: ${formatPercent(report.fallbackRouting.directModelCallRatePct)}`);
   lines.push('');
   lines.push('## LLM Fallback Diagnostics');
   lines.push('');
   lines.push(`- Enrichment opt-in: ${isAcademicBenchmarkEnrichEnabled() ? 'enabled' : 'disabled'}`);
-  lines.push(`- LLM extract opt-in: ${isAcademicBenchmarkLlmEnabled() ? 'enabled' : 'disabled'}`);
-  lines.push(`- Fallback attempts recorded in this primary report: ${report.fallbackRouting.attemptedCount}`);
+  lines.push(`- LLM extract opt-in: ${report.fallbackRouting.llmEnabled ? 'enabled' : 'disabled'}`);
+  lines.push(`- LLM actually used in this run: ${report.fallbackRouting.llmUsedInRun ? 'yes' : 'no'}`);
+  lines.push(`- Direct model calls recorded: ${report.fallbackRouting.directModelCallCount}`);
+  lines.push(`- Direct model accepts: ${report.fallbackRouting.directAcceptedCount}`);
+  lines.push(`- Cluster-reused LLM accepts: ${report.fallbackRouting.clusterReuseAcceptedCount}`);
+  lines.push(`- Total citations that accepted LLM-derived fields: ${report.fallbackRouting.acceptedCitationCount}`);
+  lines.push(`- Rejected fallback attempts: ${report.fallbackRouting.rejectedCount}`);
+  lines.push(`- Budget-skipped fallback attempts: ${report.fallbackRouting.budgetSkippedCount}`);
+  lines.push(`- Accepted fallbacks with improved fields: ${report.fallbackRouting.acceptedWithFieldImprovementsCount}`);
+  lines.push(`- Accepted fallbacks with non-empty output: ${report.fallbackRouting.acceptedWithOutputCount}`);
+  lines.push(`- Accepted fallbacks that increased strict pass coverage: ${report.fallbackRouting.acceptedWithStrictPassLiftCount}`);
+  lines.push(`- Total strict-pass delta from accepted fallbacks: ${report.fallbackRouting.totalStrictPassDelta}`);
+  if (Object.keys(report.fallbackRouting.improvedFieldCounts).length > 0) {
+    for (const [field, count] of Object.entries(report.fallbackRouting.improvedFieldCounts)) {
+      lines.push(`- Improved field ${field}: ${count}`);
+    }
+  } else {
+    lines.push('- Improved fields: none recorded in this run');
+  }
   if (Object.keys(report.fallbackReasonCounts.rejected).length > 0) {
     for (const [reason, count] of Object.entries(report.fallbackReasonCounts.rejected).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))) {
       lines.push(`- Rejected ${reason}: ${count}`);
     }
   } else {
     lines.push('- Rejected reasons: none recorded in this run');
+  }
+  if (Object.keys(report.fallbackReasonCounts.accepted).length > 0) {
+    for (const [reason, count] of Object.entries(report.fallbackReasonCounts.accepted).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))) {
+      lines.push(`- Accepted ${reason}: ${count}`);
+    }
+  } else {
+    lines.push('- Accepted reasons: none recorded in this run');
   }
   lines.push('');
   lines.push('## Internal Compatibility Reference (Secondary)');
@@ -1148,6 +1188,7 @@ async function runAcademicBenchmarkMode(
 ): Promise<BenchmarkModeSummary> {
   const corpus = JSON.parse(await readFile(CORPUS_PATH, 'utf8')) as BenchmarkCorpus;
   const adapters = options?.adapters ?? createDefaultAdapters();
+  const repeats = getAcademicBenchmarkRepeats();
   const corpusRecordById = new Map(corpus.records.map((record) => [record.id, record]));
   const sourceTypeCorpusCounts = new Map<BenchmarkSourceType, number>();
   const inputStyleCorpusCounts = new Map<BenchmarkInputStyle, number>();
@@ -1211,9 +1252,16 @@ async function runAcademicBenchmarkMode(
   let llmFallbackAcceptedCount = 0;
   let llmFallbackRejectedCount = 0;
   let llmFallbackBudgetSkippedCount = 0;
+  let llmFallbackClusterReuseAcceptedCount = 0;
+  let llmFallbackDirectAcceptedCount = 0;
+  let llmFallbackAcceptedWithFieldImprovementsCount = 0;
+  let llmFallbackAcceptedWithOutputCount = 0;
+  let llmFallbackAcceptedWithStrictPassLiftCount = 0;
+  let llmFallbackTotalStrictPassDelta = 0;
   const llmFallbackAttemptReasons = new Map<string, number>();
   const llmFallbackAcceptedReasons = new Map<string, number>();
   const llmFallbackRejectedReasons = new Map<string, number>();
+  const llmFallbackImprovedFieldCounts = new Map<string, number>();
 
   const llmEnabled = isAcademicBenchmarkLlmEnabled();
   process.env.ENABLE_GROBID_EXTRACTOR = '0';
@@ -1253,11 +1301,11 @@ async function runAcademicBenchmarkMode(
     let exactBatchMatches = 0;
     let totalBatchComparisons = 0;
 
-    for (let repeat = 1; repeat <= REPEATS; repeat += 1) {
+    for (let repeat = 1; repeat <= repeats; repeat += 1) {
       for (let batchIndex = 0; batchIndex < batches.length; batchIndex += 1) {
         const records = batches[batchIndex] ?? [];
         const content = buildBatchContent(records);
-        const progressPrefix = `[academic-benchmark:${mode}] batchSize=${batchSize} repeat=${repeat}/${REPEATS} batch=${batchIndex + 1}/${batches.length}`;
+        const progressPrefix = `[academic-benchmark:${mode}] batchSize=${batchSize} repeat=${repeat}/${repeats} batch=${batchIndex + 1}/${batches.length}`;
         console.log(`${progressPrefix} starting`);
         const start = performance.now();
         const { response } = await processV2Conversion({
@@ -1356,6 +1404,18 @@ async function runAcademicBenchmarkMode(
           if (citation.extraction?.llmFallbackAccepted) {
             llmFallbackAcceptedCount += 1;
             incrementCount(llmFallbackAcceptedReasons, String(citation.extraction?.llmFallbackReason ?? 'unknown'));
+            if (citation.extraction?.llmFallbackReusedFromCluster) llmFallbackClusterReuseAcceptedCount += 1;
+            else llmFallbackDirectAcceptedCount += 1;
+            if (evaluation.outputPresent) llmFallbackAcceptedWithOutputCount += 1;
+            if (Array.isArray(citation.extraction?.llmFallbackFieldsImproved) && citation.extraction.llmFallbackFieldsImproved.length > 0) {
+              llmFallbackAcceptedWithFieldImprovementsCount += 1;
+              for (const field of citation.extraction.llmFallbackFieldsImproved) {
+                incrementCount(llmFallbackImprovedFieldCounts, String(field));
+              }
+            }
+            const strictPassDelta = Number(citation.extraction?.llmFallbackStrictPassDelta ?? 0);
+            if (strictPassDelta > 0) llmFallbackAcceptedWithStrictPassLiftCount += 1;
+            llmFallbackTotalStrictPassDelta += strictPassDelta;
           }
           if (citation.extraction?.llmFallbackAttempted && !citation.extraction?.llmFallbackAccepted) {
             llmFallbackRejectedCount += 1;
@@ -1538,8 +1598,8 @@ async function runAcademicBenchmarkMode(
 
     batchSummaries.push({
       batchSize,
-      repeats: REPEATS,
-      totalBatches: batches.length * REPEATS,
+      repeats,
+      totalBatches: batches.length * repeats,
       expectedCitations,
       actualCitations,
       strictEssentialAccuracyPct: toPercent(strictEssentialPass, corpus.records.length),
@@ -1550,7 +1610,7 @@ async function runAcademicBenchmarkMode(
       identityIntegrityPct: toPercent(identityIntegrityCount, corpus.records.length),
       identityContaminationCount,
       identityContaminationByCategory: identityBuckets,
-      partialBatchRatePct: toPercent(partialBatches, batches.length * REPEATS),
+      partialBatchRatePct: toPercent(partialBatches, batches.length * repeats),
       consistencyPct: toPercent(identicalOutputComparisons, totalOutputComparisons),
       exactBatchConsistencyPct: toPercent(exactBatchMatches, totalBatchComparisons),
       averageRenderSimilarityPct: mean(renderScores),
@@ -1602,7 +1662,7 @@ async function runAcademicBenchmarkMode(
 
   const overall: OverallSummary = {
     corpusSize: corpus.records.length,
-    repeatCount: REPEATS,
+    repeatCount: repeats,
     retrievalDate: corpus.generatedAt,
     fieldAccuracyPct: mean(batchSummaries.map((summary) => summary.fieldAccuracyPct)),
     consistencyPct,
@@ -1690,7 +1750,7 @@ async function runAcademicBenchmarkMode(
     llmExtractEnabled: llmEnabled,
     corpusSize: corpus.records.length,
     ieeeCorpusCount,
-    repeats: REPEATS,
+    repeats,
     strict_external: {
       essentialAccuracyPct: strictEssentialAccuracyPct,
       countIntegrityPct,
@@ -1732,13 +1792,23 @@ async function runAcademicBenchmarkMode(
     nearPassLedger,
     weightedLiftModel,
     fallbackRouting: {
-      attemptedCount: llmFallbackAttemptedCount,
-      acceptedCount: llmFallbackAcceptedCount,
+      llmEnabled,
+      llmUsedInRun: llmFallbackAttemptedCount > 0 || llmFallbackAcceptedCount > 0,
+      directModelCallCount: llmFallbackAttemptedCount,
+      directAcceptedCount: llmFallbackDirectAcceptedCount,
+      clusterReuseAcceptedCount: llmFallbackClusterReuseAcceptedCount,
+      acceptedCitationCount: llmFallbackAcceptedCount,
       rejectedCount: llmFallbackRejectedCount,
       budgetSkippedCount: llmFallbackBudgetSkippedCount,
-      attemptRatePct: toPercent(llmFallbackAttemptedCount, corpus.records.length),
-      acceptRatePct: toPercent(llmFallbackAcceptedCount, llmFallbackAttemptedCount),
+      acceptedWithFieldImprovementsCount: llmFallbackAcceptedWithFieldImprovementsCount,
+      acceptedWithOutputCount: llmFallbackAcceptedWithOutputCount,
+      acceptedWithStrictPassLiftCount: llmFallbackAcceptedWithStrictPassLiftCount,
+      totalStrictPassDelta: llmFallbackTotalStrictPassDelta,
+      directModelCallRatePct: toPercent(llmFallbackAttemptedCount, corpus.records.length),
+      directAcceptRatePct: toPercent(llmFallbackDirectAcceptedCount, llmFallbackAttemptedCount),
+      acceptedCitationRatePct: toPercent(llmFallbackAcceptedCount, corpus.records.length),
       rejectedRatePct: toPercent(llmFallbackRejectedCount, llmFallbackAttemptedCount),
+      improvedFieldCounts: Object.fromEntries(Array.from(llmFallbackImprovedFieldCounts.entries()).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))),
     },
     fallbackReasonCounts: {
       attempted: Object.fromEntries(Array.from(llmFallbackAttemptReasons.entries()).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))),

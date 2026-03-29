@@ -41,53 +41,390 @@ export type RequirementProfile = {
   optional: string[];
 };
 
+export type ScoreProfileKey =
+  | 'journal'
+  | 'book'
+  | 'report'
+  | 'chapter'
+  | 'website'
+  | 'conference'
+  | 'thesis';
+
+export type ScoreFieldCategory =
+  | 'title'
+  | 'authors'
+  | 'year'
+  | 'venue'
+  | 'locator'
+  | 'identifier'
+  | 'support';
+
+export type FieldState = 'missing' | 'weak' | 'acceptable';
+
+export type ObservationPenaltyType = 'contradiction' | 'informational';
+
+export type ObservationCode =
+  | 'field_confidence_outlier'
+  | 'venue_title_partial_overlap'
+  | 'locator_unusual_shape'
+  | 'identifier_weak_shape'
+  | 'support_field_type_mismatch'
+  | 'score_profile_fallback';
+
+export type ScoreFormulaWeights = {
+  requiredAverage: number;
+  requiredCompleteness: number;
+  expectedAverage: number;
+  expectedCompleteness: number;
+};
+
+export type ScoreProfile = {
+  weights: ScoreFormulaWeights;
+  expectedFieldWeights: Record<string, number>;
+  acceptableConfidenceFloors: Record<ScoreFieldCategory, number>;
+  weakStatePartialCredit: Record<ScoreFieldCategory, number>;
+  readyAcceptableRequiredMinimum: number;
+  readyExpectedFieldMinimum: number;
+};
+
+export type ObservationCodeDefinition = {
+  code: ObservationCode;
+  penaltyType: ObservationPenaltyType;
+};
+
+export type ScoreProfileSelection = {
+  profileKey: ScoreProfileKey;
+  profile: ScoreProfile;
+  usedFallback: boolean;
+};
+
+export type ScoreFieldEvaluation = {
+  field: string;
+  category: ScoreFieldCategory;
+  state: FieldState;
+  present: boolean;
+  confidence: number;
+  scoreCredit: number;
+  completenessCredit: number;
+  normalizedValue: string;
+};
+
+export const OBSERVATION_PENALTY_PER_CODE = 0.02;
+export const OBSERVATION_PENALTY_CAP = 0.06;
+
+const REQUIREMENT_PROFILES: Record<string, RequirementProfile> = {
+  journal: {
+    required: ['authors', 'title', 'year'],
+    expected: ['venue', 'volume', 'issue', 'locator'],
+    optional: ['doi', 'url', 'publisher'],
+  },
+  book: {
+    required: ['authors', 'title', 'year', 'publisher'],
+    expected: ['edition'],
+    optional: ['doi', 'url'],
+  },
+  conference: {
+    required: ['authors', 'title', 'year'],
+    expected: ['venue', 'locator'],
+    optional: ['doi', 'url', 'publisher'],
+  },
+  chapter: {
+    required: ['authors', 'title', 'year', 'bookTitle'],
+    expected: ['locator', 'publisher'],
+    optional: ['doi', 'url'],
+  },
+  bookChapter: {
+    required: ['authors', 'title', 'year', 'bookTitle'],
+    expected: ['locator', 'publisher'],
+    optional: ['doi', 'url'],
+  },
+  website: {
+    required: ['title', 'url'],
+    expected: [],
+    optional: ['authors', 'year', 'publisher'],
+  },
+  report: {
+    required: ['title', 'year'],
+    expected: ['authors', 'institution'],
+    optional: ['url', 'doi'],
+  },
+  thesis: {
+    required: ['authors', 'title', 'year', 'institution'],
+    expected: [],
+    optional: ['url', 'doi'],
+  },
+};
+
+const SCORE_PROFILES: Record<ScoreProfileKey, ScoreProfile> = {
+  journal: {
+    weights: {
+      requiredAverage: 0.45,
+      requiredCompleteness: 0.21,
+      expectedAverage: 0.18,
+      expectedCompleteness: 0.16,
+    },
+    expectedFieldWeights: {
+      venue: 0.4,
+      volume: 0.2,
+      issue: 0.15,
+      locator: 0.25,
+    },
+    acceptableConfidenceFloors: {
+      title: 0.72,
+      authors: 0.76,
+      year: 0.78,
+      venue: 0.68,
+      locator: 0.62,
+      identifier: 0.72,
+      support: 0.64,
+    },
+    weakStatePartialCredit: {
+      title: 0.45,
+      authors: 0.4,
+      year: 0.55,
+      venue: 0.35,
+      locator: 0.3,
+      identifier: 0.3,
+      support: 0.35,
+    },
+    readyAcceptableRequiredMinimum: 3,
+    readyExpectedFieldMinimum: 1,
+  },
+  book: {
+    weights: {
+      requiredAverage: 0.48,
+      requiredCompleteness: 0.22,
+      expectedAverage: 0.12,
+      expectedCompleteness: 0.18,
+    },
+    expectedFieldWeights: {
+      edition: 1,
+    },
+    acceptableConfidenceFloors: {
+      title: 0.72,
+      authors: 0.74,
+      year: 0.78,
+      venue: 0.66,
+      locator: 0.6,
+      identifier: 0.72,
+      support: 0.68,
+    },
+    weakStatePartialCredit: {
+      title: 0.45,
+      authors: 0.42,
+      year: 0.55,
+      venue: 0.32,
+      locator: 0.3,
+      identifier: 0.3,
+      support: 0.4,
+    },
+    readyAcceptableRequiredMinimum: 4,
+    readyExpectedFieldMinimum: 1,
+  },
+  report: {
+    weights: {
+      requiredAverage: 0.45,
+      requiredCompleteness: 0.2,
+      expectedAverage: 0.13,
+      expectedCompleteness: 0.22,
+    },
+    expectedFieldWeights: {
+      authors: 0.45,
+      institution: 0.55,
+    },
+    acceptableConfidenceFloors: {
+      title: 0.72,
+      authors: 0.72,
+      year: 0.78,
+      venue: 0.62,
+      locator: 0.58,
+      identifier: 0.7,
+      support: 0.68,
+    },
+    weakStatePartialCredit: {
+      title: 0.45,
+      authors: 0.38,
+      year: 0.55,
+      venue: 0.28,
+      locator: 0.28,
+      identifier: 0.28,
+      support: 0.42,
+    },
+    readyAcceptableRequiredMinimum: 2,
+    readyExpectedFieldMinimum: 1,
+  },
+  chapter: {
+    weights: {
+      requiredAverage: 0.46,
+      requiredCompleteness: 0.22,
+      expectedAverage: 0.13,
+      expectedCompleteness: 0.19,
+    },
+    expectedFieldWeights: {
+      locator: 0.55,
+      publisher: 0.45,
+    },
+    acceptableConfidenceFloors: {
+      title: 0.72,
+      authors: 0.74,
+      year: 0.78,
+      venue: 0.68,
+      locator: 0.62,
+      identifier: 0.72,
+      support: 0.66,
+    },
+    weakStatePartialCredit: {
+      title: 0.45,
+      authors: 0.4,
+      year: 0.55,
+      venue: 0.35,
+      locator: 0.34,
+      identifier: 0.3,
+      support: 0.38,
+    },
+    readyAcceptableRequiredMinimum: 4,
+    readyExpectedFieldMinimum: 1,
+  },
+  website: {
+    weights: {
+      requiredAverage: 0.6,
+      requiredCompleteness: 0.4,
+      expectedAverage: 0,
+      expectedCompleteness: 0,
+    },
+    expectedFieldWeights: {},
+    acceptableConfidenceFloors: {
+      title: 0.72,
+      authors: 0.72,
+      year: 0.76,
+      venue: 0.62,
+      locator: 0.58,
+      identifier: 0.74,
+      support: 0.62,
+    },
+    weakStatePartialCredit: {
+      title: 0.45,
+      authors: 0.38,
+      year: 0.5,
+      venue: 0.3,
+      locator: 0.28,
+      identifier: 0.35,
+      support: 0.34,
+    },
+    readyAcceptableRequiredMinimum: 2,
+    readyExpectedFieldMinimum: 0,
+  },
+  conference: {
+    weights: {
+      requiredAverage: 0.47,
+      requiredCompleteness: 0.21,
+      expectedAverage: 0.15,
+      expectedCompleteness: 0.17,
+    },
+    expectedFieldWeights: {
+      venue: 0.55,
+      locator: 0.45,
+    },
+    acceptableConfidenceFloors: {
+      title: 0.72,
+      authors: 0.74,
+      year: 0.78,
+      venue: 0.68,
+      locator: 0.62,
+      identifier: 0.72,
+      support: 0.64,
+    },
+    weakStatePartialCredit: {
+      title: 0.45,
+      authors: 0.4,
+      year: 0.55,
+      venue: 0.35,
+      locator: 0.34,
+      identifier: 0.3,
+      support: 0.34,
+    },
+    readyAcceptableRequiredMinimum: 3,
+    readyExpectedFieldMinimum: 1,
+  },
+  thesis: {
+    weights: {
+      requiredAverage: 0.52,
+      requiredCompleteness: 0.24,
+      expectedAverage: 0,
+      expectedCompleteness: 0.24,
+    },
+    expectedFieldWeights: {},
+    acceptableConfidenceFloors: {
+      title: 0.72,
+      authors: 0.74,
+      year: 0.78,
+      venue: 0.62,
+      locator: 0.58,
+      identifier: 0.7,
+      support: 0.68,
+    },
+    weakStatePartialCredit: {
+      title: 0.45,
+      authors: 0.4,
+      year: 0.55,
+      venue: 0.3,
+      locator: 0.28,
+      identifier: 0.28,
+      support: 0.4,
+    },
+    readyAcceptableRequiredMinimum: 4,
+    readyExpectedFieldMinimum: 0,
+  },
+};
+
+const OBSERVATION_CODE_REGISTRY: Record<ObservationCode, ObservationCodeDefinition> = {
+  field_confidence_outlier: { code: 'field_confidence_outlier', penaltyType: 'contradiction' },
+  venue_title_partial_overlap: { code: 'venue_title_partial_overlap', penaltyType: 'contradiction' },
+  locator_unusual_shape: { code: 'locator_unusual_shape', penaltyType: 'contradiction' },
+  identifier_weak_shape: { code: 'identifier_weak_shape', penaltyType: 'contradiction' },
+  support_field_type_mismatch: { code: 'support_field_type_mismatch', penaltyType: 'contradiction' },
+  score_profile_fallback: { code: 'score_profile_fallback', penaltyType: 'informational' },
+};
+
+const SCORE_PROFILE_FALLBACK_REFERENCE_TYPES = new Set([
+  'unknown',
+  'preprint',
+  'standard',
+  'patent',
+  'dataset',
+]);
+
 export function getRequirementProfile(referenceType: string): RequirementProfile {
-  switch (referenceType) {
-    case 'book':
-      return {
-        required: ['authors', 'title', 'year', 'publisher'],
-        expected: ['edition'],
-        optional: ['doi', 'url'],
-      };
-    case 'conference':
-      return {
-        required: ['authors', 'title', 'year'],
-        expected: ['venue', 'locator'],
-        optional: ['doi', 'url', 'publisher'],
-      };
-    case 'chapter':
-    case 'bookChapter':
-      return {
-        required: ['authors', 'title', 'year', 'bookTitle'],
-        expected: ['locator', 'publisher'],
-        optional: ['doi', 'url'],
-      };
-    case 'website':
-      return {
-        required: ['title', 'url'],
-        expected: ['authors', 'year'],
-        optional: ['publisher'],
-      };
-    case 'report':
-      return {
-        required: ['title', 'year'],
-        expected: ['authors', 'institution'],
-        optional: ['url', 'doi'],
-      };
-    case 'thesis':
-      return {
-        required: ['authors', 'title', 'year', 'institution'],
-        expected: [],
-        optional: ['url', 'doi'],
-      };
-    case 'journal':
-    default:
-      return {
-        required: ['authors', 'title', 'year'],
-        expected: ['venue', 'volume', 'issue', 'locator'],
-        optional: ['doi', 'url', 'publisher'],
-      };
+  return REQUIREMENT_PROFILES[referenceType] ?? REQUIREMENT_PROFILES.journal;
+}
+
+export function getScoreProfile(referenceType: string): ScoreProfileSelection {
+  if ((referenceType as ScoreProfileKey) in SCORE_PROFILES) {
+    const profileKey = referenceType as ScoreProfileKey;
+    return {
+      profileKey,
+      profile: SCORE_PROFILES[profileKey],
+      usedFallback: false,
+    };
   }
+
+  if (SCORE_PROFILE_FALLBACK_REFERENCE_TYPES.has(referenceType)) {
+    return {
+      profileKey: 'journal',
+      profile: SCORE_PROFILES.journal,
+      usedFallback: true,
+    };
+  }
+
+  return {
+    profileKey: 'journal',
+    profile: SCORE_PROFILES.journal,
+    usedFallback: true,
+  };
+}
+
+export function getObservationCodeRegistry(): Record<ObservationCode, ObservationCodeDefinition> {
+  return OBSERVATION_CODE_REGISTRY;
 }
 
 export function isPlaceholderValue(value: string | null | undefined): boolean {

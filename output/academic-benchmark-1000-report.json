@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-03-29T13:17:14.041Z",
+  "generatedAt": "2026-03-29T13:57:43.150Z",
   "corpusPath": "D:\\Coding\\Citing\\scripts\\data\\academic-benchmark-corpus-1000.json",
   "corpusSize": 1000,
   "ieeeCorpusCount": 159,
-  "repeats": 3,
+  "repeats": 1,
   "methodology": {
     "source": "Crossref public works metadata frozen into a local JSON corpus.",
     "frozenAt": "2026-03-27T12:11:27.113Z",
@@ -18,13 +18,13 @@
     ],
     "notes": [
       "The corpus contains 1,000 real citations drawn from Crossref and frozen locally on the generation date shown above.",
-      "The primary score uses the deterministic v2 pipeline with enrichment, LLM extraction, and GROBID disabled for repeatability.",
+      "The primary score uses the v2 pipeline with enrichment disabled, GPT-5.4 nano extract fallback enabled, and GROBID disabled.",
       "Strict external readiness requires referenceType, year, title, firstAuthor, venue, non-empty output, and identity integrity to all pass.",
       "The legacy-comparable score is a frozen field-average reference for internal comparison only."
     ]
   },
   "strict_external": {
-    "essentialAccuracyPct": 81.8,
+    "essentialAccuracyPct": 81.77,
     "countIntegrityPct": 99.6,
     "nonEmptyOutputPct": 99.6,
     "identityIntegrityPct": 99.6,
@@ -36,13 +36,13 @@
       "duplicate_output_reuse": 0,
       "dedup_field_substitution": 0
     },
-    "averageRenderSimilarityPct": 90.02,
-    "consistencyPct": 100
+    "averageRenderSimilarityPct": 90.12,
+    "consistencyPct": 0
   },
   "legacy_comparable": {
     "methodologyVersion": "1.0",
     "frozenAt": "2026-03-27",
-    "fieldAveragePct": 94.77,
+    "fieldAveragePct": 94.78,
     "includedFields": [
       "title",
       "firstAuthor",
@@ -67,11 +67,11 @@
   },
   "overall": {
     "corpusSize": 1000,
-    "repeatCount": 3,
+    "repeatCount": 1,
     "retrievalDate": "2026-03-27T12:11:27.113Z",
-    "fieldAccuracyPct": 94.65,
-    "consistencyPct": 100,
-    "averageRenderSimilarityPct": 90.02
+    "fieldAccuracyPct": 94.64,
+    "consistencyPct": 0,
+    "averageRenderSimilarityPct": 90.12
   },
   "countIntegrityPct": 99.6,
   "nonEmptyOutputPct": 99.6,
@@ -86,12 +86,12 @@
   },
   "actionNeededReasonCounts": {
     "overall": {
-      "missing_authors": 12,
+      "missing_authors": 13,
       "malformed_authors": 3,
-      "weak_first_author": 6,
-      "weak_venue": 21,
-      "weak_reference_type": 12,
-      "multi_field_low_confidence": 111,
+      "weak_first_author": 9,
+      "weak_venue": 20,
+      "weak_reference_type": 14,
+      "multi_field_low_confidence": 98,
       "empty_output": 12,
       "identity_contamination": 0
     },
@@ -101,68 +101,70 @@
       "weak_first_author": 3,
       "weak_venue": 6,
       "weak_reference_type": 3,
-      "multi_field_low_confidence": 42,
+      "multi_field_low_confidence": 25,
       "empty_output": 6,
       "identity_contamination": 0
     },
     "nearPass": {
       "missing_authors": 0,
       "malformed_authors": 3,
-      "weak_first_author": 6,
-      "weak_venue": 21,
-      "weak_reference_type": 12,
-      "multi_field_low_confidence": 99,
+      "weak_first_author": 9,
+      "weak_venue": 19,
+      "weak_reference_type": 13,
+      "multi_field_low_confidence": 85,
       "empty_output": 0,
       "identity_contamination": 0
     }
   },
   "validationIssueCounts": {
     "title_split_token_artifact": 96,
-    "title_short_or_missing": 66,
-    "author_structure_unstable": 42,
-    "incompatible_field_overlap": 33,
-    "initials_as_surname": 24,
+    "title_short_or_missing": 65,
+    "author_structure_unstable": 40,
+    "incompatible_field_overlap": 32,
+    "initials_as_surname": 25,
     "weak_proceedings_venue": 15,
     "multiple_doi_clusters": 9,
     "repeated_title_in_container": 9,
     "alternating_surname_given_tokens": 6,
     "oversized_chunk_confirmed": 6,
     "year_out_of_range": 6,
+    "edition_repeated": 4,
     "authors_unusually_many": 3,
-    "edition_repeated": 3,
+    "doi_invalid_shape": 3,
     "embedded_reference_start_in_venue": 3,
     "multiple_year_anchor_clusters": 3,
-    "venue_missing_for_conference": 3
+    "venue_missing_for_conference": 3,
+    "authors_missing": 1
   },
   "missingRequiredFieldCounts": {
-    "bookTitle": 42,
-    "authors": 12,
+    "bookTitle": 27,
+    "authors": 13,
+    "title": 13,
+    "year": 13,
     "referenceType": 12,
-    "title": 12,
     "venue": 12,
-    "year": 12,
     "publisher": 3,
     "url": 3
   },
   "dominantFailureLedger": [
     {
       "bucket": "residual_other",
-      "count": 64,
-      "shareOfStrictFailsPct": 35.16,
+      "count": 73,
+      "shareOfStrictFailsPct": 37.44,
       "sourceTypes": {
-        "journal": 35,
-        "book": 13,
+        "journal": 36,
+        "book": 14,
+        "thesis": 7,
         "chapter": 6,
-        "conference": 5,
-        "thesis": 3,
-        "report": 2
+        "conference": 6,
+        "report": 4
       },
       "inputStyles": {
-        "mla": 22,
-        "chicago": 14,
-        "vancouver": 9,
+        "mla": 23,
+        "chicago": 16,
+        "vancouver": 11,
+        "harvard": 10,
         "ieee": 8,
-        "harvard": 6,
         "apa": 5
       },
       "sampleRecordIds": [
@@ -176,14 +178,14 @@
         "journal-0383-10-5005-jp-journals-10006-2222",
         "journal-0039-10-1186-s13104-017-2882-4",
         "conference-0118-10-1109-nebc-1989-36745",
-        "thesis-0040-10-14264-190019",
-        "chapter-0144-10-1007-978-981-10-6898-0-21"
+        "report-0052-10-2172-93952",
+        "thesis-0040-10-14264-190019"
       ]
     },
     {
       "bucket": "venue_cleanup",
       "count": 38,
-      "shareOfStrictFailsPct": 20.88,
+      "shareOfStrictFailsPct": 19.49,
       "sourceTypes": {
         "journal": 26,
         "chapter": 9,
@@ -215,7 +217,7 @@
     {
       "bucket": "conference_container_type",
       "count": 32,
-      "shareOfStrictFailsPct": 17.58,
+      "shareOfStrictFailsPct": 16.41,
       "sourceTypes": {
         "conference": 32
       },
@@ -245,7 +247,7 @@
     {
       "bucket": "ieee_author_order",
       "count": 20,
-      "shareOfStrictFailsPct": 10.99,
+      "shareOfStrictFailsPct": 10.26,
       "sourceTypes": {
         "journal": 11,
         "book": 4,
@@ -273,7 +275,7 @@
     {
       "bucket": "pages_locator",
       "count": 11,
-      "shareOfStrictFailsPct": 6.04,
+      "shareOfStrictFailsPct": 5.64,
       "sourceTypes": {
         "journal": 6,
         "conference": 5
@@ -301,53 +303,59 @@
     },
     {
       "bucket": "report_institution_type",
-      "count": 7,
-      "shareOfStrictFailsPct": 3.85,
+      "count": 9,
+      "shareOfStrictFailsPct": 4.62,
       "sourceTypes": {
-        "report": 7
+        "report": 9
       },
       "inputStyles": {
         "harvard": 3,
         "chicago": 2,
+        "apa": 1,
         "ieee": 1,
-        "mla": 1
+        "mla": 1,
+        "vancouver": 1
       },
       "sampleRecordIds": [
-        "report-0023-10-2172-4632674",
+        "report-0036-10-2172-919208",
         "report-0050-10-2172-10106665",
-        "report-0046-10-2172-4563562",
         "report-0039-10-54067-acpf-306",
-        "report-0032-10-35613-ccl-2022-2049",
         "report-0002-10-2172-7275927",
-        "report-0022-10-23867-ri0219d"
+        "report-0022-10-23867-ri0219d",
+        "report-0025-10-2172-87065",
+        "report-0023-10-2172-4632674",
+        "report-0046-10-2172-4563562",
+        "report-0032-10-35613-ccl-2022-2049"
       ]
     },
     {
       "bucket": "apa_author_order",
-      "count": 6,
-      "shareOfStrictFailsPct": 3.3,
+      "count": 8,
+      "shareOfStrictFailsPct": 4.1,
       "sourceTypes": {
-        "journal": 3,
+        "journal": 4,
+        "thesis": 2,
         "book": 1,
-        "conference": 1,
-        "thesis": 1
+        "conference": 1
       },
       "inputStyles": {
-        "apa": 6
+        "apa": 8
       },
       "sampleRecordIds": [
+        "thesis-0033-10-47749-t-unicamp-2011-800745",
         "journal-0025-10-1134-s0036023619070088",
         "journal-0577-10-1007-s10064-018-1259-9",
         "thesis-0001-10-17771-pucrio-acad-64355",
         "book-0055-10-22533-at-ed-409201303",
         "conference-0115-10-1109-icsict-1998-785904",
-        "journal-0403-10-1016-s0002-9394-32-93001-3"
+        "journal-0403-10-1016-s0002-9394-32-93001-3",
+        "journal-0247-10-1016-s2666-7568-21-00115-x"
       ]
     },
     {
       "bucket": "missing_output",
       "count": 4,
-      "shareOfStrictFailsPct": 2.2,
+      "shareOfStrictFailsPct": 2.05,
       "sourceTypes": {
         "journal": 3,
         "report": 1
@@ -375,21 +383,56 @@
   ],
   "nearPassLedger": [
     {
+      "bucket": "firstAuthor",
+      "count": 55,
+      "shareOfStrictFailsPct": 28.21,
+      "sourceTypes": {
+        "journal": 23,
+        "conference": 11,
+        "thesis": 9,
+        "report": 6,
+        "book": 4,
+        "chapter": 2
+      },
+      "inputStyles": {
+        "ieee": 15,
+        "mla": 10,
+        "chicago": 9,
+        "vancouver": 8,
+        "apa": 7,
+        "harvard": 6
+      },
+      "sampleRecordIds": [
+        "thesis-0033-10-47749-t-unicamp-2011-800745",
+        "journal-0025-10-1134-s0036023619070088",
+        "journal-0093-10-3813-zfda-2006-0021",
+        "journal-0577-10-1007-s10064-018-1259-9",
+        "journal-0150-10-1111-j-1467-8705-1974-tb01519-x",
+        "thesis-0001-10-17771-pucrio-acad-64355",
+        "journal-0344-10-1134-s1063774520060188",
+        "thesis-0040-10-14264-190019",
+        "journal-0266-10-52825-gjae-v54i4-1630",
+        "book-0055-10-22533-at-ed-409201303",
+        "journal-0089-10-1017-s0021859600013344",
+        "journal-0287-10-1016-j-agrformet-2018-05-019"
+      ]
+    },
+    {
       "bucket": "referenceType",
-      "count": 48,
-      "shareOfStrictFailsPct": 26.37,
+      "count": 51,
+      "shareOfStrictFailsPct": 26.15,
       "sourceTypes": {
         "journal": 29,
-        "book": 7,
+        "book": 9,
         "conference": 7,
-        "chapter": 5
+        "chapter": 6
       },
       "inputStyles": {
         "apa": 11,
         "mla": 11,
-        "chicago": 8,
-        "vancouver": 7,
-        "ieee": 6,
+        "chicago": 9,
+        "vancouver": 8,
+        "ieee": 7,
         "harvard": 5
       },
       "sampleRecordIds": [
@@ -408,44 +451,9 @@
       ]
     },
     {
-      "bucket": "firstAuthor",
-      "count": 45,
-      "shareOfStrictFailsPct": 24.73,
-      "sourceTypes": {
-        "journal": 21,
-        "conference": 10,
-        "book": 4,
-        "report": 4,
-        "thesis": 4,
-        "chapter": 2
-      },
-      "inputStyles": {
-        "ieee": 15,
-        "mla": 9,
-        "chicago": 8,
-        "apa": 5,
-        "vancouver": 5,
-        "harvard": 3
-      },
-      "sampleRecordIds": [
-        "journal-0025-10-1134-s0036023619070088",
-        "journal-0577-10-1007-s10064-018-1259-9",
-        "journal-0150-10-1111-j-1467-8705-1974-tb01519-x",
-        "thesis-0001-10-17771-pucrio-acad-64355",
-        "journal-0344-10-1134-s1063774520060188",
-        "thesis-0040-10-14264-190019",
-        "journal-0266-10-52825-gjae-v54i4-1630",
-        "book-0055-10-22533-at-ed-409201303",
-        "journal-0089-10-1017-s0021859600013344",
-        "journal-0287-10-1016-j-agrformet-2018-05-019",
-        "journal-0537-10-5850-jksct-2025-49-5-980",
-        "journal-0608-10-4258-hir-2012-18-3-158"
-      ]
-    },
-    {
       "bucket": "venue",
       "count": 24,
-      "shareOfStrictFailsPct": 13.19,
+      "shareOfStrictFailsPct": 12.31,
       "sourceTypes": {
         "conference": 16,
         "chapter": 5,
@@ -475,26 +483,28 @@
     },
     {
       "bucket": "title",
-      "count": 7,
-      "shareOfStrictFailsPct": 3.85,
+      "count": 9,
+      "shareOfStrictFailsPct": 4.62,
       "sourceTypes": {
+        "report": 4,
         "book": 2,
         "conference": 2,
-        "report": 2,
         "journal": 1
       },
       "inputStyles": {
+        "chicago": 3,
         "mla": 3,
-        "chicago": 2,
-        "harvard": 1,
+        "harvard": 2,
         "ieee": 1
       },
       "sampleRecordIds": [
         "conference-0118-10-1109-nebc-1989-36745",
+        "report-0052-10-2172-93952",
         "conference-0017-10-1109-iciprm-2005-1517459",
-        "report-0015-10-2172-8504956",
         "book-0033-10-1007-978-3-540-68215-8",
         "journal-0090-10-1126-sciadv-abk3076",
+        "report-0038-10-2172-6514804",
+        "report-0015-10-2172-8504956",
         "report-0053-10-2172-1408646",
         "book-0052-10-1093-med-9780199591473-003-0007"
       ]
@@ -502,7 +512,7 @@
     {
       "bucket": "year",
       "count": 2,
-      "shareOfStrictFailsPct": 1.1,
+      "shareOfStrictFailsPct": 1.03,
       "sourceTypes": {
         "conference": 2
       },
@@ -533,32 +543,32 @@
   ],
   "weightedLiftModel": {
     "targetStrictExternalAccuracyPct": 90,
-    "currentStrictExternalAccuracyPct": 81.8,
-    "remainingGapPct": 8.2,
+    "currentStrictExternalAccuracyPct": 81.77,
+    "remainingGapPct": 8.23,
     "bySourceType": [
       {
         "key": "journal",
         "count": 550,
         "corpusSharePct": 55,
-        "strictEssentialAccuracyPct": 84.73,
-        "weightedContributionPct": 46.6,
-        "weightedHeadroomPct": 8.4
+        "strictEssentialAccuracyPct": 84.67,
+        "weightedContributionPct": 46.57,
+        "weightedHeadroomPct": 8.43
       },
       {
         "key": "conference",
         "count": 150,
         "corpusSharePct": 15,
-        "strictEssentialAccuracyPct": 68.67,
-        "weightedContributionPct": 10.3,
-        "weightedHeadroomPct": 4.7
+        "strictEssentialAccuracyPct": 68.89,
+        "weightedContributionPct": 10.33,
+        "weightedHeadroomPct": 4.67
       },
       {
         "key": "book",
         "count": 100,
         "corpusSharePct": 10,
-        "strictEssentialAccuracyPct": 79,
-        "weightedContributionPct": 7.9,
-        "weightedHeadroomPct": 2.1
+        "strictEssentialAccuracyPct": 79.67,
+        "weightedContributionPct": 7.97,
+        "weightedHeadroomPct": 2.03
       },
       {
         "key": "chapter",
@@ -572,17 +582,17 @@
         "key": "report",
         "count": 50,
         "corpusSharePct": 5,
-        "strictEssentialAccuracyPct": 80,
-        "weightedContributionPct": 4,
-        "weightedHeadroomPct": 1
+        "strictEssentialAccuracyPct": 80.67,
+        "weightedContributionPct": 4.03,
+        "weightedHeadroomPct": 0.97
       },
       {
         "key": "thesis",
         "count": 50,
         "corpusSharePct": 5,
-        "strictEssentialAccuracyPct": 92,
-        "weightedContributionPct": 4.6,
-        "weightedHeadroomPct": 0.4
+        "strictEssentialAccuracyPct": 89.33,
+        "weightedContributionPct": 4.47,
+        "weightedHeadroomPct": 0.53
       }
     ],
     "byInputStyle": [
@@ -590,69 +600,167 @@
         "key": "ieee",
         "count": 159,
         "corpusSharePct": 15.9,
-        "strictEssentialAccuracyPct": 74.21,
-        "weightedContributionPct": 11.8,
-        "weightedHeadroomPct": 4.1
+        "strictEssentialAccuracyPct": 74.84,
+        "weightedContributionPct": 11.9,
+        "weightedHeadroomPct": 4
       },
       {
         "key": "mla",
         "count": 176,
         "corpusSharePct": 17.6,
-        "strictEssentialAccuracyPct": 77.84,
-        "weightedContributionPct": 13.7,
-        "weightedHeadroomPct": 3.9
+        "strictEssentialAccuracyPct": 78.03,
+        "weightedContributionPct": 13.73,
+        "weightedHeadroomPct": 3.87
       },
       {
         "key": "apa",
         "count": 168,
         "corpusSharePct": 16.8,
-        "strictEssentialAccuracyPct": 82.74,
-        "weightedContributionPct": 13.9,
-        "weightedHeadroomPct": 2.9
+        "strictEssentialAccuracyPct": 82.14,
+        "weightedContributionPct": 13.8,
+        "weightedHeadroomPct": 3
       },
       {
         "key": "chicago",
         "count": 170,
         "corpusSharePct": 17,
-        "strictEssentialAccuracyPct": 82.94,
-        "weightedContributionPct": 14.1,
-        "weightedHeadroomPct": 2.9
+        "strictEssentialAccuracyPct": 83.73,
+        "weightedContributionPct": 14.23,
+        "weightedHeadroomPct": 2.77
       },
       {
         "key": "vancouver",
         "count": 159,
         "corpusSharePct": 15.9,
-        "strictEssentialAccuracyPct": 85.53,
-        "weightedContributionPct": 13.6,
-        "weightedHeadroomPct": 2.3
+        "strictEssentialAccuracyPct": 84.91,
+        "weightedContributionPct": 13.5,
+        "weightedHeadroomPct": 2.4
       },
       {
         "key": "harvard",
         "count": 168,
         "corpusSharePct": 16.8,
-        "strictEssentialAccuracyPct": 87.5,
-        "weightedContributionPct": 14.7,
-        "weightedHeadroomPct": 2.1
+        "strictEssentialAccuracyPct": 86.9,
+        "weightedContributionPct": 14.6,
+        "weightedHeadroomPct": 2.2
       }
     ]
   },
   "fallbackRouting": {
-    "attemptedCount": 0,
-    "acceptedCount": 0,
-    "rejectedCount": 0,
-    "budgetSkippedCount": 0,
-    "attemptRatePct": 0,
-    "acceptRatePct": 0,
-    "rejectedRatePct": 0
+    "llmEnabled": true,
+    "llmUsedInRun": true,
+    "directModelCallCount": 174,
+    "directAcceptedCount": 146,
+    "clusterReuseAcceptedCount": 213,
+    "acceptedCitationCount": 359,
+    "rejectedCount": 28,
+    "budgetSkippedCount": 282,
+    "acceptedWithFieldImprovementsCount": 165,
+    "acceptedWithOutputCount": 359,
+    "acceptedWithStrictPassLiftCount": 10,
+    "totalStrictPassDelta": 11,
+    "directModelCallRatePct": 17.4,
+    "directAcceptRatePct": 83.91,
+    "acceptedCitationRatePct": 35.9,
+    "rejectedRatePct": 16.09,
+    "improvedFieldCounts": {
+      "authors": 143,
+      "thesisType": 36,
+      "title": 22,
+      "bookTitle": 16,
+      "institution": 10,
+      "firstAuthor": 9,
+      "publisher": 7,
+      "edition": 5,
+      "pages": 5,
+      "journal": 4,
+      "placeOfPublication": 4,
+      "volume": 4,
+      "doi": 3,
+      "issue": 2,
+      "url": 1
+    }
   },
   "fallbackReasonCounts": {
-    "attempted": {},
-    "accepted": {},
-    "rejected": {}
+    "attempted": {
+      "semantic_gain:authors": 65,
+      "semantic_gain:thesisType|authors": 32,
+      "semantic_gain:authors|title": 14,
+      "reference_type_less_coherent": 13,
+      "no_strict_gain": 9,
+      "semantic_gain:bookTitle|authors": 7,
+      "llm_invalid_or_failed": 3,
+      "improved:firstAuthor|authors": 2,
+      "semantic_gain:authors|title|publisher": 2,
+      "semantic_gain:institution|authors": 2,
+      "semantic_gain:thesisType": 2,
+      "improved:firstAuthor|authors|pages": 1,
+      "improved:firstAuthor|authors|title": 1,
+      "improved:firstAuthor|authors|volume|pages": 1,
+      "improved:firstAuthor|edition|authors|title": 1,
+      "improved:firstAuthor|publisher|authors": 1,
+      "improved:firstAuthor|url|authors|doi": 1,
+      "improved:title|authors|journal|pages": 1,
+      "improved:title|firstAuthor|authors|journal|volume|issue|pages": 1,
+      "semantic_gain:authors|doi": 1,
+      "semantic_gain:authors|institution": 1,
+      "semantic_gain:authors|journal": 1,
+      "semantic_gain:authors|journal|volume|issue|doi": 1,
+      "semantic_gain:authors|pages": 1,
+      "semantic_gain:authors|publisher": 1,
+      "semantic_gain:authors|volume": 1,
+      "semantic_gain:edition|authors|title": 1,
+      "semantic_gain:placeOfPublication|authors|institution|publisher": 1,
+      "semantic_gain:placeOfPublication|institution|publisher": 1,
+      "semantic_gain:thesisType|authors|institution": 1,
+      "semantic_gain:thesisType|authors|title": 1,
+      "title_plausibility_worsened": 1,
+      "type_change_missing_support_fields": 1,
+      "venue_plausibility_worsened": 1
+    },
+    "accepted": {
+      "cluster_reuse": 213,
+      "semantic_gain:authors": 65,
+      "semantic_gain:thesisType|authors": 32,
+      "semantic_gain:authors|title": 14,
+      "semantic_gain:bookTitle|authors": 7,
+      "improved:firstAuthor|authors": 2,
+      "semantic_gain:authors|title|publisher": 2,
+      "semantic_gain:institution|authors": 2,
+      "semantic_gain:thesisType": 2,
+      "improved:firstAuthor|authors|pages": 1,
+      "improved:firstAuthor|authors|title": 1,
+      "improved:firstAuthor|authors|volume|pages": 1,
+      "improved:firstAuthor|edition|authors|title": 1,
+      "improved:firstAuthor|publisher|authors": 1,
+      "improved:firstAuthor|url|authors|doi": 1,
+      "improved:title|authors|journal|pages": 1,
+      "improved:title|firstAuthor|authors|journal|volume|issue|pages": 1,
+      "semantic_gain:authors|doi": 1,
+      "semantic_gain:authors|institution": 1,
+      "semantic_gain:authors|journal": 1,
+      "semantic_gain:authors|journal|volume|issue|doi": 1,
+      "semantic_gain:authors|pages": 1,
+      "semantic_gain:authors|publisher": 1,
+      "semantic_gain:authors|volume": 1,
+      "semantic_gain:edition|authors|title": 1,
+      "semantic_gain:placeOfPublication|authors|institution|publisher": 1,
+      "semantic_gain:placeOfPublication|institution|publisher": 1,
+      "semantic_gain:thesisType|authors|institution": 1,
+      "semantic_gain:thesisType|authors|title": 1
+    },
+    "rejected": {
+      "reference_type_less_coherent": 13,
+      "no_strict_gain": 9,
+      "llm_invalid_or_failed": 3,
+      "title_plausibility_worsened": 1,
+      "type_change_missing_support_fields": 1,
+      "venue_plausibility_worsened": 1
+    }
   },
   "ieeeFailureBreakdown": {
-    "author_order": 54,
-    "venue_abbreviation": 21,
+    "author_order": 52,
+    "venue_abbreviation": 20,
     "locator_misclassified": 0,
     "doi_parse": 0,
     "reference_type": 42,
@@ -663,7 +771,7 @@
     {
       "expectedReferenceType": "journal",
       "actualReferenceType": "journal",
-      "count": 1539
+      "count": 1538
     },
     {
       "expectedReferenceType": "conference",
@@ -673,12 +781,12 @@
     {
       "expectedReferenceType": "chapter",
       "actualReferenceType": "chapter",
-      "count": 273
+      "count": 272
     },
     {
       "expectedReferenceType": "book",
       "actualReferenceType": "book",
-      "count": 258
+      "count": 257
     },
     {
       "expectedReferenceType": "thesis",
@@ -764,15 +872,30 @@
       "expectedReferenceType": "report",
       "actualReferenceType": "missing",
       "count": 3
+    },
+    {
+      "expectedReferenceType": "book",
+      "actualReferenceType": "chapter",
+      "count": 1
+    },
+    {
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "book",
+      "count": 1
+    },
+    {
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "unknown",
+      "count": 1
     }
   ],
   "selectorDiagnostics": {
     "selectorModes": {
-      "multi_candidate": 2988
+      "multi_candidate": 2987
     },
     "selectionModes": {
       "full_scoring": 966,
-      "single_survivor": 1041,
+      "single_survivor": 1040,
       "unanimous_diversity_guard": 981
     },
     "topWinnerAdapters": [
@@ -828,32 +951,64 @@
     "topSelectionReasons": [
       {
         "reason": "unanimous_diversity_guard",
-        "count": 981
+        "count": 911
       },
       {
         "reason": "lexicographic_veto_coverage_contamination_consensus",
-        "count": 966
+        "count": 734
       },
       {
         "reason": "single_survivor_after_required_field_veto",
-        "count": 759
+        "count": 629
       },
       {
         "reason": "all_candidates_vetoed_fallback_to_best_available",
-        "count": 282
+        "count": 257
+      },
+      {
+        "reason": "lexicographic_veto_coverage_contamination_consensus_llm_cap_reached",
+        "count": 148
+      },
+      {
+        "reason": "single_survivor_after_required_field_veto_llm_cap_reached",
+        "count": 75
+      },
+      {
+        "reason": "lexicographic_veto_coverage_contamination_consensus_with_llm_fill",
+        "count": 73
+      },
+      {
+        "reason": "single_survivor_after_required_field_veto_with_llm_fill",
+        "count": 49
+      },
+      {
+        "reason": "unanimous_diversity_guard_llm_cap_reached",
+        "count": 47
+      },
+      {
+        "reason": "unanimous_diversity_guard_with_llm_fill",
+        "count": 17
+      },
+      {
+        "reason": "all_candidates_vetoed_fallback_to_best_available_llm_cap_reached",
+        "count": 12
+      },
+      {
+        "reason": "all_candidates_vetoed_fallback_to_best_available_with_llm_fill",
+        "count": 7
       }
     ]
   },
   "byBatchSize": [
     {
       "batchSize": 50,
-      "repeats": 3,
-      "totalBatches": 60,
-      "expectedCitations": 3000,
-      "actualCitations": 2988,
-      "strictEssentialAccuracyPct": 81.8,
-      "legacyFieldAveragePct": 94.77,
-      "fieldAccuracyPct": 94.65,
+      "repeats": 1,
+      "totalBatches": 20,
+      "expectedCitations": 1000,
+      "actualCitations": 996,
+      "strictEssentialAccuracyPct": 81.6,
+      "legacyFieldAveragePct": 94.71,
+      "fieldAccuracyPct": 94.57,
       "countIntegrityPct": 99.6,
       "nonEmptyOutputPct": 99.6,
       "identityIntegrityPct": 99.6,
@@ -865,28 +1020,28 @@
         "duplicate_output_reuse": 0,
         "dedup_field_substitution": 0
       },
-      "partialBatchRatePct": 0,
-      "consistencyPct": 100,
-      "exactBatchConsistencyPct": 100,
-      "averageRenderSimilarityPct": 90.02,
+      "partialBatchRatePct": 95,
+      "consistencyPct": 0,
+      "exactBatchConsistencyPct": 0,
+      "averageRenderSimilarityPct": 90.22,
       "speed": {
-        "meanBatchMs": 1519.65,
-        "medianBatchMs": 1501.44,
-        "p95BatchMs": 1986.15,
-        "meanMsPerCitation": 30.39,
-        "medianMsPerCitation": 30.03,
-        "throughputCitationsPerSecond": 10.97
+        "meanBatchMs": 19144.77,
+        "medianBatchMs": 18937.94,
+        "p95BatchMs": 25815.28,
+        "meanMsPerCitation": 382.9,
+        "medianMsPerCitation": 378.75,
+        "throughputCitationsPerSecond": 2.61
       }
     },
     {
       "batchSize": 100,
-      "repeats": 3,
-      "totalBatches": 30,
-      "expectedCitations": 3000,
-      "actualCitations": 2988,
-      "strictEssentialAccuracyPct": 81.8,
-      "legacyFieldAveragePct": 94.77,
-      "fieldAccuracyPct": 94.65,
+      "repeats": 1,
+      "totalBatches": 10,
+      "expectedCitations": 1000,
+      "actualCitations": 996,
+      "strictEssentialAccuracyPct": 81.9,
+      "legacyFieldAveragePct": 94.84,
+      "fieldAccuracyPct": 94.71,
       "countIntegrityPct": 99.6,
       "nonEmptyOutputPct": 99.6,
       "identityIntegrityPct": 99.6,
@@ -898,27 +1053,27 @@
         "duplicate_output_reuse": 0,
         "dedup_field_substitution": 0
       },
-      "partialBatchRatePct": 0,
-      "consistencyPct": 100,
-      "exactBatchConsistencyPct": 100,
-      "averageRenderSimilarityPct": 90.02,
+      "partialBatchRatePct": 100,
+      "consistencyPct": 0,
+      "exactBatchConsistencyPct": 0,
+      "averageRenderSimilarityPct": 90.09,
       "speed": {
-        "meanBatchMs": 2983.23,
-        "medianBatchMs": 2862.31,
-        "p95BatchMs": 3550.86,
-        "meanMsPerCitation": 29.83,
-        "medianMsPerCitation": 28.63,
-        "throughputCitationsPerSecond": 11.17
+        "meanBatchMs": 26119.69,
+        "medianBatchMs": 26280.04,
+        "p95BatchMs": 28174.82,
+        "meanMsPerCitation": 261.2,
+        "medianMsPerCitation": 262.8,
+        "throughputCitationsPerSecond": 3.83
       }
     },
     {
       "batchSize": 200,
-      "repeats": 3,
-      "totalBatches": 15,
-      "expectedCitations": 3000,
-      "actualCitations": 2988,
+      "repeats": 1,
+      "totalBatches": 5,
+      "expectedCitations": 1000,
+      "actualCitations": 996,
       "strictEssentialAccuracyPct": 81.8,
-      "legacyFieldAveragePct": 94.77,
+      "legacyFieldAveragePct": 94.8,
       "fieldAccuracyPct": 94.65,
       "countIntegrityPct": 99.6,
       "nonEmptyOutputPct": 99.6,
@@ -931,17 +1086,17 @@
         "duplicate_output_reuse": 0,
         "dedup_field_substitution": 0
       },
-      "partialBatchRatePct": 0,
-      "consistencyPct": 100,
-      "exactBatchConsistencyPct": 100,
-      "averageRenderSimilarityPct": 90.02,
+      "partialBatchRatePct": 80,
+      "consistencyPct": 0,
+      "exactBatchConsistencyPct": 0,
+      "averageRenderSimilarityPct": 90.06,
       "speed": {
-        "meanBatchMs": 6421.98,
-        "medianBatchMs": 6492.67,
-        "p95BatchMs": 7261.17,
-        "meanMsPerCitation": 32.11,
-        "medianMsPerCitation": 32.46,
-        "throughputCitationsPerSecond": 10.38
+        "meanBatchMs": 39338.97,
+        "medianBatchMs": 40046.78,
+        "p95BatchMs": 42059.47,
+        "meanMsPerCitation": 196.7,
+        "medianMsPerCitation": 200.23,
+        "throughputCitationsPerSecond": 5.08
       }
     }
   ],
@@ -949,100 +1104,100 @@
     {
       "sourceType": "thesis",
       "count": 50,
-      "strictEssentialAccuracyPct": 92,
-      "legacyFieldAveragePct": 98.4,
-      "fieldAccuracyPct": 98.67,
-      "averageRenderSimilarityPct": 85.24
+      "strictEssentialAccuracyPct": 89.33,
+      "legacyFieldAveragePct": 97.87,
+      "fieldAccuracyPct": 98.22,
+      "averageRenderSimilarityPct": 86.93
     },
     {
       "sourceType": "journal",
       "count": 550,
-      "strictEssentialAccuracyPct": 84.73,
+      "strictEssentialAccuracyPct": 84.67,
       "legacyFieldAveragePct": 95.45,
-      "fieldAccuracyPct": 95.35,
+      "fieldAccuracyPct": 95.34,
       "averageRenderSimilarityPct": 89.67
     },
     {
       "sourceType": "chapter",
       "count": 100,
       "strictEssentialAccuracyPct": 84,
-      "legacyFieldAveragePct": 97.14,
+      "legacyFieldAveragePct": 97.19,
       "fieldAccuracyPct": 96.25,
-      "averageRenderSimilarityPct": 96.71
+      "averageRenderSimilarityPct": 96.68
     },
     {
       "sourceType": "report",
       "count": 50,
-      "strictEssentialAccuracyPct": 80,
-      "legacyFieldAveragePct": 92.43,
-      "fieldAccuracyPct": 93.69,
-      "averageRenderSimilarityPct": 89.3
+      "strictEssentialAccuracyPct": 80.67,
+      "legacyFieldAveragePct": 92.7,
+      "fieldAccuracyPct": 93.91,
+      "averageRenderSimilarityPct": 89.27
     },
     {
       "sourceType": "book",
       "count": 100,
-      "strictEssentialAccuracyPct": 79,
-      "legacyFieldAveragePct": 95,
-      "fieldAccuracyPct": 93.5,
-      "averageRenderSimilarityPct": 83.5
+      "strictEssentialAccuracyPct": 79.67,
+      "legacyFieldAveragePct": 95.13,
+      "fieldAccuracyPct": 93.56,
+      "averageRenderSimilarityPct": 83.67
     },
     {
       "sourceType": "conference",
       "count": 150,
-      "strictEssentialAccuracyPct": 68.67,
-      "legacyFieldAveragePct": 89.4,
-      "fieldAccuracyPct": 90.07,
-      "averageRenderSimilarityPct": 93.01
+      "strictEssentialAccuracyPct": 68.89,
+      "legacyFieldAveragePct": 89.48,
+      "fieldAccuracyPct": 90.1,
+      "averageRenderSimilarityPct": 93.06
     }
   ],
   "byInputStyle": [
     {
       "inputStyle": "harvard",
       "count": 168,
-      "strictEssentialAccuracyPct": 87.5,
-      "legacyFieldAveragePct": 96.46,
-      "fieldAccuracyPct": 96.38,
-      "averageRenderSimilarityPct": 90.74
+      "strictEssentialAccuracyPct": 86.9,
+      "legacyFieldAveragePct": 96.34,
+      "fieldAccuracyPct": 96.27,
+      "averageRenderSimilarityPct": 90.86
     },
     {
       "inputStyle": "vancouver",
       "count": 159,
-      "strictEssentialAccuracyPct": 85.53,
-      "legacyFieldAveragePct": 93.14,
-      "fieldAccuracyPct": 93.38,
-      "averageRenderSimilarityPct": 91.39
+      "strictEssentialAccuracyPct": 84.91,
+      "legacyFieldAveragePct": 93.08,
+      "fieldAccuracyPct": 93.3,
+      "averageRenderSimilarityPct": 91.36
     },
     {
       "inputStyle": "chicago",
       "count": 170,
-      "strictEssentialAccuracyPct": 82.94,
-      "legacyFieldAveragePct": 95.85,
-      "fieldAccuracyPct": 95.78,
-      "averageRenderSimilarityPct": 87.69
+      "strictEssentialAccuracyPct": 83.73,
+      "legacyFieldAveragePct": 96.15,
+      "fieldAccuracyPct": 96.03,
+      "averageRenderSimilarityPct": 87.92
     },
     {
       "inputStyle": "apa",
       "count": 168,
-      "strictEssentialAccuracyPct": 82.74,
-      "legacyFieldAveragePct": 95.56,
-      "fieldAccuracyPct": 95.44,
-      "averageRenderSimilarityPct": 90.79
+      "strictEssentialAccuracyPct": 82.14,
+      "legacyFieldAveragePct": 95.35,
+      "fieldAccuracyPct": 95.2,
+      "averageRenderSimilarityPct": 90.84
     },
     {
       "inputStyle": "mla",
       "count": 176,
-      "strictEssentialAccuracyPct": 77.84,
-      "legacyFieldAveragePct": 94.06,
-      "fieldAccuracyPct": 93.8,
-      "averageRenderSimilarityPct": 89.63
+      "strictEssentialAccuracyPct": 78.03,
+      "legacyFieldAveragePct": 94.03,
+      "fieldAccuracyPct": 93.75,
+      "averageRenderSimilarityPct": 89.73
     },
     {
       "inputStyle": "ieee",
       "count": 159,
-      "strictEssentialAccuracyPct": 74.21,
-      "legacyFieldAveragePct": 93.49,
-      "fieldAccuracyPct": 93.03,
-      "averageRenderSimilarityPct": 89.98
+      "strictEssentialAccuracyPct": 74.84,
+      "legacyFieldAveragePct": 93.7,
+      "fieldAccuracyPct": 93.22,
+      "averageRenderSimilarityPct": 90.13
     }
   ],
   "byField": [
@@ -1054,14 +1209,14 @@
     },
     {
       "field": "doi",
-      "accuracyPct": 98.6,
-      "pass": 2958,
+      "accuracyPct": 98.47,
+      "pass": 2954,
       "total": 3000
     },
     {
       "field": "title",
-      "accuracyPct": 95.3,
-      "pass": 2859,
+      "accuracyPct": 95.5,
+      "pass": 2865,
       "total": 3000
     },
     {
@@ -1072,8 +1227,8 @@
     },
     {
       "field": "firstAuthor",
-      "accuracyPct": 93.5,
-      "pass": 2805,
+      "accuracyPct": 93.33,
+      "pass": 2800,
       "total": 3000
     },
     {
@@ -1084,20 +1239,20 @@
     },
     {
       "field": "referenceType",
-      "accuracyPct": 92.7,
-      "pass": 2781,
+      "accuracyPct": 92.6,
+      "pass": 2778,
       "total": 3000
     },
     {
       "field": "volume",
-      "accuracyPct": 92.22,
-      "pass": 1494,
+      "accuracyPct": 92.35,
+      "pass": 1496,
       "total": 1620
     },
     {
       "field": "pages",
-      "accuracyPct": 91.07,
-      "pass": 2019,
+      "accuracyPct": 91.2,
+      "pass": 2022,
       "total": 2217
     }
   ],
@@ -1154,7 +1309,7 @@
       "renderSimilarityPct": 62,
       "selectionMode": "single_survivor",
       "winnerAdapterId": "parser:selected_style:apa",
-      "selectionReason": "all_candidates_vetoed_fallback_to_best_available"
+      "selectionReason": "all_candidates_vetoed_fallback_to_best_available_llm_cap_reached"
     },
     {
       "batchSize": 50,
@@ -1244,27 +1399,6 @@
     {
       "batchSize": 50,
       "repeat": 1,
-      "recordId": "book-0055-10-22533-at-ed-409201303",
-      "sourceType": "book",
-      "inputStyle": "apa",
-      "perturbation": "doi-label",
-      "expectedTitle": "Aspectos Fitossanitários da Agricultura",
-      "actualTitle": "Aspectos Fitossanitários da Agricultura",
-      "expectedVenue": "Atena Editora",
-      "actualVenue": "Atena Editora",
-      "expectedApa": "Mônica Jasper. (2020). Aspectos Fitossanitários da Agricultura. Atena Editora. https://doi.org/10.22533/at.ed.409201303",
-      "actualApa": "Jasper, M. (2020). Aspectos Fitossanitários da Agricultura. Atena Editora.",
-      "mismatches": [
-        "firstAuthor"
-      ],
-      "renderSimilarityPct": 79,
-      "selectionMode": "full_scoring",
-      "winnerAdapterId": "heuristic:author_year_publisher_tail",
-      "selectionReason": "lexicographic_veto_coverage_contamination_consensus"
-    },
-    {
-      "batchSize": 50,
-      "repeat": 1,
       "recordId": "thesis-0001-10-17771-pucrio-acad-64355",
       "sourceType": "thesis",
       "inputStyle": "apa",
@@ -1281,7 +1415,7 @@
       "renderSimilarityPct": 83,
       "selectionMode": "full_scoring",
       "winnerAdapterId": "heuristic:apa_thesis",
-      "selectionReason": "lexicographic_veto_coverage_contamination_consensus"
+      "selectionReason": "lexicographic_veto_coverage_contamination_consensus_llm_cap_reached"
     },
     {
       "batchSize": 50,
@@ -1302,7 +1436,7 @@
       "renderSimilarityPct": 83,
       "selectionMode": "full_scoring",
       "winnerAdapterId": "heuristic:vancouver_publisher_year_source",
-      "selectionReason": "lexicographic_veto_coverage_contamination_consensus"
+      "selectionReason": "lexicographic_veto_coverage_contamination_consensus_with_llm_fill"
     },
     {
       "batchSize": 50,
@@ -1324,6 +1458,27 @@
       "selectionMode": "unanimous_diversity_guard",
       "winnerAdapterId": "parser:selected_style:vancouver",
       "selectionReason": "unanimous_diversity_guard"
+    },
+    {
+      "batchSize": 50,
+      "repeat": 1,
+      "recordId": "thesis-0033-10-47749-t-unicamp-2011-800745",
+      "sourceType": "thesis",
+      "inputStyle": "apa",
+      "perturbation": "base",
+      "expectedTitle": "Profilaxia antibiótica na biópsia prostática transretal: revisão sistemática com metanálise",
+      "actualTitle": "Profilaxia antibiótica na biópsia prostática transretal: revisão sistemática com metanálise",
+      "expectedVenue": "Universidade Estadual de Campinas",
+      "actualVenue": "Universidade Estadual de Campinas",
+      "expectedApa": "Luís Zani, E. (2021). Profilaxia antibiótica na biópsia prostática transretal: revisão sistemática com metanálise [Doctoral dissertation, Universidade Estadual de Campinas]. https://doi.org/10.47749/t/unicamp.2011.800745",
+      "actualApa": "Zani, L., & Emerson. (2021). Profilaxia antibiótica na biópsia prostática transretal: revisão sistemática com metanálise [Doctoral dissertation]. Universidade Estadual de Campinas.",
+      "mismatches": [
+        "firstAuthor"
+      ],
+      "renderSimilarityPct": 88,
+      "selectionMode": "full_scoring",
+      "winnerAdapterId": "heuristic:apa_thesis",
+      "selectionReason": "lexicographic_veto_coverage_contamination_consensus_with_llm_fill"
     },
     {
       "batchSize": 50,
@@ -1389,32 +1544,7 @@
       "renderSimilarityPct": 88,
       "selectionMode": "full_scoring",
       "winnerAdapterId": "heuristic:sentence_thesis",
-      "selectionReason": "lexicographic_veto_coverage_contamination_consensus"
-    },
-    {
-      "batchSize": 50,
-      "repeat": 1,
-      "recordId": "journal-0433-10-1002-chin-197210264",
-      "sourceType": "journal",
-      "inputStyle": "apa",
-      "perturbation": "base",
-      "expectedTitle": "ChemInform Abstract: BERBESSERTE SYNTH. VON 2‐CYAN‐AZIRIDINEN UND UNTERSUCHUNGEN ZU IHRER ISOMERISIERUNG",
-      "actualTitle": "Cheminform Abstract: BERBESSERTE Synth. VON 2‐cyan‐aziridinen UND UNTERSUCHUNGEN ZU IHRER ISOMERISIERUNG",
-      "expectedVenue": "Chemischer Informationsdienst",
-      "actualVenue": "Chemischer Informationsdienst, 3(10), chin.197210264",
-      "expectedApa": "GUNDERMANN, K., BURZIN, K., SPRENGER, F., & SCHULZE, H. (1972). ChemInform Abstract: BERBESSERTE SYNTH. VON 2‐CYAN‐AZIRIDINEN UND UNTERSUCHUNGEN ZU IHRER ISOMERISIERUNG. Chemischer Informationsdienst, 3(10), chin.197210264. https://doi.org/10.1002/chin.197210264",
-      "actualApa": "GUNDERMANN, KARL‐DIETRICH, BURZIN, FRANZ‐JOSEF, & SCHULZE. (1972). Cheminform Abstract: BERBESSERTE Synth. VON 2‐cyan‐aziridinen UND UNTERSUCHUNGEN ZU IHRER ISOMERISIERUNG. Chemischer Informationsdienst, 3(10), chin.197210264.",
-      "mismatches": [
-        "referenceType",
-        "venue",
-        "volume",
-        "issue",
-        "pages"
-      ],
-      "renderSimilarityPct": 88,
-      "selectionMode": "single_survivor",
-      "winnerAdapterId": "heuristic:author_year_publisher_tail",
-      "selectionReason": "all_candidates_vetoed_fallback_to_best_available"
+      "selectionReason": "lexicographic_veto_coverage_contamination_consensus_llm_cap_reached"
     },
     {
       "batchSize": 50,
@@ -1436,13 +1566,34 @@
       "selectionMode": "single_survivor",
       "winnerAdapterId": "heuristic:apa_journal",
       "selectionReason": "single_survivor_after_required_field_veto"
+    },
+    {
+      "batchSize": 50,
+      "repeat": 1,
+      "recordId": "journal-0394-10-14222-turkiyat4249",
+      "sourceType": "journal",
+      "inputStyle": "harvard",
+      "perturbation": "numbered-dot",
+      "expectedTitle": "Şîa'nın Siyasallaşma Sürecinde Seyyid Kıvâmeddin Marâşî",
+      "actualTitle": "Şîa'nın Siyasallaşma Sürecinde Seyyid Kıvâmeddin Marâşî",
+      "expectedVenue": "Journal of Turkish Research Institute",
+      "actualVenue": "Journal of Turkish Research Institute",
+      "expectedApa": "COŞKUN, D. (2020). Şîa’nın Siyasallaşma Sürecinde Seyyid Kıvâmeddin Marâşî. Journal of Turkish Research Institute, 67, 481–491. https://doi.org/10.14222/turkiyat4249",
+      "actualApa": "C. O.ŞK. U. N., D. (2020). Şîa'nın Siyasallaşma Sürecinde Seyyid Kıvâmeddin Marâşî. Journal of Turkish Research Institute, (67), 481-491.",
+      "mismatches": [
+        "issue"
+      ],
+      "renderSimilarityPct": 90,
+      "selectionMode": "full_scoring",
+      "winnerAdapterId": "heuristic:harvard_sentence_journal",
+      "selectionReason": "lexicographic_veto_coverage_contamination_consensus_with_llm_fill"
     }
   ],
   "strengths": [
     "The benchmark uses a frozen 1,000-reference real-world corpus, making reruns auditable and institution-friendly.",
     "Strict external readiness, internal legacy compatibility, and batch performance are separated instead of being collapsed into one misleading score.",
-    "thesis records performed best on the strict score at 92.00%.",
-    "The fastest operating point was the 100-citation batch at 11.17 citations/sec."
+    "thesis records performed best on the strict score at 89.33%.",
+    "The fastest operating point was the 200-citation batch at 5.08 citations/sec."
   ],
   "weaknesses": [
     "conference is the weakest strict source type and should stay in the next remediation wave.",
@@ -1475,10 +1626,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 3308.71,
-      "msPerCitation": 66.17,
-      "citationsPerSecond": 15.11,
-      "partialResult": false
+      "durationMs": 25815.28,
+      "msPerCitation": 516.31,
+      "citationsPerSecond": 1.94,
+      "partialResult": true
     },
     {
       "batchIndex": 1,
@@ -1486,10 +1637,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 49,
-      "durationMs": 1525.41,
-      "msPerCitation": 30.51,
-      "citationsPerSecond": 32.78,
-      "partialResult": false
+      "durationMs": 16900.59,
+      "msPerCitation": 338.01,
+      "citationsPerSecond": 2.96,
+      "partialResult": true
     },
     {
       "batchIndex": 2,
@@ -1497,10 +1648,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1578.36,
-      "msPerCitation": 31.57,
-      "citationsPerSecond": 31.68,
-      "partialResult": false
+      "durationMs": 20695.55,
+      "msPerCitation": 413.91,
+      "citationsPerSecond": 2.42,
+      "partialResult": true
     },
     {
       "batchIndex": 3,
@@ -1508,10 +1659,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1533.72,
-      "msPerCitation": 30.67,
-      "citationsPerSecond": 32.6,
-      "partialResult": false
+      "durationMs": 16307.3,
+      "msPerCitation": 326.15,
+      "citationsPerSecond": 3.07,
+      "partialResult": true
     },
     {
       "batchIndex": 4,
@@ -1519,10 +1670,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1244.47,
-      "msPerCitation": 24.89,
-      "citationsPerSecond": 40.18,
-      "partialResult": false
+      "durationMs": 14738.34,
+      "msPerCitation": 294.77,
+      "citationsPerSecond": 3.39,
+      "partialResult": true
     },
     {
       "batchIndex": 5,
@@ -1530,10 +1681,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1720.49,
-      "msPerCitation": 34.41,
-      "citationsPerSecond": 29.06,
-      "partialResult": false
+      "durationMs": 21651.64,
+      "msPerCitation": 433.03,
+      "citationsPerSecond": 2.31,
+      "partialResult": true
     },
     {
       "batchIndex": 6,
@@ -1541,10 +1692,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1676.76,
-      "msPerCitation": 33.54,
-      "citationsPerSecond": 29.82,
-      "partialResult": false
+      "durationMs": 20330.7,
+      "msPerCitation": 406.61,
+      "citationsPerSecond": 2.46,
+      "partialResult": true
     },
     {
       "batchIndex": 7,
@@ -1552,10 +1703,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1696.45,
-      "msPerCitation": 33.93,
-      "citationsPerSecond": 29.47,
-      "partialResult": false
+      "durationMs": 19031.7,
+      "msPerCitation": 380.63,
+      "citationsPerSecond": 2.63,
+      "partialResult": true
     },
     {
       "batchIndex": 8,
@@ -1563,10 +1714,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1581.63,
-      "msPerCitation": 31.63,
-      "citationsPerSecond": 31.61,
-      "partialResult": false
+      "durationMs": 17514.18,
+      "msPerCitation": 350.28,
+      "citationsPerSecond": 2.85,
+      "partialResult": true
     },
     {
       "batchIndex": 9,
@@ -1574,10 +1725,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1554.11,
-      "msPerCitation": 31.08,
-      "citationsPerSecond": 32.17,
-      "partialResult": false
+      "durationMs": 18844.18,
+      "msPerCitation": 376.88,
+      "citationsPerSecond": 2.65,
+      "partialResult": true
     },
     {
       "batchIndex": 10,
@@ -1585,10 +1736,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1274.7,
-      "msPerCitation": 25.49,
-      "citationsPerSecond": 39.23,
-      "partialResult": false
+      "durationMs": 18211.67,
+      "msPerCitation": 364.23,
+      "citationsPerSecond": 2.75,
+      "partialResult": true
     },
     {
       "batchIndex": 11,
@@ -1596,10 +1747,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 49,
-      "durationMs": 1530.34,
-      "msPerCitation": 30.61,
-      "citationsPerSecond": 32.67,
-      "partialResult": false
+      "durationMs": 19083.74,
+      "msPerCitation": 381.67,
+      "citationsPerSecond": 2.62,
+      "partialResult": true
     },
     {
       "batchIndex": 12,
@@ -1607,10 +1758,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1552.92,
-      "msPerCitation": 31.06,
-      "citationsPerSecond": 32.2,
-      "partialResult": false
+      "durationMs": 17525.79,
+      "msPerCitation": 350.52,
+      "citationsPerSecond": 2.85,
+      "partialResult": true
     },
     {
       "batchIndex": 13,
@@ -1618,10 +1769,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 2067.61,
-      "msPerCitation": 41.35,
-      "citationsPerSecond": 24.18,
-      "partialResult": false
+      "durationMs": 26792.5,
+      "msPerCitation": 535.85,
+      "citationsPerSecond": 1.87,
+      "partialResult": true
     },
     {
       "batchIndex": 14,
@@ -1629,10 +1780,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1400.55,
-      "msPerCitation": 28.01,
-      "citationsPerSecond": 35.7,
-      "partialResult": false
+      "durationMs": 17201.35,
+      "msPerCitation": 344.03,
+      "citationsPerSecond": 2.91,
+      "partialResult": true
     },
     {
       "batchIndex": 15,
@@ -1640,9 +1791,9 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1427.08,
-      "msPerCitation": 28.54,
-      "citationsPerSecond": 35.04,
+      "durationMs": 16309.8,
+      "msPerCitation": 326.2,
+      "citationsPerSecond": 3.07,
       "partialResult": false
     },
     {
@@ -1651,10 +1802,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1296.63,
-      "msPerCitation": 25.93,
-      "citationsPerSecond": 38.56,
-      "partialResult": false
+      "durationMs": 19219.39,
+      "msPerCitation": 384.39,
+      "citationsPerSecond": 2.6,
+      "partialResult": true
     },
     {
       "batchIndex": 17,
@@ -1662,10 +1813,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 48,
-      "durationMs": 1406.45,
-      "msPerCitation": 28.13,
-      "citationsPerSecond": 35.55,
-      "partialResult": false
+      "durationMs": 19186.68,
+      "msPerCitation": 383.73,
+      "citationsPerSecond": 2.61,
+      "partialResult": true
     },
     {
       "batchIndex": 18,
@@ -1673,10 +1824,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1545.52,
-      "msPerCitation": 30.91,
-      "citationsPerSecond": 32.35,
-      "partialResult": false
+      "durationMs": 17872.02,
+      "msPerCitation": 357.44,
+      "citationsPerSecond": 2.8,
+      "partialResult": true
     },
     {
       "batchIndex": 19,
@@ -1684,450 +1835,10 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1612.85,
-      "msPerCitation": 32.26,
-      "citationsPerSecond": 31,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 0,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1309.62,
-      "msPerCitation": 26.19,
-      "citationsPerSecond": 38.18,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 1,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 49,
-      "durationMs": 1343.97,
-      "msPerCitation": 26.88,
-      "citationsPerSecond": 37.2,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 2,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1350.43,
-      "msPerCitation": 27.01,
-      "citationsPerSecond": 37.03,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 3,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1406.7,
-      "msPerCitation": 28.13,
-      "citationsPerSecond": 35.54,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 4,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1231,
-      "msPerCitation": 24.62,
-      "citationsPerSecond": 40.62,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 5,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1692.18,
-      "msPerCitation": 33.84,
-      "citationsPerSecond": 29.55,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 6,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1629.56,
-      "msPerCitation": 32.59,
-      "citationsPerSecond": 30.68,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 7,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1644.64,
-      "msPerCitation": 32.89,
-      "citationsPerSecond": 30.4,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 8,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1564.66,
-      "msPerCitation": 31.29,
-      "citationsPerSecond": 31.96,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 9,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1507.91,
-      "msPerCitation": 30.16,
-      "citationsPerSecond": 33.16,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 10,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1242.09,
-      "msPerCitation": 24.84,
-      "citationsPerSecond": 40.25,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 11,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 49,
-      "durationMs": 1508.55,
-      "msPerCitation": 30.17,
-      "citationsPerSecond": 33.14,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 12,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1501.34,
-      "msPerCitation": 30.03,
-      "citationsPerSecond": 33.3,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 13,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1997.08,
-      "msPerCitation": 39.94,
-      "citationsPerSecond": 25.04,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 14,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1365.53,
-      "msPerCitation": 27.31,
-      "citationsPerSecond": 36.62,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 15,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1377.9,
-      "msPerCitation": 27.56,
-      "citationsPerSecond": 36.29,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 16,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1256,
-      "msPerCitation": 25.12,
-      "citationsPerSecond": 39.81,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 17,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 48,
-      "durationMs": 1384.53,
-      "msPerCitation": 27.69,
-      "citationsPerSecond": 36.11,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 18,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1499.48,
-      "msPerCitation": 29.99,
-      "citationsPerSecond": 33.34,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 19,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1587.38,
-      "msPerCitation": 31.75,
-      "citationsPerSecond": 31.5,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 0,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1277.43,
-      "msPerCitation": 25.55,
-      "citationsPerSecond": 39.14,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 1,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 49,
-      "durationMs": 1323.69,
-      "msPerCitation": 26.47,
-      "citationsPerSecond": 37.77,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 2,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1327.35,
-      "msPerCitation": 26.55,
-      "citationsPerSecond": 37.67,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 3,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1418.2,
-      "msPerCitation": 28.36,
-      "citationsPerSecond": 35.26,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 4,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1217.51,
-      "msPerCitation": 24.35,
-      "citationsPerSecond": 41.07,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 5,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1665.48,
-      "msPerCitation": 33.31,
-      "citationsPerSecond": 30.02,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 6,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1600.4,
-      "msPerCitation": 32.01,
-      "citationsPerSecond": 31.24,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 7,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1637.28,
-      "msPerCitation": 32.75,
-      "citationsPerSecond": 30.54,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 8,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1571.66,
-      "msPerCitation": 31.43,
-      "citationsPerSecond": 31.81,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 9,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1501.27,
-      "msPerCitation": 30.03,
-      "citationsPerSecond": 33.31,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 10,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1232.2,
-      "msPerCitation": 24.64,
-      "citationsPerSecond": 40.58,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 11,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 49,
-      "durationMs": 1490.85,
-      "msPerCitation": 29.82,
-      "citationsPerSecond": 33.54,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 12,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1503.65,
-      "msPerCitation": 30.07,
-      "citationsPerSecond": 33.25,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 13,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1986.15,
-      "msPerCitation": 39.72,
-      "citationsPerSecond": 25.17,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 14,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1348.23,
-      "msPerCitation": 26.96,
-      "citationsPerSecond": 37.09,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 15,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1395.4,
-      "msPerCitation": 27.91,
-      "citationsPerSecond": 35.83,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 16,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1279.69,
-      "msPerCitation": 25.59,
-      "citationsPerSecond": 39.07,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 17,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 48,
-      "durationMs": 1382.01,
-      "msPerCitation": 27.64,
-      "citationsPerSecond": 36.18,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 18,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1501.54,
-      "msPerCitation": 30.03,
-      "citationsPerSecond": 33.3,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 19,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1583.66,
-      "msPerCitation": 31.67,
-      "citationsPerSecond": 31.57,
-      "partialResult": false
+      "durationMs": 19662.96,
+      "msPerCitation": 393.26,
+      "citationsPerSecond": 2.54,
+      "partialResult": true
     },
     {
       "batchIndex": 0,
@@ -2135,10 +1846,10 @@
       "repeat": 1,
       "expectedCount": 100,
       "actualCount": 99,
-      "durationMs": 2638.9,
-      "msPerCitation": 26.39,
-      "citationsPerSecond": 37.89,
-      "partialResult": false
+      "durationMs": 27575.21,
+      "msPerCitation": 275.75,
+      "citationsPerSecond": 3.63,
+      "partialResult": true
     },
     {
       "batchIndex": 1,
@@ -2146,10 +1857,10 @@
       "repeat": 1,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 2738.65,
-      "msPerCitation": 27.39,
-      "citationsPerSecond": 36.51,
-      "partialResult": false
+      "durationMs": 27436.65,
+      "msPerCitation": 274.37,
+      "citationsPerSecond": 3.64,
+      "partialResult": true
     },
     {
       "batchIndex": 2,
@@ -2157,10 +1868,10 @@
       "repeat": 1,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 2903.71,
-      "msPerCitation": 29.04,
-      "citationsPerSecond": 34.44,
-      "partialResult": false
+      "durationMs": 25763.58,
+      "msPerCitation": 257.64,
+      "citationsPerSecond": 3.88,
+      "partialResult": true
     },
     {
       "batchIndex": 3,
@@ -2168,10 +1879,10 @@
       "repeat": 1,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 3283.34,
-      "msPerCitation": 32.83,
-      "citationsPerSecond": 30.46,
-      "partialResult": false
+      "durationMs": 28174.82,
+      "msPerCitation": 281.75,
+      "citationsPerSecond": 3.55,
+      "partialResult": true
     },
     {
       "batchIndex": 4,
@@ -2179,10 +1890,10 @@
       "repeat": 1,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 3069.01,
-      "msPerCitation": 30.69,
-      "citationsPerSecond": 32.58,
-      "partialResult": false
+      "durationMs": 26528.4,
+      "msPerCitation": 265.28,
+      "citationsPerSecond": 3.77,
+      "partialResult": true
     },
     {
       "batchIndex": 5,
@@ -2190,10 +1901,10 @@
       "repeat": 1,
       "expectedCount": 100,
       "actualCount": 99,
-      "durationMs": 2779.06,
-      "msPerCitation": 27.79,
-      "citationsPerSecond": 35.98,
-      "partialResult": false
+      "durationMs": 26031.68,
+      "msPerCitation": 260.32,
+      "citationsPerSecond": 3.84,
+      "partialResult": true
     },
     {
       "batchIndex": 6,
@@ -2201,10 +1912,10 @@
       "repeat": 1,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 3550.86,
-      "msPerCitation": 35.51,
-      "citationsPerSecond": 28.16,
-      "partialResult": false
+      "durationMs": 24443.12,
+      "msPerCitation": 244.43,
+      "citationsPerSecond": 4.09,
+      "partialResult": true
     },
     {
       "batchIndex": 7,
@@ -2212,10 +1923,10 @@
       "repeat": 1,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 2753.54,
-      "msPerCitation": 27.54,
-      "citationsPerSecond": 36.32,
-      "partialResult": false
+      "durationMs": 21339.68,
+      "msPerCitation": 213.4,
+      "citationsPerSecond": 4.69,
+      "partialResult": true
     },
     {
       "batchIndex": 8,
@@ -2223,10 +1934,10 @@
       "repeat": 1,
       "expectedCount": 100,
       "actualCount": 98,
-      "durationMs": 2667.54,
-      "msPerCitation": 26.68,
-      "citationsPerSecond": 37.49,
-      "partialResult": false
+      "durationMs": 27958.08,
+      "msPerCitation": 279.58,
+      "citationsPerSecond": 3.58,
+      "partialResult": true
     },
     {
       "batchIndex": 9,
@@ -2234,230 +1945,10 @@
       "repeat": 1,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 3166.41,
-      "msPerCitation": 31.66,
-      "citationsPerSecond": 31.58,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 0,
-      "batchSize": 100,
-      "repeat": 2,
-      "expectedCount": 100,
-      "actualCount": 99,
-      "durationMs": 2627.78,
-      "msPerCitation": 26.28,
-      "citationsPerSecond": 38.05,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 1,
-      "batchSize": 100,
-      "repeat": 2,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 2740.1,
-      "msPerCitation": 27.4,
-      "citationsPerSecond": 36.49,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 2,
-      "batchSize": 100,
-      "repeat": 2,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 2943.36,
-      "msPerCitation": 29.43,
-      "citationsPerSecond": 33.97,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 3,
-      "batchSize": 100,
-      "repeat": 2,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 3277.4,
-      "msPerCitation": 32.77,
-      "citationsPerSecond": 30.51,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 4,
-      "batchSize": 100,
-      "repeat": 2,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 3089.97,
-      "msPerCitation": 30.9,
-      "citationsPerSecond": 32.36,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 5,
-      "batchSize": 100,
-      "repeat": 2,
-      "expectedCount": 100,
-      "actualCount": 99,
-      "durationMs": 2754.81,
-      "msPerCitation": 27.55,
-      "citationsPerSecond": 36.3,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 6,
-      "batchSize": 100,
-      "repeat": 2,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 3537.47,
-      "msPerCitation": 35.37,
-      "citationsPerSecond": 28.27,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 7,
-      "batchSize": 100,
-      "repeat": 2,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 2820.9,
-      "msPerCitation": 28.21,
-      "citationsPerSecond": 35.45,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 8,
-      "batchSize": 100,
-      "repeat": 2,
-      "expectedCount": 100,
-      "actualCount": 98,
-      "durationMs": 2686.96,
-      "msPerCitation": 26.87,
-      "citationsPerSecond": 37.22,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 9,
-      "batchSize": 100,
-      "repeat": 2,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 3134.84,
-      "msPerCitation": 31.35,
-      "citationsPerSecond": 31.9,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 0,
-      "batchSize": 100,
-      "repeat": 3,
-      "expectedCount": 100,
-      "actualCount": 99,
-      "durationMs": 2671.27,
-      "msPerCitation": 26.71,
-      "citationsPerSecond": 37.44,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 1,
-      "batchSize": 100,
-      "repeat": 3,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 2759.63,
-      "msPerCitation": 27.6,
-      "citationsPerSecond": 36.24,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 2,
-      "batchSize": 100,
-      "repeat": 3,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 2946.11,
-      "msPerCitation": 29.46,
-      "citationsPerSecond": 33.94,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 3,
-      "batchSize": 100,
-      "repeat": 3,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 3292.71,
-      "msPerCitation": 32.93,
-      "citationsPerSecond": 30.37,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 4,
-      "batchSize": 100,
-      "repeat": 3,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 3117.24,
-      "msPerCitation": 31.17,
-      "citationsPerSecond": 32.08,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 5,
-      "batchSize": 100,
-      "repeat": 3,
-      "expectedCount": 100,
-      "actualCount": 99,
-      "durationMs": 2808.98,
-      "msPerCitation": 28.09,
-      "citationsPerSecond": 35.6,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 6,
-      "batchSize": 100,
-      "repeat": 3,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 3519.88,
-      "msPerCitation": 35.2,
-      "citationsPerSecond": 28.41,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 7,
-      "batchSize": 100,
-      "repeat": 3,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 2798.99,
-      "msPerCitation": 27.99,
-      "citationsPerSecond": 35.73,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 8,
-      "batchSize": 100,
-      "repeat": 3,
-      "expectedCount": 100,
-      "actualCount": 98,
-      "durationMs": 2688.7,
-      "msPerCitation": 26.89,
-      "citationsPerSecond": 37.19,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 9,
-      "batchSize": 100,
-      "repeat": 3,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 3728.81,
-      "msPerCitation": 37.29,
-      "citationsPerSecond": 26.82,
-      "partialResult": false
+      "durationMs": 25945.68,
+      "msPerCitation": 259.46,
+      "citationsPerSecond": 3.85,
+      "partialResult": true
     },
     {
       "batchIndex": 0,
@@ -2465,10 +1956,10 @@
       "repeat": 1,
       "expectedCount": 200,
       "actualCount": 199,
-      "durationMs": 5902.69,
-      "msPerCitation": 29.51,
-      "citationsPerSecond": 33.88,
-      "partialResult": false
+      "durationMs": 42059.47,
+      "msPerCitation": 210.3,
+      "citationsPerSecond": 4.76,
+      "partialResult": true
     },
     {
       "batchIndex": 1,
@@ -2476,10 +1967,10 @@
       "repeat": 1,
       "expectedCount": 200,
       "actualCount": 200,
-      "durationMs": 6591.27,
-      "msPerCitation": 32.96,
-      "citationsPerSecond": 30.34,
-      "partialResult": false
+      "durationMs": 40046.78,
+      "msPerCitation": 200.23,
+      "citationsPerSecond": 4.99,
+      "partialResult": true
     },
     {
       "batchIndex": 2,
@@ -2487,10 +1978,10 @@
       "repeat": 1,
       "expectedCount": 200,
       "actualCount": 199,
-      "durationMs": 6290.77,
-      "msPerCitation": 31.45,
-      "citationsPerSecond": 31.79,
-      "partialResult": false
+      "durationMs": 40221.74,
+      "msPerCitation": 201.11,
+      "citationsPerSecond": 4.97,
+      "partialResult": true
     },
     {
       "batchIndex": 3,
@@ -2498,9 +1989,9 @@
       "repeat": 1,
       "expectedCount": 200,
       "actualCount": 200,
-      "durationMs": 6643.63,
-      "msPerCitation": 33.22,
-      "citationsPerSecond": 30.1,
+      "durationMs": 34655.38,
+      "msPerCitation": 173.28,
+      "citationsPerSecond": 5.77,
       "partialResult": false
     },
     {
@@ -2509,120 +2000,10 @@
       "repeat": 1,
       "expectedCount": 200,
       "actualCount": 198,
-      "durationMs": 6492.67,
-      "msPerCitation": 32.46,
-      "citationsPerSecond": 30.8,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 0,
-      "batchSize": 200,
-      "repeat": 2,
-      "expectedCount": 200,
-      "actualCount": 199,
-      "durationMs": 5708.36,
-      "msPerCitation": 28.54,
-      "citationsPerSecond": 35.04,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 1,
-      "batchSize": 200,
-      "repeat": 2,
-      "expectedCount": 200,
-      "actualCount": 200,
-      "durationMs": 6595.74,
-      "msPerCitation": 32.98,
-      "citationsPerSecond": 30.32,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 2,
-      "batchSize": 200,
-      "repeat": 2,
-      "expectedCount": 200,
-      "actualCount": 199,
-      "durationMs": 6212.55,
-      "msPerCitation": 31.06,
-      "citationsPerSecond": 32.19,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 3,
-      "batchSize": 200,
-      "repeat": 2,
-      "expectedCount": 200,
-      "actualCount": 200,
-      "durationMs": 6684.82,
-      "msPerCitation": 33.42,
-      "citationsPerSecond": 29.92,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 4,
-      "batchSize": 200,
-      "repeat": 2,
-      "expectedCount": 200,
-      "actualCount": 198,
-      "durationMs": 6176.45,
-      "msPerCitation": 30.88,
-      "citationsPerSecond": 32.38,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 0,
-      "batchSize": 200,
-      "repeat": 3,
-      "expectedCount": 200,
-      "actualCount": 199,
-      "durationMs": 5754.55,
-      "msPerCitation": 28.77,
-      "citationsPerSecond": 34.76,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 1,
-      "batchSize": 200,
-      "repeat": 3,
-      "expectedCount": 200,
-      "actualCount": 200,
-      "durationMs": 6660.97,
-      "msPerCitation": 33.3,
-      "citationsPerSecond": 30.03,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 2,
-      "batchSize": 200,
-      "repeat": 3,
-      "expectedCount": 200,
-      "actualCount": 199,
-      "durationMs": 7261.17,
-      "msPerCitation": 36.31,
-      "citationsPerSecond": 27.54,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 3,
-      "batchSize": 200,
-      "repeat": 3,
-      "expectedCount": 200,
-      "actualCount": 200,
-      "durationMs": 7049.06,
-      "msPerCitation": 35.25,
-      "citationsPerSecond": 28.37,
-      "partialResult": false
-    },
-    {
-      "batchIndex": 4,
-      "batchSize": 200,
-      "repeat": 3,
-      "expectedCount": 200,
-      "actualCount": 198,
-      "durationMs": 6305.06,
-      "msPerCitation": 31.53,
-      "citationsPerSecond": 31.72,
-      "partialResult": false
+      "durationMs": 39711.49,
+      "msPerCitation": 198.56,
+      "citationsPerSecond": 5.04,
+      "partialResult": true
     }
   ]
 }
