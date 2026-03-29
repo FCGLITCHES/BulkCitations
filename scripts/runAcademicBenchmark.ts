@@ -63,7 +63,7 @@ type ActionNeededReasonCode =
   | 'empty_output'
   | 'identity_contamination';
 
-type BenchmarkModeId = 'strict_deterministic' | 'production_hybrid_extract';
+type BenchmarkModeId = 'primary_benchmark';
 
 type DominantFailureBucket =
   | 'missing_output'
@@ -399,13 +399,6 @@ export type AcademicBenchmarkReport = {
   cons: string[];
   recommendedExternalPilot: string[];
   batchRuns: BatchRunSummary[];
-  production_hybrid_extract?: (BenchmarkModeSummary & {
-    available: boolean;
-    deltaFromStrictDeterministic: {
-      strictEssentialAccuracyPctChange: number;
-      ieeeStrictEssentialAccuracyPctChange: number;
-    };
-  }) | undefined;
 };
 
 function createIdentityBuckets(): Record<IdentityContaminationCategory, number> {
@@ -447,8 +440,8 @@ function isTruthyEnv(value: string | undefined): boolean {
   return /^(1|true|yes|on)$/i.test(value ?? '');
 }
 
-function isAcademicBenchmarkHybridEnabled(): boolean {
-  return isTruthyEnv(process.env.ACADEMIC_BENCHMARK_ENABLE_HYBRID);
+function isAcademicBenchmarkLlmEnabled(): boolean {
+  return isTruthyEnv(process.env.ACADEMIC_BENCHMARK_ENABLE_LLM);
 }
 
 function isAcademicBenchmarkEnrichEnabled(): boolean {
@@ -989,7 +982,7 @@ function renderMarkdown(report: AcademicBenchmarkReport): string {
   lines.push('');
   lines.push('## Executive summary');
   lines.push('');
-  lines.push(`This internal benchmark evaluates ${report.corpusSize} real-world academic references across journals, conferences, books, chapters, reports, and theses. It runs the deterministic v2 engine in 50, 100, and 200 citation batches to mirror institutional use while separating strict external readiness from a legacy internal-compatibility score.`);
+  lines.push(`This internal benchmark evaluates ${report.corpusSize} real-world academic references across journals, conferences, books, chapters, reports, and theses. It runs the current v2 engine in 50, 100, and 200 citation batches to mirror institutional use while separating strict external readiness from a legacy internal-compatibility score.`);
   lines.push('');
   lines.push('## External Readiness Score (Primary)');
   lines.push('');
@@ -1005,7 +998,7 @@ function renderMarkdown(report: AcademicBenchmarkReport): string {
   lines.push('## LLM Fallback Diagnostics');
   lines.push('');
   lines.push(`- Enrichment opt-in: ${isAcademicBenchmarkEnrichEnabled() ? 'enabled' : 'disabled'}`);
-  lines.push(`- Hybrid benchmark opt-in: ${isAcademicBenchmarkHybridEnabled() ? 'enabled' : 'disabled'}`);
+  lines.push(`- LLM extract opt-in: ${isAcademicBenchmarkLlmEnabled() ? 'enabled' : 'disabled'}`);
   lines.push(`- Fallback attempts recorded in this primary report: ${report.fallbackRouting.attemptedCount}`);
   if (Object.keys(report.fallbackReasonCounts.rejected).length > 0) {
     for (const [reason, count] of Object.entries(report.fallbackReasonCounts.rejected).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))) {
@@ -1021,20 +1014,6 @@ function renderMarkdown(report: AcademicBenchmarkReport): string {
   lines.push(`- Methodology version: ${report.legacy_comparable.methodologyVersion}`);
   lines.push(`- Frozen at: ${report.legacy_comparable.frozenAt}`);
   lines.push('');
-  if (report.production_hybrid_extract) {
-    lines.push('## Production Hybrid Extract (Secondary Internal Mode)');
-    lines.push('');
-    lines.push(`- Strict essential accuracy: ${formatPercent(report.production_hybrid_extract.strict_external.essentialAccuracyPct)}`);
-    lines.push(`- Legacy-comparable field average: ${formatPercent(report.production_hybrid_extract.legacy_comparable.fieldAveragePct)}`);
-    lines.push(`- Fallback attempt rate: ${formatPercent(report.production_hybrid_extract.fallbackRouting.attemptRatePct)}`);
-    lines.push(`- Fallback accept rate: ${formatPercent(report.production_hybrid_extract.fallbackRouting.acceptRatePct)}`);
-    lines.push(`- Deterministic strict delta: ${formatPercent(report.production_hybrid_extract.deltaFromStrictDeterministic.strictEssentialAccuracyPctChange)}`);
-    lines.push(`- IEEE strict delta: ${formatPercent(report.production_hybrid_extract.deltaFromStrictDeterministic.ieeeStrictEssentialAccuracyPctChange)}`);
-    for (const [reason, count] of Object.entries(report.production_hybrid_extract.fallbackReasonCounts.rejected).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))) {
-      lines.push(`- Hybrid rejected ${reason}: ${count}`);
-    }
-    lines.push('');
-  }
   lines.push('Footnote: The primary score uses strict citation-level pass/fail on core fields plus identity and output integrity. The secondary score is a frozen internal field-average reference for historical comparison only and must not be cited as the external readiness number.');
   lines.push('');
   lines.push('## Action Needed Reasons');
@@ -1236,8 +1215,9 @@ async function runAcademicBenchmarkMode(
   const llmFallbackAcceptedReasons = new Map<string, number>();
   const llmFallbackRejectedReasons = new Map<string, number>();
 
+  const llmEnabled = isAcademicBenchmarkLlmEnabled();
   process.env.ENABLE_GROBID_EXTRACTOR = '0';
-  process.env.ENABLE_LLM_EXTRACTOR = mode === 'production_hybrid_extract' ? '1' : '0';
+  process.env.ENABLE_LLM_EXTRACTOR = llmEnabled ? '1' : '0';
   if (enrichEnabled) {
     if (!previousEnrichConcurrency) process.env.V2_ENRICH_CONCURRENCY = '8';
     if (!previousEnrichCitationTimeoutMs) process.env.V2_ENRICH_CITATION_TIMEOUT_MS = '500';
@@ -1671,7 +1651,7 @@ async function runAcademicBenchmarkMode(
   ];
 
   const cons = [
-    'The deterministic benchmark disables enrichment, LLM extraction, and GROBID, so it is intentionally tougher than an assisted production path.',
+    'LLM extraction and GROBID can be toggled for the primary benchmark, so benchmark claims must always be read alongside the reported run flags.',
     'The legacy-comparable score is higher by design and must not be used as a readiness claim.',
     'The benchmark is still internal; an external validation round would increase procurement credibility.',
     'This release is scoped to academic references and does not cover websites, patents, statutes, or datasets.',
@@ -1707,7 +1687,7 @@ async function runAcademicBenchmarkMode(
 
   const result: BenchmarkModeSummary = {
     mode,
-    llmExtractEnabled: mode === 'production_hybrid_extract',
+    llmExtractEnabled: llmEnabled,
     corpusSize: corpus.records.length,
     ieeeCorpusCount,
     repeats: REPEATS,
@@ -1810,80 +1790,66 @@ async function runAcademicBenchmarkMode(
 }
 
 export async function runAcademicBenchmark(options?: {
-  deterministicAdapters?: V2AdapterBundle;
-  hybridAdapters?: V2AdapterBundle;
+  adapters?: V2AdapterBundle;
 }): Promise<AcademicBenchmarkReport> {
-  const deterministic = await runAcademicBenchmarkMode('strict_deterministic', {
-    adapters: options?.deterministicAdapters ?? createDefaultAdapters(),
+  const primary = await runAcademicBenchmarkMode('primary_benchmark', {
+    adapters: options?.adapters ?? createDefaultAdapters(),
   });
-  const hybridAvailable = isAcademicBenchmarkHybridEnabled() && Boolean(process.env.OPENAI_API_KEY);
-  const hybrid = hybridAvailable
-    ? await runAcademicBenchmarkMode('production_hybrid_extract', {
-      adapters: options?.hybridAdapters ?? createDefaultAdapters(),
-    })
-    : undefined;
 
   return {
     generatedAt: new Date().toISOString(),
     corpusPath: CORPUS_PATH,
-    corpusSize: deterministic.corpusSize,
-    ieeeCorpusCount: deterministic.ieeeCorpusCount,
-    repeats: deterministic.repeats,
+    corpusSize: primary.corpusSize,
+    ieeeCorpusCount: primary.ieeeCorpusCount,
+    repeats: primary.repeats,
     methodology: {
       source: 'Crossref public works metadata frozen into a local JSON corpus.',
-      frozenAt: deterministic.overall.retrievalDate,
+      frozenAt: primary.overall.retrievalDate,
       groundTruth: 'Canonical metadata fields plus APA bibliography output rendered from frozen CSL JSON.',
-      scope: Array.from(new Set(deterministic.bySourceType.map((entry) => entry.sourceType))),
+      scope: Array.from(new Set(primary.bySourceType.map((entry) => entry.sourceType))),
       notes: [
         'The corpus contains 1,000 real citations drawn from Crossref and frozen locally on the generation date shown above.',
         isAcademicBenchmarkEnrichEnabled()
-          ? 'The primary score uses the deterministic v2 pipeline with enrichment enabled and LLM extraction and GROBID disabled.'
-          : 'The primary score uses the deterministic v2 pipeline with enrichment, LLM extraction, and GROBID disabled for repeatability.',
-        'The secondary hybrid run enables GPT-5.4 nano extract fallback only when ACADEMIC_BENCHMARK_ENABLE_HYBRID=1; it is reported separately and must not replace the deterministic business-facing KPI.',
+          ? (isAcademicBenchmarkLlmEnabled()
+            ? 'The primary score uses the v2 pipeline with enrichment enabled, GPT-5.4 nano extract fallback enabled, and GROBID disabled.'
+            : 'The primary score uses the deterministic v2 pipeline with enrichment enabled, LLM extraction disabled, and GROBID disabled.')
+          : (isAcademicBenchmarkLlmEnabled()
+            ? 'The primary score uses the v2 pipeline with enrichment disabled, GPT-5.4 nano extract fallback enabled, and GROBID disabled.'
+            : 'The primary score uses the deterministic v2 pipeline with enrichment, LLM extraction, and GROBID disabled for repeatability.'),
         'Strict external readiness requires referenceType, year, title, firstAuthor, venue, non-empty output, and identity integrity to all pass.',
         'The legacy-comparable score is a frozen field-average reference for internal comparison only.',
       ],
     },
-    strict_external: deterministic.strict_external,
-    legacy_comparable: deterministic.legacy_comparable,
-    overall: deterministic.overall,
-    countIntegrityPct: deterministic.countIntegrityPct,
-    nonEmptyOutputPct: deterministic.nonEmptyOutputPct,
-    identityIntegrityPct: deterministic.identityIntegrityPct,
-    identityContaminationCount: deterministic.identityContaminationCount,
-    identityContaminationByCategory: deterministic.identityContaminationByCategory,
-    actionNeededReasonCounts: deterministic.actionNeededReasonCounts,
-    validationIssueCounts: deterministic.validationIssueCounts,
-    missingRequiredFieldCounts: deterministic.missingRequiredFieldCounts,
-    dominantFailureLedger: deterministic.dominantFailureLedger,
-    nearPassLedger: deterministic.nearPassLedger,
-    weightedLiftModel: deterministic.weightedLiftModel,
-    fallbackRouting: deterministic.fallbackRouting,
-    fallbackReasonCounts: deterministic.fallbackReasonCounts,
-    ieeeFailureBreakdown: deterministic.ieeeFailureBreakdown,
-    typeConfusionMatrix: deterministic.typeConfusionMatrix,
-    selectorDiagnostics: deterministic.selectorDiagnostics,
-    byBatchSize: deterministic.byBatchSize,
-    bySourceType: deterministic.bySourceType,
-    byInputStyle: deterministic.byInputStyle,
-    byField: deterministic.byField,
-    sampleFailures: deterministic.sampleFailures,
-    strengths: deterministic.strengths,
-    weaknesses: deterministic.weaknesses,
-    pros: deterministic.pros,
-    cons: deterministic.cons,
-    recommendedExternalPilot: deterministic.recommendedExternalPilot,
-    batchRuns: deterministic.batchRuns,
-    production_hybrid_extract: hybrid
-      ? {
-          ...hybrid,
-          available: true,
-          deltaFromStrictDeterministic: {
-            strictEssentialAccuracyPctChange: Number((hybrid.strict_external.essentialAccuracyPct - deterministic.strict_external.essentialAccuracyPct).toFixed(2)),
-            ieeeStrictEssentialAccuracyPctChange: Number((((hybrid.byInputStyle.find((entry) => entry.inputStyle === 'ieee')?.strictEssentialAccuracyPct ?? 0) - (deterministic.byInputStyle.find((entry) => entry.inputStyle === 'ieee')?.strictEssentialAccuracyPct ?? 0))).toFixed(2)),
-          },
-        }
-      : undefined,
+    strict_external: primary.strict_external,
+    legacy_comparable: primary.legacy_comparable,
+    overall: primary.overall,
+    countIntegrityPct: primary.countIntegrityPct,
+    nonEmptyOutputPct: primary.nonEmptyOutputPct,
+    identityIntegrityPct: primary.identityIntegrityPct,
+    identityContaminationCount: primary.identityContaminationCount,
+    identityContaminationByCategory: primary.identityContaminationByCategory,
+    actionNeededReasonCounts: primary.actionNeededReasonCounts,
+    validationIssueCounts: primary.validationIssueCounts,
+    missingRequiredFieldCounts: primary.missingRequiredFieldCounts,
+    dominantFailureLedger: primary.dominantFailureLedger,
+    nearPassLedger: primary.nearPassLedger,
+    weightedLiftModel: primary.weightedLiftModel,
+    fallbackRouting: primary.fallbackRouting,
+    fallbackReasonCounts: primary.fallbackReasonCounts,
+    ieeeFailureBreakdown: primary.ieeeFailureBreakdown,
+    typeConfusionMatrix: primary.typeConfusionMatrix,
+    selectorDiagnostics: primary.selectorDiagnostics,
+    byBatchSize: primary.byBatchSize,
+    bySourceType: primary.bySourceType,
+    byInputStyle: primary.byInputStyle,
+    byField: primary.byField,
+    sampleFailures: primary.sampleFailures,
+    strengths: primary.strengths,
+    weaknesses: primary.weaknesses,
+    pros: primary.pros,
+    cons: primary.cons,
+    recommendedExternalPilot: primary.recommendedExternalPilot,
+    batchRuns: primary.batchRuns,
   };
 }
 
@@ -1898,15 +1864,9 @@ async function main(): Promise<void> {
     outputMarkdown: OUTPUT_MD,
     strict_external: report.strict_external,
     legacy_comparable: report.legacy_comparable,
-    production_hybrid_extract: report.production_hybrid_extract
-      ? {
-        strict_external: report.production_hybrid_extract.strict_external,
-        legacy_comparable: report.production_hybrid_extract.legacy_comparable,
-        fallbackRouting: report.production_hybrid_extract.fallbackRouting,
-        fallbackReasonCounts: report.production_hybrid_extract.fallbackReasonCounts,
-        deltaFromStrictDeterministic: report.production_hybrid_extract.deltaFromStrictDeterministic,
-      }
-      : undefined,
+    llmExtractEnabled: isAcademicBenchmarkLlmEnabled(),
+    fallbackRouting: report.fallbackRouting,
+    fallbackReasonCounts: report.fallbackReasonCounts,
     byBatchSize: report.byBatchSize,
   }, null, 2));
 }

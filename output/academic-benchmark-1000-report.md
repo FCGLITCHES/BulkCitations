@@ -1,6 +1,6 @@
 # Academic Benchmark Report
 
-Generated: 2026-03-29T12:09:27.370Z
+Generated: 2026-03-29T13:17:14.041Z
 Frozen corpus: 2026-03-27T12:11:27.113Z
 Corpus size: 1000 real citations
 IEEE slice: 159 citations per corpus run
@@ -8,29 +8,29 @@ Machine-readable report: D:\Coding\Citing\output\academic-benchmark-1000-report.
 
 ## Executive summary
 
-This internal benchmark evaluates 1000 real-world academic references across journals, conferences, books, chapters, reports, and theses. It runs the deterministic v2 engine in 50, 100, and 200 citation batches to mirror institutional use while separating strict external readiness from a legacy internal-compatibility score.
+This internal benchmark evaluates 1000 real-world academic references across journals, conferences, books, chapters, reports, and theses. It runs the current v2 engine in 50, 100, and 200 citation batches to mirror institutional use while separating strict external readiness from a legacy internal-compatibility score.
 
 ## External Readiness Score (Primary)
 
-- Strict essential accuracy: 81.87%
+- Strict essential accuracy: 81.80%
 - Count integrity: 99.60%
 - Non-empty output rate: 99.60%
 - Identity integrity: 99.60%
 - Identity contamination count: 0
-- Consistency: 96.39%
-- Average APA render similarity: 90.32%
+- Consistency: 100.00%
+- Average APA render similarity: 90.02%
 - LLM fallback attempt rate: 0.00%
 
 ## LLM Fallback Diagnostics
 
-- Enrichment opt-in: enabled
-- Hybrid benchmark opt-in: disabled
+- Enrichment opt-in: disabled
+- LLM extract opt-in: disabled
 - Fallback attempts recorded in this primary report: 0
 - Rejected reasons: none recorded in this run
 
 ## Internal Compatibility Reference (Secondary)
 
-- Legacy-comparable field average: 95.02%
+- Legacy-comparable field average: 94.77%
 - Methodology version: 1.0
 - Frozen at: 2026-03-27
 
@@ -38,72 +38,71 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 
 ## Action Needed Reasons
 
-- Overall multi_field_low_confidence: 141
-- Overall weak_venue: 27
-- Overall weak_reference_type: 21
+- Overall multi_field_low_confidence: 111
+- Overall weak_venue: 21
 - Overall empty_output: 12
 - Overall missing_authors: 12
-- Overall weak_first_author: 12
-- Overall malformed_authors: 5
+- Overall weak_reference_type: 12
+- Overall weak_first_author: 6
+- Overall malformed_authors: 3
 - Overall identity_contamination: 0
 
-- IEEE multi_field_low_confidence: 45
+- IEEE multi_field_low_confidence: 42
 - IEEE empty_output: 6
 - IEEE missing_authors: 6
-- IEEE weak_venue: 4
+- IEEE weak_venue: 6
 - IEEE weak_first_author: 3
 - IEEE weak_reference_type: 3
 - IEEE identity_contamination: 0
 - IEEE malformed_authors: 0
 
-- Near-pass multi_field_low_confidence: 126
-- Near-pass weak_venue: 24
-- Near-pass weak_reference_type: 21
-- Near-pass weak_first_author: 9
-- Near-pass malformed_authors: 5
+- Near-pass multi_field_low_confidence: 99
+- Near-pass weak_venue: 21
+- Near-pass weak_reference_type: 12
+- Near-pass weak_first_author: 6
+- Near-pass malformed_authors: 3
 - Near-pass empty_output: 0
 - Near-pass identity_contamination: 0
 - Near-pass missing_authors: 0
 
 ## Dominant Failure Ledger
 
-- residual_other: 64 (34.59%)
-- venue_cleanup: 41 (22.16%)
-- conference_container_type: 32 (17.30%)
-- ieee_author_order: 20 (10.81%)
-- pages_locator: 11 (5.95%)
-- report_institution_type: 7 (3.78%)
-- apa_author_order: 6 (3.24%)
-- missing_output: 4 (2.16%)
+- residual_other: 64 (35.16%)
+- venue_cleanup: 38 (20.88%)
+- conference_container_type: 32 (17.58%)
+- ieee_author_order: 20 (10.99%)
+- pages_locator: 11 (6.04%)
+- report_institution_type: 7 (3.85%)
+- apa_author_order: 6 (3.30%)
+- missing_output: 4 (2.20%)
 - identity_contamination: 0 (0.00%)
 
 ## Near-Pass Ledger
 
-- referenceType: 48 (25.95%)
-- firstAuthor: 45 (24.32%)
-- venue: 27 (14.59%)
-- title: 7 (3.78%)
-- year: 2 (1.08%)
+- referenceType: 48 (26.37%)
+- firstAuthor: 45 (24.73%)
+- venue: 24 (13.19%)
+- title: 7 (3.85%)
+- year: 2 (1.10%)
 - identity: 0 (0.00%)
 - output: 0 (0.00%)
 
 ## Weighted Lift Model
 
-- Current strict external accuracy: 81.87%
+- Current strict external accuracy: 81.80%
 - Target strict external accuracy: 90.00%
-- Remaining gap: 8.13%
+- Remaining gap: 8.20%
 - Source journal: share 55.00%, strict 84.73%, weighted headroom 8.40%
-- Source conference: share 15.00%, strict 70.00%, weighted headroom 4.50%
-- Source book: share 10.00%, strict 77.00%, weighted headroom 2.30%
-- Source chapter: share 10.00%, strict 84.67%, weighted headroom 1.53%
+- Source conference: share 15.00%, strict 68.67%, weighted headroom 4.70%
+- Source book: share 10.00%, strict 79.00%, weighted headroom 2.10%
+- Source chapter: share 10.00%, strict 84.00%, weighted headroom 1.60%
 - Source report: share 5.00%, strict 80.00%, weighted headroom 1.00%
 - Source thesis: share 5.00%, strict 92.00%, weighted headroom 0.40%
 
 ## Methodology
 
 - The corpus contains 1,000 real citations drawn from Crossref and frozen locally on the generation date shown above.
-- The primary score uses the deterministic v2 pipeline with enrichment enabled and LLM extraction and GROBID disabled.
-- The secondary hybrid run enables GPT-5.4 nano extract fallback only when ACADEMIC_BENCHMARK_ENABLE_HYBRID=1; it is reported separately and must not replace the deterministic business-facing KPI.
+- The primary score uses the deterministic v2 pipeline with enrichment, LLM extraction, and GROBID disabled for repeatability.
 - Strict external readiness requires referenceType, year, title, firstAuthor, venue, non-empty output, and identity integrity to all pass.
 - The legacy-comparable score is a frozen field-average reference for internal comparison only.
 
@@ -117,47 +116,47 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 - Non-empty output rate: 99.60%
 - Identity integrity: 99.60%
 - Identity contamination count: 0
-- Consistency: 89.16%
-- Mean batch time: 3342.08 ms
-- Median batch time: 2281.94 ms
-- P95 batch time: 6709.42 ms
-- Mean ms per citation: 66.84 ms
-- Throughput: 4.99 citations/sec
+- Consistency: 100.00%
+- Mean batch time: 1519.65 ms
+- Median batch time: 1501.44 ms
+- P95 batch time: 1986.15 ms
+- Mean ms per citation: 30.39 ms
+- Throughput: 10.97 citations/sec
 
 ### Batch size 100
 
-- Strict essential accuracy: 81.90%
-- Legacy field average: 95.14%
+- Strict essential accuracy: 81.80%
+- Legacy field average: 94.77%
 - Count integrity: 99.60%
 - Non-empty output rate: 99.60%
 - Identity integrity: 99.60%
 - Identity contamination count: 0
 - Consistency: 100.00%
-- Mean batch time: 3812.32 ms
-- Median batch time: 3809.93 ms
-- P95 batch time: 4813.63 ms
-- Mean ms per citation: 38.12 ms
-- Throughput: 8.74 citations/sec
+- Mean batch time: 2983.23 ms
+- Median batch time: 2862.31 ms
+- P95 batch time: 3550.86 ms
+- Mean ms per citation: 29.83 ms
+- Throughput: 11.17 citations/sec
 
 ### Batch size 200
 
-- Strict essential accuracy: 81.90%
-- Legacy field average: 95.14%
+- Strict essential accuracy: 81.80%
+- Legacy field average: 94.77%
 - Count integrity: 99.60%
 - Non-empty output rate: 99.60%
 - Identity integrity: 99.60%
 - Identity contamination count: 0
 - Consistency: 100.00%
-- Mean batch time: 7752.35 ms
-- Median batch time: 7677.27 ms
-- P95 batch time: 8399.53 ms
-- Mean ms per citation: 38.76 ms
-- Throughput: 8.60 citations/sec
+- Mean batch time: 6421.98 ms
+- Median batch time: 6492.67 ms
+- P95 batch time: 7261.17 ms
+- Mean ms per citation: 32.11 ms
+- Throughput: 10.38 citations/sec
 
 ## IEEE failure breakdown
 
 - author_order: 54
-- venue_abbreviation: 17
+- venue_abbreviation: 21
 - locator_misclassified: 0
 - doi_parse: 0
 - reference_type: 42
@@ -193,7 +192,7 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 - The benchmark uses a frozen 1,000-reference real-world corpus, making reruns auditable and institution-friendly.
 - Strict external readiness, internal legacy compatibility, and batch performance are separated instead of being collapsed into one misleading score.
 - thesis records performed best on the strict score at 92.00%.
-- The fastest operating point was the 100-citation batch at 8.74 citations/sec.
+- The fastest operating point was the 100-citation batch at 11.17 citations/sec.
 
 ## Weaknesses
 
@@ -211,7 +210,7 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 
 ## Cons
 
-- The deterministic benchmark disables enrichment, LLM extraction, and GROBID, so it is intentionally tougher than an assisted production path.
+- LLM extraction and GROBID can be toggled for the primary benchmark, so benchmark claims must always be read alongside the reported run flags.
 - The legacy-comparable score is higher by design and must not be used as a readiness claim.
 - The benchmark is still internal; an external validation round would increase procurement credibility.
 - This release is scoped to academic references and does not cover websites, patents, statutes, or datasets.

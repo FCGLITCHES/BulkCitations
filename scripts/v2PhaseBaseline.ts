@@ -166,7 +166,7 @@ async function collectManifest(): Promise<BaselineManifest> {
   const controlledAdapters = createDefaultAdapters();
 
   const academic = await withStepTimeout('academic_benchmark', () => runAcademicBenchmark({
-    deterministicAdapters: academicAdapters,
+    adapters: academicAdapters,
   }));
   const structured = await withStepTimeout('controlled_structured', () => measureReadyMode('structured', controlledAdapters));
   const semiStructured = await withStepTimeout('controlled_semi_structured', () => measureReadyMode('semi_structured', controlledAdapters));
