@@ -86,6 +86,30 @@ describe('llm extraction schema', () => {
     });
   });
 
+  it('normalizes mixed author payload shapes that GPT often returns', () => {
+    const parsed = parseLlmExtraction({
+      referenceType: 'book',
+      authors: [
+        { first: 'Ian', last: 'Goodfellow', initials: 'I.', literal: 'Goodfellow, I.' },
+        'Yoshua Bengio',
+        { first: 'Aaron', last: 'Courville', initials: 'A.' },
+      ],
+      title: 'Deep Learning',
+      year: 2016,
+      publisher: 'MIT Press',
+      placeOfPublication: 'Cambridge, MA',
+      edition: null,
+      doi: null,
+      url: null,
+    });
+
+    expect(parsed.authors).toEqual([
+      { first: 'Ian', last: 'Goodfellow', initials: 'I.', literal: 'Goodfellow, I.' },
+      { first: 'Yoshua', last: 'Bengio', initials: 'Y.' },
+      { first: 'Aaron', last: 'Courville', initials: 'A.' },
+    ]);
+  });
+
   it('rejects malformed or inconsistent author payloads', () => {
     expect(() => parseLlmExtraction({
       referenceType: 'journal',
@@ -101,24 +125,11 @@ describe('llm extraction schema', () => {
     })).toThrow();
 
     expect(() => parseLlmExtraction({
-      referenceType: 'journal',
-      authors: ['Jane Doe'],
-      title: 'Bad author array example',
-      year: 2024,
-      journal: 'Example Journal',
-      volume: '1',
-      issue: '1',
-      pages: '1-2',
-      doi: null,
-      url: null,
-    })).toThrow();
-
-    expect(() => parseLlmExtraction({
       referenceType: 'report',
       authors: [{
-        first: 'World',
+        first: null,
         last: 'World Health Organization',
-        initials: 'WHO',
+        initials: null,
         literal: 'WHO',
       }],
       title: 'Bad group author example',

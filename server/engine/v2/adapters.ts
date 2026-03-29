@@ -1,10 +1,12 @@
 // @ts-nocheck
 import { Buffer } from 'node:buffer';
+import fs from 'node:fs';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import pLimit from 'p-limit';
 import { getAuthorityData } from '@shared/authorityLookup';
 import type {
   CanonicalAuthor,
+  CanonicalReferenceType,
   CitationStyle,
   ParsedReference,
   V2ConversionResponse,
@@ -40,11 +42,9 @@ import {
   sanitizeParsedReference,
 } from './qualityRules.js';
 import {
-  getMaxExtractConcurrentFallbackCalls,
-  getMaxExtractFallbackCallsForBatch,
   getOpenAiExtractModel,
   getOpenAiExtractTimeoutMs,
-  tryConsumeLlmCall,
+  reserveExtractFallbackCall,
 } from './llmConfig.js';
 import {
   extractJsonContent,
@@ -54,6 +54,9 @@ import {
 } from './llmExtraction.js';
 import { assessCandidatePlausibility } from './fieldPlausibility.js';
 import { buildContainerHints, resolveWinnerContainer } from './containerHints.js';
+import { resolveConferenceContainer } from './conferenceResolver.js';
+import { resolveReportMetadata } from './reportResolver.js';
+import { normalizeAuthorsForProvenance } from './authorProvenance.js';
 import {
   buildNormalizedKeyFields,
   selectExtractionCandidate,
@@ -65,6 +68,28 @@ import {
   areReferenceTypesMergeCompatible,
   resolveReferenceTypeFromEvidence,
 } from './typeResolution.js';
+import { repairSelectedParsedReference } from './selectionRepairs.js';
+import {
+  applyClusterReuseFields,
+  buildFallbackQueuePriority,
+  buildSingleTargetIdentifierFingerprint,
+  canRetryFallbackAttempt,
+  classifyLlmAttemptError,
+  clearInflightCachePromise,
+  clearInflightClusterPromise,
+  computeFallbackCacheKey,
+  computeFallbackClusterKey,
+  getFallbackAttemptHistory,
+  getInflightCachePromise,
+  getInflightClusterPromise,
+  getPersistedClusterReuse,
+  isFieldStructurallyCorrupt,
+  recordAcceptedClusterReuse,
+  recordFallbackAttemptHistory,
+  resolveTruthStateForFallback,
+  setInflightCachePromise,
+  setInflightClusterPromise,
+} from './llmFallbackPolicy.js';
 import type {
   AuthorityLookupAdapter,
   CacheAdapter,
@@ -156,6 +181,15 @@ function getParser(): CitationParser {
 function readPositiveIntEnv(name: string, fallback: number): number {
   const parsed = Number.parseInt(process.env[name] ?? '', 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function getLocalExtractFallbackCallsForBatch(batchSize: number): number {
+  const normalizedBatchSize = Math.max(batchSize, 1);
+  const perBatchCap = Math.min(readPositiveIntEnv('V2_EXTRACT_FALLBACK_MAX_CALLS_PER_BATCH', 75), 75);
+  const configuredRate = Number.parseFloat(process.env.V2_EXTRACT_FALLBACK_MAX_RATE_PER_BATCH ?? '');
+  const maxRate = Number.isFinite(configuredRate) && configuredRate > 0 ? configuredRate : 0.15;
+  const rateLimitedCap = Math.max(1, Math.ceil(normalizedBatchSize * maxRate));
+  return Math.min(rateLimitedCap, perBatchCap);
 }
 
 function isTruthyEnv(value: string | undefined): boolean {
@@ -683,6 +717,76 @@ type PreparedExtractionCandidate = ParsedSelectionCandidate & {
   plausibility: ReturnType<typeof assessCandidatePlausibility>;
 };
 
+function finalizeSelectedParse(
+  parsed: ParsedReference,
+  referenceType: CanonicalReferenceType,
+  detectTypeHint: CanonicalReferenceType | null,
+  rawNormalized?: string,
+): {
+  parsed: ParsedReference;
+  referenceType: CanonicalReferenceType;
+  containerHints: ReturnType<typeof buildContainerHints>;
+  typeResolution: ReturnType<typeof resolveReferenceTypeFromEvidence>;
+  repairReasons: string[];
+} {
+  let nextReferenceType = referenceType;
+  let resolvedContainer = resolveWinnerContainer(parsed, nextReferenceType);
+  let nextParsed = resolvedContainer.parsed;
+  let typeResolution = resolveReferenceTypeFromEvidence({
+    claimedType: nextReferenceType,
+    parsed: nextParsed,
+    containerHints: resolvedContainer.containerHints,
+    detectTypeHint,
+  });
+  nextReferenceType = typeResolution.referenceType;
+
+  const repaired = repairSelectedParsedReference({
+    parsed: nextParsed,
+    referenceType: nextReferenceType,
+  });
+  nextParsed = repaired.parsed;
+  nextReferenceType = repaired.referenceType;
+
+  const conferenceResolved = resolveConferenceContainer({
+    parsed: nextParsed,
+    referenceType: nextReferenceType,
+    rawNormalized,
+  });
+  nextParsed = conferenceResolved.parsed;
+  nextReferenceType = conferenceResolved.referenceType;
+
+  const reportResolved = resolveReportMetadata({
+    parsed: nextParsed,
+    referenceType: nextReferenceType,
+    rawNormalized,
+  });
+  nextParsed = reportResolved.parsed;
+  nextReferenceType = reportResolved.referenceType;
+
+  const sanitized = sanitizeParsedReference(nextParsed, nextReferenceType);
+  nextParsed = normalizeAuthorOptionalWebsiteParse(sanitized.parsed, sanitized.referenceType);
+  resolvedContainer = resolveWinnerContainer(nextParsed, nextReferenceType);
+  nextParsed = resolvedContainer.parsed;
+  typeResolution = resolveReferenceTypeFromEvidence({
+    claimedType: nextReferenceType,
+    parsed: nextParsed,
+    containerHints: resolvedContainer.containerHints,
+    detectTypeHint,
+  });
+
+  return {
+    parsed: nextParsed,
+    referenceType: typeResolution.referenceType,
+    containerHints: resolvedContainer.containerHints,
+    typeResolution,
+    repairReasons: Array.from(new Set([
+      ...repaired.reasons,
+      ...conferenceResolved.reasons,
+      ...reportResolved.reasons,
+    ])),
+  };
+}
+
 function cleanTrailingUrl(url: string | undefined): string | undefined {
   const normalized = normalizeWhitespace(url ?? '')
     .replace(/[<>]/g, '')
@@ -917,6 +1021,16 @@ function normalizeInstitutionalAuthor(value: string): string {
   return isGroupAuthor(normalized) ? normalizeGroupAuthor(normalized) : normalized;
 }
 
+function buildInstitutionalLiteralAuthor(value: string) {
+  const literal = normalizeInstitutionalAuthor(value);
+  return {
+    first: null,
+    last: literal,
+    initials: null,
+    literal,
+  };
+}
+
 function looksLikeInstitutionalMetadataSegment(value: string): boolean {
   const normalized = normalizeWhitespace(value);
   if (!normalized) return false;
@@ -1086,6 +1200,42 @@ function looksLikeFullNameAuthorSegment(segment: string): boolean {
     && tokens.every((token, index) => looksLikeFullNameToken(token, index, tokens.length));
 }
 
+function parseIeeeInitialLeadingCompoundSurnameSegment(segment: string): {
+  initial: string;
+  middle: string;
+  last: string;
+} | null {
+  const normalized = normalizeWhitespace(segment);
+  if (!normalized || normalized.includes(',')) return null;
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  if (tokens.length !== 3) return null;
+  if (!/^(?:[\p{Lu}]\.){1,4}$/u.test(tokens[0] ?? '') && !/^[\p{Lu}]\.?$/u.test(tokens[0] ?? '')) return null;
+  if (!/^[\p{Lu}][\p{L}'’-]+$/u.test(tokens[1] ?? '')) return null;
+  if (!/^[\p{Lu}][\p{L}'’-]+$/u.test(tokens[2] ?? '')) return null;
+  return {
+    initial: tokens[0] ?? '',
+    middle: tokens[1] ?? '',
+    last: tokens[2] ?? '',
+  };
+}
+
+function repairIeeeCompoundSurnameSeries(segments: string[]): string[] {
+  const parsedCandidates = segments.map((segment) => parseIeeeInitialLeadingCompoundSurnameSegment(segment));
+  const trailingTokenCounts = parsedCandidates.reduce<Map<string, number>>((counts, candidate) => {
+    if (!candidate) return counts;
+    counts.set(candidate.last.toLowerCase(), (counts.get(candidate.last.toLowerCase()) ?? 0) + 1);
+    return counts;
+  }, new Map<string, number>());
+  const repeatedTrailingFamilyCount = Array.from(trailingTokenCounts.values()).filter((count) => count >= 2).length;
+  if (repeatedTrailingFamilyCount === 0) return segments;
+
+  return segments.map((segment, index) => {
+    const candidate = parsedCandidates[index];
+    if (!candidate) return segment;
+    return `${candidate.middle} ${candidate.last}, ${candidate.initial}`;
+  });
+}
+
 function splitIeeeAuthorSegments(value: string): string[] {
   const normalized = normalizeWhitespace(value)
     .replace(/,\s+and\s+/i, ', ')
@@ -1093,36 +1243,37 @@ function splitIeeeAuthorSegments(value: string): string[] {
     .split(/\s*,\s*/)
     .map((segment) => stripLeadingAuthorConjunction(segment.replace(/[.;]+$/g, '')))
     .filter(Boolean);
+  const seriesRepaired = repairIeeeCompoundSurnameSeries(normalized);
 
   if (
-    normalized.length >= 3
-    && normalized.length <= 8
-    && (normalized[0]?.split(/\s+/).filter(Boolean).length ?? 0) === 1
-    && looksLikeSurnameLeadSegment(normalized[0] ?? '')
-    && looksLikeGivenNameSegment(normalized[1] ?? '')
-    && normalized.slice(2).every((segment) => looksLikeFullNameAuthorSegment(segment))
+    seriesRepaired.length >= 3
+    && seriesRepaired.length <= 8
+    && (seriesRepaired[0]?.split(/\s+/).filter(Boolean).length ?? 0) === 1
+    && looksLikeSurnameLeadSegment(seriesRepaired[0] ?? '')
+    && looksLikeGivenNameSegment(seriesRepaired[1] ?? '')
+    && seriesRepaired.slice(2).every((segment) => looksLikeFullNameAuthorSegment(segment))
   ) {
     return [
-      `${normalized[0]}, ${normalized[1]}`,
-      ...normalized.slice(2),
+      `${seriesRepaired[0]}, ${seriesRepaired[1]}`,
+      ...seriesRepaired.slice(2),
     ].map((segment) => normalizeIeeeFullNameAuthorSegment(segment));
   }
 
   if (
-    normalized.length >= 4
-    && normalized.length <= 10
-    && (normalized[0]?.split(/\s+/).filter(Boolean).length ?? 0) === 1
-    && looksLikeSurnameLeadSegment(normalized[0] ?? '')
-    && looksLikeGivenNameSegment(normalized[1] ?? '')
-    && normalized.slice(2).every((segment) => looksLikeFullNameAuthorSegment(segment))
+    seriesRepaired.length >= 4
+    && seriesRepaired.length <= 10
+    && (seriesRepaired[0]?.split(/\s+/).filter(Boolean).length ?? 0) === 1
+    && looksLikeSurnameLeadSegment(seriesRepaired[0] ?? '')
+    && looksLikeGivenNameSegment(seriesRepaired[1] ?? '')
+    && seriesRepaired.slice(2).every((segment) => looksLikeFullNameAuthorSegment(segment))
   ) {
     return [
-      `${normalized[0]}, ${normalized[1]}`,
-      ...normalized.slice(2),
+      `${seriesRepaired[0]}, ${seriesRepaired[1]}`,
+      ...seriesRepaired.slice(2),
     ].map((segment) => normalizeIeeeFullNameAuthorSegment(segment));
   }
 
-  return normalized.map((segment) => normalizeIeeeFullNameAuthorSegment(segment));
+  return seriesRepaired.map((segment) => normalizeIeeeFullNameAuthorSegment(segment));
 }
 
 function normalizeIeeeFullNameAuthorSegment(segment: string): string {
@@ -1134,16 +1285,19 @@ function normalizeIeeeFullNameAuthorSegment(segment: string): string {
   const tokens = normalized.split(/\s+/).filter(Boolean);
   const hasInitialToken = tokens.some((token) => /^(?:[\p{Lu}]\.){1,4}$/u.test(token) || /^[\p{Lu}]\.?$/u.test(token));
   if (isGroupAuthor(normalized) && !hasInitialToken) return normalized;
-  if (
-    tokens.length === 3
-    && /^[\p{Lu}]\.?$/u.test(tokens[0] ?? '')
-    && /^[\p{Lu}][\p{L}'’-]+$/u.test(tokens[1] ?? '')
-    && /^[\p{Lu}][\p{L}'’-]+$/u.test(tokens[2] ?? '')
-  ) {
-    return `${tokens[2]}, ${tokens[0]} ${tokens[1]}`;
-  }
   if (tokens.length < 2) return normalized;
-  if (parseInitialsFirstAuthor(normalized)) return normalized;
+  const compactInitialsFirst = parseInitialsFirstAuthor(normalized);
+  if (
+    compactInitialsFirst
+    && !(
+      tokens.length === 3
+      && (/^(?:[\p{Lu}]\.){1,4}$/u.test(tokens[0] ?? '') || /^[\p{Lu}]\.?$/u.test(tokens[0] ?? ''))
+      && /^[\p{Lu}][\p{L}'’-]+$/u.test(tokens[1] ?? '')
+      && /^[\p{Lu}][\p{L}'’-]+$/u.test(tokens[2] ?? '')
+    )
+  ) {
+    return normalized;
+  }
   if (!tokens.every((token, index) => looksLikeFullNameOrInitialToken(token, index, tokens.length))) return normalized;
 
   const lastToken = tokens[tokens.length - 1] ?? '';
@@ -1163,7 +1317,7 @@ function normalizeIeeeFullNameAuthorSegment(segment: string): string {
     && lastLooksPatronymic
     && tokens.every((token, index) => looksLikeFullNameOrInitialToken(token, index, tokens.length))
   ) {
-    return `${tokens[0]}, ${tokens[1]} ${tokens[2]}`;
+    return `${tokens[2]}, ${tokens[0]} ${tokens[1]}`;
   }
 
   if (
@@ -1329,10 +1483,11 @@ function buildIeeeQuotedReferenceCandidate(normalized: string): ParsedSelectionC
   const authors = splitIeeeAuthorSegments(parts.authorsLead)
     .map((segment) => {
       const normalizedSegment = normalizeWhitespace(segment);
-      const hasExpandedGivenName = /,\s*[\p{Lu}][\p{L}'’.-]+(?:\s+[\p{Lu}][\p{L}'’.-]+){0,3}$/u.test(normalizedSegment);
+      const repairedSegment = normalizeIeeeFullNameAuthorSegment(normalizedSegment);
+      const hasExpandedGivenName = /,\s*[\p{Lu}][\p{L}'’.-]+(?:\s+[\p{Lu}][\p{L}'’.-]+){0,3}$/u.test(repairedSegment);
       return hasExpandedGivenName
-        ? (parseAuthorToCanonical(normalizedSegment) ?? parseInitialsFirstAuthor(normalizedSegment))
-        : (parseInitialsFirstAuthor(normalizedSegment) ?? parseAuthorToCanonical(normalizedSegment));
+        ? (parseAuthorToCanonical(repairedSegment) ?? parseInitialsFirstAuthor(repairedSegment))
+        : (parseInitialsFirstAuthor(repairedSegment) ?? parseAuthorToCanonical(repairedSegment));
     })
     .map((author) => renderAuthor(author))
     .filter(Boolean);
@@ -1381,6 +1536,14 @@ function buildIeeeQuotedReferenceCandidate(normalized: string): ParsedSelectionC
     let conferenceTitle = normalizeConferenceContainer(
       splitConference.conferenceTitle.split(/\s*,\s*/).map((segment) => cleanContainerTitle(segment)).filter(Boolean),
     ) ?? splitConference.conferenceTitle;
+    const proceedingsTail = extractProceedingsTailSegment(parts.tail) ?? extractProceedingsTailSegment(tailWithoutPages);
+    if (
+      proceedingsTail
+      && !proceedingsSignal(conferenceTitle)
+      && !normalizeWhitespace(conferenceTitle).toLowerCase().includes(proceedingsTail.toLowerCase())
+    ) {
+      conferenceTitle = normalizeWhitespace(`${conferenceTitle}. ${proceedingsTail}`);
+    }
     if (!publisher) {
       const splitConferencePublisher = splitTrailingPublisherFromConferenceTitle(conferenceTitle);
       conferenceTitle = splitConferencePublisher.conferenceTitle;
@@ -1744,7 +1907,12 @@ function buildInstitutionalVancouverJournalCandidate(normalized: string): Parsed
 
   const title = stripTrailingPeriod(leadSegments.pop() ?? '');
   const authorLead = normalizeWhitespace(leadSegments.join('. '));
-  const authorParse = parseAuthorsForStyle([authorLead], 'vancouver');
+  const authorParse = {
+    authors: [buildInstitutionalLiteralAuthor(authorLead)],
+    parserMode: 'institutional_literal',
+    warningFlags: [] as string[],
+    rejectedCandidates: [] as string[],
+  };
   const authors = authorParse.authors.map((author) => renderAuthor(author)).filter(Boolean);
   const journal = cleanContainerTitle(match.groups.journal ?? '');
   const year = normalizeParsedYear(match.groups.year);
@@ -1762,6 +1930,7 @@ function buildInstitutionalVancouverJournalCandidate(normalized: string): Parsed
     journal,
     volume,
     issue,
+    institution: normalizeInstitutionalAuthor(authorLead),
     doi: doi ? normalizeDoiValue(doi) : undefined,
     parseWarnings: ['institutional-vancouver-journal-heuristic'],
   };
@@ -3143,7 +3312,7 @@ function buildAuthorYearPublisherTailCandidate(normalized: string, inputStyle: s
 
   const authorParse = institutionalAuthorLead
     ? {
-        authors: [parseAuthorToCanonical(normalizeInstitutionalAuthor(authorLead))],
+        authors: [buildInstitutionalLiteralAuthor(authorLead)],
         parserMode: 'institutional_literal',
         warningFlags: [] as string[],
         rejectedCandidates: [] as string[],
@@ -3566,6 +3735,13 @@ function normalizeConferenceContainer(segments: string[]): string | undefined {
   }
 
   return normalizeWhitespace(cleanedSegments.join(', '));
+}
+
+function extractProceedingsTailSegment(value: string): string | undefined {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) return undefined;
+  const match = normalized.match(/\b(?<tail>(?:proceedings|proc\.?|book of abstracts|abstracts?)\b[^.;]*(?:\b(?:1[5-9]\d{2}|20\d{2})\b)?)/i);
+  return cleanContainerTitle(match?.groups?.tail ?? '');
 }
 
 function extractTrailingAuthorLeadYear(value: string): { authorLead: string; year: string | undefined } {
@@ -4607,13 +4783,17 @@ function shouldAllowLlmFallback(
     missingCriticalCount > 0
     || missingRequiredCount >= 2
     || selectionScore < 5;
+  const weakSelection = selectionScore < V2_THRESHOLD_POLICY.extract.weakSelectionScore;
 
   if (executionMode === 'sync') {
     if (batchSize >= 50) return catastrophic;
     if (batchSize >= 10) {
       return catastrophic || (
-        missingRequiredCount >= 1
-        && selectionScore < V2_THRESHOLD_POLICY.extract.mediumBatchWeakSelectionScore
+        weakSelection
+        || (
+          missingRequiredCount >= 1
+          && selectionScore < V2_THRESHOLD_POLICY.extract.mediumBatchWeakSelectionScore
+        )
       );
     }
   }
@@ -4621,8 +4801,11 @@ function shouldAllowLlmFallback(
   if (batchSize >= 100) return catastrophic;
   if (batchSize >= 25) {
     return catastrophic || (
-      missingRequiredCount >= 1
-      && selectionScore < V2_THRESHOLD_POLICY.extract.mediumBatchWeakSelectionScore
+      weakSelection
+      || (
+        missingRequiredCount >= 1
+        && selectionScore < V2_THRESHOLD_POLICY.extract.mediumBatchWeakSelectionScore
+      )
     );
   }
   return true;
@@ -4692,6 +4875,11 @@ function getLlmFallbackTrigger(
   const weakVenue = !coverage.coreChecks.venue;
   const weakReferenceType = !coverage.coreChecks.referenceType;
   const strictNearPass = coverage.strictNearPass && noContaminationRisk;
+  const lowConfidenceNonCore = hasWeakNonCoreFieldConfidence(referenceType, fieldConfidence, parsed);
+  const duplicatedTails = hasDuplicatedTail(parsed.title) || hasDuplicatedTail(parsed.publisher) || hasDuplicatedTail(parsed.institution);
+  const identifierLeakage = hasIdentifierLeakage(parsed);
+  const metadataBleed = hasMetadataBleed(parsed);
+  const typePriorityEligible = ['book', 'report', 'chapter', 'conference', 'website', 'thesis'].includes(referenceType);
 
   let reason: string | null = null;
   if (strictNearPass && noAuthors) reason = 'missing_authors';
@@ -4699,6 +4887,10 @@ function getLlmFallbackTrigger(
   else if (strictNearPass && weakFirstAuthor) reason = 'weak_first_author';
   else if (strictNearPass && weakVenue) reason = 'weak_venue';
   else if (strictNearPass && weakReferenceType) reason = 'weak_reference_type';
+  else if (identifierLeakage) reason = 'identifier_leakage';
+  else if (metadataBleed) reason = 'metadata_bleed';
+  else if (duplicatedTails) reason = 'duplicated_tails';
+  else if (lowConfidenceNonCore) reason = 'low_confidence_non_core';
   else if (strictNearPass && coverage.corePassedCount < 5) reason = 'multi_field_low_confidence';
 
   return {
@@ -4708,6 +4900,12 @@ function getLlmFallbackTrigger(
     weakReferenceType,
     strictNearPass,
     noContaminationRisk,
+    lowConfidenceNonCore,
+    duplicatedTails,
+    identifierLeakage,
+    metadataBleed,
+    typePriorityEligible,
+    hardStructuralSuspicion: identifierLeakage || metadataBleed || duplicatedTails,
     shouldTrigger: reason !== null && !coverage.strictLocallyReady,
     reason,
   };
@@ -4723,6 +4921,162 @@ function listImprovedStrictFields(
   }
   return fields;
 }
+
+function normalizeComparableFallbackValue(value: unknown): string {
+  if (value == null) return '';
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'string') return normalizeWhitespace(value);
+  if (Array.isArray(value)) return normalizeWhitespace(value.map((item) => normalizeComparableFallbackValue(item)).join(' '));
+  return normalizeWhitespace(String(value));
+}
+
+function hasDuplicatedTail(value: string | undefined): boolean {
+  const normalized = normalizeWhitespace(value ?? '').toLowerCase();
+  if (!normalized) return false;
+  const parts = normalized.split(/[.,;:]+/).map((part) => part.trim()).filter(Boolean);
+  if (parts.length < 2) return false;
+  return new Set(parts).size < parts.length;
+}
+
+function hasIdentifierLeakage(parsed: ParsedReference): boolean {
+  const suspiciousFields: Array<keyof ParsedReference> = ['volume', 'issue', 'pages', 'journal', 'bookTitle', 'conferenceTitle', 'publisher', 'institution'];
+  return suspiciousFields.some((field) => isFieldStructurallyCorrupt(field, parsed[field]));
+}
+
+function hasMetadataBleed(parsed: ParsedReference): boolean {
+  const title = normalizeComparableFallbackValue(parsed.title);
+  const containerFields = [parsed.journal, parsed.bookTitle, parsed.conferenceTitle, parsed.publisher, parsed.institution]
+    .map((value) => normalizeComparableFallbackValue(value))
+    .filter(Boolean);
+  if (!title) return false;
+  return containerFields.some((field) => field === title || field.includes(title));
+}
+
+function hasWeakNonCoreFieldConfidence(referenceType: string, fieldConfidence: Record<string, number>, parsed: ParsedReference): boolean {
+  const fieldsByType: Record<string, Array<keyof ParsedReference>> = {
+    journal: ['journal', 'volume', 'issue', 'pages', 'doi', 'url'],
+    book: ['publisher', 'placeOfPublication', 'edition', 'doi', 'url'],
+    chapter: ['bookTitle', 'pages', 'publisher', 'placeOfPublication', 'doi', 'url'],
+    conference: ['conferenceTitle', 'pages', 'publisher', 'placeOfPublication', 'doi', 'url'],
+    report: ['institution', 'publisher', 'placeOfPublication', 'edition', 'doi', 'url'],
+    thesis: ['institution', 'thesisType', 'repository', 'doi', 'url'],
+    website: ['institution', 'publisher', 'url'],
+  };
+  const candidateFields = fieldsByType[referenceType] ?? [];
+  return candidateFields.some((field) => (
+    hasParsedFallbackField(parsed, field)
+    && (fieldConfidence[field === 'placeOfPublication' || field === 'edition' || field === 'institution' || field === 'bookTitle' || field === 'conferenceTitle' || field === 'repository' || field === 'thesisType'
+      ? 'publisher'
+      : field] ?? 0) < 0.7
+  ));
+}
+
+function hasRequiredSupportFieldsForType(parsed: ParsedReference, referenceType: string): boolean {
+  switch (referenceType) {
+    case 'conference':
+      return Boolean(normalizeWhitespace(parsed.conferenceTitle ?? ''));
+    case 'chapter':
+      return Boolean(normalizeWhitespace(parsed.bookTitle ?? ''));
+    case 'report':
+      return Boolean(normalizeWhitespace(parsed.title ?? ''))
+        && Boolean(normalizeWhitespace(parsed.year ?? ''))
+        && Boolean(normalizeWhitespace(parsed.institution ?? parsed.publisher ?? ''));
+    case 'book':
+      return Boolean(normalizeWhitespace(parsed.publisher ?? ''));
+    default:
+      return true;
+  }
+}
+
+function mergedOutputIsNoOp(beforeParsed: ParsedReference, afterParsed: ParsedReference): boolean {
+  const fields = ['authors', 'title', 'year', 'journal', 'volume', 'issue', 'pages', 'doi', 'publisher', 'placeOfPublication', 'url', 'conferenceTitle', 'bookTitle', 'institution', 'edition', 'editor', 'thesisType', 'repository'] as const;
+  return fields.every((field) => normalizeComparableFallbackValue(beforeParsed[field]) === normalizeComparableFallbackValue(afterParsed[field]));
+}
+
+function listMeaningfulTypeSpecificFallbackGains(
+  beforeParsed: ParsedReference,
+  afterParsed: ParsedReference,
+  beforeReferenceType: string,
+  afterReferenceType: string,
+) {
+  const referenceType = afterReferenceType !== 'unknown' ? afterReferenceType : beforeReferenceType;
+    const fieldsByType: Record<string, Array<keyof ParsedReference>> = {
+      book: ['publisher', 'placeOfPublication', 'edition', 'doi', 'url'],
+      chapter: ['bookTitle', 'pages', 'publisher', 'editor', 'doi', 'url'],
+      conference: ['conferenceTitle', 'pages', 'publisher', 'doi', 'url'],
+      report: ['institution', 'publisher', 'placeOfPublication', 'edition', 'doi', 'url'],
+      thesis: ['thesisType', 'institution', 'repository', 'doi', 'url'],
+      website: ['publisher', 'institution', 'url'],
+    };
+  const candidateFields = fieldsByType[referenceType] ?? [];
+  const gains: string[] = [];
+
+  for (const field of candidateFields) {
+    const beforeValue = beforeParsed[field];
+    const afterValue = afterParsed[field];
+    if (hasParsedFallbackField(afterParsed, field) && !hasParsedFallbackField(beforeParsed, field)) {
+      gains.push(String(field));
+      continue;
+    }
+
+    const normalizedBefore = normalizeComparableFallbackValue(beforeValue);
+    const normalizedAfter = normalizeComparableFallbackValue(afterValue);
+    if (!normalizedAfter || normalizedBefore === normalizedAfter) continue;
+    if (isPlaceholderValue(normalizedBefore) && !isPlaceholderValue(normalizedAfter)) {
+      gains.push(String(field));
+    }
+  }
+
+  return gains;
+}
+
+function listMeaningfulFallbackFieldChanges(
+  beforeParsed: ParsedReference,
+  afterParsed: ParsedReference,
+  beforeReferenceType: string,
+  afterReferenceType: string,
+) {
+  const referenceType = afterReferenceType !== 'unknown' ? afterReferenceType : beforeReferenceType;
+  const fieldsByType: Record<string, Array<keyof ParsedReference | 'authors' | 'title'>> = {
+      journal: ['authors', 'title', 'journal', 'volume', 'issue', 'pages', 'doi'],
+      book: ['authors', 'title', 'publisher', 'placeOfPublication', 'edition', 'doi'],
+      chapter: ['authors', 'title', 'bookTitle', 'pages', 'publisher', 'doi'],
+      conference: ['authors', 'title', 'conferenceTitle', 'pages', 'publisher', 'doi'],
+      report: ['authors', 'title', 'institution', 'publisher', 'placeOfPublication', 'edition', 'doi', 'url'],
+      thesis: ['authors', 'title', 'institution', 'thesisType', 'repository', 'doi', 'url'],
+      website: ['authors', 'title', 'publisher', 'institution', 'url'],
+    };
+  const candidateFields = fieldsByType[referenceType] ?? ['authors', 'title'];
+  const changes: string[] = [];
+
+  for (const field of candidateFields) {
+    const beforeValue = beforeParsed[field as keyof ParsedReference];
+    const afterValue = afterParsed[field as keyof ParsedReference];
+    const normalizedBefore = normalizeComparableFallbackValue(beforeValue);
+    const normalizedAfter = normalizeComparableFallbackValue(afterValue);
+    if (!normalizedAfter || normalizedBefore === normalizedAfter) continue;
+    if (field === 'authors' || field === 'title' || hasParsedFallbackField(afterParsed, field as keyof ParsedReference)) {
+      changes.push(String(field));
+    }
+  }
+
+  return changes;
+}
+
+const SAFE_SINGLE_FIELD_LLM_REPAIRS = new Set([
+  'edition',
+  'institution',
+  'publisher',
+  'placeOfPublication',
+  'conferenceTitle',
+  'bookTitle',
+  'journal',
+  'volume',
+  'issue',
+  'pages',
+  'doi',
+  'url',
+]);
 
 function shouldAcceptLlmFallbackResult(params: {
   beforeParsed: ParsedReference;
@@ -4749,46 +5103,98 @@ function shouldAcceptLlmFallbackResult(params: {
   const beforePlausibility = assessCandidatePlausibility(params.beforeParsed, params.beforeReferenceType);
   const afterPlausibility = assessCandidatePlausibility(params.afterParsed, params.afterReferenceType);
   const fieldsImproved = listImprovedStrictFields(beforeCoverage, afterCoverage);
+  const typeSpecificGains = listMeaningfulTypeSpecificFallbackGains(
+    params.beforeParsed,
+    params.afterParsed,
+    params.beforeReferenceType,
+    params.afterReferenceType,
+  );
+  const meaningfulFieldChanges = listMeaningfulFallbackFieldChanges(
+    params.beforeParsed,
+    params.afterParsed,
+    params.beforeReferenceType,
+    params.afterReferenceType,
+  );
+  const allImprovedFields = [...new Set([...fieldsImproved, ...typeSpecificGains, ...meaningfulFieldChanges])];
   const strictPassDelta = afterCoverage.corePassedCount - beforeCoverage.corePassedCount;
+  const titlePenaltyImproved = afterPlausibility.title.penalty < beforePlausibility.title.penalty;
+  const venuePenaltyImproved = afterPlausibility.venue.penalty < beforePlausibility.venue.penalty;
+  const noOpRepair = mergedOutputIsNoOp(params.beforeParsed, params.afterParsed);
+  const safeSingleFieldRepair = allImprovedFields.length === 1
+    && SAFE_SINGLE_FIELD_LLM_REPAIRS.has(allImprovedFields[0] ?? '')
+    && params.afterReferenceType === params.beforeReferenceType;
 
   if (afterCoverage.authorCount === 0) {
-    return { accept: false, reason: 'authors_still_empty', fieldsImproved, strictPassDelta: afterCoverage.corePassedCount - beforeCoverage.corePassedCount };
+    return { accept: false, reason: 'authors_still_empty', fieldsImproved: allImprovedFields, strictPassDelta: afterCoverage.corePassedCount - beforeCoverage.corePassedCount };
   }
   if (afterCoverage.malformedAuthorBlob) {
-    return { accept: false, reason: 'authors_still_malformed', fieldsImproved, strictPassDelta: afterCoverage.corePassedCount - beforeCoverage.corePassedCount };
+    return { accept: false, reason: 'authors_still_malformed', fieldsImproved: allImprovedFields, strictPassDelta: afterCoverage.corePassedCount - beforeCoverage.corePassedCount };
   }
   if (afterPlausibility.title.penalty > beforePlausibility.title.penalty) {
-    return { accept: false, reason: 'title_plausibility_worsened', fieldsImproved, strictPassDelta: afterCoverage.corePassedCount - beforeCoverage.corePassedCount };
+    return { accept: false, reason: 'title_plausibility_worsened', fieldsImproved: allImprovedFields, strictPassDelta: afterCoverage.corePassedCount - beforeCoverage.corePassedCount };
   }
   if (afterPlausibility.venue.penalty > beforePlausibility.venue.penalty) {
-    return { accept: false, reason: 'venue_plausibility_worsened', fieldsImproved, strictPassDelta: afterCoverage.corePassedCount - beforeCoverage.corePassedCount };
+    return { accept: false, reason: 'venue_plausibility_worsened', fieldsImproved: allImprovedFields, strictPassDelta: afterCoverage.corePassedCount - beforeCoverage.corePassedCount };
   }
   if (
     params.beforeReferenceType !== 'unknown'
     && params.afterReferenceType !== params.beforeReferenceType
     && !areReferenceTypesMergeCompatible(params.beforeReferenceType, params.afterReferenceType)
   ) {
-    const safeSemanticUpgrade =
-      strictPassDelta > 0
-      && afterCoverage.corePassedCount >= beforeCoverage.corePassedCount + 2
-      && afterPlausibility.title.penalty <= beforePlausibility.title.penalty
-      && afterPlausibility.venue.penalty <= beforePlausibility.venue.penalty;
-    if (!safeSemanticUpgrade) {
-      return { accept: false, reason: 'reference_type_less_coherent', fieldsImproved, strictPassDelta };
+      if (!hasRequiredSupportFieldsForType(params.afterParsed, params.afterReferenceType)) {
+        return { accept: false, reason: 'type_change_missing_support_fields', fieldsImproved: allImprovedFields, strictPassDelta };
+      }
+      const safeWebsiteUpgrade =
+        params.beforeReferenceType === 'website'
+        && ['report', 'thesis'].includes(params.afterReferenceType)
+        && afterPlausibility.title.penalty <= beforePlausibility.title.penalty
+        && afterPlausibility.venue.penalty <= beforePlausibility.venue.penalty
+        && allImprovedFields.length >= 2;
+      const safeSemanticUpgrade =
+        (
+          strictPassDelta > 0
+          && afterCoverage.corePassedCount >= beforeCoverage.corePassedCount + 2
+          && afterPlausibility.title.penalty <= beforePlausibility.title.penalty
+          && afterPlausibility.venue.penalty <= beforePlausibility.venue.penalty
+        )
+        || safeWebsiteUpgrade;
+      if (!safeSemanticUpgrade) {
+        return { accept: false, reason: 'reference_type_less_coherent', fieldsImproved: allImprovedFields, strictPassDelta };
+      }
     }
-  }
 
-  if (strictPassDelta <= 0) {
-    return { accept: false, reason: 'no_strict_gain', fieldsImproved, strictPassDelta };
-  }
+    if (strictPassDelta <= 0) {
+      const semanticGainWithoutStrictDelta =
+        strictPassDelta === 0
+        && afterCoverage.corePassedCount >= beforeCoverage.corePassedCount
+        && (
+          (!noOpRepair && allImprovedFields.length > 0)
+          || titlePenaltyImproved
+          || venuePenaltyImproved
+          || typeSpecificGains.length > 0
+          || meaningfulFieldChanges.length >= 2
+          || safeSingleFieldRepair
+        );
+      if (!semanticGainWithoutStrictDelta) {
+        return { accept: false, reason: 'no_strict_gain', fieldsImproved: allImprovedFields, strictPassDelta };
+      }
+      return {
+        accept: true,
+        reason: allImprovedFields.length > 0
+          ? `semantic_gain:${allImprovedFields.join('|')}`
+          : (titlePenaltyImproved ? 'semantic_gain:title_plausibility' : 'semantic_gain:venue_plausibility'),
+        fieldsImproved: allImprovedFields,
+        strictPassDelta,
+      };
+    }
 
-  return {
-    accept: true,
-    reason: fieldsImproved.length > 0 ? `improved:${fieldsImproved.join('|')}` : 'strict_gain',
-    fieldsImproved,
-    strictPassDelta,
-  };
-}
+    return {
+      accept: true,
+      reason: allImprovedFields.length > 0 ? `improved:${allImprovedFields.join('|')}` : 'strict_gain',
+      fieldsImproved: allImprovedFields,
+      strictPassDelta,
+    };
+  }
 
 function splitContaminationPenalty(splitArtifact?: V2SplitArtifact): number {
   if (!splitArtifact) return 0;
@@ -4825,10 +5231,21 @@ function applySplitPenaltyToFieldConfidence(
 
 async function extractWithLlm(input: string): Promise<LlmExtraction | null> {
   const apiKey = process.env.OPENAI_API_KEY;
+  const replayFile = process.env.V2_LLM_EXTRACT_REPLAY_FILE;
+  if (replayFile) {
+    const replayRaw = fs.readFileSync(replayFile, 'utf8').trim();
+    const replayParsed = JSON.parse(replayRaw);
+    const replayContent = typeof replayParsed?.choices?.[0]?.message?.content === 'string'
+      ? replayParsed.choices[0].message.content
+      : replayRaw;
+    return parseLlmExtraction(JSON.parse(extractJsonContent(replayContent)));
+  }
   if (!apiKey) return null;
 
   const baseUrl = (process.env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1').replace(/\/$/, '');
   const model = getOpenAiExtractModel();
+  const configuredTemperature = Number.parseFloat(process.env.V2_LLM_EXTRACT_TEMPERATURE ?? '0');
+  const temperature = Number.isFinite(configuredTemperature) ? configuredTemperature : 0;
 
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
@@ -4838,7 +5255,7 @@ async function extractWithLlm(input: string): Promise<LlmExtraction | null> {
     },
     body: JSON.stringify({
       model,
-      temperature: 0,
+      temperature,
       messages: [
         {
           role: 'system',
@@ -4911,27 +5328,47 @@ function mergeLlmWithDeterministic(
     repository: llm.referenceType === 'preprint'
       ? llm.repository ?? deterministic.parsed.repository
       : deterministic.parsed.repository,
-    inferenceNote: llm.referenceType === 'unknown'
-      ? llm.inferenceNote ?? deterministic.parsed.inferenceNote
-      : deterministic.parsed.inferenceNote,
-  };
+      inferenceNote: llm.referenceType === 'unknown'
+        ? llm.inferenceNote ?? deterministic.parsed.inferenceNote
+        : deterministic.parsed.inferenceNote,
+    } as ParsedReference;
 
-  return {
-    parsed,
+  const fieldsToClearByType: Partial<Record<CanonicalReferenceType, Array<keyof ParsedReference>>> = {
+    journal: ['publisher', 'placeOfPublication', 'conferenceTitle', 'bookTitle', 'institution', 'edition', 'editor', 'editors', 'thesisType', 'repository'],
+    book: ['journal', 'volume', 'issue', 'pages', 'article-number', 'conferenceTitle', 'institution', 'thesisType', 'repository'],
+    chapter: ['journal', 'volume', 'issue', 'article-number', 'institution', 'thesisType', 'repository'],
+    conference: ['journal', 'volume', 'issue', 'bookTitle', 'institution', 'edition', 'thesisType', 'repository'],
+    report: ['journal', 'volume', 'issue', 'pages', 'article-number', 'conferenceTitle', 'bookTitle', 'edition', 'editor', 'editors', 'thesisType', 'repository'],
+    website: ['journal', 'volume', 'issue', 'pages', 'article-number', 'conferenceTitle', 'bookTitle', 'edition', 'editor', 'editors', 'thesisType', 'repository'],
+    thesis: ['journal', 'volume', 'issue', 'pages', 'article-number', 'conferenceTitle', 'bookTitle', 'edition', 'editor', 'editors'],
+  };
+  const llmReferenceType = llm.referenceType !== 'unknown' ? llm.referenceType : deterministic.referenceType;
+  for (const field of fieldsToClearByType[llmReferenceType] ?? []) {
+    if ((llm as Record<string, unknown>)[field] == null) {
+      delete (parsed as Record<string, unknown>)[field];
+    }
+  }
+
+  const noOpMerge = mergedOutputIsNoOp(deterministic.parsed, parsed);
+
+    return {
+      parsed,
     referenceType: llm.referenceType !== 'unknown' ? llm.referenceType : deterministic.referenceType,
-    fieldConfidence: {
-      ...deterministic.fieldConfidence,
-      authors: llm.authors.length > 0 ? 0.78 : deterministic.fieldConfidence.authors,
-      title: llm.title ? 0.76 : deterministic.fieldConfidence.title,
-      year: llm.year != null ? 0.78 : deterministic.fieldConfidence.year,
-      journal: llm.journal ? 0.72 : deterministic.fieldConfidence.journal,
-      volume: llm.volume ? 0.7 : deterministic.fieldConfidence.volume,
-      issue: llm.issue ? 0.7 : deterministic.fieldConfidence.issue,
-      pages: llm.pages ? 0.72 : deterministic.fieldConfidence.pages,
-      doi: llm.doi ? 0.86 : deterministic.fieldConfidence.doi,
-      publisher: llm.publisher ? 0.72 : deterministic.fieldConfidence.publisher,
-      url: llm.url ? 0.8 : deterministic.fieldConfidence.url,
-    },
+    fieldConfidence: noOpMerge
+      ? deterministic.fieldConfidence
+      : {
+          ...deterministic.fieldConfidence,
+          authors: llm.authors.length > 0 ? 0.78 : deterministic.fieldConfidence.authors,
+          title: llm.title ? 0.76 : deterministic.fieldConfidence.title,
+          year: llm.year != null ? 0.78 : deterministic.fieldConfidence.year,
+          journal: llm.journal ? 0.72 : deterministic.fieldConfidence.journal,
+          volume: llm.volume ? 0.7 : deterministic.fieldConfidence.volume,
+          issue: llm.issue ? 0.7 : deterministic.fieldConfidence.issue,
+          pages: llm.pages ? 0.72 : deterministic.fieldConfidence.pages,
+          doi: llm.doi ? 0.86 : deterministic.fieldConfidence.doi,
+          publisher: llm.publisher ? 0.72 : deterministic.fieldConfidence.publisher,
+          url: llm.url ? 0.8 : deterministic.fieldConfidence.url,
+        },
   };
 }
 
@@ -5049,6 +5486,12 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     splitArtifact?: V2SplitArtifact;
     llmBudget?: { maxCalls: number; totalCalls: number; splitCalls: number; extractCalls: number; capReached: boolean };
     debugEnabled?: boolean;
+    outputStyle?: string;
+    originalRawText?: string;
+    engineVersion?: string;
+    userEdited?: boolean;
+    adminApproved?: boolean;
+    verificationNeeded?: boolean;
   }) {
     const selectorMode = getSelectorMode();
     const detectionConfidence = options?.detectionConfidence ?? 0;
@@ -5262,31 +5705,19 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       );
     }
 
-    let resolvedContainer = resolveWinnerContainer(
+    const finalizedSelection = finalizeSelectedParse(
       mergedSelection,
       selectedReferenceType === 'unknown'
         ? mergeCompatibleAlternates.find((attempt) => attempt.candidate?.claimedType !== 'unknown')?.candidate?.claimedType ?? 'unknown'
         : selectedReferenceType,
+      deterministic.referenceType !== 'unknown' ? deterministic.referenceType : null,
+      selectedBase.normalized,
     );
-    mergedSelection = resolvedContainer.parsed;
-    let typeResolution = resolveReferenceTypeFromEvidence({
-      claimedType: selectedReferenceType,
-      parsed: mergedSelection,
-      containerHints: resolvedContainer.containerHints,
-      detectTypeHint: deterministic.referenceType !== 'unknown' ? deterministic.referenceType : null,
-    });
-    selectedReferenceType = typeResolution.referenceType;
-    const sanitizedSelection = sanitizeParsedReference(mergedSelection, selectedReferenceType);
-    mergedSelection = normalizeAuthorOptionalWebsiteParse(sanitizedSelection.parsed, sanitizedSelection.referenceType);
-    resolvedContainer = resolveWinnerContainer(mergedSelection, selectedReferenceType);
-    mergedSelection = resolvedContainer.parsed;
-    typeResolution = resolveReferenceTypeFromEvidence({
-      claimedType: selectedReferenceType,
-      parsed: mergedSelection,
-      containerHints: resolvedContainer.containerHints,
-      detectTypeHint: deterministic.referenceType !== 'unknown' ? deterministic.referenceType : null,
-    });
-    selectedReferenceType = typeResolution.referenceType;
+    mergedSelection = finalizedSelection.parsed;
+    selectedReferenceType = finalizedSelection.referenceType;
+    let typeResolution = finalizedSelection.typeResolution;
+    const winnerContainerHints = finalizedSelection.containerHints;
+    const winnerRepairReasons = finalizedSelection.repairReasons;
 
     let selectedFieldConfidence = buildFieldConfidence(mergedSelection, selectedReferenceType);
     const splitArtifact = options?.splitArtifact;
@@ -5327,7 +5758,22 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
     let llmCapReached = false;
     let llmFallbackAccepted = false;
     let llmFallbackSkippedByBudget = false;
+    let llmFallbackReusedFromCluster = false;
+    let llmFallbackSkippedForTruth = false;
+    let llmFallbackVerificationNeeded = false;
     let llmFallbackReason: string | undefined;
+    let llmFallbackCacheKey: string | undefined;
+    let llmFallbackClusterKey: string | undefined;
+    let llmFallbackQueuePriority: number | undefined;
+    let llmFallbackAttemptErrorType:
+      | 'timeout'
+      | 'rate_limit'
+      | 'invalid_json_response'
+      | 'empty_response'
+      | 'network_error'
+      | 'token_limit_exceeded'
+      | 'unexpected_runtime_error'
+      | undefined;
     let llmFallbackFieldsImproved: string[] = [];
     let llmFallbackStrictPassDelta = 0;
     let llmRawExtraction: LlmExtraction | null = null;
@@ -5342,6 +5788,11 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       selectedAuthorParse,
       splitArtifact,
     );
+    const fallbackRawText = options?.originalRawText ?? input;
+    const outputStyle = options?.outputStyle ?? 'apa';
+    const engineVersion = options?.engineVersion ?? 'v2';
+    llmFallbackCacheKey = computeFallbackCacheKey(fallbackRawText);
+    llmFallbackClusterKey = computeFallbackClusterKey(mergedSelection) ?? undefined;
     const weakSelection =
       llmTrigger.shouldTrigger
       || 
@@ -5357,103 +5808,215 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       batchSize,
       options?.executionMode,
     );
-    const allowLlmFallback = llmTrigger.shouldTrigger
+    const batchFallbackCap = getLocalExtractFallbackCallsForBatch(batchSize);
+    const llmCriticalTriggerReasons = ['missing_authors', 'malformed_authors', 'weak_first_author', 'weak_venue', 'weak_reference_type', 'identifier_leakage', 'metadata_bleed', 'duplicated_tails'];
+    const allowLlmFallback = weakSelection
       && (
         batchAllowsLlmFallback
-        || ['missing_authors', 'malformed_authors', 'weak_first_author', 'weak_venue', 'weak_reference_type'].includes(llmTrigger.reason ?? '')
+        || llmCriticalTriggerReasons.includes(llmTrigger.reason ?? '')
       );
-    const batchFallbackCap = getMaxExtractFallbackCallsForBatch(batchSize);
-    const fallbackRateExceeded = (options?.llmBudget?.extractCalls ?? 0) >= batchFallbackCap;
+    llmFallbackQueuePriority = buildFallbackQueuePriority({
+      reportedBefore: false,
+      userEdited: Boolean(options?.userEdited),
+      hardStructuralSuspicion: Boolean(llmTrigger.hardStructuralSuspicion),
+      typePriority: Boolean(llmTrigger.typePriorityEligible),
+    });
 
     if (llmEnabled && weakSelection && allowLlmFallback) {
-      llmAttempted = true;
-      llmFallbackReason = llmTrigger.reason ?? 'multi_field_low_confidence';
-      if (fallbackRateExceeded) {
-        llmCapReached = true;
-        llmFallbackSkippedByBudget = true;
-        rejectedCandidates.push('llm_batch_budget_cap_reached');
-        llmWarnings.push('llm_batch_budget_cap_reached');
-      } else if (!tryConsumeLlmCall(options?.llmBudget, 'extract')) {
-        llmCapReached = true;
-        llmFallbackSkippedByBudget = true;
-        rejectedCandidates.push('llm_cap_reached');
-        llmWarnings.push('llm_cap_reached');
+      llmFallbackReason = llmTrigger.reason ?? 'weak_selection';
+      const truthState = await resolveTruthStateForFallback({
+        rawForCacheKey: fallbackRawText,
+        outputStyle,
+        engineVersion,
+        userEdited: options?.userEdited,
+        adminApproved: options?.adminApproved,
+        terminalVerificationNeeded: options?.verificationNeeded,
+      });
+      const existingAttempt = llmFallbackCacheKey ? getFallbackAttemptHistory(llmFallbackCacheKey) : null;
+      const persistedClusterReuse = getPersistedClusterReuse(llmFallbackClusterKey ?? null, engineVersion, outputStyle);
+
+      if (truthState.truthIsCurrent) {
+        llmFallbackSkippedForTruth = true;
+        llmFallbackReason = 'truth_approved';
+        llmWarnings.push('llm_fallback_skipped_truth');
+      } else if (persistedClusterReuse) {
+        const beforeParsed = { ...mergedSelection };
+        const reusedReferenceType = persistedClusterReuse.fields.referenceType ?? selectedReferenceType;
+        const reusedParsed = applyClusterReuseFields(mergedSelection, persistedClusterReuse);
+        const sanitizedReused = sanitizeParsedReference(reusedParsed, reusedReferenceType);
+        mergedSelection = normalizeAuthorOptionalWebsiteParse(sanitizedReused.parsed, sanitizedReused.referenceType);
+        selectedReferenceType = sanitizedReused.referenceType;
+        selectedFieldConfidence = {
+          ...selectedFieldConfidence,
+          ...applySplitPenaltyToFieldConfidence(buildFieldConfidence(mergedSelection, selectedReferenceType), splitPenalty),
+        };
+        llmFallbackAccepted = true;
+        llmFallbackReusedFromCluster = true;
+        llmFallbackReason = 'cluster_reuse';
+        llmFallbackFieldsImproved = listMeaningfulFallbackFieldChanges(
+          beforeParsed,
+          mergedSelection,
+          selectedReferenceType,
+          selectedReferenceType,
+        );
+        llmWarnings.push('llm_fallback_reused_from_cluster');
+      } else if (existingAttempt && !canRetryFallbackAttempt(existingAttempt)) {
+        llmFallbackReason = existingAttempt.accepted ? 'exact_cache_hit' : 'exact_cache_rejected';
+        llmWarnings.push('llm_fallback_cache_skip');
       } else {
-        try {
-          const llm = await extractWithLlm(selectedBase.normalized);
-          if (llm) {
-            const beforeParsed = { ...mergedSelection };
-            llmRawExtraction = llm;
-            llmBeforeParsed = beforeParsed;
-            const beforeReferenceType = selectedReferenceType;
-            const beforeFieldConfidence = { ...selectedFieldConfidence };
-            const beforeAuthorParse = parseAuthorsForStyle(mergedSelection.authors ?? [], selectedStyle);
-            const merged = mergeLlmWithDeterministic({
-              parsed: mergedSelection,
-              referenceType: selectedReferenceType,
-              fieldConfidence: selectedFieldConfidence,
-            }, llm);
-            let candidateSelection = normalizeAuthorOptionalWebsiteParse(
-              sanitizeParsedReference(merged.parsed, merged.referenceType).parsed,
-              sanitizeParsedReference(merged.parsed, merged.referenceType).referenceType,
-            );
-            const candidateSanitized = sanitizeParsedReference(candidateSelection, merged.referenceType);
-            candidateSelection = normalizeAuthorOptionalWebsiteParse(candidateSanitized.parsed, candidateSanitized.referenceType);
-            llmMergedCandidateParsed = candidateSelection;
-            let hybridContainer = resolveWinnerContainer(candidateSelection, candidateSanitized.referenceType);
-            candidateSelection = hybridContainer.parsed;
-            llmMergedCandidateParsed = candidateSelection;
-            const hybridResolution = resolveReferenceTypeFromEvidence({
-              claimedType: candidateSanitized.referenceType,
-              parsed: candidateSelection,
-              containerHints: hybridContainer.containerHints,
-              detectTypeHint: deterministic.referenceType !== 'unknown' ? deterministic.referenceType : null,
-            });
-            const candidateReferenceType = hybridResolution.referenceType;
-            const candidateFieldConfidence = {
-              ...merged.fieldConfidence,
-              ...applySplitPenaltyToFieldConfidence(buildFieldConfidence(candidateSelection, candidateReferenceType), splitPenalty),
-            };
-            const candidateAuthorParse = parseAuthorsForStyle(candidateSelection.authors ?? [], selectedStyle);
-            const acceptance = shouldAcceptLlmFallbackResult({
-              beforeParsed,
-              beforeReferenceType,
-              beforeFieldConfidence,
-              beforeAuthorParse,
-              afterParsed: candidateSelection,
-              afterReferenceType: candidateReferenceType,
-              afterFieldConfidence: candidateFieldConfidence,
-              afterAuthorParse: candidateAuthorParse,
-            });
-            llmFallbackFieldsImproved = acceptance.fieldsImproved;
-            llmFallbackStrictPassDelta = acceptance.strictPassDelta;
-            if (acceptance.accept) {
-              mergedSelection = candidateSelection;
-              selectedReferenceType = candidateReferenceType;
-              typeResolution = hybridResolution;
-              selectedFieldConfidence = candidateFieldConfidence;
-              extractorPath = 'llm';
-              llmApplied = true;
-              llmFallbackAccepted = true;
-              llmFallbackReason = acceptance.reason;
-              llmWarnings.push('llm_fallback_applied');
-            } else {
-              rejectedCandidates.push(`llm_rejected:${acceptance.reason}`);
-              llmWarnings.push(`llm_fallback_rejected:${acceptance.reason}`);
-              llmFallbackReason = acceptance.reason;
-            }
-          } else {
-            rejectedCandidates.push('llm_unavailable');
-            llmWarnings.push('llm_fallback_unavailable');
-            llmFallbackReason = 'llm_unavailable';
-            llmFailureMessage = 'LLM returned no content.';
-          }
-        } catch (error) {
-          rejectedCandidates.push('llm_invalid_or_failed');
-          llmFailureMessage = error instanceof Error ? error.message : String(error);
-          llmWarnings.push(`llm_fallback_failed:${llmFailureMessage}`);
-          llmFallbackReason = 'llm_invalid_or_failed';
+        const inflightExact = llmFallbackCacheKey ? getInflightCachePromise<void>(llmFallbackCacheKey) : null;
+        const inflightCluster = getInflightClusterPromise<void>(llmFallbackClusterKey ?? null);
+        if (inflightExact) {
+          await inflightExact;
+        } else if (inflightCluster) {
+          await inflightCluster;
         }
+
+        const reusedAfterWait = getPersistedClusterReuse(llmFallbackClusterKey ?? null, engineVersion, outputStyle);
+        if (reusedAfterWait) {
+          const reusedReferenceType = reusedAfterWait.fields.referenceType ?? selectedReferenceType;
+          const reusedParsed = applyClusterReuseFields(mergedSelection, reusedAfterWait);
+          const sanitizedReused = sanitizeParsedReference(reusedParsed, reusedReferenceType);
+          mergedSelection = normalizeAuthorOptionalWebsiteParse(sanitizedReused.parsed, sanitizedReused.referenceType);
+          selectedReferenceType = sanitizedReused.referenceType;
+          selectedFieldConfidence = {
+            ...selectedFieldConfidence,
+            ...applySplitPenaltyToFieldConfidence(buildFieldConfidence(mergedSelection, selectedReferenceType), splitPenalty),
+          };
+          llmFallbackAccepted = true;
+          llmFallbackReusedFromCluster = true;
+          llmFallbackReason = 'cluster_reuse';
+          llmWarnings.push('llm_fallback_reused_from_cluster');
+        } else {
+          const reserved = await reserveExtractFallbackCall(options?.llmBudget, batchSize);
+          if (!reserved) {
+            llmCapReached = true;
+            llmFallbackSkippedByBudget = true;
+            rejectedCandidates.push('llm_batch_budget_cap_reached');
+            llmWarnings.push('llm_batch_budget_cap_reached');
+          } else {
+            const llmExecution = (async () => {
+              llmAttempted = true;
+              try {
+                const llm = await extractWithLlm(selectedBase.normalized);
+                if (!llm) {
+                  llmFallbackAttemptErrorType = 'empty_response';
+                  llmFailureMessage = 'LLM returned no content.';
+                  recordFallbackAttemptHistory({
+                    cacheKey: llmFallbackCacheKey!,
+                    accepted: false,
+                    completedAt: new Date().toISOString(),
+                    errorType: 'empty_response',
+                  });
+                  return;
+                }
+
+                const beforeParsed = { ...mergedSelection };
+                llmRawExtraction = llm;
+                llmBeforeParsed = beforeParsed;
+                const beforeReferenceType = selectedReferenceType;
+                const beforeFieldConfidence = { ...selectedFieldConfidence };
+                const beforeAuthorParse = parseAuthorsForStyle(mergedSelection.authors ?? [], selectedStyle);
+                const merged = mergeLlmWithDeterministic({
+                  parsed: mergedSelection,
+                  referenceType: selectedReferenceType,
+                  fieldConfidence: selectedFieldConfidence,
+                }, llm);
+                let candidateSelection = normalizeAuthorOptionalWebsiteParse(
+                  sanitizeParsedReference(merged.parsed, merged.referenceType).parsed,
+                  sanitizeParsedReference(merged.parsed, merged.referenceType).referenceType,
+                );
+                const candidateSanitized = sanitizeParsedReference(candidateSelection, merged.referenceType);
+                candidateSelection = normalizeAuthorOptionalWebsiteParse(candidateSanitized.parsed, candidateSanitized.referenceType);
+                llmMergedCandidateParsed = candidateSelection;
+                let hybridContainer = resolveWinnerContainer(candidateSelection, candidateSanitized.referenceType);
+                candidateSelection = hybridContainer.parsed;
+                llmMergedCandidateParsed = candidateSelection;
+                const hybridResolution = resolveReferenceTypeFromEvidence({
+                  claimedType: candidateSanitized.referenceType,
+                  parsed: candidateSelection,
+                  containerHints: hybridContainer.containerHints,
+                  detectTypeHint: deterministic.referenceType !== 'unknown' ? deterministic.referenceType : null,
+                });
+                const candidateReferenceType = hybridResolution.referenceType;
+                const candidateFieldConfidence = {
+                  ...merged.fieldConfidence,
+                  ...applySplitPenaltyToFieldConfidence(buildFieldConfidence(candidateSelection, candidateReferenceType), splitPenalty),
+                };
+                const candidateAuthorParse = parseAuthorsForStyle(candidateSelection.authors ?? [], selectedStyle);
+                const acceptance = shouldAcceptLlmFallbackResult({
+                  beforeParsed,
+                  beforeReferenceType,
+                  beforeFieldConfidence,
+                  beforeAuthorParse,
+                  afterParsed: candidateSelection,
+                  afterReferenceType: candidateReferenceType,
+                  afterFieldConfidence: candidateFieldConfidence,
+                  afterAuthorParse: candidateAuthorParse,
+                });
+                llmFallbackFieldsImproved = acceptance.fieldsImproved;
+                llmFallbackStrictPassDelta = acceptance.strictPassDelta;
+                if (acceptance.accept) {
+                  mergedSelection = candidateSelection;
+                  selectedReferenceType = candidateReferenceType;
+                  typeResolution = hybridResolution;
+                  selectedFieldConfidence = candidateFieldConfidence;
+                  extractorPath = 'llm';
+                  llmApplied = true;
+                  llmFallbackAccepted = true;
+                  llmFallbackReason = acceptance.reason;
+                  recordAcceptedClusterReuse(
+                    llmFallbackClusterKey ?? null,
+                    engineVersion,
+                    outputStyle,
+                    candidateSelection,
+                    candidateReferenceType,
+                  );
+                  recordFallbackAttemptHistory({
+                    cacheKey: llmFallbackCacheKey!,
+                    accepted: true,
+                    completedAt: new Date().toISOString(),
+                  });
+                  llmWarnings.push('llm_fallback_applied');
+                } else {
+                  rejectedCandidates.push(`llm_rejected:${acceptance.reason}`);
+                  llmWarnings.push(`llm_fallback_rejected:${acceptance.reason}`);
+                  llmFallbackReason = acceptance.reason;
+                  recordFallbackAttemptHistory({
+                    cacheKey: llmFallbackCacheKey!,
+                    accepted: false,
+                    completedAt: new Date().toISOString(),
+                  });
+                }
+              } catch (error) {
+                rejectedCandidates.push('llm_invalid_or_failed');
+                llmFailureMessage = error instanceof Error ? error.message : String(error);
+                llmFallbackAttemptErrorType = classifyLlmAttemptError(error);
+                llmWarnings.push(`llm_fallback_failed:${llmFailureMessage}`);
+                llmFallbackReason = 'llm_invalid_or_failed';
+                recordFallbackAttemptHistory({
+                  cacheKey: llmFallbackCacheKey!,
+                  accepted: false,
+                  completedAt: new Date().toISOString(),
+                  errorType: llmFallbackAttemptErrorType,
+                });
+              }
+            })();
+
+            if (llmFallbackCacheKey) setInflightCachePromise(llmFallbackCacheKey, llmExecution);
+            setInflightClusterPromise(llmFallbackClusterKey ?? null, llmExecution);
+            try {
+              await llmExecution;
+            } finally {
+              if (llmFallbackCacheKey) clearInflightCachePromise(llmFallbackCacheKey, llmExecution);
+              clearInflightClusterPromise(llmFallbackClusterKey ?? null, llmExecution);
+            }
+          }
+        }
+      }
+
+      if (options?.userEdited && !options?.adminApproved && (llmAttempted || llmFallbackReusedFromCluster)) {
+        llmFallbackVerificationNeeded = true;
       }
     } else if (llmEnabled && weakSelection && !allowLlmFallback) {
       rejectedCandidates.push('llm_batch_gated');
@@ -5603,11 +6166,12 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             ? `_llm_rejected_${llmFallbackReason.replace(/[^a-z0-9]+/gi, '_')}`
           : '';
     const selectedAuthorFingerprint = JSON.stringify(selectedBase.parsed.authors ?? []);
-    const mergedAuthorFingerprint = JSON.stringify(mergedSelection.authors ?? []);
+    const provenanceAdjustedAuthors = normalizeAuthorsForProvenance(mergedSelection.authors ?? [], selectedStyle);
+    const mergedAuthorFingerprint = JSON.stringify(provenanceAdjustedAuthors.authors ?? []);
     const selectedStyleConfidence = selectedBase.styleConfidence ?? deterministic.styleConfidence;
     const finalAuthorParse = selectedAuthorFingerprint === mergedAuthorFingerprint
       ? selectedAuthorParse
-      : parseAuthorsForStyle(mergedSelection.authors ?? [], selectedStyle);
+      : parseAuthorsForStyle(provenanceAdjustedAuthors.authors ?? [], selectedStyle);
     const warnings = Array.from(new Set([
       ...deterministic.warnings,
       ...(fallback?.warnings ?? []),
@@ -5615,6 +6179,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       ...(inSource?.warnings ?? []),
       ...selectedBase.warnings,
       ...splitWarnings,
+      ...winnerRepairReasons.map((reason) => `selected_repair:${reason}`),
       ...llmWarnings,
     ]));
     const selectionDebugScores = preparedAttempts.reduce<Record<string, number>>((scores, attempt) => {
@@ -5657,6 +6222,13 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       llmFallbackAccepted: llmFallbackAccepted,
       llmFallbackReason,
       llmFallbackSkippedByBudget,
+      llmFallbackReusedFromCluster,
+      llmFallbackSkippedForTruth,
+      llmFallbackVerificationNeeded,
+      llmFallbackCacheKey,
+      llmFallbackClusterKey,
+      llmFallbackQueuePriority,
+      llmFallbackAttemptErrorType,
       llmFallbackFieldsImproved,
       llmFallbackStrictPassDelta,
       llmFallbackFirstAuthorConfidence: llmTrigger.firstAuthorConfidence,
@@ -5677,7 +6249,8 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             winner_candidate_id: selectedBase.id,
             winner_score_breakdown: selection.winnerBreakdown,
             adapter_registry: selection.adapterRegistry,
-            winner_container_hints: resolvedContainer.containerHints,
+            winner_container_hints: winnerContainerHints,
+            winner_repair_reasons: winnerRepairReasons,
             type_resolution_reason: typeResolution.reason,
             extractor_path: extractorPath,
             detected_style: selectedStyle,
@@ -5707,6 +6280,13 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             llm_cap_reached: llmCapReached,
             llm_fallback_reason: llmFallbackReason,
             llm_fallback_skipped_by_budget: llmFallbackSkippedByBudget,
+            llm_fallback_reused_from_cluster: llmFallbackReusedFromCluster,
+            llm_fallback_skipped_for_truth: llmFallbackSkippedForTruth,
+            llm_fallback_verification_needed: llmFallbackVerificationNeeded,
+            llm_fallback_cache_key: llmFallbackCacheKey,
+            llm_fallback_cluster_key: llmFallbackClusterKey,
+            llm_fallback_queue_priority: llmFallbackQueuePriority,
+            llm_fallback_attempt_error_type: llmFallbackAttemptErrorType,
             llm_fallback_fields_improved: llmFallbackFieldsImproved,
             llm_fallback_strict_pass_delta: llmFallbackStrictPassDelta,
             llm_fallback_first_author_confidence: llmTrigger.firstAuthorConfidence,
@@ -5722,9 +6302,15 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
               malformedAuthorBlob: llmTrigger.malformedAuthorBlob,
               weakVenue: llmTrigger.weakVenue,
               weakReferenceType: llmTrigger.weakReferenceType,
+              lowConfidenceNonCore: llmTrigger.lowConfidenceNonCore,
+              duplicatedTails: llmTrigger.duplicatedTails,
+              identifierLeakage: llmTrigger.identifierLeakage,
+              metadataBleed: llmTrigger.metadataBleed,
+              typePriorityEligible: llmTrigger.typePriorityEligible,
               strictNearPass: llmTrigger.strictNearPass,
               corePassedCount: llmTrigger.corePassedCount,
               batchFallbackCap,
+              queuePriority: llmFallbackQueuePriority,
             },
             rejectedCandidates,
           }

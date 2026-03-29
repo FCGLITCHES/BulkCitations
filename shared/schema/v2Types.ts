@@ -217,6 +217,20 @@ export interface ExtractionMetadata {
   llmFallbackAccepted?: boolean;
   llmFallbackReason?: string;
   llmFallbackSkippedByBudget?: boolean;
+  llmFallbackReusedFromCluster?: boolean;
+  llmFallbackSkippedForTruth?: boolean;
+  llmFallbackVerificationNeeded?: boolean;
+  llmFallbackCacheKey?: string;
+  llmFallbackClusterKey?: string;
+  llmFallbackQueuePriority?: number;
+  llmFallbackAttemptErrorType?:
+    | 'timeout'
+    | 'rate_limit'
+    | 'invalid_json_response'
+    | 'empty_response'
+    | 'network_error'
+    | 'token_limit_exceeded'
+    | 'unexpected_runtime_error';
   llmFallbackFieldsImproved?: string[];
   llmFallbackStrictPassDelta?: number;
   llmFallbackFirstAuthorConfidence?: number;

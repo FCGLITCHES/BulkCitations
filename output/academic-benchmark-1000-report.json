@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-29T05:27:26.463Z",
+  "generatedAt": "2026-03-29T12:09:27.370Z",
   "corpusPath": "D:\\Coding\\Citing\\scripts\\data\\academic-benchmark-corpus-1000.json",
   "corpusSize": 1000,
   "ieeeCorpusCount": 159,
@@ -10,11 +10,11 @@
     "groundTruth": "Canonical metadata fields plus APA bibliography output rendered from frozen CSL JSON.",
     "scope": [
       "thesis",
-      "chapter",
       "journal",
+      "chapter",
+      "report",
       "book",
-      "conference",
-      "report"
+      "conference"
     ],
     "notes": [
       "The corpus contains 1,000 real citations drawn from Crossref and frozen locally on the generation date shown above.",
@@ -25,25 +25,25 @@
     ]
   },
   "strict_external": {
-    "essentialAccuracyPct": 81.93,
-    "countIntegrityPct": 99.5,
-    "nonEmptyOutputPct": 99.5,
-    "identityIntegrityPct": 99.4,
-    "identityContaminationCount": 3,
+    "essentialAccuracyPct": 81.87,
+    "countIntegrityPct": 99.6,
+    "nonEmptyOutputPct": 99.6,
+    "identityIntegrityPct": 99.6,
+    "identityContaminationCount": 0,
     "identityContaminationByCategory": {
-      "shifted_prev": 3,
+      "shifted_prev": 0,
       "shifted_next": 0,
       "multiwork_merged_output": 0,
       "duplicate_output_reuse": 0,
       "dedup_field_substitution": 0
     },
-    "averageRenderSimilarityPct": 90.2,
-    "consistencyPct": 96.1
+    "averageRenderSimilarityPct": 90.32,
+    "consistencyPct": 96.39
   },
   "legacy_comparable": {
     "methodologyVersion": "1.0",
     "frozenAt": "2026-03-27",
-    "fieldAveragePct": 94.44,
+    "fieldAveragePct": 95.02,
     "includedFields": [
       "title",
       "firstAuthor",
@@ -70,16 +70,16 @@
     "corpusSize": 1000,
     "repeatCount": 3,
     "retrievalDate": "2026-03-27T12:11:27.113Z",
-    "fieldAccuracyPct": 94.5,
-    "consistencyPct": 96.1,
-    "averageRenderSimilarityPct": 90.2
+    "fieldAccuracyPct": 94.86,
+    "consistencyPct": 96.39,
+    "averageRenderSimilarityPct": 90.32
   },
-  "countIntegrityPct": 99.5,
-  "nonEmptyOutputPct": 99.5,
-  "identityIntegrityPct": 99.4,
-  "identityContaminationCount": 3,
+  "countIntegrityPct": 99.6,
+  "nonEmptyOutputPct": 99.6,
+  "identityIntegrityPct": 99.6,
+  "identityContaminationCount": 0,
   "identityContaminationByCategory": {
-    "shifted_prev": 3,
+    "shifted_prev": 0,
     "shifted_next": 0,
     "multiwork_merged_output": 0,
     "duplicate_output_reuse": 0,
@@ -87,14 +87,14 @@
   },
   "actionNeededReasonCounts": {
     "overall": {
-      "missing_authors": 15,
+      "missing_authors": 12,
       "malformed_authors": 5,
-      "weak_first_author": 15,
-      "weak_venue": 35,
-      "weak_reference_type": 15,
-      "multi_field_low_confidence": 155,
-      "empty_output": 15,
-      "identity_contamination": 3
+      "weak_first_author": 12,
+      "weak_venue": 27,
+      "weak_reference_type": 21,
+      "multi_field_low_confidence": 141,
+      "empty_output": 12,
+      "identity_contamination": 0
     },
     "ieee": {
       "missing_authors": 6,
@@ -110,94 +110,93 @@
       "missing_authors": 0,
       "malformed_authors": 5,
       "weak_first_author": 9,
-      "weak_venue": 29,
-      "weak_reference_type": 15,
-      "multi_field_low_confidence": 134,
+      "weak_venue": 24,
+      "weak_reference_type": 21,
+      "multi_field_low_confidence": 126,
       "empty_output": 0,
       "identity_contamination": 0
     }
   },
   "validationIssueCounts": {
-    "provider_resolution_error": 1981,
-    "authority_fields_applied": 666,
-    "no_exact_external_match": 336,
+    "provider_resolution_error": 2056,
+    "authority_fields_applied": 612,
+    "no_exact_external_match": 320,
     "title_split_token_artifact": 96,
-    "title_short_or_missing": 63,
-    "author_structure_unstable": 47,
-    "incompatible_field_overlap": 34,
-    "initials_as_surname": 25,
-    "multiple_doi_clusters": 12,
+    "title_short_or_missing": 66,
+    "author_structure_unstable": 44,
+    "incompatible_field_overlap": 29,
+    "initials_as_surname": 28,
+    "weak_proceedings_venue": 15,
+    "multiple_doi_clusters": 9,
     "repeated_title_in_container": 9,
-    "weak_proceedings_venue": 9,
     "alternating_surname_given_tokens": 6,
     "oversized_chunk_confirmed": 6,
     "year_out_of_range": 6,
     "edition_repeated": 3,
     "embedded_reference_start_in_venue": 3,
     "multiple_year_anchor_clusters": 3,
-    "split_token_artifact": 3,
     "venue_missing_for_conference": 3,
-    "provider_no_coverage": 2,
     "authors_unusually_many": 1
   },
   "missingRequiredFieldCounts": {
     "bookTitle": 34,
-    "authors": 15,
-    "referenceType": 15,
-    "title": 15,
-    "venue": 15,
-    "year": 15,
-    "publisher": 3
+    "authors": 12,
+    "referenceType": 12,
+    "title": 12,
+    "venue": 12,
+    "year": 12,
+    "publisher": 3,
+    "url": 3
   },
   "dominantFailureLedger": [
     {
       "bucket": "residual_other",
-      "count": 54,
-      "shareOfStrictFailsPct": 29.35,
+      "count": 64,
+      "shareOfStrictFailsPct": 34.59,
       "sourceTypes": {
-        "journal": 28,
-        "book": 11,
+        "journal": 35,
+        "book": 13,
         "chapter": 6,
-        "conference": 4,
+        "conference": 5,
         "thesis": 3,
         "report": 2
       },
       "inputStyles": {
-        "mla": 16,
-        "chicago": 12,
-        "harvard": 12,
-        "vancouver": 8,
-        "ieee": 5,
-        "apa": 1
+        "mla": 22,
+        "chicago": 14,
+        "vancouver": 9,
+        "ieee": 8,
+        "harvard": 6,
+        "apa": 5
       },
       "sampleRecordIds": [
+        "journal-0240-10-1097-md-0000000000017835",
         "journal-0389-10-1177-09557490251414723",
         "chapter-0084-10-1007-978-3-642-00418-6-1748",
-        "journal-0171-10-47191-jefms-v5-i9-30",
+        "journal-0414-10-1097-ms9-0000000000003904",
         "journal-0178-10-1038-npre-2010-5416",
         "journal-0150-10-1111-j-1467-8705-1974-tb01519-x",
         "book-0072-10-1596-1813-9450-3795",
         "journal-0383-10-5005-jp-journals-10006-2222",
-        "journal-0544-10-1007-bf00265015",
-        "journal-0352-10-1103-physreve-60-r29",
+        "journal-0039-10-1186-s13104-017-2882-4",
+        "conference-0118-10-1109-nebc-1989-36745",
         "thesis-0040-10-14264-190019",
-        "chapter-0144-10-1007-978-981-10-6898-0-21",
-        "conference-0006-10-1109-icpe-2015-7168043"
+        "chapter-0144-10-1007-978-981-10-6898-0-21"
       ]
     },
     {
       "bucket": "venue_cleanup",
-      "count": 46,
-      "shareOfStrictFailsPct": 25,
+      "count": 41,
+      "shareOfStrictFailsPct": 22.16,
       "sourceTypes": {
-        "journal": 30,
+        "journal": 26,
         "chapter": 9,
-        "book": 7
+        "book": 6
       },
       "inputStyles": {
-        "mla": 11,
-        "apa": 9,
-        "harvard": 9,
+        "apa": 8,
+        "harvard": 8,
+        "mla": 8,
         "vancouver": 7,
         "ieee": 6,
         "chicago": 4
@@ -210,8 +209,8 @@
         "chapter-0101-10-5771-9783845281797-49",
         "journal-0433-10-1002-chin-197210264",
         "journal-0527-10-1097-01-gim-0000144014-91237-a1",
+        "journal-0196-10-1016-0167-2738-93-90411-u",
         "chapter-0015-10-1007-978-3-319-96866-7-25",
-        "journal-0335-10-1080-10549811-2011-588473",
         "journal-0030-10-1016-j-jmmm-2014-01-069",
         "journal-0449-10-1016-j-canrad-2018-07-061",
         "journal-0377-10-1006-clin-1994-1029"
@@ -219,50 +218,48 @@
     },
     {
       "bucket": "conference_container_type",
-      "count": 26,
-      "shareOfStrictFailsPct": 14.13,
+      "count": 32,
+      "shareOfStrictFailsPct": 17.3,
       "sourceTypes": {
-        "conference": 26
+        "conference": 32
       },
       "inputStyles": {
-        "chicago": 8,
-        "apa": 5,
+        "chicago": 7,
+        "apa": 6,
+        "mla": 6,
+        "ieee": 5,
         "harvard": 4,
-        "ieee": 3,
-        "mla": 3,
-        "vancouver": 3
+        "vancouver": 4
       },
       "sampleRecordIds": [
-        "conference-0056-10-1109-lfnm-2003-1246078",
+        "conference-0151-10-1117-12-389136",
         "conference-0120-10-1109-crmico-2004-183125",
-        "conference-0118-10-1109-nebc-1989-36745",
+        "conference-0044-10-1117-12-784326",
+        "conference-0103-10-21125-iceri-2022-0037",
+        "conference-0015-10-1109-sam-2002-1191043",
         "conference-0076-10-21698-simi-2022-ab31",
-        "conference-0061-10-2514-6-1987-550",
-        "conference-0043-10-3997-2214-4609-2022590004",
         "conference-0082-10-1061-9780784483428-034",
-        "conference-0144-10-1109-trustcom-2015-373",
         "conference-0029-10-1117-12-306042",
         "conference-0042-10-1109-icaicta63815-2024-10763158",
-        "conference-0028-10-1115-pvp2025-154370",
-        "conference-0050-10-1055-s-0039-1693558"
+        "conference-0050-10-1055-s-0039-1693558",
+        "conference-0012-10-1364-ecbo-2011-80881m",
+        "conference-0086-10-21528-cbic2011-23-2"
       ]
     },
     {
       "bucket": "ieee_author_order",
-      "count": 22,
-      "shareOfStrictFailsPct": 11.96,
+      "count": 20,
+      "shareOfStrictFailsPct": 10.81,
       "sourceTypes": {
-        "journal": 13,
+        "journal": 11,
         "book": 4,
         "conference": 4,
         "chapter": 1
       },
       "inputStyles": {
-        "ieee": 22
+        "ieee": 20
       },
       "sampleRecordIds": [
-        "journal-0002-10-53730-ijhs-v6ns1-8707",
-        "journal-0566-10-1016-j-molcata-2009-01-028",
         "journal-0296-10-33917-mic-4-93-2020-47-56",
         "journal-0344-10-1134-s1063774520060188",
         "journal-0266-10-52825-gjae-v54i4-1630",
@@ -272,27 +269,28 @@
         "book-0005-10-24824-978854440890-2",
         "book-0077-10-1007-978-3-476-98830-0",
         "journal-0410-10-18227-2177-4307-acta-v11i26-3251",
-        "chapter-0071-10-1007-978-981-19-7800-5-13"
+        "chapter-0071-10-1007-978-981-19-7800-5-13",
+        "book-0059-10-1007-978-3-319-04268-8",
+        "conference-0080-10-14488-enegep2023-tn-st-407-2007-46053"
       ]
     },
     {
       "bucket": "pages_locator",
-      "count": 12,
-      "shareOfStrictFailsPct": 6.52,
+      "count": 11,
+      "shareOfStrictFailsPct": 5.95,
       "sourceTypes": {
-        "conference": 6,
-        "journal": 6
+        "journal": 6,
+        "conference": 5
       },
       "inputStyles": {
         "apa": 4,
-        "vancouver": 4,
+        "vancouver": 3,
         "chicago": 2,
         "harvard": 1,
         "mla": 1
       },
       "sampleRecordIds": [
         "journal-0199-10-5739-isfp-1999-661",
-        "conference-0015-10-1109-sam-2002-1191043",
         "journal-0535-10-1243-pime-proc-1995-209-338-02",
         "journal-0307-10-1073-pnas-040548097",
         "conference-0051-10-1109-ict-1998-740430",
@@ -307,29 +305,23 @@
     },
     {
       "bucket": "report_institution_type",
-      "count": 12,
-      "shareOfStrictFailsPct": 6.52,
+      "count": 7,
+      "shareOfStrictFailsPct": 3.78,
       "sourceTypes": {
-        "report": 12
+        "report": 7
       },
       "inputStyles": {
-        "harvard": 4,
-        "chicago": 3,
-        "ieee": 2,
-        "mla": 2,
-        "vancouver": 1
+        "harvard": 3,
+        "chicago": 2,
+        "ieee": 1,
+        "mla": 1
       },
       "sampleRecordIds": [
-        "report-0014-10-21236-ada142872",
-        "report-0011-10-31979-mti-2020-1890",
-        "report-0018-10-5703-1288284313295",
-        "report-0010-10-55277-researchhub-dmbxp6iu-1",
         "report-0023-10-2172-4632674",
         "report-0050-10-2172-10106665",
         "report-0046-10-2172-4563562",
         "report-0039-10-54067-acpf-306",
-        "report-0027-10-31899-pgy13-1007",
-        "report-0038-10-2172-6514804",
+        "report-0032-10-35613-ccl-2022-2049",
         "report-0002-10-2172-7275927",
         "report-0022-10-23867-ri0219d"
       ]
@@ -337,7 +329,7 @@
     {
       "bucket": "apa_author_order",
       "count": 6,
-      "shareOfStrictFailsPct": 3.26,
+      "shareOfStrictFailsPct": 3.24,
       "sourceTypes": {
         "journal": 3,
         "book": 1,
@@ -358,20 +350,19 @@
     },
     {
       "bucket": "missing_output",
-      "count": 5,
-      "shareOfStrictFailsPct": 2.72,
+      "count": 4,
+      "shareOfStrictFailsPct": 2.16,
       "sourceTypes": {
-        "journal": 4,
+        "journal": 3,
         "report": 1
       },
       "inputStyles": {
         "ieee": 2,
-        "mla": 2,
+        "mla": 1,
         "vancouver": 1
       },
       "sampleRecordIds": [
         "journal-0033-10-1002-chin-200104012",
-        "journal-0203-10-1111-ecot-12053",
         "report-0021-10-55277-researchhub-3jjve22d",
         "journal-0110-10-2165-00128415-201113780-00107",
         "journal-0140-10-1097-00042737-200305000-00034"
@@ -379,159 +370,152 @@
     },
     {
       "bucket": "identity_contamination",
-      "count": 1,
-      "shareOfStrictFailsPct": 0.54,
-      "sourceTypes": {
-        "journal": 1
-      },
-      "inputStyles": {
-        "harvard": 1
-      },
-      "sampleRecordIds": [
-        "journal-0292-10-1016-s0003-4975-10-66852-x"
-      ]
+      "count": 0,
+      "shareOfStrictFailsPct": 0,
+      "sourceTypes": {},
+      "inputStyles": {},
+      "sampleRecordIds": []
     }
   ],
   "nearPassLedger": [
     {
-      "bucket": "firstAuthor",
-      "count": 58,
-      "shareOfStrictFailsPct": 31.52,
+      "bucket": "referenceType",
+      "count": 48,
+      "shareOfStrictFailsPct": 25.95,
       "sourceTypes": {
-        "journal": 33,
+        "journal": 29,
+        "book": 7,
+        "conference": 7,
+        "chapter": 5
+      },
+      "inputStyles": {
+        "apa": 11,
+        "mla": 11,
+        "chicago": 8,
+        "vancouver": 7,
+        "ieee": 6,
+        "harvard": 5
+      },
+      "sampleRecordIds": [
+        "journal-0240-10-1097-md-0000000000017835",
+        "journal-0389-10-1177-09557490251414723",
+        "chapter-0084-10-1007-978-3-642-00418-6-1748",
+        "journal-0414-10-1097-ms9-0000000000003904",
+        "journal-0178-10-1038-npre-2010-5416",
+        "book-0072-10-1596-1813-9450-3795",
+        "journal-0383-10-5005-jp-journals-10006-2222",
+        "journal-0039-10-1186-s13104-017-2882-4",
+        "chapter-0144-10-1007-978-981-10-6898-0-21",
+        "journal-0199-10-5739-isfp-1999-661",
+        "journal-0535-10-1243-pime-proc-1995-209-338-02",
+        "journal-0307-10-1073-pnas-040548097"
+      ]
+    },
+    {
+      "bucket": "firstAuthor",
+      "count": 45,
+      "shareOfStrictFailsPct": 24.32,
+      "sourceTypes": {
+        "journal": 21,
         "conference": 10,
-        "book": 5,
+        "book": 4,
         "report": 4,
         "thesis": 4,
         "chapter": 2
       },
       "inputStyles": {
-        "ieee": 18,
-        "harvard": 11,
-        "chicago": 9,
+        "ieee": 15,
         "mla": 9,
-        "vancouver": 6,
-        "apa": 5
+        "chicago": 8,
+        "apa": 5,
+        "vancouver": 5,
+        "harvard": 3
       },
       "sampleRecordIds": [
-        "journal-0002-10-53730-ijhs-v6ns1-8707",
         "journal-0025-10-1134-s0036023619070088",
         "journal-0577-10-1007-s10064-018-1259-9",
-        "journal-0171-10-47191-jefms-v5-i9-30",
         "journal-0150-10-1111-j-1467-8705-1974-tb01519-x",
-        "journal-0566-10-1016-j-molcata-2009-01-028",
         "thesis-0001-10-17771-pucrio-acad-64355",
-        "report-0014-10-21236-ada142872",
-        "journal-0544-10-1007-bf00265015",
         "journal-0344-10-1134-s1063774520060188",
-        "journal-0352-10-1103-physreve-60-r29",
-        "thesis-0040-10-14264-190019"
-      ]
-    },
-    {
-      "bucket": "referenceType",
-      "count": 33,
-      "shareOfStrictFailsPct": 17.93,
-      "sourceTypes": {
-        "journal": 14,
-        "conference": 7,
-        "chapter": 5,
-        "book": 4,
-        "report": 3
-      },
-      "inputStyles": {
-        "apa": 7,
-        "mla": 6,
-        "vancouver": 6,
-        "chicago": 5,
-        "harvard": 5,
-        "ieee": 4
-      },
-      "sampleRecordIds": [
-        "journal-0389-10-1177-09557490251414723",
-        "chapter-0084-10-1007-978-3-642-00418-6-1748",
-        "journal-0178-10-1038-npre-2010-5416",
-        "book-0072-10-1596-1813-9450-3795",
-        "journal-0383-10-5005-jp-journals-10006-2222",
-        "chapter-0144-10-1007-978-981-10-6898-0-21",
-        "journal-0199-10-5739-isfp-1999-661",
-        "journal-0535-10-1243-pime-proc-1995-209-338-02",
-        "journal-0307-10-1073-pnas-040548097",
-        "conference-0082-10-1061-9780784483428-034",
-        "journal-0100-10-1557-proc-571-43",
-        "journal-0310-10-47701-icohetech-v3i1-2103"
+        "thesis-0040-10-14264-190019",
+        "journal-0266-10-52825-gjae-v54i4-1630",
+        "book-0055-10-22533-at-ed-409201303",
+        "journal-0089-10-1017-s0021859600013344",
+        "journal-0287-10-1016-j-agrformet-2018-05-019",
+        "journal-0537-10-5850-jksct-2025-49-5-980",
+        "journal-0608-10-4258-hir-2012-18-3-158"
       ]
     },
     {
       "bucket": "venue",
-      "count": 19,
-      "shareOfStrictFailsPct": 10.33,
+      "count": 27,
+      "shareOfStrictFailsPct": 14.59,
       "sourceTypes": {
-        "conference": 7,
+        "conference": 16,
         "chapter": 5,
-        "book": 4,
+        "book": 3,
         "journal": 3
       },
       "inputStyles": {
         "apa": 6,
-        "chicago": 3,
-        "harvard": 3,
-        "ieee": 3,
-        "mla": 3,
+        "ieee": 6,
+        "chicago": 5,
+        "mla": 5,
+        "harvard": 4,
         "vancouver": 1
       },
       "sampleRecordIds": [
-        "conference-0056-10-1109-lfnm-2003-1246078",
+        "conference-0151-10-1117-12-389136",
+        "conference-0120-10-1109-crmico-2004-183125",
         "chapter-0023-10-1201-9781003327899-11",
-        "conference-0061-10-2514-6-1987-550",
-        "conference-0043-10-3997-2214-4609-2022590004",
+        "conference-0044-10-1117-12-784326",
+        "conference-0103-10-21125-iceri-2022-0037",
         "chapter-0015-10-1007-978-3-319-96866-7-25",
+        "conference-0042-10-1109-icaicta63815-2024-10763158",
         "journal-0030-10-1016-j-jmmm-2014-01-069",
-        "conference-0028-10-1115-pvp2025-154370",
+        "conference-0050-10-1055-s-0039-1693558",
+        "conference-0019-10-1117-12-2632510",
         "chapter-0121-10-1007-978-3-030-66011-6-10",
-        "conference-0067-10-1049-cp-2013-1920",
-        "journal-0448-10-1111-j-1468-2265-2011-00682-37-x",
-        "journal-0491-10-1093-nq-s3-x-254-384c",
-        "chapter-0086-10-1093-oseo-instance-00038575"
+        "conference-0067-10-1049-cp-2013-1920"
       ]
     },
     {
       "bucket": "title",
       "count": 7,
-      "shareOfStrictFailsPct": 3.8,
+      "shareOfStrictFailsPct": 3.78,
       "sourceTypes": {
-        "book": 3,
+        "book": 2,
+        "conference": 2,
         "report": 2,
-        "conference": 1,
         "journal": 1
       },
       "inputStyles": {
         "mla": 3,
         "chicago": 2,
-        "ieee": 2
+        "harvard": 1,
+        "ieee": 1
       },
       "sampleRecordIds": [
+        "conference-0118-10-1109-nebc-1989-36745",
         "conference-0017-10-1109-iciprm-2005-1517459",
         "report-0015-10-2172-8504956",
         "book-0033-10-1007-978-3-540-68215-8",
         "journal-0090-10-1126-sciadv-abk3076",
         "report-0053-10-2172-1408646",
-        "book-0065-10-5040-9798216422365",
         "book-0052-10-1093-med-9780199591473-003-0007"
       ]
     },
     {
       "bucket": "year",
-      "count": 3,
-      "shareOfStrictFailsPct": 1.63,
+      "count": 2,
+      "shareOfStrictFailsPct": 1.08,
       "sourceTypes": {
-        "conference": 3
+        "conference": 2
       },
       "inputStyles": {
-        "vancouver": 3
+        "vancouver": 2
       },
       "sampleRecordIds": [
-        "conference-0015-10-1109-sam-2002-1191043",
         "conference-0051-10-1109-ict-1998-740430",
         "conference-0075-10-1109-icassp-1997-599838"
       ]
@@ -555,32 +539,32 @@
   ],
   "weightedLiftModel": {
     "targetStrictExternalAccuracyPct": 90,
-    "currentStrictExternalAccuracyPct": 81.93,
-    "remainingGapPct": 8.07,
+    "currentStrictExternalAccuracyPct": 81.87,
+    "remainingGapPct": 8.13,
     "bySourceType": [
       {
         "key": "journal",
         "count": 550,
         "corpusSharePct": 55,
-        "strictEssentialAccuracyPct": 84.55,
-        "weightedContributionPct": 46.5,
-        "weightedHeadroomPct": 8.5
+        "strictEssentialAccuracyPct": 84.73,
+        "weightedContributionPct": 46.6,
+        "weightedHeadroomPct": 8.4
       },
       {
         "key": "conference",
         "count": 150,
         "corpusSharePct": 15,
-        "strictEssentialAccuracyPct": 73.56,
-        "weightedContributionPct": 11.03,
-        "weightedHeadroomPct": 3.97
+        "strictEssentialAccuracyPct": 70,
+        "weightedContributionPct": 10.5,
+        "weightedHeadroomPct": 4.5
       },
       {
         "key": "book",
         "count": 100,
         "corpusSharePct": 10,
-        "strictEssentialAccuracyPct": 78.33,
-        "weightedContributionPct": 7.83,
-        "weightedHeadroomPct": 2.17
+        "strictEssentialAccuracyPct": 77,
+        "weightedContributionPct": 7.7,
+        "weightedHeadroomPct": 2.3
       },
       {
         "key": "chapter",
@@ -594,9 +578,9 @@
         "key": "report",
         "count": 50,
         "corpusSharePct": 5,
-        "strictEssentialAccuracyPct": 70,
-        "weightedContributionPct": 3.5,
-        "weightedHeadroomPct": 1.5
+        "strictEssentialAccuracyPct": 80,
+        "weightedContributionPct": 4,
+        "weightedHeadroomPct": 1
       },
       {
         "key": "thesis",
@@ -612,25 +596,17 @@
         "key": "ieee",
         "count": 159,
         "corpusSharePct": 15.9,
-        "strictEssentialAccuracyPct": 75.47,
-        "weightedContributionPct": 12,
-        "weightedHeadroomPct": 3.9
+        "strictEssentialAccuracyPct": 75.05,
+        "weightedContributionPct": 11.93,
+        "weightedHeadroomPct": 3.97
       },
       {
         "key": "mla",
         "count": 176,
         "corpusSharePct": 17.6,
-        "strictEssentialAccuracyPct": 80.11,
-        "weightedContributionPct": 14.1,
-        "weightedHeadroomPct": 3.5
-      },
-      {
-        "key": "harvard",
-        "count": 168,
-        "corpusSharePct": 16.8,
-        "strictEssentialAccuracyPct": 82.14,
-        "weightedContributionPct": 13.8,
-        "weightedHeadroomPct": 3
+        "strictEssentialAccuracyPct": 77.84,
+        "weightedContributionPct": 13.7,
+        "weightedHeadroomPct": 3.9
       },
       {
         "key": "chicago",
@@ -644,9 +620,9 @@
         "key": "apa",
         "count": 168,
         "corpusSharePct": 16.8,
-        "strictEssentialAccuracyPct": 85.71,
-        "weightedContributionPct": 14.4,
-        "weightedHeadroomPct": 2.4
+        "strictEssentialAccuracyPct": 83.13,
+        "weightedContributionPct": 13.97,
+        "weightedHeadroomPct": 2.83
       },
       {
         "key": "vancouver",
@@ -655,6 +631,14 @@
         "strictEssentialAccuracyPct": 85.12,
         "weightedContributionPct": 13.53,
         "weightedHeadroomPct": 2.37
+      },
+      {
+        "key": "harvard",
+        "count": 168,
+        "corpusSharePct": 16.8,
+        "strictEssentialAccuracyPct": 87.1,
+        "weightedContributionPct": 14.63,
+        "weightedHeadroomPct": 2.17
       }
     ]
   },
@@ -673,11 +657,11 @@
     "rejected": {}
   },
   "ieeeFailureBreakdown": {
-    "author_order": 60,
-    "venue_abbreviation": 18,
-    "locator_misclassified": 3,
+    "author_order": 54,
+    "venue_abbreviation": 17,
+    "locator_misclassified": 0,
     "doi_parse": 0,
-    "reference_type": 30,
+    "reference_type": 42,
     "identity_contamination": 0,
     "empty_output": 6
   },
@@ -685,12 +669,12 @@
     {
       "expectedReferenceType": "journal",
       "actualReferenceType": "journal",
-      "count": 1575
+      "count": 1539
     },
     {
       "expectedReferenceType": "conference",
       "actualReferenceType": "conference",
-      "count": 411
+      "count": 414
     },
     {
       "expectedReferenceType": "chapter",
@@ -700,7 +684,7 @@
     {
       "expectedReferenceType": "book",
       "actualReferenceType": "book",
-      "count": 270
+      "count": 258
     },
     {
       "expectedReferenceType": "thesis",
@@ -710,32 +694,32 @@
     {
       "expectedReferenceType": "report",
       "actualReferenceType": "report",
-      "count": 132
+      "count": 147
     },
     {
       "expectedReferenceType": "journal",
       "actualReferenceType": "conference",
-      "count": 39
-    },
-    {
-      "expectedReferenceType": "conference",
-      "actualReferenceType": "chapter",
-      "count": 27
+      "count": 48
     },
     {
       "expectedReferenceType": "journal",
-      "actualReferenceType": "book",
-      "count": 21
-    },
-    {
-      "expectedReferenceType": "chapter",
-      "actualReferenceType": "journal",
-      "count": 15
+      "actualReferenceType": "report",
+      "count": 33
     },
     {
       "expectedReferenceType": "book",
       "actualReferenceType": "report",
-      "count": 12
+      "count": 24
+    },
+    {
+      "expectedReferenceType": "conference",
+      "actualReferenceType": "chapter",
+      "count": 24
+    },
+    {
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "book",
+      "count": 18
     },
     {
       "expectedReferenceType": "chapter",
@@ -743,43 +727,43 @@
       "count": 12
     },
     {
-      "expectedReferenceType": "conference",
+      "expectedReferenceType": "chapter",
       "actualReferenceType": "journal",
       "count": 12
-    },
-    {
-      "expectedReferenceType": "journal",
-      "actualReferenceType": "missing",
-      "count": 12
-    },
-    {
-      "expectedReferenceType": "book",
-      "actualReferenceType": "journal",
-      "count": 9
-    },
-    {
-      "expectedReferenceType": "report",
-      "actualReferenceType": "book",
-      "count": 9
     },
     {
       "expectedReferenceType": "book",
       "actualReferenceType": "conference",
-      "count": 6
-    },
-    {
-      "expectedReferenceType": "report",
-      "actualReferenceType": "journal",
-      "count": 6
+      "count": 9
     },
     {
       "expectedReferenceType": "book",
-      "actualReferenceType": "unknown",
+      "actualReferenceType": "journal",
+      "count": 9
+    },
+    {
+      "expectedReferenceType": "conference",
+      "actualReferenceType": "journal",
+      "count": 9
+    },
+    {
+      "expectedReferenceType": "journal",
+      "actualReferenceType": "missing",
+      "count": 9
+    },
+    {
+      "expectedReferenceType": "chapter",
+      "actualReferenceType": "report",
+      "count": 3
+    },
+    {
+      "expectedReferenceType": "conference",
+      "actualReferenceType": "book",
       "count": 3
     },
     {
       "expectedReferenceType": "journal",
-      "actualReferenceType": "unknown",
+      "actualReferenceType": "website",
       "count": 3
     },
     {
@@ -790,29 +774,29 @@
   ],
   "selectorDiagnostics": {
     "selectorModes": {
-      "multi_candidate": 2985
+      "multi_candidate": 2988
     },
     "selectionModes": {
-      "full_scoring": 963,
-      "single_survivor": 1044,
-      "unanimous_diversity_guard": 978
+      "full_scoring": 966,
+      "single_survivor": 1041,
+      "unanimous_diversity_guard": 981
     },
     "topWinnerAdapters": [
       {
         "adapterId": "heuristic:ieee_quoted_reference",
-        "count": 609
+        "count": 615
       },
       {
         "adapterId": "heuristic:in_source_container",
         "count": 363
       },
       {
-        "adapterId": "heuristic:quoted_title_journal_locator",
+        "adapterId": "heuristic:harvard_sentence_journal",
         "count": 225
       },
       {
-        "adapterId": "heuristic:harvard_sentence_journal",
-        "count": 222
+        "adapterId": "heuristic:quoted_title_journal_locator",
+        "count": 225
       },
       {
         "adapterId": "heuristic:vancouver_compact_journal",
@@ -828,7 +812,7 @@
       },
       {
         "adapterId": "heuristic:author_year_publisher_tail",
-        "count": 129
+        "count": 132
       },
       {
         "adapterId": "heuristic:sentence_thesis",
@@ -836,11 +820,11 @@
       },
       {
         "adapterId": "parser:selected_style:mla",
-        "count": 111
+        "count": 108
       },
       {
         "adapterId": "parser:selected_style:vancouver",
-        "count": 102
+        "count": 105
       },
       {
         "adapterId": "heuristic:quoted_book_chapter",
@@ -850,19 +834,19 @@
     "topSelectionReasons": [
       {
         "reason": "unanimous_diversity_guard",
-        "count": 978
+        "count": 981
       },
       {
         "reason": "lexicographic_veto_coverage_contamination_consensus",
-        "count": 963
+        "count": 966
       },
       {
         "reason": "single_survivor_after_required_field_veto",
-        "count": 729
+        "count": 759
       },
       {
         "reason": "all_candidates_vetoed_fallback_to_best_available",
-        "count": 315
+        "count": 282
       }
     ]
   },
@@ -872,32 +856,32 @@
       "repeats": 3,
       "totalBatches": 60,
       "expectedCitations": 3000,
-      "actualCitations": 2985,
-      "strictEssentialAccuracyPct": 82,
-      "legacyFieldAveragePct": 94.19,
-      "fieldAccuracyPct": 94.28,
-      "countIntegrityPct": 99.5,
-      "nonEmptyOutputPct": 99.5,
-      "identityIntegrityPct": 99.4,
-      "identityContaminationCount": 1,
+      "actualCitations": 2988,
+      "strictEssentialAccuracyPct": 81.8,
+      "legacyFieldAveragePct": 94.77,
+      "fieldAccuracyPct": 94.65,
+      "countIntegrityPct": 99.6,
+      "nonEmptyOutputPct": 99.6,
+      "identityIntegrityPct": 99.6,
+      "identityContaminationCount": 0,
       "identityContaminationByCategory": {
-        "shifted_prev": 1,
+        "shifted_prev": 0,
         "shifted_next": 0,
         "multiwork_merged_output": 0,
         "duplicate_output_reuse": 0,
         "dedup_field_substitution": 0
       },
-      "partialBatchRatePct": 100,
-      "consistencyPct": 88.29,
-      "exactBatchConsistencyPct": 47.5,
-      "averageRenderSimilarityPct": 89.86,
+      "partialBatchRatePct": 66.67,
+      "consistencyPct": 89.16,
+      "exactBatchConsistencyPct": 50,
+      "averageRenderSimilarityPct": 90.02,
       "speed": {
-        "meanBatchMs": 3353.92,
-        "medianBatchMs": 2470.58,
-        "p95BatchMs": 6527.94,
-        "meanMsPerCitation": 67.08,
-        "medianMsPerCitation": 49.41,
-        "throughputCitationsPerSecond": 4.97
+        "meanBatchMs": 3342.08,
+        "medianBatchMs": 2281.94,
+        "p95BatchMs": 6709.42,
+        "meanMsPerCitation": 66.84,
+        "medianMsPerCitation": 45.64,
+        "throughputCitationsPerSecond": 4.99
       }
     },
     {
@@ -905,32 +889,32 @@
       "repeats": 3,
       "totalBatches": 30,
       "expectedCitations": 3000,
-      "actualCitations": 2985,
+      "actualCitations": 2988,
       "strictEssentialAccuracyPct": 81.9,
-      "legacyFieldAveragePct": 94.56,
-      "fieldAccuracyPct": 94.61,
-      "countIntegrityPct": 99.5,
-      "nonEmptyOutputPct": 99.5,
-      "identityIntegrityPct": 99.4,
-      "identityContaminationCount": 1,
+      "legacyFieldAveragePct": 95.14,
+      "fieldAccuracyPct": 94.97,
+      "countIntegrityPct": 99.6,
+      "nonEmptyOutputPct": 99.6,
+      "identityIntegrityPct": 99.6,
+      "identityContaminationCount": 0,
       "identityContaminationByCategory": {
-        "shifted_prev": 1,
+        "shifted_prev": 0,
         "shifted_next": 0,
         "multiwork_merged_output": 0,
         "duplicate_output_reuse": 0,
         "dedup_field_substitution": 0
       },
-      "partialBatchRatePct": 100,
+      "partialBatchRatePct": 80,
       "consistencyPct": 100,
       "exactBatchConsistencyPct": 100,
-      "averageRenderSimilarityPct": 90.37,
+      "averageRenderSimilarityPct": 90.47,
       "speed": {
-        "meanBatchMs": 3747.02,
-        "medianBatchMs": 3842.05,
-        "p95BatchMs": 4525.65,
-        "meanMsPerCitation": 37.47,
-        "medianMsPerCitation": 38.42,
-        "throughputCitationsPerSecond": 8.9
+        "meanBatchMs": 3812.32,
+        "medianBatchMs": 3809.93,
+        "p95BatchMs": 4813.63,
+        "meanMsPerCitation": 38.12,
+        "medianMsPerCitation": 38.1,
+        "throughputCitationsPerSecond": 8.74
       }
     },
     {
@@ -938,32 +922,32 @@
       "repeats": 3,
       "totalBatches": 15,
       "expectedCitations": 3000,
-      "actualCitations": 2985,
+      "actualCitations": 2988,
       "strictEssentialAccuracyPct": 81.9,
-      "legacyFieldAveragePct": 94.56,
-      "fieldAccuracyPct": 94.61,
-      "countIntegrityPct": 99.5,
-      "nonEmptyOutputPct": 99.5,
-      "identityIntegrityPct": 99.4,
-      "identityContaminationCount": 1,
+      "legacyFieldAveragePct": 95.14,
+      "fieldAccuracyPct": 94.97,
+      "countIntegrityPct": 99.6,
+      "nonEmptyOutputPct": 99.6,
+      "identityIntegrityPct": 99.6,
+      "identityContaminationCount": 0,
       "identityContaminationByCategory": {
-        "shifted_prev": 1,
+        "shifted_prev": 0,
         "shifted_next": 0,
         "multiwork_merged_output": 0,
         "duplicate_output_reuse": 0,
         "dedup_field_substitution": 0
       },
-      "partialBatchRatePct": 100,
+      "partialBatchRatePct": 80,
       "consistencyPct": 100,
       "exactBatchConsistencyPct": 100,
-      "averageRenderSimilarityPct": 90.37,
+      "averageRenderSimilarityPct": 90.47,
       "speed": {
-        "meanBatchMs": 7437.96,
-        "medianBatchMs": 7412.12,
-        "p95BatchMs": 7983.49,
-        "meanMsPerCitation": 37.19,
-        "medianMsPerCitation": 37.06,
-        "throughputCitationsPerSecond": 8.96
+        "meanBatchMs": 7752.35,
+        "medianBatchMs": 7677.27,
+        "p95BatchMs": 8399.53,
+        "meanMsPerCitation": 38.76,
+        "medianMsPerCitation": 38.39,
+        "throughputCitationsPerSecond": 8.6
       }
     }
   ],
@@ -974,7 +958,15 @@
       "strictEssentialAccuracyPct": 92,
       "legacyFieldAveragePct": 98.4,
       "fieldAccuracyPct": 98.67,
-      "averageRenderSimilarityPct": 85.23
+      "averageRenderSimilarityPct": 85.24
+    },
+    {
+      "sourceType": "journal",
+      "count": 550,
+      "strictEssentialAccuracyPct": 84.73,
+      "legacyFieldAveragePct": 95.63,
+      "fieldAccuracyPct": 95.5,
+      "averageRenderSimilarityPct": 90.09
     },
     {
       "sourceType": "chapter",
@@ -982,144 +974,136 @@
       "strictEssentialAccuracyPct": 84.67,
       "legacyFieldAveragePct": 97.36,
       "fieldAccuracyPct": 96.45,
-      "averageRenderSimilarityPct": 97.08
-    },
-    {
-      "sourceType": "journal",
-      "count": 550,
-      "strictEssentialAccuracyPct": 84.55,
-      "legacyFieldAveragePct": 94.89,
-      "fieldAccuracyPct": 95.1,
-      "averageRenderSimilarityPct": 89.79
-    },
-    {
-      "sourceType": "book",
-      "count": 100,
-      "strictEssentialAccuracyPct": 78.33,
-      "legacyFieldAveragePct": 94.27,
-      "fieldAccuracyPct": 93.56,
-      "averageRenderSimilarityPct": 83.98
-    },
-    {
-      "sourceType": "conference",
-      "count": 150,
-      "strictEssentialAccuracyPct": 73.56,
-      "legacyFieldAveragePct": 90.23,
-      "fieldAccuracyPct": 90.77,
-      "averageRenderSimilarityPct": 93.26
+      "averageRenderSimilarityPct": 97.05
     },
     {
       "sourceType": "report",
       "count": 50,
+      "strictEssentialAccuracyPct": 80,
+      "legacyFieldAveragePct": 92.7,
+      "fieldAccuracyPct": 93.91,
+      "averageRenderSimilarityPct": 89.43
+    },
+    {
+      "sourceType": "book",
+      "count": 100,
+      "strictEssentialAccuracyPct": 77,
+      "legacyFieldAveragePct": 94.6,
+      "fieldAccuracyPct": 93.17,
+      "averageRenderSimilarityPct": 83.78
+    },
+    {
+      "sourceType": "conference",
+      "count": 150,
       "strictEssentialAccuracyPct": 70,
-      "legacyFieldAveragePct": 91.1,
-      "fieldAccuracyPct": 90.92,
-      "averageRenderSimilarityPct": 89.16
+      "legacyFieldAveragePct": 90.45,
+      "fieldAccuracyPct": 90.97,
+      "averageRenderSimilarityPct": 93
     }
   ],
   "byInputStyle": [
     {
-      "inputStyle": "apa",
+      "inputStyle": "harvard",
       "count": 168,
-      "strictEssentialAccuracyPct": 85.71,
-      "legacyFieldAveragePct": 95.73,
-      "fieldAccuracyPct": 95.98,
-      "averageRenderSimilarityPct": 91.16
+      "strictEssentialAccuracyPct": 87.1,
+      "legacyFieldAveragePct": 96.58,
+      "fieldAccuracyPct": 96.48,
+      "averageRenderSimilarityPct": 90.95
     },
     {
       "inputStyle": "vancouver",
       "count": 159,
       "strictEssentialAccuracyPct": 85.12,
       "legacyFieldAveragePct": 93.63,
-      "fieldAccuracyPct": 93.88,
-      "averageRenderSimilarityPct": 91.61
+      "fieldAccuracyPct": 93.8,
+      "averageRenderSimilarityPct": 91.51
+    },
+    {
+      "inputStyle": "apa",
+      "count": 168,
+      "strictEssentialAccuracyPct": 83.13,
+      "legacyFieldAveragePct": 95.79,
+      "fieldAccuracyPct": 95.64,
+      "averageRenderSimilarityPct": 91.09
     },
     {
       "inputStyle": "chicago",
       "count": 170,
       "strictEssentialAccuracyPct": 82.94,
-      "legacyFieldAveragePct": 95.2,
-      "fieldAccuracyPct": 95.37,
-      "averageRenderSimilarityPct": 88.78
-    },
-    {
-      "inputStyle": "harvard",
-      "count": 168,
-      "strictEssentialAccuracyPct": 82.14,
-      "legacyFieldAveragePct": 94.89,
-      "fieldAccuracyPct": 94.94,
-      "averageRenderSimilarityPct": 90.33
+      "legacyFieldAveragePct": 96.09,
+      "fieldAccuracyPct": 95.98,
+      "averageRenderSimilarityPct": 88.73
     },
     {
       "inputStyle": "mla",
       "count": 176,
-      "strictEssentialAccuracyPct": 80.11,
-      "legacyFieldAveragePct": 93.64,
-      "fieldAccuracyPct": 93.43,
-      "averageRenderSimilarityPct": 89.65
+      "strictEssentialAccuracyPct": 77.84,
+      "legacyFieldAveragePct": 94.23,
+      "fieldAccuracyPct": 93.95,
+      "averageRenderSimilarityPct": 89.78
     },
     {
       "inputStyle": "ieee",
       "count": 159,
-      "strictEssentialAccuracyPct": 75.47,
-      "legacyFieldAveragePct": 93.52,
-      "fieldAccuracyPct": 93.38,
-      "averageRenderSimilarityPct": 89.75
+      "strictEssentialAccuracyPct": 75.05,
+      "legacyFieldAveragePct": 93.73,
+      "fieldAccuracyPct": 93.25,
+      "averageRenderSimilarityPct": 89.93
     }
   ],
   "byField": [
     {
-      "field": "doi",
-      "accuracyPct": 98.53,
-      "pass": 2956,
+      "field": "year",
+      "accuracyPct": 98.7,
+      "pass": 2961,
       "total": 3000
     },
     {
-      "field": "year",
-      "accuracyPct": 98.5,
-      "pass": 2955,
+      "field": "doi",
+      "accuracyPct": 98.67,
+      "pass": 2960,
       "total": 3000
     },
     {
       "field": "issue",
-      "accuracyPct": 95.05,
-      "pass": 1343,
+      "accuracyPct": 95.47,
+      "pass": 1349,
       "total": 1413
     },
     {
       "field": "title",
-      "accuracyPct": 94.6,
-      "pass": 2838,
+      "accuracyPct": 95.3,
+      "pass": 2859,
       "total": 3000
     },
     {
-      "field": "referenceType",
-      "accuracyPct": 93.7,
-      "pass": 2811,
+      "field": "firstAuthor",
+      "accuracyPct": 93.5,
+      "pass": 2805,
       "total": 3000
     },
     {
       "field": "venue",
-      "accuracyPct": 92.63,
-      "pass": 2779,
+      "accuracyPct": 92.97,
+      "pass": 2789,
       "total": 3000
     },
     {
       "field": "volume",
-      "accuracyPct": 92.41,
-      "pass": 1497,
+      "accuracyPct": 92.96,
+      "pass": 1506,
       "total": 1620
     },
     {
-      "field": "firstAuthor",
-      "accuracyPct": 92.1,
-      "pass": 2763,
+      "field": "referenceType",
+      "accuracyPct": 92.7,
+      "pass": 2781,
       "total": 3000
     },
     {
       "field": "pages",
-      "accuracyPct": 91.52,
-      "pass": 2029,
+      "accuracyPct": 92.24,
+      "pass": 2045,
       "total": 2217
     }
   ],
@@ -1181,6 +1165,27 @@
     {
       "batchSize": 50,
       "repeat": 1,
+      "recordId": "journal-0240-10-1097-md-0000000000017835",
+      "sourceType": "journal",
+      "inputStyle": "chicago",
+      "perturbation": "line-break-before-tail",
+      "expectedTitle": "Perforation of inferior vena cava and duodenum by strut of inferior vena cava filter: A case report",
+      "actualTitle": "Perforation of inferior vena cava and duodenum by strut of inferior vena cava filter: A case report",
+      "expectedVenue": "Medicine",
+      "actualVenue": "Medicine",
+      "expectedApa": "Park, H. O., Choi, J. Y., Jang, I. S., Kim, J. D., Kim, J. W., Byun, J. H., Kim, S. H., Yang, J. H., Moon, S. H., Kim, K. N., Kang, D. H., Jung, J. J., Choi, S. M., Kim, J. Y., & Lee, C. E. (2019). Perforation of inferior vena cava and duodenum by strut of inferior vena cava filter: A case report. Medicine, 98(47), e17835. https://doi.org/10.1097/md.0000000000017835",
+      "actualApa": "Park, H. O. (2019). Perforation of inferior vena cava and duodenum by strut of inferior vena cava filter: A case report. In Medicine (No. e17835; Vol. 98, Issue 47).",
+      "mismatches": [
+        "referenceType"
+      ],
+      "renderSimilarityPct": 63,
+      "selectionMode": "single_survivor",
+      "winnerAdapterId": "heuristic:quoted_title_journal_locator",
+      "selectionReason": "single_survivor_after_required_field_veto"
+    },
+    {
+      "batchSize": 50,
+      "repeat": 1,
       "recordId": "journal-0296-10-33917-mic-4-93-2020-47-56",
       "sourceType": "journal",
       "inputStyle": "ieee",
@@ -1203,22 +1208,22 @@
     {
       "batchSize": 50,
       "repeat": 1,
-      "recordId": "journal-0002-10-53730-ijhs-v6ns1-8707",
+      "recordId": "journal-0414-10-1097-ms9-0000000000003904",
       "sourceType": "journal",
-      "inputStyle": "ieee",
-      "perturbation": "numbered-dot",
-      "expectedTitle": "role and significance of physical culture and sport in the sphere of education",
-      "actualTitle": "role and significance of physical culture and sport in the sphere of education",
-      "expectedVenue": "International journal of health sciences",
-      "actualVenue": "International journal of health sciences",
-      "expectedApa": "Djumabaevich, T. S., Karimovich, K. Z., Beknazarovich, X. Z., Sagdullaevich, A. N., & Tirkashevich, M. S. (2022). role and significance of physical culture and sport in the sphere of education. International Journal of Health Sciences, 14419–14427. https://doi.org/10.53730/ijhs.v6ns1.8707",
-      "actualApa": "Tashtaev, S. D., Khudoiberganov, Z. K., Xudaykulov, Z. B., Adilov, N. S., & Mamasoliev, S. T. (2022). role and significance of physical culture and sport in the sphere of education. International Journal of Health Sciences, 14419-14427.",
+      "inputStyle": "chicago",
+      "perturbation": "smart-punctuation",
+      "expectedTitle": "Takotsubo cardiomyopathy: a rare case report highlighting seizure presentation in a 27-year-old female",
+      "actualTitle": "Takotsubo cardiomyopathy: a rare case report highlighting seizure presentation in a 27-year-old female",
+      "expectedVenue": "Annals of Medicine & Surgery",
+      "actualVenue": "Annals of Medicine & Surgery",
+      "expectedApa": "Alsadi, M. O., Latifa, J., Alokla, D., Darkaznli, M. I., Al Almallah, L., Channan, F., & AlSalloum Alibrahim, M. J. (2025). Takotsubo cardiomyopathy: a rare case report highlighting seizure presentation in a 27-year-old female. Annals of Medicine & Surgery, 87(11), 7698–7700. https://doi.org/10.1097/ms9.0000000000003904",
+      "actualApa": "Alsadi, M. O. (2025). Takotsubo cardiomyopathy: a rare case report highlighting seizure presentation in a 27-year-old female. In Annals of Medicine & Surgery (Vol. 87, Issue 11, pp. 7698-7700).",
       "mismatches": [
-        "firstAuthor"
+        "referenceType"
       ],
-      "renderSimilarityPct": 75,
+      "renderSimilarityPct": 72,
       "selectionMode": "single_survivor",
-      "winnerAdapterId": "heuristic:ieee_quoted_reference",
+      "winnerAdapterId": "heuristic:quoted_title_journal_locator",
       "selectionReason": "single_survivor_after_required_field_veto"
     },
     {
@@ -1245,23 +1250,23 @@
     {
       "batchSize": 50,
       "repeat": 1,
-      "recordId": "journal-0171-10-47191-jefms-v5-i9-30",
-      "sourceType": "journal",
-      "inputStyle": "vancouver",
-      "perturbation": "numbered-bracket",
-      "expectedTitle": "Naira to Dollar Exchange Rate Fluctuations and Nigeria’s Balance of Payment",
-      "actualTitle": "Naira to Dollar Exchange Rate Fluctuations and Nigeria's Balance of Payment",
-      "expectedVenue": "JOURNAL OF ECONOMICS, FINANCE AND MANAGEMENT STUDIES",
-      "actualVenue": "JOURNAL OF ECONOMICS, FINANCE AND MANAGEMENT STUDIES",
-      "expectedApa": "Department of Economics, Faculty of Social Sciences, Niger Delta University, Wilberforce Island, P.M.B. 071, Yenagoa, Bayelsa State, Nigeria. (2022). Naira to Dollar Exchange Rate Fluctuations and Nigeria’s Balance of Payment. JOURNAL OF ECONOMICS, FINANCE AND MANAGEMENT STUDIES, 5(9). https://doi.org/10.47191/jefms/v5-i9-30",
-      "actualApa": "Department of Economics, Island, P. 071 W., Yenagoa, State, B., & Nigeria. (2022). Naira to Dollar Exchange Rate Fluctuations and Nigeria's Balance of Payment. JOURNAL OF ECONOMICS, FINANCE AND MANAGEMENT STUDIES, 5(9).",
+      "recordId": "book-0055-10-22533-at-ed-409201303",
+      "sourceType": "book",
+      "inputStyle": "apa",
+      "perturbation": "doi-label",
+      "expectedTitle": "Aspectos Fitossanitários da Agricultura",
+      "actualTitle": "Aspectos Fitossanitários da Agricultura",
+      "expectedVenue": "Atena Editora",
+      "actualVenue": "Atena Editora",
+      "expectedApa": "Mônica Jasper. (2020). Aspectos Fitossanitários da Agricultura. Atena Editora. https://doi.org/10.22533/at.ed.409201303",
+      "actualApa": "Jasper, M. (2020). Aspectos Fitossanitários da Agricultura. Atena Editora.",
       "mismatches": [
         "firstAuthor"
       ],
       "renderSimilarityPct": 79,
-      "selectionMode": "single_survivor",
-      "winnerAdapterId": "heuristic:institutional_vancouver_journal",
-      "selectionReason": "all_candidates_vetoed_fallback_to_best_available"
+      "selectionMode": "full_scoring",
+      "winnerAdapterId": "heuristic:author_year_publisher_tail",
+      "selectionReason": "lexicographic_veto_coverage_contamination_consensus"
     },
     {
       "batchSize": 50,
@@ -1287,6 +1292,48 @@
     {
       "batchSize": 50,
       "repeat": 1,
+      "recordId": "report-0030-10-4271-630502",
+      "sourceType": "report",
+      "inputStyle": "vancouver",
+      "perturbation": "smart-punctuation",
+      "expectedTitle": "An operator's experience",
+      "actualTitle": "An operator's experience",
+      "expectedVenue": "SAE International",
+      "actualVenue": "SAE International",
+      "expectedApa": "Eaton, W. F. (1963). An operator’s experience (p. 630502). SAE International. https://doi.org/10.4271/630502",
+      "actualApa": "Eaton, W. F. (1963). An operator's experience. SAE International.",
+      "mismatches": [
+        "pages"
+      ],
+      "renderSimilarityPct": 83,
+      "selectionMode": "full_scoring",
+      "winnerAdapterId": "heuristic:vancouver_publisher_year_source",
+      "selectionReason": "lexicographic_veto_coverage_contamination_consensus"
+    },
+    {
+      "batchSize": 50,
+      "repeat": 1,
+      "recordId": "chapter-0144-10-1007-978-981-10-6898-0-21",
+      "sourceType": "chapter",
+      "inputStyle": "vancouver",
+      "perturbation": "line-break-before-tail",
+      "expectedTitle": "Opaque Predicate Detection by Static Analysis of Binary Executables",
+      "actualTitle": "Opaque Predicate Detection by Static Analysis of Binary Executables",
+      "expectedVenue": "Communications in Computer and Information Science",
+      "actualVenue": "In: Communications in Computer and Information Science",
+      "expectedApa": "Prakash, R. K. R., Amritha, P. P., & Sethumadhavan, M. (2017). Opaque Predicate Detection by Static Analysis of Binary Executables. In Communications in Computer and Information Science (pp. 250–258). Springer Singapore. https://doi.org/10.1007/978-981-10-6898-0_21",
+      "actualApa": "Prakash, R. K. R., Amritha, P. P., & Sethumadhavan, M. (2017). Opaque Predicate Detection by Static Analysis of Binary Executables. In: Communications in Computer and Information Science, 250-258.",
+      "mismatches": [
+        "referenceType"
+      ],
+      "renderSimilarityPct": 87,
+      "selectionMode": "unanimous_diversity_guard",
+      "winnerAdapterId": "parser:selected_style:vancouver",
+      "selectionReason": "unanimous_diversity_guard"
+    },
+    {
+      "batchSize": 50,
+      "repeat": 1,
       "recordId": "journal-0383-10-5005-jp-journals-10006-2222",
       "sourceType": "journal",
       "inputStyle": "mla",
@@ -1294,9 +1341,9 @@
       "expectedTitle": "Role of Oxygenation Factor Hypoxia-inducible Factor-1α (HIF-1α) as Prognostic Indicators in Cervical Cancer",
       "actualTitle": "Role of Oxygenation Factor Hypoxia-inducible Factor-1α (HIF-1α) as Prognostic Indicators in Cervical Cancer",
       "expectedVenue": "Journal of South Asian Federation of Obstetrics and Gynaecology",
-      "actualVenue": "Journal of South Asian Federation of Obstetrics and Gynaecology, vol. 15, no. 4",
+      "actualVenue": "Journal of South Asian Federation of Obstetrics and Gynaecology, vol. 15",
       "expectedApa": "Megadhana, I. W., Winata, I. G. S., Widiyanti, E. S., & Lawu, A. A. (2023). Role of Oxygenation Factor Hypoxia-inducible Factor-1α (HIF-1α) as Prognostic Indicators in Cervical Cancer. Journal of South Asian Federation of Obstetrics and Gynaecology, 15(4), 490–496. https://doi.org/10.5005/jp-journals-10006-2222",
-      "actualApa": "Megadhana, I. W., I Gde Sastra Winata, E. S. W., & Lawu, A. A. (2023). Role of Oxygenation Factor Hypoxia-inducible Factor-1α (HIF-1α) as Prognostic Indicators in Cervical Cancer. In Journal of South Asian Federation of Obstetrics and Gynaecology, vol. 15, no. 4 (pp. 490-496). 10.",
+      "actualApa": "Megadhana, I. W., I Gde Sastra Winata, E. S. W., & Lawu, A. A. (2023). Role of Oxygenation Factor Hypoxia-inducible Factor-1α (HIF-1α) as Prognostic Indicators in Cervical Cancer. In Journal of South Asian Federation of Obstetrics and Gynaecology, vol. 15 (pp. 490-496). 10.",
       "mismatches": [
         "referenceType",
         "volume",
@@ -1307,6 +1354,27 @@
       "selectionMode": "single_survivor",
       "winnerAdapterId": "heuristic:quoted_book_chapter",
       "selectionReason": "single_survivor_after_required_field_veto"
+    },
+    {
+      "batchSize": 50,
+      "repeat": 1,
+      "recordId": "journal-0039-10-1186-s13104-017-2882-4",
+      "sourceType": "journal",
+      "inputStyle": "vancouver",
+      "perturbation": "doi-label",
+      "expectedTitle": "Development of interstitial pneumonia during treatment with eribulin: a case report",
+      "actualTitle": "Development of interstitial pneumonia during treatment with eribulin: a case report",
+      "expectedVenue": "BMC Research Notes",
+      "actualVenue": "BMC Research Notes",
+      "expectedApa": "Nakamura, K., Kato, M., Miyashita, Y., Nagashima, O., Sasaki, S., Tominaga, S., & Takahashi, K. (2017). Development of interstitial pneumonia during treatment with eribulin: a case report. BMC Research Notes, 10(1), 557. https://doi.org/10.1186/s13104-017-2882-4",
+      "actualApa": "Nakamura, K., Kato, M., Miyashita, Y., Nagashima, O., Sasaki, S., Tominaga, S., & Takahashi, K. (2017). Development of interstitial pneumonia during treatment with eribulin: a case report. In BMC Research Notes (Vol. 10, Issue 1, p. 557). BMC Research Notes.",
+      "mismatches": [
+        "referenceType"
+      ],
+      "renderSimilarityPct": 88,
+      "selectionMode": "unanimous_diversity_guard",
+      "winnerAdapterId": "heuristic:vancouver_compact_journal",
+      "selectionReason": "unanimous_diversity_guard"
     },
     {
       "batchSize": 50,
@@ -1332,6 +1400,31 @@
     {
       "batchSize": 50,
       "repeat": 1,
+      "recordId": "journal-0433-10-1002-chin-197210264",
+      "sourceType": "journal",
+      "inputStyle": "apa",
+      "perturbation": "base",
+      "expectedTitle": "ChemInform Abstract: BERBESSERTE SYNTH. VON 2‐CYAN‐AZIRIDINEN UND UNTERSUCHUNGEN ZU IHRER ISOMERISIERUNG",
+      "actualTitle": "Cheminform Abstract: BERBESSERTE Synth. VON 2‐cyan‐aziridinen UND UNTERSUCHUNGEN ZU IHRER ISOMERISIERUNG",
+      "expectedVenue": "Chemischer Informationsdienst",
+      "actualVenue": "Chemischer Informationsdienst, 3(10), chin.197210264",
+      "expectedApa": "GUNDERMANN, K., BURZIN, K., SPRENGER, F., & SCHULZE, H. (1972). ChemInform Abstract: BERBESSERTE SYNTH. VON 2‐CYAN‐AZIRIDINEN UND UNTERSUCHUNGEN ZU IHRER ISOMERISIERUNG. Chemischer Informationsdienst, 3(10), chin.197210264. https://doi.org/10.1002/chin.197210264",
+      "actualApa": "GUNDERMANN, KARL‐DIETRICH, BURZIN, FRANZ‐JOSEF, & SCHULZE. (1972). Cheminform Abstract: BERBESSERTE Synth. VON 2‐cyan‐aziridinen UND UNTERSUCHUNGEN ZU IHRER ISOMERISIERUNG. Chemischer Informationsdienst, 3(10), chin.197210264.",
+      "mismatches": [
+        "referenceType",
+        "venue",
+        "volume",
+        "issue",
+        "pages"
+      ],
+      "renderSimilarityPct": 88,
+      "selectionMode": "single_survivor",
+      "winnerAdapterId": "heuristic:author_year_publisher_tail",
+      "selectionReason": "all_candidates_vetoed_fallback_to_best_available"
+    },
+    {
+      "batchSize": 50,
+      "repeat": 1,
       "recordId": "journal-0025-10-1134-s0036023619070088",
       "sourceType": "journal",
       "inputStyle": "apa",
@@ -1349,124 +1442,19 @@
       "selectionMode": "single_survivor",
       "winnerAdapterId": "heuristic:apa_journal",
       "selectionReason": "single_survivor_after_required_field_veto"
-    },
-    {
-      "batchSize": 50,
-      "repeat": 1,
-      "recordId": "journal-0394-10-14222-turkiyat4249",
-      "sourceType": "journal",
-      "inputStyle": "harvard",
-      "perturbation": "numbered-dot",
-      "expectedTitle": "Şîa'nın Siyasallaşma Sürecinde Seyyid Kıvâmeddin Marâşî",
-      "actualTitle": "Şîa'nın Siyasallaşma Sürecinde Seyyid Kıvâmeddin Marâşî",
-      "expectedVenue": "Journal of Turkish Research Institute",
-      "actualVenue": "Journal of Turkish Research Institute",
-      "expectedApa": "COŞKUN, D. (2020). Şîa’nın Siyasallaşma Sürecinde Seyyid Kıvâmeddin Marâşî. Journal of Turkish Research Institute, 67, 481–491. https://doi.org/10.14222/turkiyat4249",
-      "actualApa": "C. O.ŞK. U. N., D. (2020). Şîa'nın Siyasallaşma Sürecinde Seyyid Kıvâmeddin Marâşî. Journal of Turkish Research Institute, 67, 481-491.",
-      "mismatches": [
-        "issue"
-      ],
-      "renderSimilarityPct": 90,
-      "selectionMode": "full_scoring",
-      "winnerAdapterId": "heuristic:harvard_sentence_journal",
-      "selectionReason": "lexicographic_veto_coverage_contamination_consensus"
-    },
-    {
-      "batchSize": 50,
-      "repeat": 1,
-      "recordId": "journal-0407-10-1371-journal-pone-0269394",
-      "sourceType": "journal",
-      "inputStyle": "mla",
-      "perturbation": "doi-label",
-      "expectedTitle": "Comparative assessment of cognitive impairment and oxidative stress markers among vitamin D insufficient elderly patients with and without type 2 diabetes mellitus (T2DM)",
-      "actualTitle": "Comparative assessment of cognitive impairment and oxidative stress markers among vitamin D insufficient elderly patients with and without type 2 diabetes mellitus (T2DM)",
-      "expectedVenue": "PLOS ONE",
-      "actualVenue": "PLOS ONE",
-      "expectedApa": "R., R., Uthaiah, C. A., C. M., R., Madhunapantula, S. V., Salimath, P. V., K., P., M., S. K., & M. R., K. (2022). Comparative assessment of cognitive impairment and oxidative stress markers among vitamin D insufficient elderly patients with and without type 2 diabetes mellitus (T2DM). PLOS ONE, 17(6), e0269394. https://doi.org/10.1371/journal.pone.0269394",
-      "actualApa": "R, R., Rajalakshmi, Uthaiah, C. A., M, R. C., Madhunapantula, S. V., Salimath, P. V., K, P., M, S. K., & R, K. M. (2022). Comparative assessment of cognitive impairment and oxidative stress markers among vitamin D insufficient elderly patients with and without type 2 diabetes mellitus (T2DM). PLOS ONE, 17(6), 10.",
-      "mismatches": [
-        "pages"
-      ],
-      "renderSimilarityPct": 90,
-      "selectionMode": "single_survivor",
-      "winnerAdapterId": "heuristic:ieee_quoted_reference",
-      "selectionReason": "all_candidates_vetoed_fallback_to_best_available"
-    },
-    {
-      "batchSize": 50,
-      "repeat": 1,
-      "recordId": "journal-0178-10-1038-npre-2010-5416",
-      "sourceType": "journal",
-      "inputStyle": "harvard",
-      "perturbation": "numbered-dot",
-      "expectedTitle": "Hyperinsulinemia and insulin resistance : What comes first ?",
-      "actualTitle": "Hyperinsulinemia and insulin resistance: What comes first ?",
-      "expectedVenue": "Nature Precedings",
-      "actualVenue": "Nature Precedings",
-      "expectedApa": "Patil, P., Patil, P., & Watve, M. (2010). Hyperinsulinemia and insulin resistance : What comes first ? Nature Precedings. https://doi.org/10.1038/npre.2010.5416",
-      "actualApa": "Patil, P., Patil, P., & Watve, M. (2010). Hyperinsulinemia and insulin resistance: What comes first ? Nature Precedings.",
-      "mismatches": [
-        "referenceType"
-      ],
-      "renderSimilarityPct": 90,
-      "selectionMode": "full_scoring",
-      "winnerAdapterId": "heuristic:author_year_publisher_tail",
-      "selectionReason": "lexicographic_veto_coverage_contamination_consensus"
-    },
-    {
-      "batchSize": 50,
-      "repeat": 1,
-      "recordId": "journal-0566-10-1016-j-molcata-2009-01-028",
-      "sourceType": "journal",
-      "inputStyle": "ieee",
-      "perturbation": "smart-punctuation",
-      "expectedTitle": "Cellulose sulfuric acid: An efficient biodegradable and recyclable solid acid catalyst for the one-pot synthesis of aryl-14H-dibenzo[a.j]xanthenes under solvent-free conditions",
-      "actualTitle": "Cellulose sulfuric acid: An efficient biodegradable and recyclable solid acid catalyst for the one-pot synthesis of aryl-14H-dibenzo[a.j]xanthenes under solvent-free conditions",
-      "expectedVenue": "Journal of Molecular Catalysis A: Chemical",
-      "actualVenue": "Journal of Molecular Catalysis A: Chemical",
-      "expectedApa": "Venu Madhav, J., Thirupathi Reddy, Y., Narsimha Reddy, P., Nikhil Reddy, M., Kuarm, S., Crooks, Peter. A., & Rajitha, B. (2009). Cellulose sulfuric acid: An efficient biodegradable and recyclable solid acid catalyst for the one-pot synthesis of aryl-14H-dibenzo[a.j]xanthenes under solvent-free conditions. Journal of Molecular Catalysis A: Chemical, 304(1–2), 85–87. https://doi.org/10.1016/j.molcata.2009.01.028",
-      "actualApa": "Madhav, J. V., Reddy, Y. T., Reddy, P. N., Reddy, M. N., Kuarm, S., Crooks, P. A., & Rajitha, B. (2009). Cellulose sulfuric acid: An efficient biodegradable and recyclable solid acid catalyst for the one-pot synthesis of aryl-14H-dibenzo[a.j]xanthenes under solvent-free conditions. Journal of Molecular Catalysis A: Chemical, 304(1-2), 85-87.",
-      "mismatches": [
-        "firstAuthor"
-      ],
-      "renderSimilarityPct": 90,
-      "selectionMode": "single_survivor",
-      "winnerAdapterId": "heuristic:ieee_quoted_reference",
-      "selectionReason": "single_survivor_after_required_field_veto"
-    },
-    {
-      "batchSize": 50,
-      "repeat": 1,
-      "recordId": "journal-0352-10-1103-physreve-60-r29",
-      "sourceType": "journal",
-      "inputStyle": "harvard",
-      "perturbation": "line-break-before-tail",
-      "expectedTitle": "Effect of ordering on spinodal decomposition of liquid-crystal/polymer mixtures",
-      "actualTitle": "Effect of ordering on spinodal decomposition of liquid-crystal/polymer mixtures",
-      "expectedVenue": "Physical Review E",
-      "actualVenue": "Physical Review E",
-      "expectedApa": "Lapeña, A. M., Glotzer, S. C., Langer, S. A., & Liu, A. J. (1999). Effect of ordering on spinodal decomposition of liquid-crystal/polymer mixtures. Physical Review E, 60(1), R29–R32. https://doi.org/10.1103/physreve.60.r29",
-      "actualApa": "Lapeña, A., Glotzer, S., Langer, S., & Liu, A. (1999). Effect of ordering on spinodal decomposition of liquid-crystal/polymer mixtures. Physical Review E, 60(1), R29-R32.",
-      "mismatches": [
-        "firstAuthor"
-      ],
-      "renderSimilarityPct": 90,
-      "selectionMode": "unanimous_diversity_guard",
-      "winnerAdapterId": "heuristic:harvard_sentence_journal",
-      "selectionReason": "unanimous_diversity_guard"
     }
   ],
   "strengths": [
     "The benchmark uses a frozen 1,000-reference real-world corpus, making reruns auditable and institution-friendly.",
     "Strict external readiness, internal legacy compatibility, and batch performance are separated instead of being collapsed into one misleading score.",
     "thesis records performed best on the strict score at 92.00%.",
-    "The fastest operating point was the 200-citation batch at 8.96 citations/sec."
+    "The fastest operating point was the 100-citation batch at 8.74 citations/sec."
   ],
   "weaknesses": [
-    "report is the weakest strict source type and should stay in the next remediation wave.",
+    "conference is the weakest strict source type and should stay in the next remediation wave.",
     "IEEE is the lowest-performing input style on the strict score.",
     "pages is the lowest-accuracy field and remains the clearest parser-recovery target.",
-    "Identity contamination currently accounts for 3 strict failures across the benchmarked runs."
+    "Identity contamination currently accounts for 0 strict failures across the benchmarked runs."
   ],
   "pros": [
     "Uses real citations rather than synthetic placeholders.",
@@ -1493,8 +1481,8 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 8042.65,
-      "msPerCitation": 160.85,
+      "durationMs": 8039.45,
+      "msPerCitation": 160.79,
       "citationsPerSecond": 6.22,
       "partialResult": true
     },
@@ -1504,9 +1492,9 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 49,
-      "durationMs": 6126.14,
-      "msPerCitation": 122.52,
-      "citationsPerSecond": 8.16,
+      "durationMs": 6102.74,
+      "msPerCitation": 122.05,
+      "citationsPerSecond": 8.19,
       "partialResult": true
     },
     {
@@ -1515,8 +1503,8 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 6100.97,
-      "msPerCitation": 122.02,
+      "durationMs": 6095.03,
+      "msPerCitation": 121.9,
       "citationsPerSecond": 8.2,
       "partialResult": true
     },
@@ -1526,9 +1514,9 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 6104.74,
-      "msPerCitation": 122.09,
-      "citationsPerSecond": 8.19,
+      "durationMs": 6160.03,
+      "msPerCitation": 123.2,
+      "citationsPerSecond": 8.12,
       "partialResult": true
     },
     {
@@ -1537,152 +1525,152 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 4920.45,
-      "msPerCitation": 98.41,
+      "durationMs": 4946.66,
+      "msPerCitation": 98.93,
+      "citationsPerSecond": 10.11,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 5,
+      "batchSize": 50,
+      "repeat": 1,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 7737.53,
+      "msPerCitation": 154.75,
+      "citationsPerSecond": 6.46,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 6,
+      "batchSize": 50,
+      "repeat": 1,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 6371.42,
+      "msPerCitation": 127.43,
+      "citationsPerSecond": 7.85,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 7,
+      "batchSize": 50,
+      "repeat": 1,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 6465.52,
+      "msPerCitation": 129.31,
+      "citationsPerSecond": 7.73,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 8,
+      "batchSize": 50,
+      "repeat": 1,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 6296.79,
+      "msPerCitation": 125.94,
+      "citationsPerSecond": 7.94,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 9,
+      "batchSize": 50,
+      "repeat": 1,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 6232.18,
+      "msPerCitation": 124.64,
+      "citationsPerSecond": 8.02,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 10,
+      "batchSize": 50,
+      "repeat": 1,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 4947.5,
+      "msPerCitation": 98.95,
+      "citationsPerSecond": 10.11,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 11,
+      "batchSize": 50,
+      "repeat": 1,
+      "expectedCount": 50,
+      "actualCount": 49,
+      "durationMs": 7504.3,
+      "msPerCitation": 150.09,
+      "citationsPerSecond": 6.66,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 12,
+      "batchSize": 50,
+      "repeat": 1,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 6264.07,
+      "msPerCitation": 125.28,
+      "citationsPerSecond": 7.98,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 13,
+      "batchSize": 50,
+      "repeat": 1,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 6709.42,
+      "msPerCitation": 134.19,
+      "citationsPerSecond": 7.45,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 14,
+      "batchSize": 50,
+      "repeat": 1,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 6128.95,
+      "msPerCitation": 122.58,
+      "citationsPerSecond": 8.16,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 15,
+      "batchSize": 50,
+      "repeat": 1,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 6260.04,
+      "msPerCitation": 125.2,
+      "citationsPerSecond": 7.99,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 16,
+      "batchSize": 50,
+      "repeat": 1,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 4920.83,
+      "msPerCitation": 98.42,
       "citationsPerSecond": 10.16,
       "partialResult": true
     },
     {
-      "batchIndex": 5,
-      "batchSize": 50,
-      "repeat": 1,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 7844.91,
-      "msPerCitation": 156.9,
-      "citationsPerSecond": 6.37,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 6,
-      "batchSize": 50,
-      "repeat": 1,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 6334.8,
-      "msPerCitation": 126.7,
-      "citationsPerSecond": 7.89,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 7,
-      "batchSize": 50,
-      "repeat": 1,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 6486.03,
-      "msPerCitation": 129.72,
-      "citationsPerSecond": 7.71,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 8,
-      "batchSize": 50,
-      "repeat": 1,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 6192.88,
-      "msPerCitation": 123.86,
-      "citationsPerSecond": 8.07,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 9,
-      "batchSize": 50,
-      "repeat": 1,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 6152.41,
-      "msPerCitation": 123.05,
-      "citationsPerSecond": 8.13,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 10,
-      "batchSize": 50,
-      "repeat": 1,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 4962.54,
-      "msPerCitation": 99.25,
-      "citationsPerSecond": 10.08,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 11,
-      "batchSize": 50,
-      "repeat": 1,
-      "expectedCount": 50,
-      "actualCount": 48,
-      "durationMs": 5701.55,
-      "msPerCitation": 114.03,
-      "citationsPerSecond": 8.77,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 12,
-      "batchSize": 50,
-      "repeat": 1,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 6140.82,
-      "msPerCitation": 122.82,
-      "citationsPerSecond": 8.14,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 13,
-      "batchSize": 50,
-      "repeat": 1,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 6689.42,
-      "msPerCitation": 133.79,
-      "citationsPerSecond": 7.47,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 14,
-      "batchSize": 50,
-      "repeat": 1,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 6088.2,
-      "msPerCitation": 121.76,
-      "citationsPerSecond": 8.21,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 15,
-      "batchSize": 50,
-      "repeat": 1,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 6107.27,
-      "msPerCitation": 122.15,
-      "citationsPerSecond": 8.19,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 16,
-      "batchSize": 50,
-      "repeat": 1,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 5936.43,
-      "msPerCitation": 118.73,
-      "citationsPerSecond": 8.42,
-      "partialResult": true
-    },
-    {
       "batchIndex": 17,
       "batchSize": 50,
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 48,
-      "durationMs": 4643.29,
-      "msPerCitation": 92.87,
-      "citationsPerSecond": 10.77,
+      "durationMs": 5654.8,
+      "msPerCitation": 113.1,
+      "citationsPerSecond": 8.84,
       "partialResult": true
     },
     {
@@ -1691,31 +1679,31 @@
       "repeat": 1,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 6310.88,
-      "msPerCitation": 126.22,
+      "durationMs": 6231.1,
+      "msPerCitation": 124.62,
+      "citationsPerSecond": 8.02,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 19,
+      "batchSize": 50,
+      "repeat": 1,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 6316.68,
+      "msPerCitation": 126.33,
       "citationsPerSecond": 7.92,
       "partialResult": true
     },
     {
-      "batchIndex": 19,
-      "batchSize": 50,
-      "repeat": 1,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 6527.94,
-      "msPerCitation": 130.56,
-      "citationsPerSecond": 7.66,
-      "partialResult": true
-    },
-    {
       "batchIndex": 0,
       "batchSize": 50,
       "repeat": 2,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1515.91,
-      "msPerCitation": 30.32,
-      "citationsPerSecond": 32.98,
+      "durationMs": 1473.55,
+      "msPerCitation": 29.47,
+      "citationsPerSecond": 33.93,
       "partialResult": true
     },
     {
@@ -1724,10 +1712,10 @@
       "repeat": 2,
       "expectedCount": 50,
       "actualCount": 49,
-      "durationMs": 1465.75,
-      "msPerCitation": 29.32,
-      "citationsPerSecond": 34.11,
-      "partialResult": true
+      "durationMs": 1474.4,
+      "msPerCitation": 29.49,
+      "citationsPerSecond": 33.91,
+      "partialResult": false
     },
     {
       "batchIndex": 2,
@@ -1735,10 +1723,10 @@
       "repeat": 2,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1453.11,
-      "msPerCitation": 29.06,
-      "citationsPerSecond": 34.41,
-      "partialResult": true
+      "durationMs": 1477.61,
+      "msPerCitation": 29.55,
+      "citationsPerSecond": 33.84,
+      "partialResult": false
     },
     {
       "batchIndex": 3,
@@ -1746,9 +1734,9 @@
       "repeat": 2,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 2532.39,
-      "msPerCitation": 50.65,
-      "citationsPerSecond": 19.74,
+      "durationMs": 2589.7,
+      "msPerCitation": 51.79,
+      "citationsPerSecond": 19.31,
       "partialResult": true
     },
     {
@@ -1757,10 +1745,10 @@
       "repeat": 2,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1398.66,
-      "msPerCitation": 27.97,
-      "citationsPerSecond": 35.75,
-      "partialResult": true
+      "durationMs": 1448.02,
+      "msPerCitation": 28.96,
+      "citationsPerSecond": 34.53,
+      "partialResult": false
     },
     {
       "batchIndex": 5,
@@ -1768,10 +1756,10 @@
       "repeat": 2,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1834.09,
-      "msPerCitation": 36.68,
-      "citationsPerSecond": 27.26,
-      "partialResult": true
+      "durationMs": 1810.49,
+      "msPerCitation": 36.21,
+      "citationsPerSecond": 27.62,
+      "partialResult": false
     },
     {
       "batchIndex": 6,
@@ -1779,10 +1767,10 @@
       "repeat": 2,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1747.48,
-      "msPerCitation": 34.95,
-      "citationsPerSecond": 28.61,
-      "partialResult": true
+      "durationMs": 1732.18,
+      "msPerCitation": 34.64,
+      "citationsPerSecond": 28.87,
+      "partialResult": false
     },
     {
       "batchIndex": 7,
@@ -1790,10 +1778,10 @@
       "repeat": 2,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 2857.37,
-      "msPerCitation": 57.15,
-      "citationsPerSecond": 17.5,
-      "partialResult": true
+      "durationMs": 2808.31,
+      "msPerCitation": 56.17,
+      "citationsPerSecond": 17.8,
+      "partialResult": false
     },
     {
       "batchIndex": 8,
@@ -1801,10 +1789,10 @@
       "repeat": 2,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1779.45,
-      "msPerCitation": 35.59,
-      "citationsPerSecond": 28.1,
-      "partialResult": true
+      "durationMs": 1786.49,
+      "msPerCitation": 35.73,
+      "citationsPerSecond": 27.99,
+      "partialResult": false
     },
     {
       "batchIndex": 9,
@@ -1812,9 +1800,9 @@
       "repeat": 2,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1656.68,
-      "msPerCitation": 33.13,
-      "citationsPerSecond": 30.18,
+      "durationMs": 1673.76,
+      "msPerCitation": 33.48,
+      "citationsPerSecond": 29.87,
       "partialResult": true
     },
     {
@@ -1823,9 +1811,9 @@
       "repeat": 2,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1371.87,
-      "msPerCitation": 27.44,
-      "citationsPerSecond": 36.45,
+      "durationMs": 1368.81,
+      "msPerCitation": 27.38,
+      "citationsPerSecond": 36.53,
       "partialResult": true
     },
     {
@@ -1833,10 +1821,10 @@
       "batchSize": 50,
       "repeat": 2,
       "expectedCount": 50,
-      "actualCount": 48,
-      "durationMs": 2595.52,
-      "msPerCitation": 51.91,
-      "citationsPerSecond": 19.26,
+      "actualCount": 49,
+      "durationMs": 2767.16,
+      "msPerCitation": 55.34,
+      "citationsPerSecond": 18.07,
       "partialResult": true
     },
     {
@@ -1845,262 +1833,262 @@
       "repeat": 2,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1638.07,
+      "durationMs": 1654.3,
+      "msPerCitation": 33.09,
+      "citationsPerSecond": 30.22,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 13,
+      "batchSize": 50,
+      "repeat": 2,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 2116.2,
+      "msPerCitation": 42.32,
+      "citationsPerSecond": 23.63,
+      "partialResult": false
+    },
+    {
+      "batchIndex": 14,
+      "batchSize": 50,
+      "repeat": 2,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 2621.89,
+      "msPerCitation": 52.44,
+      "citationsPerSecond": 19.07,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 15,
+      "batchSize": 50,
+      "repeat": 2,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 1651.43,
+      "msPerCitation": 33.03,
+      "citationsPerSecond": 30.28,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 16,
+      "batchSize": 50,
+      "repeat": 2,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 1326.43,
+      "msPerCitation": 26.53,
+      "citationsPerSecond": 37.7,
+      "partialResult": false
+    },
+    {
+      "batchIndex": 17,
+      "batchSize": 50,
+      "repeat": 2,
+      "expectedCount": 50,
+      "actualCount": 48,
+      "durationMs": 1529.67,
+      "msPerCitation": 30.59,
+      "citationsPerSecond": 32.69,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 18,
+      "batchSize": 50,
+      "repeat": 2,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 2619.52,
+      "msPerCitation": 52.39,
+      "citationsPerSecond": 19.09,
+      "partialResult": false
+    },
+    {
+      "batchIndex": 19,
+      "batchSize": 50,
+      "repeat": 2,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 1761.01,
+      "msPerCitation": 35.22,
+      "citationsPerSecond": 28.39,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 0,
+      "batchSize": 50,
+      "repeat": 3,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 1403.57,
+      "msPerCitation": 28.07,
+      "citationsPerSecond": 35.62,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 1,
+      "batchSize": 50,
+      "repeat": 3,
+      "expectedCount": 50,
+      "actualCount": 49,
+      "durationMs": 1440.91,
+      "msPerCitation": 28.82,
+      "citationsPerSecond": 34.7,
+      "partialResult": false
+    },
+    {
+      "batchIndex": 2,
+      "batchSize": 50,
+      "repeat": 3,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 2447.69,
+      "msPerCitation": 48.95,
+      "citationsPerSecond": 20.43,
+      "partialResult": false
+    },
+    {
+      "batchIndex": 3,
+      "batchSize": 50,
+      "repeat": 3,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 1584.56,
+      "msPerCitation": 31.69,
+      "citationsPerSecond": 31.55,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 4,
+      "batchSize": 50,
+      "repeat": 3,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 1322.58,
+      "msPerCitation": 26.45,
+      "citationsPerSecond": 37.8,
+      "partialResult": false
+    },
+    {
+      "batchIndex": 5,
+      "batchSize": 50,
+      "repeat": 3,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 1848.89,
+      "msPerCitation": 36.98,
+      "citationsPerSecond": 27.04,
+      "partialResult": false
+    },
+    {
+      "batchIndex": 6,
+      "batchSize": 50,
+      "repeat": 3,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 2811,
+      "msPerCitation": 56.22,
+      "citationsPerSecond": 17.79,
+      "partialResult": false
+    },
+    {
+      "batchIndex": 7,
+      "batchSize": 50,
+      "repeat": 3,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 1825.64,
+      "msPerCitation": 36.51,
+      "citationsPerSecond": 27.39,
+      "partialResult": false
+    },
+    {
+      "batchIndex": 8,
+      "batchSize": 50,
+      "repeat": 3,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 1671.58,
+      "msPerCitation": 33.43,
+      "citationsPerSecond": 29.91,
+      "partialResult": false
+    },
+    {
+      "batchIndex": 9,
+      "batchSize": 50,
+      "repeat": 3,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 2679.61,
+      "msPerCitation": 53.59,
+      "citationsPerSecond": 18.66,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 10,
+      "batchSize": 50,
+      "repeat": 3,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 1424.39,
+      "msPerCitation": 28.49,
+      "citationsPerSecond": 35.1,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 11,
+      "batchSize": 50,
+      "repeat": 3,
+      "expectedCount": 50,
+      "actualCount": 49,
+      "durationMs": 1647.46,
+      "msPerCitation": 32.95,
+      "citationsPerSecond": 30.35,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 12,
+      "batchSize": 50,
+      "repeat": 3,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 1612.4,
+      "msPerCitation": 32.25,
+      "citationsPerSecond": 31.01,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 13,
+      "batchSize": 50,
+      "repeat": 3,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 3114.94,
+      "msPerCitation": 62.3,
+      "citationsPerSecond": 16.05,
+      "partialResult": false
+    },
+    {
+      "batchIndex": 14,
+      "batchSize": 50,
+      "repeat": 3,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 1652.32,
+      "msPerCitation": 33.05,
+      "citationsPerSecond": 30.26,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 15,
+      "batchSize": 50,
+      "repeat": 3,
+      "expectedCount": 50,
+      "actualCount": 50,
+      "durationMs": 1637.92,
       "msPerCitation": 32.76,
-      "citationsPerSecond": 30.52,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 13,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 2104.01,
-      "msPerCitation": 42.08,
-      "citationsPerSecond": 23.76,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 14,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 2582.18,
-      "msPerCitation": 51.64,
-      "citationsPerSecond": 19.36,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 15,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1681.37,
-      "msPerCitation": 33.63,
-      "citationsPerSecond": 29.74,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 16,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1384.05,
-      "msPerCitation": 27.68,
-      "citationsPerSecond": 36.13,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 17,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 48,
-      "durationMs": 1546.94,
-      "msPerCitation": 30.94,
-      "citationsPerSecond": 32.32,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 18,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 2704.13,
-      "msPerCitation": 54.08,
-      "citationsPerSecond": 18.49,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 19,
-      "batchSize": 50,
-      "repeat": 2,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1838.97,
-      "msPerCitation": 36.78,
-      "citationsPerSecond": 27.19,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 0,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1448.41,
-      "msPerCitation": 28.97,
-      "citationsPerSecond": 34.52,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 1,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 49,
-      "durationMs": 1475.14,
-      "msPerCitation": 29.5,
-      "citationsPerSecond": 33.9,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 2,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 2404.61,
-      "msPerCitation": 48.09,
-      "citationsPerSecond": 20.79,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 3,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1583.84,
-      "msPerCitation": 31.68,
-      "citationsPerSecond": 31.57,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 4,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1390.43,
-      "msPerCitation": 27.81,
-      "citationsPerSecond": 35.96,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 5,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1855.35,
-      "msPerCitation": 37.11,
-      "citationsPerSecond": 26.95,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 6,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 2791.87,
-      "msPerCitation": 55.84,
-      "citationsPerSecond": 17.91,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 7,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1742.33,
-      "msPerCitation": 34.85,
-      "citationsPerSecond": 28.7,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 8,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1667.76,
-      "msPerCitation": 33.36,
-      "citationsPerSecond": 29.98,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 9,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 2633.1,
-      "msPerCitation": 52.66,
-      "citationsPerSecond": 18.99,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 10,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1831.92,
-      "msPerCitation": 36.64,
-      "citationsPerSecond": 27.29,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 11,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 48,
-      "durationMs": 1998.86,
-      "msPerCitation": 39.98,
-      "citationsPerSecond": 25.01,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 12,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 2851.63,
-      "msPerCitation": 57.03,
-      "citationsPerSecond": 17.53,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 13,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 2408.77,
-      "msPerCitation": 48.18,
-      "citationsPerSecond": 20.76,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 14,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 1876.83,
-      "msPerCitation": 37.54,
-      "citationsPerSecond": 26.64,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 15,
-      "batchSize": 50,
-      "repeat": 3,
-      "expectedCount": 50,
-      "actualCount": 50,
-      "durationMs": 2713.22,
-      "msPerCitation": 54.26,
-      "citationsPerSecond": 18.43,
+      "citationsPerSecond": 30.53,
       "partialResult": true
     },
     {
@@ -2109,10 +2097,10 @@
       "repeat": 3,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1511.49,
-      "msPerCitation": 30.23,
-      "citationsPerSecond": 33.08,
-      "partialResult": true
+      "durationMs": 1342.74,
+      "msPerCitation": 26.85,
+      "citationsPerSecond": 37.24,
+      "partialResult": false
     },
     {
       "batchIndex": 17,
@@ -2120,9 +2108,9 @@
       "repeat": 3,
       "expectedCount": 50,
       "actualCount": 48,
-      "durationMs": 1595.26,
-      "msPerCitation": 31.91,
-      "citationsPerSecond": 31.34,
+      "durationMs": 2557.08,
+      "msPerCitation": 51.14,
+      "citationsPerSecond": 19.55,
       "partialResult": true
     },
     {
@@ -2131,10 +2119,10 @@
       "repeat": 3,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 1634.35,
-      "msPerCitation": 32.69,
-      "citationsPerSecond": 30.59,
-      "partialResult": true
+      "durationMs": 1683.4,
+      "msPerCitation": 33.67,
+      "citationsPerSecond": 29.7,
+      "partialResult": false
     },
     {
       "batchIndex": 19,
@@ -2142,9 +2130,9 @@
       "repeat": 3,
       "expectedCount": 50,
       "actualCount": 50,
-      "durationMs": 2717.46,
-      "msPerCitation": 54.35,
-      "citationsPerSecond": 18.4,
+      "durationMs": 1740.4,
+      "msPerCitation": 34.81,
+      "citationsPerSecond": 28.73,
       "partialResult": true
     },
     {
@@ -2153,9 +2141,9 @@
       "repeat": 1,
       "expectedCount": 100,
       "actualCount": 99,
-      "durationMs": 2939.26,
-      "msPerCitation": 29.39,
-      "citationsPerSecond": 34.02,
+      "durationMs": 3995.75,
+      "msPerCitation": 39.96,
+      "citationsPerSecond": 25.03,
       "partialResult": true
     },
     {
@@ -2164,9 +2152,9 @@
       "repeat": 1,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 3936.14,
-      "msPerCitation": 39.36,
-      "citationsPerSecond": 25.41,
+      "durationMs": 2979.29,
+      "msPerCitation": 29.79,
+      "citationsPerSecond": 33.57,
       "partialResult": true
     },
     {
@@ -2175,10 +2163,10 @@
       "repeat": 1,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 3228.99,
-      "msPerCitation": 32.29,
-      "citationsPerSecond": 30.97,
-      "partialResult": true
+      "durationMs": 4222.68,
+      "msPerCitation": 42.23,
+      "citationsPerSecond": 23.68,
+      "partialResult": false
     },
     {
       "batchIndex": 3,
@@ -2186,10 +2174,10 @@
       "repeat": 1,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 4525.65,
-      "msPerCitation": 45.26,
-      "citationsPerSecond": 22.1,
-      "partialResult": true
+      "durationMs": 3633.74,
+      "msPerCitation": 36.34,
+      "citationsPerSecond": 27.52,
+      "partialResult": false
     },
     {
       "batchIndex": 4,
@@ -2197,53 +2185,53 @@
       "repeat": 1,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 3440.4,
-      "msPerCitation": 34.4,
-      "citationsPerSecond": 29.07,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 5,
-      "batchSize": 100,
-      "repeat": 1,
-      "expectedCount": 100,
-      "actualCount": 98,
-      "durationMs": 3982.69,
-      "msPerCitation": 39.83,
-      "citationsPerSecond": 25.11,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 6,
-      "batchSize": 100,
-      "repeat": 1,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 3794.7,
-      "msPerCitation": 37.95,
-      "citationsPerSecond": 26.35,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 7,
-      "batchSize": 100,
-      "repeat": 1,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 4393.36,
+      "durationMs": 4393.11,
       "msPerCitation": 43.93,
       "citationsPerSecond": 22.76,
       "partialResult": true
     },
     {
+      "batchIndex": 5,
+      "batchSize": 100,
+      "repeat": 1,
+      "expectedCount": 100,
+      "actualCount": 99,
+      "durationMs": 3081.34,
+      "msPerCitation": 30.81,
+      "citationsPerSecond": 32.45,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 6,
+      "batchSize": 100,
+      "repeat": 1,
+      "expectedCount": 100,
+      "actualCount": 100,
+      "durationMs": 4813.63,
+      "msPerCitation": 48.14,
+      "citationsPerSecond": 20.77,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 7,
+      "batchSize": 100,
+      "repeat": 1,
+      "expectedCount": 100,
+      "actualCount": 100,
+      "durationMs": 3351.53,
+      "msPerCitation": 33.52,
+      "citationsPerSecond": 29.84,
+      "partialResult": true
+    },
+    {
       "batchIndex": 8,
       "batchSize": 100,
       "repeat": 1,
       "expectedCount": 100,
       "actualCount": 98,
-      "durationMs": 2959.72,
-      "msPerCitation": 29.6,
-      "citationsPerSecond": 33.79,
+      "durationMs": 4034,
+      "msPerCitation": 40.34,
+      "citationsPerSecond": 24.79,
       "partialResult": true
     },
     {
@@ -2252,9 +2240,9 @@
       "repeat": 1,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 4393.67,
-      "msPerCitation": 43.94,
-      "citationsPerSecond": 22.76,
+      "durationMs": 3374.13,
+      "msPerCitation": 33.74,
+      "citationsPerSecond": 29.64,
       "partialResult": true
     },
     {
@@ -2263,9 +2251,9 @@
       "repeat": 2,
       "expectedCount": 100,
       "actualCount": 99,
-      "durationMs": 2948.85,
-      "msPerCitation": 29.49,
-      "citationsPerSecond": 33.91,
+      "durationMs": 3932.94,
+      "msPerCitation": 39.33,
+      "citationsPerSecond": 25.43,
       "partialResult": true
     },
     {
@@ -2274,9 +2262,9 @@
       "repeat": 2,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 3957.92,
-      "msPerCitation": 39.58,
-      "citationsPerSecond": 25.27,
+      "durationMs": 3088.04,
+      "msPerCitation": 30.88,
+      "citationsPerSecond": 32.38,
       "partialResult": true
     },
     {
@@ -2285,10 +2273,10 @@
       "repeat": 2,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 3202.91,
-      "msPerCitation": 32.03,
-      "citationsPerSecond": 31.22,
-      "partialResult": true
+      "durationMs": 4267.14,
+      "msPerCitation": 42.67,
+      "citationsPerSecond": 23.43,
+      "partialResult": false
     },
     {
       "batchIndex": 3,
@@ -2296,10 +2284,10 @@
       "repeat": 2,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 4543.82,
-      "msPerCitation": 45.44,
-      "citationsPerSecond": 22.01,
-      "partialResult": true
+      "durationMs": 3602.99,
+      "msPerCitation": 36.03,
+      "citationsPerSecond": 27.75,
+      "partialResult": false
     },
     {
       "batchIndex": 4,
@@ -2307,9 +2295,9 @@
       "repeat": 2,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 3451.71,
-      "msPerCitation": 34.52,
-      "citationsPerSecond": 28.97,
+      "durationMs": 4448.54,
+      "msPerCitation": 44.49,
+      "citationsPerSecond": 22.48,
       "partialResult": true
     },
     {
@@ -2317,54 +2305,54 @@
       "batchSize": 100,
       "repeat": 2,
       "expectedCount": 100,
-      "actualCount": 98,
-      "durationMs": 3977.82,
-      "msPerCitation": 39.78,
-      "citationsPerSecond": 25.14,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 6,
-      "batchSize": 100,
-      "repeat": 2,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 3804.99,
-      "msPerCitation": 38.05,
-      "citationsPerSecond": 26.28,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 7,
-      "batchSize": 100,
-      "repeat": 2,
-      "expectedCount": 100,
-      "actualCount": 100,
-      "durationMs": 4210.39,
-      "msPerCitation": 42.1,
-      "citationsPerSecond": 23.75,
-      "partialResult": true
-    },
-    {
-      "batchIndex": 8,
-      "batchSize": 100,
-      "repeat": 2,
-      "expectedCount": 100,
-      "actualCount": 98,
-      "durationMs": 3166.16,
-      "msPerCitation": 31.66,
+      "actualCount": 99,
+      "durationMs": 3166.77,
+      "msPerCitation": 31.67,
       "citationsPerSecond": 31.58,
       "partialResult": true
     },
     {
+      "batchIndex": 6,
+      "batchSize": 100,
+      "repeat": 2,
+      "expectedCount": 100,
+      "actualCount": 100,
+      "durationMs": 4804.48,
+      "msPerCitation": 48.04,
+      "citationsPerSecond": 20.81,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 7,
+      "batchSize": 100,
+      "repeat": 2,
+      "expectedCount": 100,
+      "actualCount": 100,
+      "durationMs": 3362.77,
+      "msPerCitation": 33.63,
+      "citationsPerSecond": 29.74,
+      "partialResult": true
+    },
+    {
+      "batchIndex": 8,
+      "batchSize": 100,
+      "repeat": 2,
+      "expectedCount": 100,
+      "actualCount": 98,
+      "durationMs": 3944,
+      "msPerCitation": 39.44,
+      "citationsPerSecond": 25.35,
+      "partialResult": true
+    },
+    {
       "batchIndex": 9,
       "batchSize": 100,
       "repeat": 2,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 4390.7,
-      "msPerCitation": 43.91,
-      "citationsPerSecond": 22.78,
+      "durationMs": 3448.89,
+      "msPerCitation": 34.49,
+      "citationsPerSecond": 28.99,
       "partialResult": true
     },
     {
@@ -2373,9 +2361,9 @@
       "repeat": 3,
       "expectedCount": 100,
       "actualCount": 99,
-      "durationMs": 3054.82,
-      "msPerCitation": 30.55,
-      "citationsPerSecond": 32.74,
+      "durationMs": 3990.34,
+      "msPerCitation": 39.9,
+      "citationsPerSecond": 25.06,
       "partialResult": true
     },
     {
@@ -2384,9 +2372,9 @@
       "repeat": 3,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 4004.56,
-      "msPerCitation": 40.05,
-      "citationsPerSecond": 24.97,
+      "durationMs": 3118.94,
+      "msPerCitation": 31.19,
+      "citationsPerSecond": 32.06,
       "partialResult": true
     },
     {
@@ -2395,10 +2383,10 @@
       "repeat": 3,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 3257,
-      "msPerCitation": 32.57,
-      "citationsPerSecond": 30.7,
-      "partialResult": true
+      "durationMs": 4182.45,
+      "msPerCitation": 41.82,
+      "citationsPerSecond": 23.91,
+      "partialResult": false
     },
     {
       "batchIndex": 3,
@@ -2406,10 +2394,10 @@
       "repeat": 3,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 4493.42,
-      "msPerCitation": 44.93,
-      "citationsPerSecond": 22.25,
-      "partialResult": true
+      "durationMs": 3686.93,
+      "msPerCitation": 36.87,
+      "citationsPerSecond": 27.12,
+      "partialResult": false
     },
     {
       "batchIndex": 4,
@@ -2417,9 +2405,9 @@
       "repeat": 3,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 3468.32,
-      "msPerCitation": 34.68,
-      "citationsPerSecond": 28.83,
+      "durationMs": 4618.48,
+      "msPerCitation": 46.18,
+      "citationsPerSecond": 21.65,
       "partialResult": true
     },
     {
@@ -2427,10 +2415,10 @@
       "batchSize": 100,
       "repeat": 3,
       "expectedCount": 100,
-      "actualCount": 98,
-      "durationMs": 3879.1,
-      "msPerCitation": 38.79,
-      "citationsPerSecond": 25.78,
+      "actualCount": 99,
+      "durationMs": 3136.63,
+      "msPerCitation": 31.37,
+      "citationsPerSecond": 31.88,
       "partialResult": true
     },
     {
@@ -2439,9 +2427,9 @@
       "repeat": 3,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 3707.61,
-      "msPerCitation": 37.08,
-      "citationsPerSecond": 26.97,
+      "durationMs": 4842.13,
+      "msPerCitation": 48.42,
+      "citationsPerSecond": 20.65,
       "partialResult": true
     },
     {
@@ -2450,9 +2438,9 @@
       "repeat": 3,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 4107.14,
-      "msPerCitation": 41.07,
-      "citationsPerSecond": 24.35,
+      "durationMs": 3332.74,
+      "msPerCitation": 33.33,
+      "citationsPerSecond": 30.01,
       "partialResult": true
     },
     {
@@ -2461,9 +2449,9 @@
       "repeat": 3,
       "expectedCount": 100,
       "actualCount": 98,
-      "durationMs": 2905.26,
-      "msPerCitation": 29.05,
-      "citationsPerSecond": 34.42,
+      "durationMs": 4009.28,
+      "msPerCitation": 40.09,
+      "citationsPerSecond": 24.94,
       "partialResult": true
     },
     {
@@ -2472,9 +2460,9 @@
       "repeat": 3,
       "expectedCount": 100,
       "actualCount": 100,
-      "durationMs": 4283.59,
-      "msPerCitation": 42.84,
-      "citationsPerSecond": 23.34,
+      "durationMs": 3506.06,
+      "msPerCitation": 35.06,
+      "citationsPerSecond": 28.52,
       "partialResult": true
     },
     {
@@ -2483,9 +2471,9 @@
       "repeat": 1,
       "expectedCount": 200,
       "actualCount": 199,
-      "durationMs": 6826.9,
-      "msPerCitation": 34.13,
-      "citationsPerSecond": 29.3,
+      "durationMs": 7021.23,
+      "msPerCitation": 35.11,
+      "citationsPerSecond": 28.49,
       "partialResult": true
     },
     {
@@ -2494,20 +2482,20 @@
       "repeat": 1,
       "expectedCount": 200,
       "actualCount": 200,
-      "durationMs": 7658.67,
-      "msPerCitation": 38.29,
-      "citationsPerSecond": 26.11,
-      "partialResult": true
+      "durationMs": 7910.06,
+      "msPerCitation": 39.55,
+      "citationsPerSecond": 25.28,
+      "partialResult": false
     },
     {
       "batchIndex": 2,
       "batchSize": 200,
       "repeat": 1,
       "expectedCount": 200,
-      "actualCount": 198,
-      "durationMs": 7338.47,
-      "msPerCitation": 36.69,
-      "citationsPerSecond": 27.25,
+      "actualCount": 199,
+      "durationMs": 7524.79,
+      "msPerCitation": 37.62,
+      "citationsPerSecond": 26.58,
       "partialResult": true
     },
     {
@@ -2516,9 +2504,9 @@
       "repeat": 1,
       "expectedCount": 200,
       "actualCount": 200,
-      "durationMs": 7872.76,
-      "msPerCitation": 39.36,
-      "citationsPerSecond": 25.4,
+      "durationMs": 8290.41,
+      "msPerCitation": 41.45,
+      "citationsPerSecond": 24.12,
       "partialResult": true
     },
     {
@@ -2527,9 +2515,9 @@
       "repeat": 1,
       "expectedCount": 200,
       "actualCount": 198,
-      "durationMs": 7303.26,
-      "msPerCitation": 36.52,
-      "citationsPerSecond": 27.39,
+      "durationMs": 7650.64,
+      "msPerCitation": 38.25,
+      "citationsPerSecond": 26.14,
       "partialResult": true
     },
     {
@@ -2538,9 +2526,9 @@
       "repeat": 2,
       "expectedCount": 200,
       "actualCount": 199,
-      "durationMs": 6855.5,
-      "msPerCitation": 34.28,
-      "citationsPerSecond": 29.17,
+      "durationMs": 7216.17,
+      "msPerCitation": 36.08,
+      "citationsPerSecond": 27.72,
       "partialResult": true
     },
     {
@@ -2549,20 +2537,20 @@
       "repeat": 2,
       "expectedCount": 200,
       "actualCount": 200,
-      "durationMs": 7663.03,
-      "msPerCitation": 38.32,
-      "citationsPerSecond": 26.1,
-      "partialResult": true
+      "durationMs": 7989.92,
+      "msPerCitation": 39.95,
+      "citationsPerSecond": 25.03,
+      "partialResult": false
     },
     {
       "batchIndex": 2,
       "batchSize": 200,
       "repeat": 2,
       "expectedCount": 200,
-      "actualCount": 198,
-      "durationMs": 7345.55,
-      "msPerCitation": 36.73,
-      "citationsPerSecond": 27.23,
+      "actualCount": 199,
+      "durationMs": 7677.27,
+      "msPerCitation": 38.39,
+      "citationsPerSecond": 26.05,
       "partialResult": true
     },
     {
@@ -2571,9 +2559,9 @@
       "repeat": 2,
       "expectedCount": 200,
       "actualCount": 200,
-      "durationMs": 7983.49,
-      "msPerCitation": 39.92,
-      "citationsPerSecond": 25.05,
+      "durationMs": 8228.12,
+      "msPerCitation": 41.14,
+      "citationsPerSecond": 24.31,
       "partialResult": true
     },
     {
@@ -2582,9 +2570,9 @@
       "repeat": 2,
       "expectedCount": 200,
       "actualCount": 198,
-      "durationMs": 7267.23,
-      "msPerCitation": 36.34,
-      "citationsPerSecond": 27.52,
+      "durationMs": 7530.68,
+      "msPerCitation": 37.65,
+      "citationsPerSecond": 26.56,
       "partialResult": true
     },
     {
@@ -2593,9 +2581,9 @@
       "repeat": 3,
       "expectedCount": 200,
       "actualCount": 199,
-      "durationMs": 6926.62,
-      "msPerCitation": 34.63,
-      "citationsPerSecond": 28.87,
+      "durationMs": 7233.18,
+      "msPerCitation": 36.17,
+      "citationsPerSecond": 27.65,
       "partialResult": true
     },
     {
@@ -2604,20 +2592,20 @@
       "repeat": 3,
       "expectedCount": 200,
       "actualCount": 200,
-      "durationMs": 7697.75,
-      "msPerCitation": 38.49,
-      "citationsPerSecond": 25.98,
-      "partialResult": true
+      "durationMs": 8150.66,
+      "msPerCitation": 40.75,
+      "citationsPerSecond": 24.54,
+      "partialResult": false
     },
     {
       "batchIndex": 2,
       "batchSize": 200,
       "repeat": 3,
       "expectedCount": 200,
-      "actualCount": 198,
-      "durationMs": 7462.89,
-      "msPerCitation": 37.31,
-      "citationsPerSecond": 26.8,
+      "actualCount": 199,
+      "durationMs": 7828.82,
+      "msPerCitation": 39.14,
+      "citationsPerSecond": 25.55,
       "partialResult": true
     },
     {
@@ -2626,9 +2614,9 @@
       "repeat": 3,
       "expectedCount": 200,
       "actualCount": 200,
-      "durationMs": 7955.14,
-      "msPerCitation": 39.78,
-      "citationsPerSecond": 25.14,
+      "durationMs": 8399.53,
+      "msPerCitation": 42,
+      "citationsPerSecond": 23.81,
       "partialResult": true
     },
     {
@@ -2637,9 +2625,9 @@
       "repeat": 3,
       "expectedCount": 200,
       "actualCount": 198,
-      "durationMs": 7412.12,
-      "msPerCitation": 37.06,
-      "citationsPerSecond": 26.98,
+      "durationMs": 7633.84,
+      "msPerCitation": 38.17,
+      "citationsPerSecond": 26.2,
       "partialResult": true
     }
   ]

@@ -200,6 +200,19 @@ describe('v2 author rescue utilities', () => {
     });
   });
 
+  it('keeps comma-heavy institutional literals intact after acronym-dot cleanup', () => {
+    const result = parseAuthorsForStyle([
+      'Department of Economics, Faculty of Social Sciences, Niger Delta University, Wilberforce Island, PMB 071, Yenagoa, Bayelsa State, Nigeria',
+    ], 'vancouver');
+
+    expect(result.authors).toMatchObject([
+      {
+        last: 'Department of Economics, Faculty of Social Sciences, Niger Delta University, Wilberforce Island, PMB 071, Yenagoa, Bayelsa State, Nigeria',
+        initials: null,
+      },
+    ]);
+  });
+
   it('preserves valid DOI suffix parentheses in historical DOI formats', () => {
     expect(normalizeDoiValue('10.1016/0030-4018(76)90095-x')).toBe('10.1016/0030-4018(76)90095-x');
     expect(normalizeDoiValue('https://doi.org/10.1016/0030-4018(76)90095-x)')).toBe('10.1016/0030-4018(76)90095-x');
@@ -224,6 +237,23 @@ describe('v2 author rescue utilities', () => {
 
     expect(result.authors).toMatchObject([
       { last: 'da Silva', initials: 'V. L.' },
+    ]);
+  });
+
+  it('treats compact initial-leading personal names as people instead of group authors', () => {
+    const result = parseAuthorsForStyle(['KN Jones', 'NS Stoloff'], 'harvard');
+
+    expect(result.authors).toMatchObject([
+      { last: 'Jones', initials: 'K. N.' },
+      { last: 'Stoloff', initials: 'N. S.' },
+    ]);
+  });
+
+  it('keeps acronym-led institutional authors on the group-author path when they are not compact personal names', () => {
+    const result = parseAuthorsForStyle(['UN Women'], 'auto');
+
+    expect(result.authors).toMatchObject([
+      { literal: 'UN Women', last: 'UN Women' },
     ]);
   });
 });

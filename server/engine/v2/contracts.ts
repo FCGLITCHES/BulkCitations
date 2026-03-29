@@ -105,6 +105,11 @@ export interface V2LlmBudget {
   splitCalls: number;
   extractCalls: number;
   capReached: boolean;
+  extractBatchBudget?: number;
+  extractBatchCapReached?: boolean;
+  fallbackConcurrency?: number;
+  _extractReservationVersion?: number;
+  _extractReservationLock?: Promise<void>;
 }
 
 export interface V2PipelineContext {
@@ -150,6 +155,12 @@ export interface ExtractorAdapter {
     splitArtifact?: V2SplitArtifact;
     llmBudget?: V2LlmBudget;
     debugEnabled?: boolean;
+    outputStyle?: string;
+    originalRawText?: string;
+    engineVersion?: string;
+    userEdited?: boolean;
+    adminApproved?: boolean;
+    verificationNeeded?: boolean;
   }): Promise<{
     parsed: {
       authors?: Array<string | CanonicalAuthor>;
@@ -197,6 +208,13 @@ export interface ExtractorAdapter {
     llmFallbackAccepted?: boolean;
     llmFallbackReason?: string;
     llmFallbackSkippedByBudget?: boolean;
+    llmFallbackReusedFromCluster?: boolean;
+    llmFallbackSkippedForTruth?: boolean;
+    llmFallbackVerificationNeeded?: boolean;
+    llmFallbackCacheKey?: string;
+    llmFallbackClusterKey?: string;
+    llmFallbackQueuePriority?: number;
+    llmFallbackAttemptErrorType?: 'timeout' | 'rate_limit' | 'invalid_json_response' | 'empty_response' | 'network_error' | 'token_limit_exceeded' | 'unexpected_runtime_error';
     llmFallbackFieldsImproved?: string[];
     llmFallbackStrictPassDelta?: number;
     llmFallbackFirstAuthorConfidence?: number;

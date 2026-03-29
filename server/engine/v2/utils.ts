@@ -410,6 +410,7 @@ export function isLikelyAllCaps(value: string): boolean {
 const TITLE_STOP_WORDS = new Set(['a', 'an', 'and', 'as', 'at', 'by', 'for', 'in', 'of', 'on', 'or', 'the', 'to', 'vs']);
 const INITIALS_TOKEN_PATTERN = /^[\p{Lu}](?:[.-]?[\p{Lu}]){0,5}\.?$/u;
 const DOTTED_INITIALS_PATTERN = /^[\p{Lu}](?:\.[\p{Lu}])+\.?$/u;
+const NON_PERSONAL_COMPACT_INITIAL_TAIL_SIGNAL = /\b(?:women|nations|commission|department|ministry|office|administration|agency|bureau|council|center|centre|laboratory|lab|school|college|university|institute|society|association|bank|foundation|team|group|committee|board|unit|program|programme|portal|hub|press|publisher|army|navy|force)\b/i;
 
 export function toSmartTitleCase(value: string): string {
   return fixUnicodeText(value)
@@ -464,6 +465,32 @@ function normalizeCompactedGivenNames(value: string): string {
   );
 }
 
+export function parseCompactInitialLeadingPersonalAuthor(author: string): CanonicalAuthor | null {
+  const normalized = fixUnicodeText(author.replace(/[;]+$/, ''));
+  if (!normalized || normalized.includes(',')) return null;
+
+  const parts = normalized.split(/\s+/).filter(Boolean);
+  if (parts.length < 2 || parts.length > 4) return null;
+
+  const lead = parts[0]?.replace(/\./g, '') ?? '';
+  if (!/^[\p{Lu}]{1,4}$/u.test(lead)) return null;
+
+  const surname = normalizeWhitespace(parts.slice(1).join(' '));
+  if (!surname) return null;
+  if (NON_PERSONAL_COMPACT_INITIAL_TAIL_SIGNAL.test(surname)) return null;
+  if (!/^[\p{L}'’-]+(?:\s+[\p{L}'’-]+){0,2}$/u.test(surname)) return null;
+
+  return {
+    first: null,
+    last: normalizePersonLastName(surname),
+    initials: dottedInitials(lead),
+  };
+}
+
+export function looksLikeCompactInitialLeadingPersonalName(author: string): boolean {
+  return Boolean(parseCompactInitialLeadingPersonalAuthor(author));
+}
+
 export function parseAuthorToCanonical(author: string): CanonicalAuthor {
   const normalized = fixUnicodeText(author.replace(/[;]+$/, ''));
   if (!normalized) {
@@ -482,6 +509,11 @@ export function parseAuthorToCanonical(author: string): CanonicalAuthor {
       initials: null,
       literal: normalized,
     };
+  }
+
+  const compactInitialLeading = parseCompactInitialLeadingPersonalAuthor(normalized);
+  if (compactInitialLeading) {
+    return compactInitialLeading;
   }
 
   if (isGroupAuthor(normalized)) {
@@ -625,6 +657,8 @@ function buildPairedAuthorsFromAlternatingTokens(tokens: string[]): string[] {
   return paired;
 }
 
+const INSTITUTIONAL_COMMA_LITERAL_PATTERN = /\b(?:department|faculty|university|institute|ministry|office|administration|agency|bureau|council|division|directorate|center|centre|laboratory|lab|school|college)\b/i;
+
 function splitAuthorBlob(author: string): string[] {
   const rawNormalized = normalizeWhitespace(fixUnicodeText(author));
   const invertedConjoinedAuthors = splitConjoinedInvertedAuthorBlobs(rawNormalized);
@@ -642,6 +676,13 @@ function splitAuthorBlob(author: string): string[] {
     && normalized.includes(',')
     && /[.()]/.test(normalized)
     && /\b(?:commission|department|ministry|office|administration|agency|bureau|council|division|div\.|directorate|university|institute|laboratory|lab|human factors|reactor controls)\b/i.test(normalized)
+  ) {
+    return [normalized];
+  }
+  if (
+    normalized.includes(',')
+    && INSTITUTIONAL_COMMA_LITERAL_PATTERN.test(normalized)
+    && normalized.split(/\s*,\s*/).filter(Boolean).length >= 3
   ) {
     return [normalized];
   }
@@ -962,7 +1003,12 @@ export function parseAuthorsForStyle(
     && looksLikeMixedInvertedAndFullNameArray(rawStrings);
   const compactVancouverArray = rawStrings.length === expandedAuthors.length
     && rawStrings.filter((author) => !/^et\s+al\.?$/i.test(author)).length >= 2
-    && rawStrings.every((author) => /^et\s+al\.?$/i.test(author) || Boolean(parseCompactVancouverAuthor(author)) || isGroupAuthor(author));
+    && rawStrings.every((author) => (
+      /^et\s+al\.?$/i.test(author)
+      || Boolean(parseCompactVancouverAuthor(author))
+      || Boolean(parseCompactInitialLeadingPersonalAuthor(author))
+      || isGroupAuthor(author)
+    ));
   if (compactVancouverArray) {
     return {
       authors: rawStrings.map((author) => {
@@ -973,6 +1019,10 @@ export function parseAuthorsForStyle(
             initials: null,
             literal: 'et al.',
           };
+        }
+        const compactInitialLeading = parseCompactInitialLeadingPersonalAuthor(author);
+        if (compactInitialLeading) {
+          return compactInitialLeading;
         }
         if (isGroupAuthor(author)) {
           const group = normalizeGroupAuthor(author);
@@ -1010,6 +1060,11 @@ export function parseAuthorsForStyle(
   const canonicalAuthors = expandedAuthors.map((author) => {
     if (typeof author !== 'string') return normalizeCanonicalAuthor(author);
     const normalized = fixUnicodeText(author);
+
+    const compactInitialLeading = parseCompactInitialLeadingPersonalAuthor(normalized);
+    if (compactInitialLeading) {
+      return compactInitialLeading;
+    }
 
     if (isGroupAuthor(normalized)) {
       const group = normalizeGroupAuthor(normalized);

@@ -1,6 +1,6 @@
 # Academic Benchmark Report
 
-Generated: 2026-03-29T05:27:26.463Z
+Generated: 2026-03-29T12:09:27.370Z
 Frozen corpus: 2026-03-27T12:11:27.113Z
 Corpus size: 1000 real citations
 IEEE slice: 159 citations per corpus run
@@ -12,13 +12,13 @@ This internal benchmark evaluates 1000 real-world academic references across jou
 
 ## External Readiness Score (Primary)
 
-- Strict essential accuracy: 81.93%
-- Count integrity: 99.50%
-- Non-empty output rate: 99.50%
-- Identity integrity: 99.40%
-- Identity contamination count: 3
-- Consistency: 96.10%
-- Average APA render similarity: 90.20%
+- Strict essential accuracy: 81.87%
+- Count integrity: 99.60%
+- Non-empty output rate: 99.60%
+- Identity integrity: 99.60%
+- Identity contamination count: 0
+- Consistency: 96.39%
+- Average APA render similarity: 90.32%
 - LLM fallback attempt rate: 0.00%
 
 ## LLM Fallback Diagnostics
@@ -30,7 +30,7 @@ This internal benchmark evaluates 1000 real-world academic references across jou
 
 ## Internal Compatibility Reference (Secondary)
 
-- Legacy-comparable field average: 94.44%
+- Legacy-comparable field average: 95.02%
 - Methodology version: 1.0
 - Frozen at: 2026-03-27
 
@@ -38,14 +38,14 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 
 ## Action Needed Reasons
 
-- Overall multi_field_low_confidence: 155
-- Overall weak_venue: 35
-- Overall empty_output: 15
-- Overall missing_authors: 15
-- Overall weak_first_author: 15
-- Overall weak_reference_type: 15
+- Overall multi_field_low_confidence: 141
+- Overall weak_venue: 27
+- Overall weak_reference_type: 21
+- Overall empty_output: 12
+- Overall missing_authors: 12
+- Overall weak_first_author: 12
 - Overall malformed_authors: 5
-- Overall identity_contamination: 3
+- Overall identity_contamination: 0
 
 - IEEE multi_field_low_confidence: 45
 - IEEE empty_output: 6
@@ -56,9 +56,9 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 - IEEE identity_contamination: 0
 - IEEE malformed_authors: 0
 
-- Near-pass multi_field_low_confidence: 134
-- Near-pass weak_venue: 29
-- Near-pass weak_reference_type: 15
+- Near-pass multi_field_low_confidence: 126
+- Near-pass weak_venue: 24
+- Near-pass weak_reference_type: 21
 - Near-pass weak_first_author: 9
 - Near-pass malformed_authors: 5
 - Near-pass empty_output: 0
@@ -67,36 +67,36 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 
 ## Dominant Failure Ledger
 
-- residual_other: 54 (29.35%)
-- venue_cleanup: 46 (25.00%)
-- conference_container_type: 26 (14.13%)
-- ieee_author_order: 22 (11.96%)
-- pages_locator: 12 (6.52%)
-- report_institution_type: 12 (6.52%)
-- apa_author_order: 6 (3.26%)
-- missing_output: 5 (2.72%)
-- identity_contamination: 1 (0.54%)
+- residual_other: 64 (34.59%)
+- venue_cleanup: 41 (22.16%)
+- conference_container_type: 32 (17.30%)
+- ieee_author_order: 20 (10.81%)
+- pages_locator: 11 (5.95%)
+- report_institution_type: 7 (3.78%)
+- apa_author_order: 6 (3.24%)
+- missing_output: 4 (2.16%)
+- identity_contamination: 0 (0.00%)
 
 ## Near-Pass Ledger
 
-- firstAuthor: 58 (31.52%)
-- referenceType: 33 (17.93%)
-- venue: 19 (10.33%)
-- title: 7 (3.80%)
-- year: 3 (1.63%)
+- referenceType: 48 (25.95%)
+- firstAuthor: 45 (24.32%)
+- venue: 27 (14.59%)
+- title: 7 (3.78%)
+- year: 2 (1.08%)
 - identity: 0 (0.00%)
 - output: 0 (0.00%)
 
 ## Weighted Lift Model
 
-- Current strict external accuracy: 81.93%
+- Current strict external accuracy: 81.87%
 - Target strict external accuracy: 90.00%
-- Remaining gap: 8.07%
-- Source journal: share 55.00%, strict 84.55%, weighted headroom 8.50%
-- Source conference: share 15.00%, strict 73.56%, weighted headroom 3.97%
-- Source book: share 10.00%, strict 78.33%, weighted headroom 2.17%
+- Remaining gap: 8.13%
+- Source journal: share 55.00%, strict 84.73%, weighted headroom 8.40%
+- Source conference: share 15.00%, strict 70.00%, weighted headroom 4.50%
+- Source book: share 10.00%, strict 77.00%, weighted headroom 2.30%
 - Source chapter: share 10.00%, strict 84.67%, weighted headroom 1.53%
-- Source report: share 5.00%, strict 70.00%, weighted headroom 1.50%
+- Source report: share 5.00%, strict 80.00%, weighted headroom 1.00%
 - Source thesis: share 5.00%, strict 92.00%, weighted headroom 0.40%
 
 ## Methodology
@@ -111,96 +111,96 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 
 ### Batch size 50
 
-- Strict essential accuracy: 82.00%
-- Legacy field average: 94.19%
-- Count integrity: 99.50%
-- Non-empty output rate: 99.50%
-- Identity integrity: 99.40%
-- Identity contamination count: 1
-- Consistency: 88.29%
-- Mean batch time: 3353.92 ms
-- Median batch time: 2470.58 ms
-- P95 batch time: 6527.94 ms
-- Mean ms per citation: 67.08 ms
-- Throughput: 4.97 citations/sec
+- Strict essential accuracy: 81.80%
+- Legacy field average: 94.77%
+- Count integrity: 99.60%
+- Non-empty output rate: 99.60%
+- Identity integrity: 99.60%
+- Identity contamination count: 0
+- Consistency: 89.16%
+- Mean batch time: 3342.08 ms
+- Median batch time: 2281.94 ms
+- P95 batch time: 6709.42 ms
+- Mean ms per citation: 66.84 ms
+- Throughput: 4.99 citations/sec
 
 ### Batch size 100
 
 - Strict essential accuracy: 81.90%
-- Legacy field average: 94.56%
-- Count integrity: 99.50%
-- Non-empty output rate: 99.50%
-- Identity integrity: 99.40%
-- Identity contamination count: 1
+- Legacy field average: 95.14%
+- Count integrity: 99.60%
+- Non-empty output rate: 99.60%
+- Identity integrity: 99.60%
+- Identity contamination count: 0
 - Consistency: 100.00%
-- Mean batch time: 3747.02 ms
-- Median batch time: 3842.05 ms
-- P95 batch time: 4525.65 ms
-- Mean ms per citation: 37.47 ms
-- Throughput: 8.90 citations/sec
+- Mean batch time: 3812.32 ms
+- Median batch time: 3809.93 ms
+- P95 batch time: 4813.63 ms
+- Mean ms per citation: 38.12 ms
+- Throughput: 8.74 citations/sec
 
 ### Batch size 200
 
 - Strict essential accuracy: 81.90%
-- Legacy field average: 94.56%
-- Count integrity: 99.50%
-- Non-empty output rate: 99.50%
-- Identity integrity: 99.40%
-- Identity contamination count: 1
+- Legacy field average: 95.14%
+- Count integrity: 99.60%
+- Non-empty output rate: 99.60%
+- Identity integrity: 99.60%
+- Identity contamination count: 0
 - Consistency: 100.00%
-- Mean batch time: 7437.96 ms
-- Median batch time: 7412.12 ms
-- P95 batch time: 7983.49 ms
-- Mean ms per citation: 37.19 ms
-- Throughput: 8.96 citations/sec
+- Mean batch time: 7752.35 ms
+- Median batch time: 7677.27 ms
+- P95 batch time: 8399.53 ms
+- Mean ms per citation: 38.76 ms
+- Throughput: 8.60 citations/sec
 
 ## IEEE failure breakdown
 
-- author_order: 60
-- venue_abbreviation: 18
-- locator_misclassified: 3
+- author_order: 54
+- venue_abbreviation: 17
+- locator_misclassified: 0
 - doi_parse: 0
-- reference_type: 30
+- reference_type: 42
 - identity_contamination: 0
 - empty_output: 6
 
 ## Selector diagnostics
 
-- selection mode full_scoring: 963
-- selection mode single_survivor: 1044
-- selection mode unanimous_diversity_guard: 978
-- top winner adapter heuristic:ieee_quoted_reference: 609
+- selection mode full_scoring: 966
+- selection mode single_survivor: 1041
+- selection mode unanimous_diversity_guard: 981
+- top winner adapter heuristic:ieee_quoted_reference: 615
 - top winner adapter heuristic:in_source_container: 363
+- top winner adapter heuristic:harvard_sentence_journal: 225
 - top winner adapter heuristic:quoted_title_journal_locator: 225
-- top winner adapter heuristic:harvard_sentence_journal: 222
 - top winner adapter heuristic:vancouver_compact_journal: 204
 
 ## Type confusion matrix
 
-- journal -> journal: 1575
-- conference -> conference: 411
+- journal -> journal: 1539
+- conference -> conference: 414
 - chapter -> chapter: 273
-- book -> book: 270
+- book -> book: 258
 - thesis -> thesis: 150
-- report -> report: 132
-- journal -> conference: 39
-- conference -> chapter: 27
-- journal -> book: 21
-- chapter -> journal: 15
+- report -> report: 147
+- journal -> conference: 48
+- journal -> report: 33
+- book -> report: 24
+- conference -> chapter: 24
 
 ## Strengths
 
 - The benchmark uses a frozen 1,000-reference real-world corpus, making reruns auditable and institution-friendly.
 - Strict external readiness, internal legacy compatibility, and batch performance are separated instead of being collapsed into one misleading score.
 - thesis records performed best on the strict score at 92.00%.
-- The fastest operating point was the 200-citation batch at 8.96 citations/sec.
+- The fastest operating point was the 100-citation batch at 8.74 citations/sec.
 
 ## Weaknesses
 
-- report is the weakest strict source type and should stay in the next remediation wave.
+- conference is the weakest strict source type and should stay in the next remediation wave.
 - IEEE is the lowest-performing input style on the strict score.
 - pages is the lowest-accuracy field and remains the clearest parser-recovery target.
-- Identity contamination currently accounts for 3 strict failures across the benchmarked runs.
+- Identity contamination currently accounts for 0 strict failures across the benchmarked runs.
 
 ## Pros
 
@@ -231,43 +231,43 @@ Footnote: The primary score uses strict citation-level pass/fail on core fields 
 - book-0029-10-4028-b-fkeh8l [batch 50, repeat 1] mismatches: referenceType, title, firstAuthor, venue; render similarity: 62.00%; winner: parser:selected_style:apa; mode: single_survivor
   Expected: Nandyala, S. H. (2017). Journal of Biomimetics, Biomaterials and Biomedical Engineering Vol. 34. In Journal of Biomimetics, Biomaterials and Biomedical Engineering. Trans Tech Publications Ltd. https://doi.org/10.4028/b-fkeh8l
   Actual: ussain Nandyala, J., ournal of Biomimetics, B., & Ltd, B. E. V. 3. T. T. P. (2017). doi. Sooraj Hussain Nandyala, Journal of Biomimetics, Biomaterials and Biomedical Engineering, 34, 2017.
+- journal-0240-10-1097-md-0000000000017835 [batch 50, repeat 1] mismatches: referenceType; render similarity: 63.00%; winner: heuristic:quoted_title_journal_locator; mode: single_survivor
+  Expected: Park, H. O., Choi, J. Y., Jang, I. S., Kim, J. D., Kim, J. W., Byun, J. H., Kim, S. H., Yang, J. H., Moon, S. H., Kim, K. N., Kang, D. H., Jung, J. J., Choi, S. M., Kim, J. Y., & Lee, C. E. (2019). Perforation of inferior vena cava and duodenum by strut of inferior vena cava filter: A case report. Medicine, 98(47), e17835. https://doi.org/10.1097/md.0000000000017835
+  Actual: Park, H. O. (2019). Perforation of inferior vena cava and duodenum by strut of inferior vena cava filter: A case report. In Medicine (No. e17835; Vol. 98, Issue 47).
 - journal-0296-10-33917-mic-4-93-2020-47-56 [batch 50, repeat 1] mismatches: title, firstAuthor; render similarity: 64.00%; winner: heuristic:ieee_quoted_reference; mode: single_survivor
   Expected: Российская академия народного хозяйства и государственной службы при Президенте Российской Федерации, Ахрамеев, М. Д., Стефановский, Д. В., Российская академия народного хозяйства и государственной службы при Президенте Российской Федерации, Сенько, О. В., & Федеральный исследовательский центр “Информатика и управление” Российской Академии Наук. (2020). Прогнозирование банкротств контрагентов на основе данных платежной дисциплины. Microeconomics, 93(4), 47–56. https://doi.org/10.33917/mic-4.93.2020.47-56
   Actual: Федерации, Р. А. Н. Х. И. С. П. П. Р. Дмитриевич Ахрамеев, М. Владимирович Стефановский, Д. Федерации, Р. А. Н. Х. И. С. П. П. Р. Валентинович Сенько, О. & центр, Ф. И. (2020). Информатика иуправление" Российской Академии Наук, "Прогнозирование банкротств контрагентов на основе данных платежной дисциплины. Microeconomics, 93(4), 47-56.
-- journal-0002-10-53730-ijhs-v6ns1-8707 [batch 50, repeat 1] mismatches: firstAuthor; render similarity: 75.00%; winner: heuristic:ieee_quoted_reference; mode: single_survivor
-  Expected: Djumabaevich, T. S., Karimovich, K. Z., Beknazarovich, X. Z., Sagdullaevich, A. N., & Tirkashevich, M. S. (2022). role and significance of physical culture and sport in the sphere of education. International Journal of Health Sciences, 14419–14427. https://doi.org/10.53730/ijhs.v6ns1.8707
-  Actual: Tashtaev, S. D., Khudoiberganov, Z. K., Xudaykulov, Z. B., Adilov, N. S., & Mamasoliev, S. T. (2022). role and significance of physical culture and sport in the sphere of education. International Journal of Health Sciences, 14419-14427.
+- journal-0414-10-1097-ms9-0000000000003904 [batch 50, repeat 1] mismatches: referenceType; render similarity: 72.00%; winner: heuristic:quoted_title_journal_locator; mode: single_survivor
+  Expected: Alsadi, M. O., Latifa, J., Alokla, D., Darkaznli, M. I., Al Almallah, L., Channan, F., & AlSalloum Alibrahim, M. J. (2025). Takotsubo cardiomyopathy: a rare case report highlighting seizure presentation in a 27-year-old female. Annals of Medicine & Surgery, 87(11), 7698–7700. https://doi.org/10.1097/ms9.0000000000003904
+  Actual: Alsadi, M. O. (2025). Takotsubo cardiomyopathy: a rare case report highlighting seizure presentation in a 27-year-old female. In Annals of Medicine & Surgery (Vol. 87, Issue 11, pp. 7698-7700).
 - journal-0150-10-1111-j-1467-8705-1974-tb01519-x [batch 50, repeat 1] mismatches: firstAuthor; render similarity: 75.00%; winner: heuristic:quoted_title_journal_locator; mode: unanimous_diversity_guard
   Expected: EVERETT, B. (1974). A Visit to Burnt Norton. Critical Quarterly, 16(3), 199–224. https://doi.org/10.1111/j.1467-8705.1974.tb01519.x
   Actual: BARBARA EVERETT. (1974). A Visit to Burnt Norton. Critical Quarterly, 16(3), 199-224.
-- journal-0171-10-47191-jefms-v5-i9-30 [batch 50, repeat 1] mismatches: firstAuthor; render similarity: 79.00%; winner: heuristic:institutional_vancouver_journal; mode: single_survivor
-  Expected: Department of Economics, Faculty of Social Sciences, Niger Delta University, Wilberforce Island, P.M.B. 071, Yenagoa, Bayelsa State, Nigeria. (2022). Naira to Dollar Exchange Rate Fluctuations and Nigeria’s Balance of Payment. JOURNAL OF ECONOMICS, FINANCE AND MANAGEMENT STUDIES, 5(9). https://doi.org/10.47191/jefms/v5-i9-30
-  Actual: Department of Economics, Island, P. 071 W., Yenagoa, State, B., & Nigeria. (2022). Naira to Dollar Exchange Rate Fluctuations and Nigeria's Balance of Payment. JOURNAL OF ECONOMICS, FINANCE AND MANAGEMENT STUDIES, 5(9).
+- book-0055-10-22533-at-ed-409201303 [batch 50, repeat 1] mismatches: firstAuthor; render similarity: 79.00%; winner: heuristic:author_year_publisher_tail; mode: full_scoring
+  Expected: Mônica Jasper. (2020). Aspectos Fitossanitários da Agricultura. Atena Editora. https://doi.org/10.22533/at.ed.409201303
+  Actual: Jasper, M. (2020). Aspectos Fitossanitários da Agricultura. Atena Editora.
 - thesis-0001-10-17771-pucrio-acad-64355 [batch 50, repeat 1] mismatches: firstAuthor; render similarity: 83.00%; winner: heuristic:apa_thesis; mode: full_scoring
   Expected: CLARA QUARESMA PEREIRA DA SILVA, A. (2023). CULTURA POPULAR E (RE)PRODUÇÕES DE MASCULINIDADES HEGEMÔNICAS: ESTUDO DE CASO DA SÉRIE FRIENDS [Doctoral dissertation, Faculdades Catolicas]. https://doi.org/10.17771/pucrio.acad.64355
   Actual: CLARA QUARESMA PEREIRA da. (2023). CULTURA POPULAR E (re)produções DE MASCULINIDADES Hegemônicas: ESTUDO DE CASO DA SÉRIE FRIENDS. Faculdades Catolicas.
+- report-0030-10-4271-630502 [batch 50, repeat 1] mismatches: pages; render similarity: 83.00%; winner: heuristic:vancouver_publisher_year_source; mode: full_scoring
+  Expected: Eaton, W. F. (1963). An operator’s experience (p. 630502). SAE International. https://doi.org/10.4271/630502
+  Actual: Eaton, W. F. (1963). An operator's experience. SAE International.
+- chapter-0144-10-1007-978-981-10-6898-0-21 [batch 50, repeat 1] mismatches: referenceType; render similarity: 87.00%; winner: parser:selected_style:vancouver; mode: unanimous_diversity_guard
+  Expected: Prakash, R. K. R., Amritha, P. P., & Sethumadhavan, M. (2017). Opaque Predicate Detection by Static Analysis of Binary Executables. In Communications in Computer and Information Science (pp. 250–258). Springer Singapore. https://doi.org/10.1007/978-981-10-6898-0_21
+  Actual: Prakash, R. K. R., Amritha, P. P., & Sethumadhavan, M. (2017). Opaque Predicate Detection by Static Analysis of Binary Executables. In: Communications in Computer and Information Science, 250-258.
 - journal-0383-10-5005-jp-journals-10006-2222 [batch 50, repeat 1] mismatches: referenceType, volume, issue, doi; render similarity: 88.00%; winner: heuristic:quoted_book_chapter; mode: single_survivor
   Expected: Megadhana, I. W., Winata, I. G. S., Widiyanti, E. S., & Lawu, A. A. (2023). Role of Oxygenation Factor Hypoxia-inducible Factor-1α (HIF-1α) as Prognostic Indicators in Cervical Cancer. Journal of South Asian Federation of Obstetrics and Gynaecology, 15(4), 490–496. https://doi.org/10.5005/jp-journals-10006-2222
-  Actual: Megadhana, I. W., I Gde Sastra Winata, E. S. W., & Lawu, A. A. (2023). Role of Oxygenation Factor Hypoxia-inducible Factor-1α (HIF-1α) as Prognostic Indicators in Cervical Cancer. In Journal of South Asian Federation of Obstetrics and Gynaecology, vol. 15, no. 4 (pp. 490-496). 10.
+  Actual: Megadhana, I. W., I Gde Sastra Winata, E. S. W., & Lawu, A. A. (2023). Role of Oxygenation Factor Hypoxia-inducible Factor-1α (HIF-1α) as Prognostic Indicators in Cervical Cancer. In Journal of South Asian Federation of Obstetrics and Gynaecology, vol. 15 (pp. 490-496). 10.
+- journal-0039-10-1186-s13104-017-2882-4 [batch 50, repeat 1] mismatches: referenceType; render similarity: 88.00%; winner: heuristic:vancouver_compact_journal; mode: unanimous_diversity_guard
+  Expected: Nakamura, K., Kato, M., Miyashita, Y., Nagashima, O., Sasaki, S., Tominaga, S., & Takahashi, K. (2017). Development of interstitial pneumonia during treatment with eribulin: a case report. BMC Research Notes, 10(1), 557. https://doi.org/10.1186/s13104-017-2882-4
+  Actual: Nakamura, K., Kato, M., Miyashita, Y., Nagashima, O., Sasaki, S., Tominaga, S., & Takahashi, K. (2017). Development of interstitial pneumonia during treatment with eribulin: a case report. In BMC Research Notes (Vol. 10, Issue 1, p. 557). BMC Research Notes.
 - thesis-0040-10-14264-190019 [batch 50, repeat 1] mismatches: firstAuthor; render similarity: 88.00%; winner: heuristic:sentence_thesis; mode: full_scoring
   Expected: Peter Kyne. (2023). Chondrichthyans and the Queensland East Coast Trawl Fishery: Bycatch reduction, biology, conservation status and sustainability [Doctoral dissertation, University of Queensland Library]. https://doi.org/10.14264/190019
   Actual: Kyne, P. (2023). Chondrichthyans and the Queensland East Coast Trawl Fishery: Bycatch reduction, biology, conservation status and sustainability. University of Queensland Library.
+- journal-0433-10-1002-chin-197210264 [batch 50, repeat 1] mismatches: referenceType, venue, volume, issue, pages; render similarity: 88.00%; winner: heuristic:author_year_publisher_tail; mode: single_survivor
+  Expected: GUNDERMANN, K., BURZIN, K., SPRENGER, F., & SCHULZE, H. (1972). ChemInform Abstract: BERBESSERTE SYNTH. VON 2‐CYAN‐AZIRIDINEN UND UNTERSUCHUNGEN ZU IHRER ISOMERISIERUNG. Chemischer Informationsdienst, 3(10), chin.197210264. https://doi.org/10.1002/chin.197210264
+  Actual: GUNDERMANN, KARL‐DIETRICH, BURZIN, FRANZ‐JOSEF, & SCHULZE. (1972). Cheminform Abstract: BERBESSERTE Synth. VON 2‐cyan‐aziridinen UND UNTERSUCHUNGEN ZU IHRER ISOMERISIERUNG. Chemischer Informationsdienst, 3(10), chin.197210264.
 - journal-0025-10-1134-s0036023619070088 [batch 50, repeat 1] mismatches: firstAuthor; render similarity: 89.00%; winner: heuristic:apa_journal; mode: single_survivor
   Expected: Folomeikin, Yu. I., Karachevtsev, F. N., & Stolyarova, V. L. (2019). Production of Ceramics Based on the Y2O3–ZrO2–HfO2 System for Casting Molds. Russian Journal of Inorganic Chemistry, 64(7), 934–940. https://doi.org/10.1134/s0036023619070088
   Actual: Karachevtsev, F. N., & Stolyarova, V. L. (2019). Production of Ceramics Based on the Y2O3-ZrO2-HfO2 System for Casting Molds. Russian Journal of Inorganic Chemistry, 64(7), 934-940.
-- journal-0394-10-14222-turkiyat4249 [batch 50, repeat 1] mismatches: issue; render similarity: 90.00%; winner: heuristic:harvard_sentence_journal; mode: full_scoring
-  Expected: COŞKUN, D. (2020). Şîa’nın Siyasallaşma Sürecinde Seyyid Kıvâmeddin Marâşî. Journal of Turkish Research Institute, 67, 481–491. https://doi.org/10.14222/turkiyat4249
-  Actual: C. O.ŞK. U. N., D. (2020). Şîa'nın Siyasallaşma Sürecinde Seyyid Kıvâmeddin Marâşî. Journal of Turkish Research Institute, 67, 481-491.
-- journal-0407-10-1371-journal-pone-0269394 [batch 50, repeat 1] mismatches: pages; render similarity: 90.00%; winner: heuristic:ieee_quoted_reference; mode: single_survivor
-  Expected: R., R., Uthaiah, C. A., C. M., R., Madhunapantula, S. V., Salimath, P. V., K., P., M., S. K., & M. R., K. (2022). Comparative assessment of cognitive impairment and oxidative stress markers among vitamin D insufficient elderly patients with and without type 2 diabetes mellitus (T2DM). PLOS ONE, 17(6), e0269394. https://doi.org/10.1371/journal.pone.0269394
-  Actual: R, R., Rajalakshmi, Uthaiah, C. A., M, R. C., Madhunapantula, S. V., Salimath, P. V., K, P., M, S. K., & R, K. M. (2022). Comparative assessment of cognitive impairment and oxidative stress markers among vitamin D insufficient elderly patients with and without type 2 diabetes mellitus (T2DM). PLOS ONE, 17(6), 10.
-- journal-0178-10-1038-npre-2010-5416 [batch 50, repeat 1] mismatches: referenceType; render similarity: 90.00%; winner: heuristic:author_year_publisher_tail; mode: full_scoring
-  Expected: Patil, P., Patil, P., & Watve, M. (2010). Hyperinsulinemia and insulin resistance : What comes first ? Nature Precedings. https://doi.org/10.1038/npre.2010.5416
-  Actual: Patil, P., Patil, P., & Watve, M. (2010). Hyperinsulinemia and insulin resistance: What comes first ? Nature Precedings.
-- journal-0566-10-1016-j-molcata-2009-01-028 [batch 50, repeat 1] mismatches: firstAuthor; render similarity: 90.00%; winner: heuristic:ieee_quoted_reference; mode: single_survivor
-  Expected: Venu Madhav, J., Thirupathi Reddy, Y., Narsimha Reddy, P., Nikhil Reddy, M., Kuarm, S., Crooks, Peter. A., & Rajitha, B. (2009). Cellulose sulfuric acid: An efficient biodegradable and recyclable solid acid catalyst for the one-pot synthesis of aryl-14H-dibenzo[a.j]xanthenes under solvent-free conditions. Journal of Molecular Catalysis A: Chemical, 304(1–2), 85–87. https://doi.org/10.1016/j.molcata.2009.01.028
-  Actual: Madhav, J. V., Reddy, Y. T., Reddy, P. N., Reddy, M. N., Kuarm, S., Crooks, P. A., & Rajitha, B. (2009). Cellulose sulfuric acid: An efficient biodegradable and recyclable solid acid catalyst for the one-pot synthesis of aryl-14H-dibenzo[a.j]xanthenes under solvent-free conditions. Journal of Molecular Catalysis A: Chemical, 304(1-2), 85-87.
-- journal-0352-10-1103-physreve-60-r29 [batch 50, repeat 1] mismatches: firstAuthor; render similarity: 90.00%; winner: heuristic:harvard_sentence_journal; mode: unanimous_diversity_guard
-  Expected: Lapeña, A. M., Glotzer, S. C., Langer, S. A., & Liu, A. J. (1999). Effect of ordering on spinodal decomposition of liquid-crystal/polymer mixtures. Physical Review E, 60(1), R29–R32. https://doi.org/10.1103/physreve.60.r29
-  Actual: Lapeña, A., Glotzer, S., Langer, S., & Liu, A. (1999). Effect of ordering on spinodal decomposition of liquid-crystal/polymer mixtures. Physical Review E, 60(1), R29-R32.
 

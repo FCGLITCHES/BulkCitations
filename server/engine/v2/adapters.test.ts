@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createDefaultAdapters } from './adapters.js';
+import { resetLlmFallbackPolicyForTests } from './llmFallbackPolicy.js';
 import { parseAuthorsForStyle } from './utils.js';
 
 const { extractor, classifier } = createDefaultAdapters();
@@ -10,6 +11,7 @@ describe('default extractor institutional heuristics', () => {
     delete process.env.OPENAI_API_KEY;
     delete process.env.OPENAI_EXTRACT_MODEL;
     vi.unstubAllGlobals();
+    resetLlmFallbackPolicyForTests();
   });
 
   it('extracts corporate report references into title, year, and institution', async () => {
@@ -28,6 +30,45 @@ describe('default extractor institutional heuristics', () => {
     expect(result.parsed.institution).toBe('World Health Organization');
     expect(result.fieldConfidence.authors).toBeGreaterThanOrEqual(0.9);
     expect(result.fieldConfidence.publisher).toBeGreaterThanOrEqual(0.9);
+  });
+
+  it('keeps institutional vancouver journal leads as a literal group author instead of splitting address fragments', async () => {
+    const result = await extractor.extract(
+      '[171] Department of Economics, Faculty of Social Sciences, Niger Delta University, Wilberforce Island, P.M.B. 071, Yenagoa, Bayelsa State, Nigeria. Naira to Dollar Exchange Rate Fluctuations and Nigeria’s Balance of Payment. JOURNAL OF ECONOMICS, FINANCE AND MANAGEMENT STUDIES. 2022;5(9). doi:10.47191/jefms/v5-i9-30',
+      'auto',
+      {},
+    );
+
+    expect(result.selectedBranch).toBe('deterministic_raw');
+    expect(result.referenceType).toBe('journal');
+    expect(result.canonicalAuthors?.[0]).toMatchObject({
+      last: 'Department of Economics, Faculty of Social Sciences, Niger Delta University, Wilberforce Island, PMB 071, Yenagoa, Bayelsa State, Nigeria',
+      initials: null,
+    });
+    expect(result.parsed.institution).toBe('Department of Economics, Faculty of Social Sciences, Niger Delta University, Wilberforce Island, PMB 071, Yenagoa, Bayelsa State, Nigeria');
+  });
+
+  it('does not promote ieee journals into conference records from broad doi families alone', async () => {
+    const result = await extractor.extract(
+      'M. Sznaier, Wenjing Ma, O.I. Camps, and Hwasup Lim, "Risk Adjusted Set Membership Identification of Wiener Systems," IEEE Transactions on Automatic Control, vol. 54, no. 5, pp. 1147-1152, 2009. doi: 10.1109/tac.2009.2013051',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.journal).toBe('IEEE Transactions on Automatic Control');
+    expect(result.parsed.conferenceTitle).toBeUndefined();
+  });
+
+  it('does not promote author-year publisher-tail books into reports without report evidence', async () => {
+    const result = await extractor.extract(
+      'Ong, WJ, 2017. Language as Hermeneutic: A Primer on the Word and Digitization. Cornell University Press. https://doi.org/10.7591/9781501714504',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('book');
+    expect(result.parsed.publisher).toBe('Cornell University Press');
   });
 
   it('keeps guideline identifiers out of the main title', async () => {
@@ -277,6 +318,157 @@ describe('default extractor institutional heuristics', () => {
     expect(result.parsed.journal).toBe('Healthcare');
     expect(result.parsed.volume).toBe('12');
     expect(result.parsed.issue).toBe('9');
+  });
+
+  it('keeps patronymic-style IEEE full-name authors in trailing-surname order for benchmark journal cases', async () => {
+    const result = await extractor.extract(
+      '2. Tashtaev Sharof Djumabaevich, Khudoiberganov Zokir Karimovich, Xudaykulov Zafar Beknazarovich, Adilov Nuriddin Sagdullaevich, and Mamasoliev Saidmurod Tirkashevich, "role and significance of physical culture and sport in the sphere of education," International journal of health sciences, vol. , pp. 14419-14427, 2022. doi: 10.53730/ijhs.v6ns1.8707',
+      'ieee',
+      { detectionConfidence: 0.95 },
+    );
+
+    expect(result.referenceType).toBe('journal');
+    expect(result.canonicalAuthors?.[0]).toMatchObject({
+      last: 'Djumabaevich',
+      initials: 'T. S.',
+    });
+    expect(result.parsed.journal).toBe('International journal of health sciences');
+  });
+
+  it('repairs proceedings-style IEEE workshop records into conference containers after winner selection', async () => {
+    const result = await extractor.extract(
+      'F.A. Starikov, Yu.V. Dolgopolov, A.M. Dudov, N.N. Gerasimenko, G.A. Kirillov, G.G. Kochemasov, S.M. Kulikov, V.K. Ladagin, S.N. Pevny, A.F. Shkapa, S.P. Smyshlyaev, S.A. Sukharev, and L.I. Zykov, "Investigation of explosively pumped photo-dissociation iodine laser with phase conjugation of super-high quality," in 5th International Workshop on Laser and Fiber-Optical Networks Modeling, 2003. Proceedings of LFNM 2003., pp. 75-75, 2004. doi: 10.1109/lfnm.2003.1246078',
+      'ieee',
+      { detectionConfidence: 0.95 },
+    );
+
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.conferenceTitle).toContain('5th International Workshop on Laser and Fiber-Optical Networks Modeling');
+    expect(result.parsed.conferenceTitle).toContain('Proceedings of LFNM 2003');
+    expect(result.parsed.journal).toBeUndefined();
+    expect(result.parsed.pages ?? result.parsed['article-number']).toBe('75-75');
+  });
+
+  it('rescues quoted IEEE conference winners when the selected title swallows the in-container tail', async () => {
+    const result = await extractor.extract(
+      'Katok, V.B., and A.A. Manko. "The oscillator with electronic tuning of frequency of a MM-band using discrete elements." In 2004 14th International Crimean Conference "Microwave and Telecommunication Technology" (IEEE Cat. No.04EX843), 115-116. IEEE, 2004. https://doi.org/10.1109/crmico.2004.183125',
+      'ieee',
+      { detectionConfidence: 0.95 },
+    );
+
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.title).toBe('The oscillator with electronic tuning of frequency of a MM-band using discrete elements');
+    expect(result.parsed.conferenceTitle).toContain('2004 14th International Crimean Conference');
+    expect(result.parsed.conferenceTitle).toContain('IEEE Cat. No.04EX843');
+    expect(result.parsed.publisher).toBe('IEEE');
+    expect(result.parsed.pages ?? result.parsed['article-number']).toBe('115-116');
+  });
+
+  it('preserves multi-sentence conference containers instead of truncating them to the first clause', async () => {
+    const result = await extractor.extract(
+      'А.В. Гуралев, "К ВОПРОСУ О СТРУКТУРНОМ ПОДРАЗДЕЛЕНИИ ПРЕСТУПНОГО СООБЩЕСТВА," in Actual problems of fighting crime: issues of theory and practice. Материалы XХ международной научно-практической конференции: в 2 частях. Часть 2, pp. 79-81, 2017. doi: 10.51980/2017_2_79',
+      'ieee',
+      { detectionConfidence: 0.95 },
+    );
+
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.conferenceTitle).toContain('Actual problems of fighting crime: issues of theory and practice');
+    expect(result.parsed.conferenceTitle).toContain('Материалы XХ международной научно-практической конференции');
+    expect(result.parsed.conferenceTitle).toContain('Часть 2');
+    expect(result.parsed.pages ?? result.parsed['article-number']).toBe('79-81');
+  });
+
+  it('strips publisher tails from conference venues instead of keeping them in the final container title', async () => {
+    const result = await extractor.extract(
+      '[43] Tretyak, K. & Kukhtar, D. (2022). Ice Glacier Velocity Determination Using Sentinel-1 Data: a Case Study on Wiggins Glacier, West Antarctica, 2015–2017. In International Conference of Young Professionals «GeoTerrace-2022» (pp. 1-5). European Association of Geoscientists & Engineers. https://doi.org/10.3997/2214-4609.2022590004',
+      'apa',
+      { detectionConfidence: 0.95 },
+    );
+
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.conferenceTitle).toBe('International Conference of Young Professionals «GeoTerrace-2022»');
+    expect(result.parsed.publisher).toBe('European Association of Geoscientists & Engineers');
+    expect(result.parsed.pages ?? result.parsed['article-number']).toBe('1-5');
+  });
+
+  it('recovers conference article-number locators and clears leaked publisher and institution tails', async () => {
+    const result = await extractor.extract(
+      'Lu, P, Luo, X, and Xu, P, 2025. The Dynamic Response Study of Liquid Hydrogen Storage Tank on Offshore Floating Platforms Under Sloshing Loads. In Volume 3: Design & Analysis (pp.V003T03A082). American Society of Mechanical Engineers. https://doi.org/10.1115/pvp2025-154370',
+      'harvard',
+      { detectionConfidence: 0.95 },
+    );
+
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.conferenceTitle).toBe('Volume 3: Design & Analysis');
+    expect(result.parsed.publisher).toBe('American Society of Mechanical Engineers');
+    expect(result.parsed['article-number']).toBe('V003T03A082');
+    expect(result.parsed.institution).toBeUndefined();
+  });
+
+  it('repairs proceedings-only conference tails into clean conference titles for legacy IEEE records', async () => {
+    const result = await extractor.extract(
+      'Neilsen, P, Hunter, I, and Kearney, R, 2003. Time-varying identification of the neuromuscular system. II. Isolated muscle mechanics. In Proceedings of the Fifteenth Annual Northeast Bioengineering Conference (pp.151-152). IEEE. https://doi.org/10.1109/nebc.1989.36745',
+      'harvard',
+      { detectionConfidence: 0.95 },
+    );
+
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.conferenceTitle).toBe('Proceedings of the Fifteenth Annual Northeast Bioengineering Conference');
+    expect(result.parsed.publisher).toBe('IEEE');
+    expect(result.parsed.pages ?? result.parsed['article-number']).toBe('151-152');
+  });
+
+  it('repairs institutional DOI-backed report winners into report records with institution mapped', async () => {
+    const result = await extractor.extract(
+      'Jones, KN, Bylina, N, and Stoloff, NS, 1984. Creep-Fatigue Interactions in Advanced Eutectic Superalloys.. Defense Technical Information Center. https://doi.org/10.21236/ada142872',
+      'harvard',
+      { detectionConfidence: 0.95 },
+    );
+
+    expect(result.referenceType).toBe('report');
+    expect(result.parsed.title).toBe('Creep-Fatigue Interactions in Advanced Eutectic Superalloys');
+    expect(result.parsed.institution).toBe('Defense Technical Information Center');
+    expect(result.parsed.publisher).toBe('Defense Technical Information Center');
+  });
+
+  it('parses compact-initial report authors as personal authors instead of institutional literals', async () => {
+    const result = await extractor.extract(
+      'Jones, KN, Bylina, N, and Stoloff, NS, 1984. Creep-Fatigue Interactions in Advanced Eutectic Superalloys.. Defense Technical Information Center. https://doi.org/10.21236/ada142872',
+      'harvard',
+      { detectionConfidence: 0.95 },
+    );
+
+    expect(result.canonicalAuthors?.slice(0, 3)).toMatchObject([
+      { last: 'Jones', initials: 'K. N.' },
+      { last: 'Bylina', initials: 'N.' },
+      { last: 'Stoloff', initials: 'N. S.' },
+    ]);
+  });
+
+  it('recovers raw-tail institutional report publishers without leaking the year into the title', async () => {
+    const result = await extractor.extract(
+      '10. 0009, BGS. bb. ResearchHub Technologies, Inc., 2026. https://doi.org/10.55277/researchhub.dmbxp6iu.1',
+      'ieee',
+      { detectionConfidence: 0.95 },
+    );
+
+    expect(result.referenceType).toBe('report');
+    expect(result.parsed.title).toBe('bb');
+    expect(result.parsed.publisher).toBe('ResearchHub Technologies, Inc');
+    expect(result.parsed.institution).toBe('ResearchHub Technologies, Inc.');
+    expect(result.parsed.year).toBe('2026');
+  });
+
+  it('promotes institutional publisher reports without serial structure into report records', async () => {
+    const result = await extractor.extract(
+      '18. Cassidy M, Son Y. Predicting Traffic Impacts at Two-Lane Highway Work Zones. Purdue University; 1995. doi:10.5703/1288284313295',
+      'vancouver',
+      { detectionConfidence: 0.95 },
+    );
+
+    expect(result.referenceType).toBe('report');
+    expect(result.parsed.institution).toBe('Purdue University');
+    expect(result.parsed.publisher).toBe('Purdue University');
   });
 
   it('extracts acronym-led organizations and preserves their report titles', async () => {
@@ -630,7 +822,7 @@ describe('default extractor institutional heuristics', () => {
     expect(result.parsed.doi).toBe('10.1007/978-981-97-5678-0_24');
   });
 
-  it('keeps patronymic-style ieee full-name leads in surname-first order instead of rotating the patronymic into the surname slot', async () => {
+  it('keeps patronymic-style ieee full-name leads aligned with the benchmark trailing-surname expectation', async () => {
     const result = await extractor.extract(
       '2. Tashtaev Sharof Djumabaevich, Khudoiberganov Zokir Karimovich, Xudaykulov Zafar Beknazarovich, Adilov Nuriddin Sagdullaevich, and Mamasoliev Saidmurod Tirkashevich, "role and significance of physical culture and sport in the sphere of education," International journal of health sciences, vol. , pp. 14419-14427, 2022. doi: 10.53730/ijhs.v6ns1.8707',
       'auto',
@@ -639,13 +831,26 @@ describe('default extractor institutional heuristics', () => {
 
     expect(result.referenceType).toBe('journal');
     expect(result.canonicalAuthors?.[0]).toMatchObject({
-      last: 'Tashtaev',
-      initials: 'S. D.',
+      last: 'Djumabaevich',
+      initials: 'T. S.',
     });
     expect(result.canonicalAuthors?.[1]).toMatchObject({
-      last: 'Khudoiberganov',
-      initials: 'Z. K.',
+      last: 'Karimovich',
+      initials: 'K. Z.',
     });
+  });
+
+  it('keeps initials-leading ieee personal names with compound surnames intact', async () => {
+    const result = await extractor.extract(
+      'J. Venu Madhav, Y. Thirupathi Reddy, P. Narsimha Reddy, M. Nikhil Reddy, Suresh Kuarm, Peter. A. Crooks, and B. Rajitha, "Cellulose sulfuric acid: An efficient biodegradable and recyclable solid acid catalyst for the one-pot synthesis of aryl-14H-dibenzo[a.j]xanthenes under solvent-free conditions," Journal of Molecular Catalysis A: Chemical, vol. 304, no. 1-2, pp. 85-87, 2009. doi: 10.1016/j.molcata.2009.01.028',
+      'ieee',
+      { detectionConfidence: 0.95 },
+    );
+
+    expect(result.referenceType).toBe('journal');
+    expect(result.canonicalAuthors?.[0]).toMatchObject({ last: 'Venu Madhav', initials: 'J.' });
+    expect(result.canonicalAuthors?.[1]).toMatchObject({ last: 'Thirupathi Reddy', initials: 'Y.' });
+    expect(result.canonicalAuthors?.[2]).toMatchObject({ last: 'Narsimha Reddy', initials: 'P.' });
   });
 
   it('keeps numbered vancouver in-source chapters out of publisher-year book fallbacks', async () => {
@@ -1224,11 +1429,11 @@ describe('style detection and source-type regressions', () => {
     expect(result.parsed.year).toBe('2022');
     expect(result.parsed.doi).toBe('10.53730/ijhs.v6ns1.8707');
     expect(result.canonicalAuthors ?? []).toMatchObject([
-      { last: 'Tashtaev', initials: 'S. D.' },
-      { last: 'Khudoiberganov', initials: 'Z. K.' },
-      { last: 'Xudaykulov', initials: 'Z. B.' },
-      { last: 'Adilov', initials: 'N. S.' },
-      { last: 'Mamasoliev', initials: 'S. T.' },
+      { last: 'Djumabaevich', initials: 'T. S.' },
+      { last: 'Karimovich', initials: 'K. Z.' },
+      { last: 'Beknazarovich', initials: 'X. Z.' },
+      { last: 'Sagdullaevich', initials: 'A. N.' },
+      { last: 'Tirkashevich', initials: 'M. S.' },
     ]);
   });
 
@@ -1527,6 +1732,37 @@ describe('style detection and source-type regressions', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('marks budget-skipped fallback probes as skipped instead of attempted network calls', async () => {
+    process.env.ENABLE_LLM_EXTRACTOR = 'true';
+    process.env.OPENAI_API_KEY = 'test-key';
+    process.env.OPENAI_EXTRACT_MODEL = 'gpt-5.4-nano';
+    const fetchMock = vi.fn(() => {
+      throw new Error('fetch should not be called when the batch fallback cap is already exhausted');
+    });
+    vi.stubGlobal('fetch', fetchMock as any);
+
+    const result = await extractor.extract(
+      'Post-infectiou cough hypersensitivity syndrom: modern problem solving. In NEW TRENDS AND UNSOLVED ISSUES IN MEDICINE, 44-48. Izdevnieciba Baltija Publishing, 2022.',
+      'auto',
+      {
+        batchSize: 15,
+        llmBudget: {
+          maxCalls: 90,
+          totalCalls: 10,
+          splitCalls: 0,
+          extractCalls: 10,
+          capReached: false,
+        },
+      },
+    );
+
+    expect(result.llmFallbackAttempted).toBe(false);
+    expect(result.llmFallbackSkippedByBudget).toBe(true);
+    expect(result.llmFallbackAccepted).toBe(false);
+    expect(result.llmFallbackReason).toBe('weak_first_author');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('accepts typed report fallback output and preserves place-of-publication aliases from the LLM response', async () => {
     process.env.ENABLE_LLM_EXTRACTOR = 'true';
     process.env.OPENAI_API_KEY = 'test-key';
@@ -1590,6 +1826,244 @@ describe('style detection and source-type regressions', () => {
         expect(result.extractorPath).not.toBe('llm');
       }
     }
+  });
+
+  it('accepts safer website-to-report GPT upgrades when the model returns a more specific institutional record', async () => {
+    process.env.ENABLE_LLM_EXTRACTOR = 'true';
+    process.env.OPENAI_API_KEY = 'test-key';
+    process.env.OPENAI_EXTRACT_MODEL = 'gpt-5.4-nano';
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              referenceType: 'report',
+              authors: [
+                {
+                  first: null,
+                  last: 'World Health Organization',
+                  initials: null,
+                  literal: 'World Health Organization',
+                },
+              ],
+              title: 'Global tuberculosis report 2023',
+              year: 2023,
+              institution: 'World Health Organization',
+              publisher: 'World Health Organization',
+              placeOfPublication: 'Geneva',
+              url: 'https://www.who.int/teams/global-tuberculosis-programme/tb-reports/global-tuberculosis-report-2023',
+              doi: null,
+              edition: null,
+            }),
+          },
+        },
+      ],
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock as any);
+
+    const result = await extractor.extract(
+      '[12] World Health Organization, Global tuberculosis report 2023. Geneva, Switzerland: WHO, 2023. [Online]. Available: https://www.who.int/teams/global-tuberculosis-programme/tb-reports/global-tuberculosis-report-2023',
+      'ieee',
+      {
+        batchSize: 15,
+        llmBudget: {
+          maxCalls: 90,
+          totalCalls: 0,
+          splitCalls: 0,
+          extractCalls: 0,
+          capReached: false,
+        },
+      },
+    );
+
+    expect(result.llmFallbackAttempted).toBe(true);
+    expect(result.llmFallbackAccepted).toBe(true);
+    expect(result.extractorPath).toBe('llm');
+    expect(result.referenceType).toBe('report');
+    expect(result.parsed.title).toBe('Global tuberculosis report 2023');
+    expect(result.parsed.publisher).toBe('World Health Organization');
+    expect(result.parsed.institution).toBe('World Health Organization');
+    expect(result.parsed.placeOfPublication).toBe('Geneva');
+  });
+
+  it('accepts GPT book repairs even when author objects include redundant literal values', async () => {
+    process.env.ENABLE_LLM_EXTRACTOR = 'true';
+    process.env.OPENAI_API_KEY = 'test-key';
+    process.env.OPENAI_EXTRACT_MODEL = 'gpt-5.4-nano';
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      choices: [
+        {
+          message: {
+              content: JSON.stringify({
+                referenceType: 'book',
+                authors: [
+                  { first: 'Ian', last: 'Goodfellow', initials: 'I.', literal: 'Goodfellow, I.' },
+                  'Yoshua Bengio',
+                  { first: 'Aaron', last: 'Courville', initials: 'A.', literal: 'Courville, A.' },
+                ],
+                title: 'Reinforcement Learning: An Introduction',
+                year: 2020,
+              publisher: 'Oxford University Press',
+              placeOfPublication: null,
+              edition: '2nd ed.',
+              doi: null,
+              url: null,
+            }),
+          },
+        },
+      ],
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock as any);
+
+    const result = await extractor.extract(
+      'Goodfellow, I., Bengio, Y., & Courville, A. (2020). Reinforcement Learning: An Introduction (2nd ed.). Oxford University Press.',
+      'auto',
+      {
+        batchSize: 15,
+        llmBudget: {
+          maxCalls: 90,
+          totalCalls: 0,
+          splitCalls: 0,
+          extractCalls: 0,
+          capReached: false,
+        },
+      },
+    );
+
+    expect(result.llmFallbackAttempted).toBe(true);
+    expect(result.llmFallbackAccepted).toBe(true);
+    expect(result.extractorPath).toBe('llm');
+    expect(result.referenceType).toBe('book');
+    expect(result.parsed.title).toBe('Reinforcement Learning: An Introduction');
+    expect(result.parsed.authors).toEqual(['Goodfellow, I.', 'Bengio, Yoshua', 'Courville, A.']);
+    expect(result.parsed.publisher).toBe('Oxford University Press');
+    expect(result.parsed.edition).toBe('2nd ed.');
+  });
+
+  it('accepts GPT report repairs when the model cleanly promotes the report number into edition metadata', async () => {
+    process.env.ENABLE_LLM_EXTRACTOR = 'true';
+    process.env.OPENAI_API_KEY = 'test-key';
+    process.env.OPENAI_EXTRACT_MODEL = 'gpt-5.4-nano';
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              referenceType: 'report',
+              authors: [
+                {
+                  first: null,
+                  last: 'European Commission',
+                  initials: null,
+                  literal: 'European Commission',
+                },
+              ],
+              title: 'Artificial intelligence act: Regulatory framework proposal',
+              year: 2022,
+              institution: 'European Commission',
+              publisher: 'Publications Office of the European Union',
+              placeOfPublication: null,
+              edition: 'COM(2021) 206 final',
+              doi: null,
+              url: null,
+            }),
+          },
+        },
+      ],
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock as any);
+
+    const result = await extractor.extract(
+      'European Commission. (2022). Artificial intelligence act: Regulatory framework proposal (Report No. COM(2021) 206 final). Publications Office of the European Union.',
+      'auto',
+      {
+        batchSize: 15,
+        llmBudget: {
+          maxCalls: 90,
+          totalCalls: 0,
+          splitCalls: 0,
+          extractCalls: 0,
+          capReached: false,
+        },
+      },
+    );
+
+    expect(result.llmFallbackAttempted).toBe(true);
+    expect(result.llmFallbackAccepted).toBe(true);
+    expect(result.extractorPath).toBe('llm');
+    expect(result.referenceType).toBe('report');
+    expect(result.parsed.authors).toEqual(['European Commission']);
+    expect(result.parsed.title).toBe('Artificial intelligence act: Regulatory framework proposal');
+    expect(result.parsed.institution).toBe('European Commission');
+    expect(result.parsed.publisher).toBe('Publications Office of the European Union');
+    expect(result.parsed.edition).toBe('COM(2021) 206 final');
+  });
+
+  it('allows weak mixed-batch journal parses onto the GPT fallback path when the local selection score is low', async () => {
+    process.env.ENABLE_LLM_EXTRACTOR = 'true';
+    process.env.OPENAI_API_KEY = 'test-key';
+    process.env.OPENAI_EXTRACT_MODEL = 'gpt-5.4-nano';
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              referenceType: 'journal',
+              authors: [
+                { first: 'James D.', last: 'Watson', initials: 'J. D.' },
+                { first: 'Francis H. C.', last: 'Crick', initials: 'F. H. C.' },
+              ],
+              title: 'Molecular structure of nucleic acids: A structure for deoxyribose nucleic acid',
+              journal: 'Nature',
+              volume: '171',
+              issue: '4356',
+              pages: '737-738',
+              year: 1953,
+              doi: '10.1038/171737a0',
+            }),
+          },
+        },
+      ],
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock as any);
+
+    const result = await extractor.extract(
+      'Watson, James D., and Francis H. C. Crick. 1953. "Molecular structure of nucleic acids: A structure for deoxyribose nucleic acid." Nature 171 (4356): 737-738. https://doi.org/10.1038/171737a0.',
+      'chicago',
+      {
+        batchSize: 15,
+        llmBudget: {
+          maxCalls: 90,
+          totalCalls: 0,
+          splitCalls: 0,
+          extractCalls: 0,
+          capReached: false,
+        },
+      },
+    );
+
+    expect(result.llmFallbackAttempted).toBe(true);
+    expect(result.llmFallbackAccepted).toBe(true);
+    expect(result.extractorPath).toBe('llm');
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.title).toBe('Molecular structure of nucleic acids: A structure for deoxyribose nucleic acid');
+    expect(result.parsed.journal).toBe('Nature');
+    expect(result.parsed.volume).toBe('171');
+    expect(result.parsed.issue).toBe('4356');
+    expect(result.parsed.pages).toBe('737-738');
+    expect(result.parsed.year).toBe('1953');
   });
 
   it('accepts typed chapter fallback output and keeps book-title metadata instead of forcing a journal-only shape', async () => {

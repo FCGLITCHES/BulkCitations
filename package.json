@@ -20,6 +20,8 @@
     "stress:sde": "tsx scripts/stressSdeV2.ts",
     "report:real-ready": "tsx scripts/reportRealReadyCorpus.ts",
     "report:pdf-ready": "tsx scripts/pdfReadyBenchmark.ts report",
+    "debug:llm-batch": "tsx scripts/debugLlmBatch.ts",
+    "debug:llm-extractor": "tsx scripts/debugLlmExtractor.ts",
     "baseline:v2:freeze": "tsx scripts/v2PhaseBaseline.ts freeze",
     "baseline:v2:check": "tsx scripts/v2PhaseBaseline.ts check",
     "pdf:ready:freeze:upload": "tsx scripts/pdfReadyBenchmark.ts freeze pdf_upload",

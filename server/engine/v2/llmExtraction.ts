@@ -22,6 +22,37 @@ const nullableYear = z.preprocess((value) => {
 
 const thesisTypeSchema = z.enum(['Doctoral dissertation', "Master's thesis"]).nullable().optional();
 
+function normalizeComparableAuthorToken(value: string | null | undefined): string {
+  return normalizeWhitespace(value ?? '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
+}
+
+function isCompatiblePersonLiteral(author: {
+  first?: string | null;
+  last: string;
+  initials?: string | null;
+  literal?: string | null;
+}): boolean {
+  const literal = normalizeWhitespace(author.literal ?? '');
+  if (!literal) return false;
+
+  const normalizedLiteral = normalizeComparableAuthorToken(literal);
+  const normalizedLast = normalizeComparableAuthorToken(author.last);
+  if (!normalizedLiteral || !normalizedLast || !normalizedLiteral.includes(normalizedLast)) {
+    return false;
+  }
+
+  const normalizedFirst = normalizeComparableAuthorToken(author.first);
+  const normalizedInitials = normalizeComparableAuthorToken(author.initials);
+  return Boolean(
+    (normalizedFirst && normalizedLiteral.includes(normalizedFirst))
+    || (normalizedInitials && normalizedLiteral.includes(normalizedInitials))
+    || (!normalizedFirst && !normalizedInitials),
+  );
+}
+
 const authorSchema = z.object({
   first: nullableTrimmedString,
   last: z.string().trim().min(1),
@@ -30,19 +61,65 @@ const authorSchema = z.object({
 }).superRefine((author, ctx) => {
   const hasLiteral = Boolean(author.literal);
   if (!hasLiteral) return;
-  if (author.literal !== author.last) {
+  const looksLikeGroupAuthor = author.first == null && author.initials == null;
+  if (looksLikeGroupAuthor && author.literal !== author.last) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: 'group author literal must match last',
     });
   }
-  if (author.first != null || author.initials != null) {
+  if (!looksLikeGroupAuthor && !isCompatiblePersonLiteral(author)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'group author must not include first or initials',
+      message: 'person author literal must stay compatible with first/last/initials',
     });
   }
 });
+
+function normalizeAuthorEntry(value: unknown): CanonicalAuthor {
+  if (typeof value === 'string') {
+    return parseAuthorToCanonical(normalizeWhitespace(value));
+  }
+
+  const input = value && typeof value === 'object'
+    ? { ...(value as Record<string, unknown>) }
+    : {};
+
+  const first = typeof input.first === 'string' ? normalizeWhitespace(input.first) : null;
+  const last = typeof input.last === 'string' ? normalizeWhitespace(input.last) : '';
+  const initials = typeof input.initials === 'string' ? normalizeWhitespace(input.initials) : null;
+  const literal = typeof input.literal === 'string' ? normalizeWhitespace(input.literal) : null;
+
+  const looksLikeGroupAuthor = Boolean(literal && !first && !initials);
+  if (looksLikeGroupAuthor) {
+    const groupName = last || literal || '';
+    return {
+      first: null,
+      last: groupName,
+      initials: null,
+      literal: literal || groupName,
+    };
+  }
+
+  return {
+    first: first || null,
+    last: last || (literal ?? ''),
+    initials: initials || null,
+    literal: literal && isCompatiblePersonLiteral({
+      first: first || null,
+      last: last || (literal ?? ''),
+      initials: initials || null,
+      literal,
+    })
+      ? literal
+      : undefined,
+  };
+}
+
+function normalizeAuthorArray(value: unknown): CanonicalAuthor[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  return value.map((entry) => normalizeAuthorEntry(entry));
+}
 
 const sharedFields = {
   authors: z.array(authorSchema).default([]),
@@ -184,17 +261,31 @@ function normalizeIsoDate(value: unknown): string | null | undefined {
   return iso ? `${iso[1]}-${iso[2]}-${iso[3]}` : trimmed;
 }
 
+function normalizeNullableText(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = normalizeWhitespace(value);
+  return trimmed || null;
+}
+
+function normalizeUrlValue(value: unknown): string | null {
+  const normalized = normalizeNullableText(value);
+  return normalized ? normalized.replace(/[)\].,;:]+$/g, '') : null;
+}
+
+function normalizePagesValue(value: unknown): string | null {
+  const normalized = normalizeNullableText(value);
+  return normalized ? normalized.replace(/[–—]/g, '-') : null;
+}
+
+function normalizeEditionValue(value: unknown): string | null {
+  const normalized = normalizeNullableText(value);
+  return normalized || null;
+}
+
 function normalizeEditors(value: unknown): CanonicalAuthor[] | undefined {
-  if (!Array.isArray(value)) return undefined;
-  return value.map((entry) => {
-    const parsed = authorSchema.parse(entry);
-    return {
-      first: parsed.first ?? null,
-      last: parsed.last,
-      initials: parsed.initials ?? null,
-      ...(parsed.literal ? { literal: parsed.literal } : {}),
-    };
-  });
+  const normalized = normalizeAuthorArray(value);
+  if (!normalized) return undefined;
+  return normalized.map((entry) => normalizeAuthorEntry(authorSchema.parse(entry)));
 }
 
 function normalizeLegacyEditor(value: unknown): CanonicalAuthor[] | undefined {
@@ -219,14 +310,32 @@ export function extractJsonContent(value: string): string {
 export function normalizeLlmExtractionInput(value: unknown): Record<string, unknown> {
   const input = value && typeof value === 'object' ? { ...(value as Record<string, unknown>) } : {};
   const doiValue = typeof input.doi === 'string' ? normalizeDoiValue(input.doi) : input.doi;
+  const editionCandidate = input.edition ?? input.reportNumber ?? input.guidelineCode ?? input.revision ?? input.version ?? null;
   const normalized: Record<string, unknown> = {
     ...input,
     referenceType: normalizeReferenceType(input.referenceType),
     doi: typeof doiValue === 'string' && doiValue ? doiValue : null,
-    placeOfPublication: input.placeOfPublication ?? input.place ?? null,
+    title: normalizeNullableText(input.title),
+    journal: normalizeNullableText(input.journal),
+    conferenceTitle: normalizeNullableText(input.conferenceTitle),
+    bookTitle: normalizeNullableText(input.bookTitle),
+    publisher: normalizeNullableText(input.publisher),
+    institution: normalizeNullableText(input.institution),
+    repository: normalizeNullableText(input.repository),
+    thesisType: normalizeNullableText(input.thesisType),
+    volume: normalizeNullableText(input.volume),
+    issue: normalizeNullableText(input.issue),
+    pages: normalizePagesValue(input.pages),
+    url: normalizeUrlValue(input.url),
+    placeOfPublication: normalizeNullableText(input.placeOfPublication ?? input.place),
     accessed: normalizeIsoDate(input.accessed ?? input.accessed_date ?? null) ?? null,
-    edition: input.edition ?? input.reportNumber ?? input.guidelineCode ?? input.revision ?? input.version ?? null,
+    edition: normalizeEditionValue(editionCandidate),
   };
+
+  const normalizedAuthors = normalizeAuthorArray(input.authors);
+  if (normalizedAuthors) {
+    normalized.authors = normalizedAuthors;
+  }
 
   const normalizedEditors = normalizeEditors(input.editors) ?? normalizeLegacyEditor(input.editor);
   if (normalizedEditors) {
