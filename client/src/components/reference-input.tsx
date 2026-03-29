@@ -47,6 +47,7 @@ export default function ReferenceInput({
   const [detectionStatus, setDetectionStatus] = useState("Ready to detect");
   const [referenceCount, setReferenceCount] = useState(0);
   const [isFileUploading, setIsFileUploading] = useState(false);
+  const [nativePdfFile, setNativePdfFile] = useState<File | null>(null);
   const { toast } = useToast();
 
   const convertMutation = useMutation({
@@ -64,76 +65,11 @@ export default function ReferenceInput({
     }
   });
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const allowedTypes = ['text/plain', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    const allowedExtensions = ['.txt', '.pdf', '.docx'];
-    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-
-    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
-      onError("Please upload a .txt, .pdf, or .docx file");
-      return;
-    }
-
-    setIsFileUploading(true);
-
-    try {
-      if (file.type === 'text/plain' || fileExtension === '.txt') {
-        // Handle text files directly
-        const text = await file.text();
-        setInputText(text);
-        handleInputChange(text);
-
-        toast({
-          title: "File Uploaded!",
-          description: `Loaded ${file.name} with references`,
-        });
-      } else {
-        // Handle PDF, DOC, DOCX files via server
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await fetch('/api/parse-file', {
-          method: 'POST',
-          body: formData,
-          credentials: 'include',
-        });
-
-        if (!response.ok) {
-          const errBody = await response.json().catch(() => ({}));
-          const msg = (errBody as { details?: string; error?: string }).details
-            || (errBody as { error?: string }).error
-            || response.statusText;
-          throw new Error(msg || 'Failed to parse file');
-        }
-
-        const result = await response.json() as { text?: string };
-
-        if (result.text != null && String(result.text).trim()) {
-          setInputText(result.text);
-          handleInputChange(result.text);
-
-          toast({
-            title: "File Uploaded!",
-            description: `Extracted text from ${file.name}`,
-          });
-        } else {
-          onError("No text content found in the uploaded file");
-        }
-      }
-    } catch (error) {
-      onError(error instanceof Error ? error.message : "Failed to read file content");
-    } finally {
-      setIsFileUploading(false);
-      // Reset the input value so the same file can be uploaded again
-      event.target.value = '';
-    }
-  };
-
-  const handleInputChange = useCallback((value: string) => {
+  const handleInputChange = useCallback((value: string, options?: { keepPdfBinding?: boolean }) => {
     setInputText(value);
+    if (!options?.keepPdfBinding) {
+      setNativePdfFile(null);
+    }
 
     if (!value.trim()) {
       setReferenceCount(0);
@@ -154,6 +90,140 @@ export default function ReferenceInput({
     }
   }, [inputStyle]);
 
+  const pollPdfJob = useCallback(async (jobId: string, expiresAt: string): Promise<ConversionResponse> => {
+    const deadline = Number.isFinite(Date.parse(expiresAt)) ? Date.parse(expiresAt) : Date.now() + 10 * 60 * 1000;
+
+    while (Date.now() <= deadline) {
+      const response = await fetch(`/api/convert-file/jobs/${jobId}`, {
+        credentials: 'include',
+      });
+
+      if (response.status === 404) {
+        const payload = await response.json().catch(() => ({}));
+        const message = (payload as { message?: string }).message || "This PDF conversion job expired. Please retry the upload.";
+        throw new Error(message);
+      }
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        const message = (payload as { error?: string; details?: string }).details
+          || (payload as { error?: string }).error
+          || response.statusText;
+        throw new Error(message || "Failed to poll PDF conversion status");
+      }
+
+      const payload = await response.json() as ConversionResponse | {
+        status?: string;
+        error?: { message?: string };
+      };
+
+      if ('convertedReferences' in payload) {
+        return payload;
+      }
+
+      if (payload.status === 'failed') {
+        throw new Error(payload.error?.message || "PDF conversion failed");
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    }
+
+    throw new Error("This PDF conversion job expired. Please retry the upload.");
+  }, []);
+
+  const handleNativePdfConvert = useCallback(async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('inputStyle', inputStyle);
+    formData.append('outputStyle', outputStyle);
+
+    const response = await fetch('/api/convert-file', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      const message = (payload as { details?: string; error?: string }).details
+        || (payload as { error?: string }).error
+        || response.statusText;
+      throw new Error(message || "Failed to queue PDF conversion");
+    }
+
+    const queued = await response.json() as { job_id: string; expiresAt: string };
+    return pollPdfJob(queued.job_id, queued.expiresAt);
+  }, [inputStyle, outputStyle, pollPdfJob]);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['text/plain', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const allowedExtensions = ['.txt', '.pdf', '.docx'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+      onError("Please upload a .txt, .pdf, or .docx file");
+      return;
+    }
+
+    setIsFileUploading(true);
+    handleInputChange('');
+
+    try {
+      if (file.type === 'text/plain' || fileExtension === '.txt') {
+        const text = await file.text();
+        handleInputChange(text);
+
+        toast({
+          title: "File Uploaded!",
+          description: `Loaded ${file.name} with references`,
+        });
+      } else {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/parse-file', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          const errBody = await response.json().catch(() => ({}));
+          const msg = (errBody as { details?: string; error?: string }).details
+            || (errBody as { error?: string }).error
+            || response.statusText;
+          throw new Error(msg || 'Failed to parse file');
+        }
+
+        const result = await response.json() as { text?: string };
+
+        if (result.text != null && String(result.text).trim()) {
+          if (file.type === 'application/pdf' || fileExtension === '.pdf') {
+            setNativePdfFile(file);
+            handleInputChange(result.text, { keepPdfBinding: true });
+          } else {
+            handleInputChange(result.text);
+          }
+
+          toast({
+            title: "File Uploaded!",
+            description: `Extracted text from ${file.name}`,
+          });
+        } else {
+          onError("No text content found in the uploaded file");
+        }
+      }
+    } catch (error) {
+      onError(error instanceof Error ? error.message : "Failed to read file content");
+    } finally {
+      setIsFileUploading(false);
+      event.target.value = '';
+    }
+  };
+
   useEffect(() => {
     if (initialCaptureText) handleInputChange(initialCaptureText);
   }, [initialCaptureText, handleInputChange]);
@@ -168,6 +238,18 @@ export default function ReferenceInput({
 
     if (engineVersion === "v2") {
       onProcessingStart(Math.max(referenceCount, 1));
+      if (nativePdfFile) {
+        handleNativePdfConvert(nativePdfFile)
+          .then((data) => {
+            onConversionResult(data);
+            onProcessingEnd();
+          })
+          .catch((error) => {
+            onError(error instanceof Error ? error.message : "PDF conversion failed");
+            onProcessingEnd();
+          });
+        return;
+      }
       convertMutation.mutate({
         content: source,
         inputStyle,
@@ -275,8 +357,7 @@ export default function ReferenceInput({
   };
 
   const handleClear = () => {
-    setInputText("");
-    setReferenceCount(0);
+    handleInputChange("");
     setDetectionStatus("Ready to detect");
   };
 

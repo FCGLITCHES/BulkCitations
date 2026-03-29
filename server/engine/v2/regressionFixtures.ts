@@ -26,8 +26,8 @@ export const regressionFixtures: RegressionFixture[] = [
       'Reuben M. Baron and David A. Kenny, "The moderator–mediator variable distinction in social psychological research: Conceptual, strategic, and statistical considerations.," Journal of Personality and Social Psychology, vol. 51, no. 6, pp. 1173-1182, 1986.',
       'Baron RM, Kenny DA. The moderator–mediator variable distinction in social psychological research: Conceptual, strategic, and statistical considerations.. Journal of Personality and Social Psychology. 1986;51(6):1173-1182.',
     ],
-    expectedDuplicateCount: 4,
-    expectedUniqueCount: 2,
+    expectedDuplicateCount: 5,
+    expectedUniqueCount: 1,
     expectedMergedTitle: 'The moderator-mediator variable distinction in social psychological research: Conceptual, strategic, and statistical considerations',
     expectedMergedAuthors: ['Baron', 'Kenny'],
     forbiddenOutputPatterns: [
@@ -48,8 +48,8 @@ export const regressionFixtures: RegressionFixture[] = [
       'Jensen, Michael C., and William H. Meckling. "Theory of the firm: Managerial behavior, agency costs and ownership structure." Journal of Financial Economics, vol. 3, no. 4, 1976, pp. 305-360.',
       'Jensen, Michael C., and William H. Meckling. "Theory of the firm: Managerial behavior, agency costs and ownership structure." Journal of Financial Economics 3, no. 4 (1976): 305-360.',
     ],
-    expectedDuplicateCount: 4,
-    expectedUniqueCount: 2,
+    expectedDuplicateCount: 5,
+    expectedUniqueCount: 1,
     expectedMergedTitle: 'Theory of the firm: Managerial behavior, agency costs and ownership structure',
     expectedMergedAuthors: ['Jensen', 'Meckling'],
     forbiddenOutputPatterns: [
@@ -69,8 +69,8 @@ export const regressionFixtures: RegressionFixture[] = [
       'Zadeh, L.A.. "Fuzzy sets." Information and Control, vol. 8, no. 3, 1965, pp. 338-353.',
       'Zadeh, L.A.. "Fuzzy sets." Information and Control 8, no. 3 (1965): 338-353.',
     ],
-    expectedDuplicateCount: 4,
-    expectedUniqueCount: 2,
+    expectedDuplicateCount: 5,
+    expectedUniqueCount: 1,
     expectedMergedTitle: 'Fuzzy sets',
     expectedMergedAuthors: ['Zadeh'],
     forbiddenOutputPatterns: [
@@ -243,5 +243,36 @@ export const regressionFixtures: RegressionFixture[] = [
     expectedDetectedStyle: 'vancouver',
     expectedReferenceType: 'report',
     expectedOutputIncludes: ['Global tuberculosis report 2023.'],
+  },
+  {
+    id: 'academic-ieee-report-initials-boundary-regression',
+    description: 'Initials-first IEEE reports from the academic benchmark should keep the personal author and title boundary intact.',
+    references: [
+      'H.H. Barschall, INTENSE SOURCES OF HIGH-ENERGY NEUTRONS.. Office of Scientific and Technical Information (OSTI), 1972. doi: 10.2172/4587753',
+    ],
+    expectedReferenceType: 'report',
+    expectedOutputIncludes: [
+      'Barschall, H. H.',
+      'INTENSE SOURCES OF HIGH-ENERGY NEUTRONS.',
+      'Office of Scientific and Technical Information (OSTI).',
+    ],
+    forbiddenOutputPatterns: [
+      /\bH\.\s*H\.,\s*H\.\s*H\./i,
+      /\bBarschall,\s*INTENSE SOURCES/i,
+    ],
+  },
+  {
+    id: 'academic-ieee-journal-vol-tail-regression',
+    description: 'IEEE journal venue cleanup should remove trailing vol markers from the final venue string.',
+    references: [
+      'Robbert J. J. Gobbens and Tjeerd van der Ploeg, “The Prediction of Quality of Life by Frailty and Disability among Dutch Community-Dwelling People Aged 75 Years or Older,” Healthcare, vol. 12, no. 9, pp. 874, 2024. doi: 10.3390/healthcare12090874',
+    ],
+    expectedReferenceType: 'journal',
+    expectedOutputIncludes: [
+      'Healthcare, 12(9), 874.',
+    ],
+    forbiddenOutputPatterns: [
+      /Healthcare,\s*Vol\b/i,
+    ],
   },
 ];

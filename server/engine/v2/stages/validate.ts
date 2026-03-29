@@ -28,6 +28,7 @@ import {
 import { OVERSIZED_CHUNK_CHARS, OVERSIZED_CHUNK_LINES } from './split.js';
 import { isGroupAuthor, normalizeGroupAuthor } from '../../shared/citationSemantics.js';
 import { buildReferenceSignatureIssues } from '../contaminationDetector.js';
+import { analyzeReadyBlockers } from '../readyBlockers.js';
 
 const DOI_PATTERN = /^10\.\d{4,}\/\S+$/i;
 const PAGE_PATTERN = /^[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?$/;
@@ -531,6 +532,7 @@ export async function validateCitationOffline(
     lineCount: number;
   },
 ): Promise<{ issues: ValidationIssue[]; metadata: ValidationMetadata }> {
+  const readyBlockerAnalysis = analyzeReadyBlockers(citation);
   const issues = dedupeIssues([
     ...buildSplitContaminationIssues(citation, splitArtifact),
     ...buildReferenceSignatureIssues({
@@ -547,6 +549,7 @@ export async function validateCitationOffline(
     ...buildResidualArtifactIssues(citation),
     ...buildPlausibilityIssues(citation),
     ...buildResolutionIssues(citation),
+    ...readyBlockerAnalysis.issues,
   ]);
 
   return {

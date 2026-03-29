@@ -1,11 +1,10 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { randomUUID } from "node:crypto";
+import { access, mkdir, unlink, writeFile } from "node:fs/promises";
+import path from "node:path";
 import multer from "multer";
 import * as mammoth from "mammoth";
-import * as pdfParseModule from "pdf-parse-new";
-const pdfParse: (buffer: Buffer) => Promise<{ text: string }> =
-  typeof pdfParseModule === "function" ? pdfParseModule : (pdfParseModule?.default ?? pdfParseModule);
 import { storage } from "./storage";
 import reportsRouter from "./routes/reports";
 import historyRouter from "./routes/history";
@@ -25,6 +24,8 @@ import {
   type ConvertedReference,
   type ConversionResponse,
   type DuplicateGroup,
+  type V2ConversionRequest,
+  type V2ConversionResponse,
 } from "@shared/schema";
 import { reformatReferences, initCSLStyles } from "./engine/index";
 import { runAssertions } from "./engine/strictRenderer.js";
@@ -72,6 +73,16 @@ import {
   recordFailedPublicLogin,
   setPublicSessionCookie,
 } from "./utils/userAuth.js";
+import {
+  extractPdfTextFromBuffer,
+  getPdfErrorMessage,
+  getPdfErrorStatusCode,
+  isPdfProcessingError,
+  PDF_MAX_BYTES,
+  PDF_ERROR_MESSAGES,
+  type PdfErrorCode,
+} from "./pdfProcessing.js";
+import { v2JobStorage, type V2StoredJob } from "./v2JobStorage.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize CSL styles at startup
@@ -80,8 +91,281 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Configure multer for file uploads
   const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+    limits: { fileSize: PDF_MAX_BYTES },
   });
+  const uploadSingle = upload.single("file");
+  const PDF_FILE_JOB_TTL_MS = 10 * 60 * 1000;
+  const PDF_FILE_JOB_STALE_MS = 2 * 60 * 1000;
+  const PDF_FILE_JOB_SWEEP_MS = 30 * 1000;
+  const PDF_FILE_JOB_DIR = path.resolve(process.cwd(), "tmp", "pdfs", "jobs");
+  const activePdfFileJobs = new Set<string>();
+
+  type PdfJobMetadata = {
+    tempPath: string;
+    originalFilename: string;
+    byteSize: number;
+  };
+
+  function isKnownPdfErrorCode(value: string): value is PdfErrorCode {
+    return value in PDF_ERROR_MESSAGES;
+  }
+
+  function getPdfJobExpiry(now = Date.now()): Date {
+    return new Date(now + PDF_FILE_JOB_TTL_MS);
+  }
+
+  function isExpiredPdfJob(job: Pick<V2StoredJob, "expiresAt">, now = Date.now()): boolean {
+    return Boolean(job.expiresAt && job.expiresAt.getTime() <= now);
+  }
+
+  function isPdfFileJob(job: V2StoredJob | undefined): job is V2StoredJob {
+    return job != null && job.request.sourceType === "pdf_file";
+  }
+
+  function getPdfJobMetadata(job: V2StoredJob): PdfJobMetadata {
+    const metadata = (job.metadata ?? {}) as Record<string, unknown>;
+    const tempPath = typeof metadata.tempPath === "string" ? metadata.tempPath : job.request.content;
+    const originalFilename = typeof metadata.originalFilename === "string" ? metadata.originalFilename : "upload.pdf";
+    const rawByteSize = metadata.byteSize;
+    const byteSize = typeof rawByteSize === "number"
+      ? rawByteSize
+      : Number.parseInt(String(rawByteSize ?? "0"), 10);
+    return {
+      tempPath,
+      originalFilename,
+      byteSize: Number.isFinite(byteSize) ? byteSize : 0,
+    };
+  }
+
+  async function runSingleUploadMiddleware(req: Request, res: any): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      uploadSingle(req as any, res, (error) => {
+        if (error) reject(error);
+        else resolve();
+      });
+    });
+  }
+
+  function getPdfErrorDetails(error: unknown): { code?: PdfErrorCode; message: string } {
+    if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
+      return {
+        code: "pdf_too_large",
+        message: getPdfErrorMessage("pdf_too_large"),
+      };
+    }
+    if (isPdfProcessingError(error)) {
+      return {
+        code: error.code,
+        message: error.message,
+      };
+    }
+
+    const message = error instanceof Error ? error.message : String(error);
+    if (isKnownPdfErrorCode(message)) {
+      return {
+        code: message,
+        message: getPdfErrorMessage(message),
+      };
+    }
+
+    return { message };
+  }
+
+  function sendPdfJobExpired(res: any) {
+    return res.status(getPdfErrorStatusCode("job_expired")).json({
+      code: "job_expired",
+      message: getPdfErrorMessage("job_expired"),
+    });
+  }
+
+  function sendPdfRouteError(res: any, error: unknown, fallbackMessage: string) {
+    const details = getPdfErrorDetails(error);
+    if (details.code) {
+      return res.status(getPdfErrorStatusCode(details.code)).json({
+        code: details.code,
+        error: details.message,
+        details: details.message,
+      });
+    }
+
+    return res.status(500).json({
+      error: fallbackMessage,
+      details: details.message,
+    });
+  }
+
+  async function fileExists(filePath: string): Promise<boolean> {
+    try {
+      await access(filePath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function safeDeleteFile(filePath?: string): Promise<void> {
+    if (!filePath) return;
+    try {
+      await unlink(filePath);
+    } catch (error) {
+      const code = error instanceof Error && "code" in error ? String((error as NodeJS.ErrnoException).code ?? "") : "";
+      if (code !== "ENOENT") {
+        console.warn("[pdf-file-job] Could not delete temp file:", filePath, error instanceof Error ? error.message : String(error));
+      }
+    }
+  }
+
+  async function buildLegacyResponseFromV2(
+    v2Response: V2ConversionResponse,
+    request: { inputStyle: string; outputStyle: string },
+    engineVersion: "v1" | "v2",
+  ): Promise<ConversionResponse> {
+    const legacyRecords = mapV2ResponseToLegacyRecords(v2Response, request);
+    const storedRefs = await storage.createReferences(
+      legacyRecords.map((record) => record.storageData),
+    );
+    const convertResults: ConvertedReference[] = legacyRecords.map((record, idx) => attachReferencePayloads({
+      ...record.uiData,
+      id: storedRefs[idx].id.toString(),
+    }));
+
+    if (engineVersion === "v1") {
+      return {
+        convertedReferences: convertResults,
+        clusters: clusterCitations(convertResults),
+        duplicateGroups: undefined,
+        engineVersion,
+        errors: undefined,
+      };
+    }
+
+    const uiRecordBySourceId = new Map(
+      legacyRecords.map((record, idx) => [record.sourceId, convertResults[idx]]),
+    );
+    const duplicateGroups: DuplicateGroup[] = v2Response.citations
+      .filter((citation) => citation.status === "merged" && citation.duplicate?.mergedFrom?.length)
+      .map((citation) => {
+        const members = (citation.duplicate?.mergedFrom ?? [])
+          .map((sourceId) => uiRecordBySourceId.get(sourceId))
+          .filter((member): member is ConvertedReference => Boolean(member));
+        const primarySourceId =
+          v2Response.duplicates.find((entry) => entry.mergedId === citation.id)?.originalId
+          ?? citation.duplicate?.mergedFrom?.[0]
+          ?? "";
+        const primaryId = uiRecordBySourceId.get(primarySourceId)?.id ?? members[0]?.id ?? "";
+        return {
+          groupId: citation.id,
+          primaryId,
+          method: citation.duplicate?.method ?? "structural",
+          members,
+        };
+      })
+      .filter((group) => group.members.length > 1 && Boolean(group.primaryId));
+
+    return {
+      convertedReferences: convertResults,
+      clusters: undefined,
+      duplicateGroups,
+      engineVersion,
+      errors: undefined,
+    };
+  }
+
+  async function failPdfFileJob(jobId: string, error: unknown): Promise<void> {
+    const details = getPdfErrorDetails(error);
+    await v2JobStorage.failJob(jobId, details.message, details.code);
+  }
+
+  async function queuePdfFileJob(job: V2StoredJob): Promise<void> {
+    if (!isPdfFileJob(job) || activePdfFileJobs.has(job.id)) return;
+    activePdfFileJobs.add(job.id);
+
+    queueMicrotask(async () => {
+      const { tempPath } = getPdfJobMetadata(job);
+
+      try {
+        const liveJob = await v2JobStorage.getJob(job.id);
+        if (!isPdfFileJob(liveJob)) return;
+        if (isExpiredPdfJob(liveJob)) {
+          await safeDeleteFile(tempPath);
+          return;
+        }
+        if (!(await fileExists(tempPath))) {
+          await failPdfFileJob(job.id, new Error("source_unavailable"));
+          await safeDeleteFile(tempPath);
+          return;
+        }
+
+        await v2JobStorage.markProcessing(job.id, { startedAt: new Date() });
+
+        const { response: rawResponse } = await processV2Conversion(liveJob.request, {
+          executionMode: "async",
+        });
+        const v2Response: V2ConversionResponse = {
+          ...rawResponse,
+          job_id: job.id,
+        };
+        const latestJob = await v2JobStorage.getJob(job.id);
+        if (!isPdfFileJob(latestJob) || isExpiredPdfJob(latestJob)) {
+          await safeDeleteFile(tempPath);
+          return;
+        }
+
+        const legacyResponse = await buildLegacyResponseFromV2(v2Response, {
+          inputStyle: liveJob.request.inputStyle ?? "auto",
+          outputStyle: liveJob.request.outputStyle ?? "apa",
+        }, "v2");
+
+        await v2JobStorage.completeJob(job.id, v2Response, { legacyResponse });
+        await safeDeleteFile(tempPath);
+      } catch (error) {
+        await failPdfFileJob(job.id, error);
+        await safeDeleteFile(tempPath);
+      } finally {
+        activePdfFileJobs.delete(job.id);
+      }
+    });
+  }
+
+  async function recoverPdfFileJobs(): Promise<void> {
+    const jobs = await v2JobStorage.listJobsByStatus(["queued", "processing"]);
+    const now = Date.now();
+
+    for (const job of jobs) {
+      if (!isPdfFileJob(job)) continue;
+
+      const { tempPath } = getPdfJobMetadata(job);
+      if (isExpiredPdfJob(job, now)) {
+        await safeDeleteFile(tempPath);
+        continue;
+      }
+
+      if (!(await fileExists(tempPath))) {
+        await failPdfFileJob(job.id, new Error("source_unavailable"));
+        continue;
+      }
+
+      if (job.status === "queued") {
+        await queuePdfFileJob(job);
+        continue;
+      }
+
+      const startedAtMs = job.startedAt?.getTime() ?? 0;
+      if (startedAtMs === 0 || now - startedAtMs >= PDF_FILE_JOB_STALE_MS) {
+        await queuePdfFileJob(job);
+      }
+    }
+  }
+
+  async function sweepExpiredPdfFileJobs(): Promise<void> {
+    const jobs = await v2JobStorage.listJobsByStatus(["queued", "processing", "completed", "failed"]);
+    const now = Date.now();
+
+    for (const job of jobs) {
+      if (!isPdfFileJob(job) || !isExpiredPdfJob(job, now)) continue;
+      await safeDeleteFile(getPdfJobMetadata(job).tempPath);
+    }
+  }
 
   function getRulesScoreForStoredReference(ref: Awaited<ReturnType<typeof storage.getReference>>) {
     if (!ref?.parsedData || !ref.convertedText || !ref.outputStyle) {
@@ -726,31 +1010,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }, {
           executionMode: 'sync',
         });
-
-        const legacyRecords = mapV2ResponseToLegacyRecords(v1CompatResponse, {
+        return res.json(await buildLegacyResponseFromV2(v1CompatResponse, {
           inputStyle: validatedData.inputStyle,
           outputStyle: validatedData.outputStyle,
-        });
-
-        const storedRefs = await storage.createReferences(
-          legacyRecords.map((record) => record.storageData)
-        );
-
-        const convertResults: ConvertedReference[] = legacyRecords.map((record, idx) => attachReferencePayloads({
-          ...record.uiData,
-          id: storedRefs[idx].id.toString(),
-        }));
-        const clusters = clusterCitations(convertResults);
-
-        const response: ConversionResponse = {
-          convertedReferences: convertResults,
-          clusters,
-          duplicateGroups: undefined,
-          engineVersion: 'v1',
-          errors: undefined,
-        };
-
-        return res.json(response);
+        }, 'v1'));
       }
 
       const sourceContent = String(validatedData.content ?? '').trim() || incomingReferences.join("\n\n");
@@ -766,52 +1029,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }, {
         executionMode: 'sync',
       });
-
-      const legacyRecords = mapV2ResponseToLegacyRecords(v2Response, {
+      res.json(await buildLegacyResponseFromV2(v2Response, {
         inputStyle: validatedData.inputStyle,
         outputStyle: validatedData.outputStyle,
-      });
-
-      const storedRefs = await storage.createReferences(
-        legacyRecords.map((record) => record.storageData)
-      );
-
-      const convertResults: ConvertedReference[] = legacyRecords.map((record, idx) => attachReferencePayloads({
-        ...record.uiData,
-        id: storedRefs[idx].id.toString(),
-      }));
-      const uiRecordBySourceId = new Map(
-        legacyRecords.map((record, idx) => [record.sourceId, convertResults[idx]])
-      );
-      const duplicateGroups: DuplicateGroup[] = v2Response.citations
-        .filter((citation) => citation.status === 'merged' && citation.duplicate?.mergedFrom?.length)
-        .map((citation) => {
-          const members = (citation.duplicate?.mergedFrom ?? [])
-            .map((sourceId) => uiRecordBySourceId.get(sourceId))
-            .filter((member): member is ConvertedReference => Boolean(member));
-          const primarySourceId =
-            v2Response.duplicates.find((entry) => entry.mergedId === citation.id)?.originalId
-            ?? citation.duplicate?.mergedFrom?.[0]
-            ?? '';
-          const primaryId = uiRecordBySourceId.get(primarySourceId)?.id ?? members[0]?.id ?? '';
-          return {
-            groupId: citation.id,
-            primaryId,
-            method: citation.duplicate?.method ?? 'structural',
-            members,
-          };
-        })
-        .filter((group) => group.members.length > 1 && Boolean(group.primaryId));
-
-      const response: ConversionResponse = {
-        convertedReferences: convertResults,
-        clusters: undefined,
-        duplicateGroups,
-        engineVersion: 'v2',
-        errors: undefined,
-      };
-
-      res.json(response);
+      }, 'v2'));
     } catch (error) {
       console.error('Validation error:', error instanceof Error ? error.message : String(error));
       res.status(400).json({
@@ -819,6 +1040,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
+  });
+
+  app.post("/api/convert-file", async (req, res) => {
+    try {
+      await runSingleUploadMiddleware(req, res);
+
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const file = req.file;
+      const ext = file.originalname.toLowerCase().slice(file.originalname.lastIndexOf("."));
+      const mime = file.mimetype || "";
+      const isPdf = mime === "application/pdf" || ext === ".pdf";
+
+      if (!isPdf) {
+        return res.status(400).json({
+          error: "PDF upload is required for this endpoint.",
+        });
+      }
+
+      const inputStyle = typeof req.body?.inputStyle === "string" ? req.body.inputStyle : "auto";
+      const outputStyle = typeof req.body?.outputStyle === "string" ? req.body.outputStyle : "apa";
+      const jobId = randomUUID();
+      const tempPath = path.join(PDF_FILE_JOB_DIR, `${jobId}.pdf`);
+      const expiresAt = getPdfJobExpiry();
+      const byteSize = file.buffer.byteLength;
+
+      if (byteSize > PDF_MAX_BYTES) {
+        throw new Error("pdf_too_large");
+      }
+
+      await mkdir(PDF_FILE_JOB_DIR, { recursive: true });
+      await writeFile(tempPath, file.buffer);
+
+      const request: V2ConversionRequest = {
+        sourceType: "pdf_file",
+        content: tempPath,
+        inputStyle,
+        outputStyle,
+        enrich: false,
+        dedup: true,
+        group: false,
+        debug: false,
+        metadata: {
+          fileJob: true,
+          tempPath,
+          originalFilename: file.originalname,
+          byteSize,
+        },
+      };
+
+      const job = await v2JobStorage.createQueuedJob(request, {
+        id: jobId,
+        expiresAt,
+        metadata: {
+          fileJob: true,
+          tempPath,
+          originalFilename: file.originalname,
+          byteSize,
+        },
+      });
+
+      await queuePdfFileJob(job);
+
+      return res.status(202).json({
+        job_id: job.id,
+        status: job.status,
+        engineVersion: "v2",
+        executionMode: "async",
+        expiresAt: expiresAt.toISOString(),
+      });
+    } catch (error) {
+      return sendPdfRouteError(res, error, "Failed to queue PDF conversion");
+    }
+  });
+
+  app.get("/api/convert-file/jobs/:jobId", async (req, res) => {
+    const job = await v2JobStorage.getJob(req.params.jobId);
+    if (!isPdfFileJob(job)) {
+      return sendPdfJobExpired(res);
+    }
+    if (isExpiredPdfJob(job)) {
+      await safeDeleteFile(getPdfJobMetadata(job).tempPath);
+      return sendPdfJobExpired(res);
+    }
+
+    if (job.status === "completed") {
+      if (!job.legacyResponse) {
+        return res.status(500).json({
+          error: "Completed PDF job is missing its legacy response payload.",
+        });
+      }
+      return res.json(job.legacyResponse);
+    }
+
+    if (job.status === "failed") {
+      const code = job.errorCode && isKnownPdfErrorCode(job.errorCode)
+        ? job.errorCode
+        : undefined;
+      return res.json({
+        job_id: job.id,
+        status: job.status,
+        expiresAt: job.expiresAt?.toISOString(),
+        error: {
+          code: code ?? "pdf_corrupt",
+          message: job.error ?? getPdfErrorMessage(code ?? "pdf_corrupt"),
+        },
+      });
+    }
+
+    return res.json({
+      job_id: job.id,
+      status: job.status,
+      expiresAt: job.expiresAt?.toISOString(),
+    });
   });
 
   // Export endpoints
@@ -962,8 +1299,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // File parsing endpoint
-  app.post("/api/parse-file", upload.single('file'), async (req, res) => {
+  app.post("/api/parse-file", async (req, res) => {
     try {
+      await runSingleUploadMiddleware(req, res);
+
       if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
       }
@@ -982,8 +1321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isTxt) {
         text = file.buffer.toString('utf-8');
       } else if (isPdf) {
-        const pdfData = await pdfParse(file.buffer);
-        text = (pdfData && pdfData.text) ? pdfData.text : '';
+        text = (await extractPdfTextFromBuffer(file.buffer)).text;
       } else if (isDocx) {
         const result = await mammoth.extractRawText({ buffer: file.buffer });
         text = (result && result.value) ? result.value : '';
@@ -996,10 +1334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ text: (text || '').trim() });
     } catch (error) {
       console.error('File parsing error:', error);
-      res.status(500).json({
-        error: 'Failed to parse file',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
+      return sendPdfRouteError(res, error, 'Failed to parse file');
     }
   });
 
@@ -1082,6 +1417,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const pdfFileJobSweep = setInterval(() => {
+    recoverPdfFileJobs().catch((error) => {
+      console.error("[pdf-file-job] Recovery sweep failed:", error instanceof Error ? error.message : String(error));
+    });
+    sweepExpiredPdfFileJobs().catch((error) => {
+      console.error("[pdf-file-job] Expiry sweep failed:", error instanceof Error ? error.message : String(error));
+    });
+  }, PDF_FILE_JOB_SWEEP_MS);
+  void recoverPdfFileJobs().catch((error) => {
+    console.error("[pdf-file-job] Startup recovery failed:", error instanceof Error ? error.message : String(error));
+  });
+
   const httpServer = createServer(app);
+  httpServer.on("close", () => {
+    clearInterval(pdfFileJobSweep);
+  });
   return httpServer;
 }

@@ -75,7 +75,6 @@ const DUPLICATE_FIELD_PENALTIES: Record<string, number> = {
   doi: 0.01,
   url: 0.01,
   edition: 0.01,
-  editor: 0.01,
 };
 
 function normalizedScalarValue(value: string | number | null | undefined): string {
@@ -113,7 +112,6 @@ function changedDuplicateFields(original: CanonicalCitation, hydrated: Canonical
     ['doi', normalizedScalarValue(original.doi.value), normalizedScalarValue(hydrated.doi.value)],
     ['url', normalizedScalarValue(original.url.value), normalizedScalarValue(hydrated.url.value)],
     ['edition', normalizedScalarValue(original.edition.value), normalizedScalarValue(hydrated.edition.value)],
-    ['editor', normalizedScalarValue(original.editor.value), normalizedScalarValue(hydrated.editor.value)],
     ['referenceType', normalizedScalarValue(original.referenceType), normalizedScalarValue(hydrated.referenceType)],
   ];
 
@@ -411,7 +409,10 @@ async function createMergedCitation(group: CanonicalCitation[], method: 'doi' | 
         bookTitle: mergeField(merged.bookTitle, duplicate.bookTitle, merged, duplicate, 'bookTitle', (value) => Boolean(value)),
         institution: mergeField(merged.institution, duplicate.institution, merged, duplicate, 'institution', (value) => Boolean(value)),
         edition: mergeField(merged.edition, duplicate.edition, merged, duplicate, 'edition', (value) => Boolean(value)),
+        editors: mergeField(merged.editors, duplicate.editors, merged, duplicate, 'editors', (value) => value.length > 0),
         editor: mergeField(merged.editor, duplicate.editor, merged, duplicate, 'editor', (value) => Boolean(value)),
+        thesisType: mergeField(merged.thesisType, duplicate.thesisType, merged, duplicate, 'thesisType', (value) => Boolean(value)),
+        repository: mergeField(merged.repository, duplicate.repository, merged, duplicate, 'repository', (value) => Boolean(value)),
       };
     }
 
@@ -467,7 +468,10 @@ async function hydrateDuplicateCitation(
     bookTitle: inheritMergedField(mergedCitation.bookTitle, citation.id, mergedCitation.id),
     institution: inheritMergedField(mergedCitation.institution, citation.id, mergedCitation.id),
     edition: inheritMergedField(mergedCitation.edition, citation.id, mergedCitation.id),
+    editors: inheritMergedField(mergedCitation.editors, citation.id, mergedCitation.id),
     editor: inheritMergedField(mergedCitation.editor, citation.id, mergedCitation.id),
+    thesisType: inheritMergedField(mergedCitation.thesisType, citation.id, mergedCitation.id),
+    repository: inheritMergedField(mergedCitation.repository, citation.id, mergedCitation.id),
     resolution: mergedCitation.resolution
       ? {
           ...mergedCitation.resolution,

@@ -268,6 +268,14 @@ export function classifyLocatorToken(token: string): { kind: LocatorKind; value:
     return { kind: 'article-number', value: normalized };
   }
 
+  if (
+    /^[A-Za-z][A-Za-z0-9.-]*\d[A-Za-z0-9.-]*$/i.test(normalized)
+    && /[A-Za-z]/.test(normalized)
+    && (normalized.includes('.') || /[A-Za-z].*\d.*[A-Za-z]/i.test(normalized))
+  ) {
+    return { kind: 'article-number', value: normalized };
+  }
+
   if (/^\d{5,}$/.test(normalized)) {
     return { kind: 'article-number', value: normalized };
   }

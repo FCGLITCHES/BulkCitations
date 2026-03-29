@@ -31,6 +31,16 @@ pnpm run benchmark:academic:generate
 pnpm run benchmark:academic
 ```
 
+By default, `pnpm run benchmark:academic` runs the deterministic benchmark only, even if `OPENAI_API_KEY` is present in `.env`.
+
+To opt into the secondary hybrid benchmark that uses GPT-5.4 nano extract fallback, set:
+
+```bash
+ACADEMIC_BENCHMARK_ENABLE_HYBRID=1
+```
+
+Keep that hybrid run internal. The deterministic report remains the business-facing readiness score.
+
 ## Current evaluation design
 
 - Real references only.

@@ -1,6 +1,26 @@
 import type { CanonicalReferenceType, ExtractionContainerHints, ParsedReference } from '@shared/schema';
 import { providerSourceTypeToCanonical } from './sourceTypes.js';
 
+function normalizeDoi(value: string | undefined): string {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function looksConferenceDoiFamily(doi: string | undefined): boolean {
+  const normalizedDoi = normalizeDoi(doi);
+  return /^(?:10\.1109\/|10\.1145\/|10\.1117\/|10\.1115\/|10\.29327\/|10\.2991\/|10\.2495\/|10\.26678\/|10\.14201\/0aq|10\.51980\/|10\.3997\/2214-4609\.20|10\.1164\/ajrccm-conference\.|10\.1136\/[^/]+-snis\.|10\.1055\/s-|10\.52202\/|10\.46898\/home\.|10\.2749\/222137|10\.1364\/(?:ls|freeform)\.|10\.2316\/p\.|10\.5817\/cz\.muni\.p210-|10\.54941\/ahfe|10\.17491\/cgsi\/)/i.test(normalizedDoi);
+}
+
+function looksBookChapterDoiFamily(doi: string | undefined): boolean {
+  const normalizedDoi = normalizeDoi(doi);
+  return /^(?:10\.1007\/97[89]-|10\.1201\/97[89]|10\.1016\/b97[89]-|10\.30525\/97[89]-|10\.1163\/97[89]|10\.5040\/97[89]|10\.51202\/97[89]|10\.1093\/[^/]+\/97[89].*(?:003\.\d+|ch-\d+))/i.test(normalizedDoi);
+}
+
+function hasConferenceText(value: string | undefined): boolean {
+  const normalized = String(value ?? '').trim().toLowerCase();
+  if (!normalized) return false;
+  return /\b(?:conference|symposium|workshop|congress|meeting|proceedings|forum|summit|colloquium|poster abstracts?|electronic poster abstracts?)\b/i.test(normalized);
+}
+
 function resolveTypeFromContainerHints(
   hints: ExtractionContainerHints,
   claimedType: CanonicalReferenceType,
@@ -36,6 +56,44 @@ export function resolveReferenceTypeFromEvidence(options: {
   providerSourceType?: string | null;
   detectTypeHint?: CanonicalReferenceType | null;
 }): { referenceType: CanonicalReferenceType; reason: string } {
+  if (
+    looksBookChapterDoiFamily(options.parsed.doi)
+    && (
+      options.claimedType === 'chapter'
+      || Boolean(options.parsed.bookTitle)
+      || (
+        Boolean(options.parsed.conferenceTitle)
+        && !hasConferenceText(options.parsed.conferenceTitle)
+      )
+    )
+  ) {
+    return {
+      referenceType: 'chapter',
+      reason: 'doi_family:book_chapter',
+    };
+  }
+
+  if (
+    looksConferenceDoiFamily(options.parsed.doi)
+    && !looksBookChapterDoiFamily(options.parsed.doi)
+    && (
+      options.claimedType === 'conference'
+      || Boolean(options.parsed.conferenceTitle)
+      || (
+        Boolean(options.parsed.bookTitle)
+        && !options.parsed.editor
+        && !options.parsed.placeOfPublication
+      )
+      || hasConferenceText(options.parsed.bookTitle)
+      || (options.detectTypeHint === 'conference')
+    )
+  ) {
+    return {
+      referenceType: 'conference',
+      reason: 'doi_family:conference',
+    };
+  }
+
   const containerResolved = resolveTypeFromContainerHints(options.containerHints, options.claimedType, options.parsed);
   if (containerResolved) {
     return {

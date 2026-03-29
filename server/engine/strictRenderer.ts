@@ -604,10 +604,12 @@ function formatStructuredApaContainer(clean: string, fields: ParsedFields): stri
     if (isConference) {
         const container = (fields?.conferenceTitle || fields?.bookTitle || fields?.journal || '').trim();
         if (!container) return clean;
+        const placeOfPublication = (fields?.placeOfPublication || '').trim();
         const pages = normalizeLocatorRange(fields?.pages || fields?.page);
         const publisher = (fields?.publisher || '').trim();
         const doiUrl = normalizeDoiUrl(fields?.doi);
         let rebuilt = `${prefix} In ${container}`;
+        if (placeOfPublication) rebuilt += `, ${placeOfPublication}`;
         if (pages) rebuilt += ` (pp. ${pages})`;
         rebuilt += '.';
         if (publisher) rebuilt += ` ${ensureTerminalPeriod(publisher)}`;

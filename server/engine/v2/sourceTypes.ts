@@ -41,9 +41,39 @@ const PROVIDER_SOURCE_TYPE_PATTERNS: CanonicalSourceTypeMatch[] = [
   },
 ];
 
+const CROSSREF_TYPE_MAP: Record<string, CanonicalReferenceType> = {
+  'journal-article': 'journal',
+  'journal-volume': 'journal',
+  'journal-issue': 'journal',
+  article: 'journal',
+  book: 'book',
+  'edited-book': 'book',
+  monograph: 'book',
+  'reference-book': 'book',
+  'book-series': 'book',
+  'book-set': 'book',
+  'book-chapter': 'chapter',
+  'book-part': 'chapter',
+  'book-section': 'chapter',
+  'reference-entry': 'chapter',
+  'proceedings-article': 'conference',
+  dissertation: 'thesis',
+  report: 'report',
+  standard: 'report',
+  'posted-content': 'preprint',
+};
+
+export function mapCrossrefTypeToReferenceType(crossrefType: string): CanonicalReferenceType {
+  const normalized = normalizeWhitespace(crossrefType.toLowerCase());
+  return CROSSREF_TYPE_MAP[normalized] ?? 'unknown';
+}
+
 export function providerSourceTypeToCanonical(sourceType?: string): CanonicalReferenceType | null {
   const normalized = normalizeWhitespace((sourceType ?? '').toLowerCase());
   if (!normalized) return null;
+
+  const crossrefMapped = mapCrossrefTypeToReferenceType(normalized);
+  if (crossrefMapped !== 'unknown') return crossrefMapped;
 
   for (const entry of PROVIDER_SOURCE_TYPE_PATTERNS) {
     if (entry.pattern.test(normalized)) return entry.canonical;

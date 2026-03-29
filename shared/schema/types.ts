@@ -106,6 +106,7 @@ export interface Cluster {
 // Parsed reference data structure
 export interface ParsedReference {
   authors?: string[];
+  editors?: string[];
   title?: string;
   year?: string;
   journal?: string;
@@ -124,6 +125,9 @@ export interface ParsedReference {
   institution?: string;
   edition?: string;
   editor?: string;
+  thesisType?: "Doctoral dissertation" | "Master's thesis";
+  repository?: string;
+  inferenceNote?: string;
   /** Parse recovery/debug codes: invalid-year-recovered, merged-volume-issue, venue-unknown, etc. */
   parseWarnings?: string[];
   /** When multiple plausible years exist, for debugging */

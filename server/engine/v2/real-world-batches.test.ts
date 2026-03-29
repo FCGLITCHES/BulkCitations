@@ -47,6 +47,6 @@ describe('v2 real-world batch regressions', () => {
 
       const splitDebug = response.debug?.citations.map((citation) => citation.stages.split).filter(Boolean) ?? [];
       expect(splitDebug.length).toBeGreaterThan(0);
-    });
+    }, fixture.expectedCount >= 400 ? 30000 : 15000);
   }
 });

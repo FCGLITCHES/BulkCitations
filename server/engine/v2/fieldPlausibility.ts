@@ -75,9 +75,19 @@ function titleLooksLikeEmbeddedMetadataNote(value: string): boolean {
     || /\bReport No\.?\s*[A-Z0-9-]+/i.test(normalized);
 }
 
+function titleLooksLikeAddressTail(value: string): boolean {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) return false;
+  return /^(?:\d{2,}|p\.?\s*m\.?\s*b\.?\s*\d+),\s+[A-Z][^,]+(?:,\s+[A-Z][^,]+){1,4}$/iu.test(normalized)
+    || /^\d{2,},\s+[A-Z][^,]+,\s+[A-Z][^,]+,\s+[A-Z][^,]+$/u.test(normalized);
+}
+
 function looksLikeSentenceAuthorBlob(value: string): boolean {
   const normalized = normalizeWhitespace(value);
   if (!normalized) return false;
+  if (looksLikeLegitimateInitialAuthor(normalized) || looksLikeLegitimateFullNameAuthor(normalized)) {
+    return false;
+  }
   if (!/[.:;]/.test(normalized)) return false;
   if (normalized.split(/\s+/).length < 5) return false;
   return true;
@@ -88,6 +98,13 @@ function looksLikeLegitimateInitialAuthor(value: string): boolean {
   if (!normalized) return false;
   return /^[\p{L}'’.-]+(?:\s+[\p{L}'’.-]+)*,\s*[\p{Lu}](?:\.\s*[\p{Lu}]\.)*\.?$/u.test(normalized)
     || /^[\p{Lu}](?:\.\s*[\p{Lu}]\.)*\s+[\p{L}'’.-]+(?:\s+[\p{L}'’.-]+)*$/u.test(normalized);
+}
+
+function looksLikeLegitimateFullNameAuthor(value: string): boolean {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) return false;
+  return /^[\p{L}'’.-]+(?:\s+[\p{L}'’.-]+)*,\s*[\p{Lu}][\p{L}'’.-]+(?:\s+[\p{Lu}][\p{L}'’.-]+){0,4}$/u.test(normalized)
+    || /^[\p{Lu}][\p{L}'’.-]+(?:\s+[\p{Lu}][\p{L}'’.-]+){0,4}\s+[\p{L}'’.-]+(?:\s+[\p{L}'’.-]+)*$/u.test(normalized);
 }
 
 function venueLooksLikePublisherTail(value: string): boolean {
@@ -144,6 +161,9 @@ export function assessTitle(parsed: ParsedReference): FieldPlausibilityAssessmen
   }
   if (titleLooksLikeEmbeddedMetadataNote(title)) {
     return implausible('title_contains_metadata_note', 1.05);
+  }
+  if (titleLooksLikeAddressTail(title)) {
+    return implausible('title_looks_like_address_tail', 1.15);
   }
   if (lower.startsWith('in ') && title.split(/\s+/).length > 5) {
     return implausible('title_starts_with_container', 0.8);
@@ -206,6 +226,9 @@ export function assessPublisher(parsed: ParsedReference): FieldPlausibilityAsses
   if (!publisher) return missing();
 
   const lower = publisher.toLowerCase();
+  if (lower.startsWith('in ')) {
+    return implausible('publisher_starts_with_container', 1.25);
+  }
   if (/^[^.;]{1,80}:\s+[^.;]+$/u.test(publisher)) {
     return implausible('publisher_contains_place_prefix', 1.1);
   }
@@ -213,6 +236,8 @@ export function assessPublisher(parsed: ParsedReference): FieldPlausibilityAsses
     /\b(?:report\s+no\.?|working paper|technical note|policy brief)\b/i.test(publisher)
     || /[)\]]\s*[:;,-]/.test(publisher)
     || /\b[A-Z]{2,}(?:-[A-Z0-9]{2,}){1,}\)?/.test(publisher)
+    || /\bpp?\.?\s*[A-Za-z]?\d+/i.test(publisher)
+    || /\bp\.?\s*[A-Za-z]?\d+/i.test(publisher)
   ) {
     return implausible('publisher_contains_metadata_tail', 1.15);
   }

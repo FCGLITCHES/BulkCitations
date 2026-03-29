@@ -153,6 +153,7 @@ export interface ExtractorAdapter {
   }): Promise<{
     parsed: {
       authors?: Array<string | CanonicalAuthor>;
+      editors?: CanonicalAuthor[];
       title?: string;
       year?: string;
       journal?: string;
@@ -164,11 +165,15 @@ export interface ExtractorAdapter {
       publisher?: string;
       placeOfPublication?: string;
       url?: string;
+      accessed?: string;
       conferenceTitle?: string;
       bookTitle?: string;
       institution?: string;
       edition?: string;
       editor?: string;
+      thesisType?: "Doctoral dissertation" | "Master's thesis";
+      repository?: string;
+      inferenceNote?: string;
     };
     referenceType: CanonicalCitation['referenceType'];
     method: 'deterministic' | 'llm' | 'hybrid';

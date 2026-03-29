@@ -2,6 +2,8 @@ import 'dotenv/config';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { createDefaultAdapters } from '../server/engine/v2/adapters.js';
+import type { V2AdapterBundle } from '../server/engine/v2/contracts.js';
 import { processV2Conversion } from '../server/engine/v2/pipeline.js';
 import {
   bestVenue,
@@ -62,6 +64,26 @@ type ActionNeededReasonCode =
   | 'identity_contamination';
 
 type BenchmarkModeId = 'strict_deterministic' | 'production_hybrid_extract';
+
+type DominantFailureBucket =
+  | 'missing_output'
+  | 'identity_contamination'
+  | 'conference_container_type'
+  | 'report_institution_type'
+  | 'ieee_author_order'
+  | 'apa_author_order'
+  | 'venue_cleanup'
+  | 'pages_locator'
+  | 'residual_other';
+
+type NearPassBlockingField =
+  | 'referenceType'
+  | 'year'
+  | 'title'
+  | 'firstAuthor'
+  | 'venue'
+  | 'output'
+  | 'identity';
 
 type SliceMetrics = {
   count: number;
@@ -169,6 +191,45 @@ type FallbackRoutingSummary = {
   rejectedRatePct: number;
 };
 
+type FallbackReasonCounts = {
+  attempted: Record<string, number>;
+  accepted: Record<string, number>;
+  rejected: Record<string, number>;
+};
+
+type LedgerBucketSummary<TBucket extends string> = Array<{
+  bucket: TBucket;
+  count: number;
+  shareOfStrictFailsPct: number;
+  sourceTypes: Record<string, number>;
+  inputStyles: Record<string, number>;
+  sampleRecordIds: string[];
+}>;
+
+type WeightedLiftProjectionEntry = {
+  key: string;
+  count: number;
+  corpusSharePct: number;
+  strictEssentialAccuracyPct: number;
+  weightedContributionPct: number;
+  weightedHeadroomPct: number;
+};
+
+type WeightedLiftModel = {
+  targetStrictExternalAccuracyPct: number;
+  currentStrictExternalAccuracyPct: number;
+  remainingGapPct: number;
+  bySourceType: WeightedLiftProjectionEntry[];
+  byInputStyle: WeightedLiftProjectionEntry[];
+};
+
+type LedgerAccumulator<TBucket extends string> = Map<TBucket, {
+  count: number;
+  sourceTypes: Record<string, number>;
+  inputStyles: Record<string, number>;
+  sampleRecordIds: string[];
+}>;
+
 type BenchmarkModeSummary = {
   mode: BenchmarkModeId;
   llmExtractEnabled: boolean;
@@ -203,7 +264,11 @@ type BenchmarkModeSummary = {
   actionNeededReasonCounts: ActionNeededReasonCounts;
   validationIssueCounts: Record<string, number>;
   missingRequiredFieldCounts: Record<string, number>;
+  dominantFailureLedger: LedgerBucketSummary<DominantFailureBucket>;
+  nearPassLedger: LedgerBucketSummary<NearPassBlockingField>;
+  weightedLiftModel: WeightedLiftModel;
   fallbackRouting: FallbackRoutingSummary;
+  fallbackReasonCounts: FallbackReasonCounts;
   typeConfusionMatrix: Array<{
     expectedReferenceType: string;
     actualReferenceType: string;
@@ -287,7 +352,11 @@ export type AcademicBenchmarkReport = {
   actionNeededReasonCounts: ActionNeededReasonCounts;
   validationIssueCounts: Record<string, number>;
   missingRequiredFieldCounts: Record<string, number>;
+  dominantFailureLedger: LedgerBucketSummary<DominantFailureBucket>;
+  nearPassLedger: LedgerBucketSummary<NearPassBlockingField>;
+  weightedLiftModel: WeightedLiftModel;
   fallbackRouting: FallbackRoutingSummary;
+  fallbackReasonCounts: FallbackReasonCounts;
   ieeeFailureBreakdown: Record<FailureBreakdownCategory, number>;
   typeConfusionMatrix: Array<{
     expectedReferenceType: string;
@@ -374,6 +443,18 @@ function createActionNeededReasonCounts(): Record<ActionNeededReasonCode, number
   };
 }
 
+function isTruthyEnv(value: string | undefined): boolean {
+  return /^(1|true|yes|on)$/i.test(value ?? '');
+}
+
+function isAcademicBenchmarkHybridEnabled(): boolean {
+  return isTruthyEnv(process.env.ACADEMIC_BENCHMARK_ENABLE_HYBRID);
+}
+
+function isAcademicBenchmarkEnrichEnabled(): boolean {
+  return isTruthyEnv(process.env.ACADEMIC_BENCHMARK_ENABLE_ENRICH);
+}
+
 function createSlice(): SliceMetrics {
   return {
     count: 0,
@@ -411,6 +492,10 @@ function incrementCount(map: Map<string, number>, key: string | null | undefined
 
 function incrementRecordCount<T extends string>(record: Record<T, number>, key: T): void {
   record[key] = (record[key] ?? 0) + 1;
+}
+
+function incrementNestedCount(target: Record<string, number>, key: string): void {
+  target[key] = (target[key] ?? 0) + 1;
 }
 
 function rankedCounts(map: Map<string, number>) {
@@ -468,6 +553,127 @@ function createEmptyCitation(raw = ''): any {
     duplicate: null,
     stageDebug: undefined,
   };
+}
+
+function createLedgerAccumulator<TBucket extends string>(buckets: readonly TBucket[]): LedgerAccumulator<TBucket> {
+  return new Map<TBucket, {
+    count: number;
+    sourceTypes: Record<string, number>;
+    inputStyles: Record<string, number>;
+    sampleRecordIds: string[];
+  }>(buckets.map((bucket) => [bucket, {
+    count: 0,
+    sourceTypes: {},
+    inputStyles: {},
+    sampleRecordIds: [],
+  }]));
+}
+
+function recordLedgerHit<TBucket extends string>(
+  accumulator: LedgerAccumulator<TBucket>,
+  bucket: TBucket,
+  record: BenchmarkRecord,
+): void {
+  const entry = accumulator.get(bucket);
+  if (!entry) return;
+  entry.count += 1;
+  incrementNestedCount(entry.sourceTypes, record.sourceType);
+  incrementNestedCount(entry.inputStyles, record.inputStyle);
+  if (entry.sampleRecordIds.length < 12) entry.sampleRecordIds.push(record.id);
+}
+
+function recordLedgerVote<TBucket extends string>(
+  votes: Map<string, Map<TBucket, number>>,
+  recordId: string,
+  bucket: TBucket,
+): void {
+  const entry = votes.get(recordId) ?? new Map<TBucket, number>();
+  entry.set(bucket, (entry.get(bucket) ?? 0) + 1);
+  votes.set(recordId, entry);
+}
+
+function materializeLedgerVotes<TBucket extends string>(
+  votes: Map<string, Map<TBucket, number>>,
+  recordsById: Map<string, BenchmarkRecord>,
+  accumulator: LedgerAccumulator<TBucket>,
+): number {
+  let total = 0;
+  for (const [recordId, bucketVotes] of votes.entries()) {
+    const record = recordsById.get(recordId);
+    if (!record || bucketVotes.size === 0) continue;
+    const winner = Array.from(bucketVotes.entries())
+      .sort((left, right) => right[1] - left[1] || String(left[0]).localeCompare(String(right[0])))[0]?.[0];
+    if (!winner) continue;
+    recordLedgerHit(accumulator, winner, record);
+    total += 1;
+  }
+  return total;
+}
+
+function finalizeLedger<TBucket extends string>(
+  accumulator: LedgerAccumulator<TBucket>,
+  totalStrictFails: number,
+): LedgerBucketSummary<TBucket> {
+  return Array.from(accumulator.entries())
+    .map(([bucket, entry]) => ({
+      bucket,
+      count: entry.count,
+      shareOfStrictFailsPct: totalStrictFails > 0 ? toPercent(entry.count, totalStrictFails) : 0,
+      sourceTypes: Object.fromEntries(Object.entries(entry.sourceTypes).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))),
+      inputStyles: Object.fromEntries(Object.entries(entry.inputStyles).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))),
+      sampleRecordIds: entry.sampleRecordIds,
+    }))
+    .sort((left, right) => right.count - left.count || left.bucket.localeCompare(right.bucket));
+}
+
+function classifyDominantFailure(
+  record: BenchmarkRecord,
+  evaluation: ReturnType<typeof evaluateCitation>,
+  identityContaminationCategory: IdentityContaminationCategory | undefined,
+): DominantFailureBucket | null {
+  if (evaluation.strictEssentialPassed) return null;
+  if (!evaluation.outputPresent) return 'missing_output';
+  if (identityContaminationCategory) return 'identity_contamination';
+  if (record.sourceType === 'conference' && (evaluation.mismatches.includes('referenceType') || evaluation.mismatches.includes('venue'))) {
+    return 'conference_container_type';
+  }
+  if (record.sourceType === 'report' && (evaluation.mismatches.includes('referenceType') || evaluation.mismatches.includes('venue') || evaluation.mismatches.includes('firstAuthor'))) {
+    return 'report_institution_type';
+  }
+  if (record.inputStyle === 'ieee' && evaluation.mismatches.includes('firstAuthor')) return 'ieee_author_order';
+  if (record.inputStyle === 'apa' && evaluation.mismatches.includes('firstAuthor')) return 'apa_author_order';
+  if (evaluation.mismatches.includes('venue')) return 'venue_cleanup';
+  if (evaluation.mismatches.includes('pages')) return 'pages_locator';
+  return 'residual_other';
+}
+
+function classifyNearPassBlockingField(
+  evaluation: ReturnType<typeof evaluateCitation>,
+): NearPassBlockingField | null {
+  if (evaluation.strictEssentialPassed) return null;
+  const blockers = evaluation.mismatches.filter((field): field is NearPassBlockingField =>
+    ['referenceType', 'year', 'title', 'firstAuthor', 'venue', 'output', 'identity'].includes(field),
+  );
+  return blockers.length === 1 ? blockers[0] : null;
+}
+
+function buildWeightedLiftProjection(
+  entries: Array<{ key: string; count: number; strictEssentialAccuracyPct: number }>,
+  corpusSize: number,
+): WeightedLiftProjectionEntry[] {
+  return entries
+    .map((entry) => {
+      const share = entry.count / Math.max(corpusSize, 1);
+      return {
+        key: entry.key,
+        count: entry.count,
+        corpusSharePct: toPercent(entry.count, corpusSize),
+        strictEssentialAccuracyPct: entry.strictEssentialAccuracyPct,
+        weightedContributionPct: Number((share * entry.strictEssentialAccuracyPct).toFixed(2)),
+        weightedHeadroomPct: Number((share * Math.max(100 - entry.strictEssentialAccuracyPct, 0)).toFixed(2)),
+      };
+    })
+    .sort((left, right) => right.weightedHeadroomPct - left.weightedHeadroomPct || left.key.localeCompare(right.key));
 }
 
 function alignBatch(records: readonly BenchmarkRecord[], citations: readonly any[]): BatchAlignment {
@@ -796,6 +1002,19 @@ function renderMarkdown(report: AcademicBenchmarkReport): string {
   lines.push(`- Average APA render similarity: ${formatPercent(report.strict_external.averageRenderSimilarityPct)}`);
   lines.push(`- LLM fallback attempt rate: ${formatPercent(report.fallbackRouting.attemptRatePct)}`);
   lines.push('');
+  lines.push('## LLM Fallback Diagnostics');
+  lines.push('');
+  lines.push(`- Enrichment opt-in: ${isAcademicBenchmarkEnrichEnabled() ? 'enabled' : 'disabled'}`);
+  lines.push(`- Hybrid benchmark opt-in: ${isAcademicBenchmarkHybridEnabled() ? 'enabled' : 'disabled'}`);
+  lines.push(`- Fallback attempts recorded in this primary report: ${report.fallbackRouting.attemptedCount}`);
+  if (Object.keys(report.fallbackReasonCounts.rejected).length > 0) {
+    for (const [reason, count] of Object.entries(report.fallbackReasonCounts.rejected).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))) {
+      lines.push(`- Rejected ${reason}: ${count}`);
+    }
+  } else {
+    lines.push('- Rejected reasons: none recorded in this run');
+  }
+  lines.push('');
   lines.push('## Internal Compatibility Reference (Secondary)');
   lines.push('');
   lines.push(`- Legacy-comparable field average: ${formatPercent(report.legacy_comparable.fieldAveragePct)}`);
@@ -811,6 +1030,9 @@ function renderMarkdown(report: AcademicBenchmarkReport): string {
     lines.push(`- Fallback accept rate: ${formatPercent(report.production_hybrid_extract.fallbackRouting.acceptRatePct)}`);
     lines.push(`- Deterministic strict delta: ${formatPercent(report.production_hybrid_extract.deltaFromStrictDeterministic.strictEssentialAccuracyPctChange)}`);
     lines.push(`- IEEE strict delta: ${formatPercent(report.production_hybrid_extract.deltaFromStrictDeterministic.ieeeStrictEssentialAccuracyPctChange)}`);
+    for (const [reason, count] of Object.entries(report.production_hybrid_extract.fallbackReasonCounts.rejected).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))) {
+      lines.push(`- Hybrid rejected ${reason}: ${count}`);
+    }
     lines.push('');
   }
   lines.push('Footnote: The primary score uses strict citation-level pass/fail on core fields plus identity and output integrity. The secondary score is a frozen internal field-average reference for historical comparison only and must not be cited as the external readiness number.');
@@ -827,6 +1049,27 @@ function renderMarkdown(report: AcademicBenchmarkReport): string {
   lines.push('');
   for (const [reason, count] of Object.entries(report.actionNeededReasonCounts.nearPass).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))) {
     lines.push(`- Near-pass ${reason}: ${count}`);
+  }
+  lines.push('');
+  lines.push('## Dominant Failure Ledger');
+  lines.push('');
+  for (const entry of report.dominantFailureLedger.slice(0, 9)) {
+    lines.push(`- ${entry.bucket}: ${entry.count} (${formatPercent(entry.shareOfStrictFailsPct)})`);
+  }
+  lines.push('');
+  lines.push('## Near-Pass Ledger');
+  lines.push('');
+  for (const entry of report.nearPassLedger) {
+    lines.push(`- ${entry.bucket}: ${entry.count} (${formatPercent(entry.shareOfStrictFailsPct)})`);
+  }
+  lines.push('');
+  lines.push('## Weighted Lift Model');
+  lines.push('');
+  lines.push(`- Current strict external accuracy: ${formatPercent(report.weightedLiftModel.currentStrictExternalAccuracyPct)}`);
+  lines.push(`- Target strict external accuracy: ${formatPercent(report.weightedLiftModel.targetStrictExternalAccuracyPct)}`);
+  lines.push(`- Remaining gap: ${formatPercent(report.weightedLiftModel.remainingGapPct)}`);
+  for (const entry of report.weightedLiftModel.bySourceType.slice(0, 6)) {
+    lines.push(`- Source ${entry.key}: share ${formatPercent(entry.corpusSharePct)}, strict ${formatPercent(entry.strictEssentialAccuracyPct)}, weighted headroom ${formatPercent(entry.weightedHeadroomPct)}`);
   }
   lines.push('');
   lines.push('## Methodology');
@@ -920,10 +1163,28 @@ function renderMarkdown(report: AcademicBenchmarkReport): string {
   return `${lines.join('\n')}\n`;
 }
 
-async function runAcademicBenchmarkMode(mode: BenchmarkModeId): Promise<BenchmarkModeSummary> {
+async function runAcademicBenchmarkMode(
+  mode: BenchmarkModeId,
+  options?: { adapters?: V2AdapterBundle },
+): Promise<BenchmarkModeSummary> {
   const corpus = JSON.parse(await readFile(CORPUS_PATH, 'utf8')) as BenchmarkCorpus;
+  const adapters = options?.adapters ?? createDefaultAdapters();
+  const corpusRecordById = new Map(corpus.records.map((record) => [record.id, record]));
+  const sourceTypeCorpusCounts = new Map<BenchmarkSourceType, number>();
+  const inputStyleCorpusCounts = new Map<BenchmarkInputStyle, number>();
+  for (const record of corpus.records) {
+    sourceTypeCorpusCounts.set(record.sourceType, (sourceTypeCorpusCounts.get(record.sourceType) ?? 0) + 1);
+    inputStyleCorpusCounts.set(record.inputStyle, (inputStyleCorpusCounts.get(record.inputStyle) ?? 0) + 1);
+  }
   const previousLlmExtractor = process.env.ENABLE_LLM_EXTRACTOR;
   const previousGrobidExtractor = process.env.ENABLE_GROBID_EXTRACTOR;
+  const previousEnrichConcurrency = process.env.V2_ENRICH_CONCURRENCY;
+  const previousEnrichCitationTimeoutMs = process.env.V2_ENRICH_CITATION_TIMEOUT_MS;
+  const previousEnrichTimeoutMs = process.env.V2_ENRICH_TIMEOUT_MS;
+  const previousTruthConcurrency = process.env.V2_TRUTH_CONCURRENCY;
+  const previousProviderMaxRetries = process.env.V2_PROVIDER_MAX_RETRIES;
+  const previousProviderMaxRetryAfterMs = process.env.V2_PROVIDER_MAX_RETRY_AFTER_MS;
+  const enrichEnabled = isAcademicBenchmarkEnrichEnabled();
   const batchRuns: BatchRunSummary[] = [];
   const bySourceType = new Map<BenchmarkSourceType, SliceMetrics>();
   const byInputStyle = new Map<BenchmarkInputStyle, SliceMetrics>();
@@ -940,6 +1201,28 @@ async function runAcademicBenchmarkMode(mode: BenchmarkModeId): Promise<Benchmar
   const ieeeCorpusCount = corpus.records.filter((record) => record.inputStyle === 'ieee').length;
   const validationIssueCounts = new Map<string, number>();
   const missingRequiredFieldCounts = new Map<string, number>();
+  const dominantFailureLedgerAccumulator = createLedgerAccumulator([
+    'missing_output',
+    'identity_contamination',
+    'conference_container_type',
+    'report_institution_type',
+    'ieee_author_order',
+    'apa_author_order',
+    'venue_cleanup',
+    'pages_locator',
+    'residual_other',
+  ] as const);
+  const nearPassLedgerAccumulator = createLedgerAccumulator([
+    'referenceType',
+    'year',
+    'title',
+    'firstAuthor',
+    'venue',
+    'output',
+    'identity',
+  ] as const);
+  const dominantFailureVotes = new Map<string, Map<DominantFailureBucket, number>>();
+  const nearPassVotes = new Map<string, Map<NearPassBlockingField, number>>();
   const actionNeededReasonCounts: ActionNeededReasonCounts = {
     overall: createActionNeededReasonCounts(),
     ieee: createActionNeededReasonCounts(),
@@ -949,10 +1232,22 @@ async function runAcademicBenchmarkMode(mode: BenchmarkModeId): Promise<Benchmar
   let llmFallbackAcceptedCount = 0;
   let llmFallbackRejectedCount = 0;
   let llmFallbackBudgetSkippedCount = 0;
+  const llmFallbackAttemptReasons = new Map<string, number>();
+  const llmFallbackAcceptedReasons = new Map<string, number>();
+  const llmFallbackRejectedReasons = new Map<string, number>();
 
   process.env.ENABLE_GROBID_EXTRACTOR = '0';
   process.env.ENABLE_LLM_EXTRACTOR = mode === 'production_hybrid_extract' ? '1' : '0';
+  if (enrichEnabled) {
+    if (!previousEnrichConcurrency) process.env.V2_ENRICH_CONCURRENCY = '8';
+    if (!previousEnrichCitationTimeoutMs) process.env.V2_ENRICH_CITATION_TIMEOUT_MS = '500';
+    if (!previousEnrichTimeoutMs) process.env.V2_ENRICH_TIMEOUT_MS = '6000';
+    if (!previousTruthConcurrency) process.env.V2_TRUTH_CONCURRENCY = '1';
+    if (!previousProviderMaxRetries) process.env.V2_PROVIDER_MAX_RETRIES = '0';
+    if (!previousProviderMaxRetryAfterMs) process.env.V2_PROVIDER_MAX_RETRY_AFTER_MS = '1000';
+  }
 
+  try {
   for (const batchSize of BATCH_SIZES) {
     const batches = chunkRecords(corpus.records, batchSize);
     const baselineOutputs = new Map<number, string[]>();
@@ -982,21 +1277,27 @@ async function runAcademicBenchmarkMode(mode: BenchmarkModeId): Promise<Benchmar
       for (let batchIndex = 0; batchIndex < batches.length; batchIndex += 1) {
         const records = batches[batchIndex] ?? [];
         const content = buildBatchContent(records);
+        const progressPrefix = `[academic-benchmark:${mode}] batchSize=${batchSize} repeat=${repeat}/${REPEATS} batch=${batchIndex + 1}/${batches.length}`;
+        console.log(`${progressPrefix} starting`);
         const start = performance.now();
         const { response } = await processV2Conversion({
           sourceType: 'text',
           content,
           inputStyle: 'auto',
           outputStyle: 'apa',
-          enrich: false,
+          enrich: enrichEnabled,
           dedup: false,
           group: false,
           debug: repeat === 1,
         }, {
+          adapters,
           executionMode: 'sync',
         });
         const duration = performance.now() - start;
         const actualCount = response.citations.length;
+        console.log(
+          `${progressPrefix} done durationMs=${duration.toFixed(2)} actual=${actualCount}/${records.length} partial=${response.processingPath.partialResult ? 'yes' : 'no'}`,
+        );
 
         batchRuns.push({
           batchIndex,
@@ -1064,9 +1365,22 @@ async function runAcademicBenchmarkMode(mode: BenchmarkModeId): Promise<Benchmar
           if (evaluation.outputPresent) nonEmptyOutputCount += 1;
           if (evaluation.identityPassed && evaluation.outputPresent) identityIntegrityCount += 1;
           if (evaluation.strictEssentialPassed) strictEssentialPass += 1;
-          if (citation.extraction?.llmFallbackAttempted) llmFallbackAttemptedCount += 1;
-          if (citation.extraction?.llmFallbackAccepted) llmFallbackAcceptedCount += 1;
-          if (citation.extraction?.llmFallbackAttempted && !citation.extraction?.llmFallbackAccepted) llmFallbackRejectedCount += 1;
+          const dominantFailure = classifyDominantFailure(record, evaluation, identityContaminationCategory);
+          if (dominantFailure) recordLedgerVote(dominantFailureVotes, record.id, dominantFailure);
+          const nearPassField = classifyNearPassBlockingField(evaluation);
+          if (nearPassField) recordLedgerVote(nearPassVotes, record.id, nearPassField);
+          if (citation.extraction?.llmFallbackAttempted) {
+            llmFallbackAttemptedCount += 1;
+            incrementCount(llmFallbackAttemptReasons, String(citation.extraction?.llmFallbackReason ?? 'unknown'));
+          }
+          if (citation.extraction?.llmFallbackAccepted) {
+            llmFallbackAcceptedCount += 1;
+            incrementCount(llmFallbackAcceptedReasons, String(citation.extraction?.llmFallbackReason ?? 'unknown'));
+          }
+          if (citation.extraction?.llmFallbackAttempted && !citation.extraction?.llmFallbackAccepted) {
+            llmFallbackRejectedCount += 1;
+            incrementCount(llmFallbackRejectedReasons, String(citation.extraction?.llmFallbackReason ?? 'unknown'));
+          }
           if (citation.extraction?.llmFallbackSkippedByBudget) llmFallbackBudgetSkippedCount += 1;
           if (Array.isArray(citation.validationIssues)) {
             for (const issue of citation.validationIssues) incrementCount(validationIssueCounts, issue?.code);
@@ -1156,6 +1470,10 @@ async function runAcademicBenchmarkMode(mode: BenchmarkModeId): Promise<Benchmar
         for (const { record } of alignment.missing) {
           incrementCount(typeConfusionCounts, `${record.expected.referenceType}=>missing`);
           const evaluation = evaluateCitation(record, createEmptyCitation(record.rawInput), undefined);
+          const dominantFailure = classifyDominantFailure(record, evaluation, undefined);
+          if (dominantFailure) recordLedgerVote(dominantFailureVotes, record.id, dominantFailure);
+          const nearPassField = classifyNearPassBlockingField(evaluation);
+          if (nearPassField) recordLedgerVote(nearPassVotes, record.id, nearPassField);
           incrementRecordCount(actionNeededReasonCounts.overall, 'empty_output');
           incrementRecordCount(actionNeededReasonCounts.overall, 'multi_field_low_confidence');
           incrementRecordCount(actionNeededReasonCounts.overall, 'missing_authors');
@@ -1278,7 +1596,7 @@ async function runAcademicBenchmarkMode(mode: BenchmarkModeId): Promise<Benchmar
 
   const bySourceTypeSummary = sortSliceMap(bySourceType).map((entry) => ({
     sourceType: entry.key,
-    count: entry.count,
+    count: sourceTypeCorpusCounts.get(entry.key) ?? entry.count,
     strictEssentialAccuracyPct: entry.strictEssentialAccuracyPct,
     legacyFieldAveragePct: entry.legacyFieldAveragePct,
     fieldAccuracyPct: entry.fieldAccuracyPct,
@@ -1287,7 +1605,7 @@ async function runAcademicBenchmarkMode(mode: BenchmarkModeId): Promise<Benchmar
 
   const byInputStyleSummary = sortSliceMap(byInputStyle).map((entry) => ({
     inputStyle: entry.key,
-    count: entry.count,
+    count: inputStyleCorpusCounts.get(entry.key) ?? entry.count,
     strictEssentialAccuracyPct: entry.strictEssentialAccuracyPct,
     legacyFieldAveragePct: entry.legacyFieldAveragePct,
     fieldAccuracyPct: entry.fieldAccuracyPct,
@@ -1310,6 +1628,10 @@ async function runAcademicBenchmarkMode(mode: BenchmarkModeId): Promise<Benchmar
     consistencyPct,
     averageRenderSimilarityPct,
   };
+  const totalStrictFails = materializeLedgerVotes(dominantFailureVotes, corpusRecordById, dominantFailureLedgerAccumulator);
+  materializeLedgerVotes(nearPassVotes, corpusRecordById, nearPassLedgerAccumulator);
+  const dominantFailureLedger = finalizeLedger(dominantFailureLedgerAccumulator, totalStrictFails);
+  const nearPassLedger = finalizeLedger(nearPassLedgerAccumulator, totalStrictFails);
   const typeConfusionMatrix = Array.from(typeConfusionCounts.entries())
     .map(([key, count]) => {
       const [expectedReferenceType, actualReferenceType] = key.split('=>');
@@ -1361,6 +1683,27 @@ async function runAcademicBenchmarkMode(mode: BenchmarkModeId): Promise<Benchmar
     'Record count integrity, non-empty output rate, identity integrity, and strict essential accuracy together so the evaluation cannot be gamed by a softer metric.',
     'Have a librarian, writing center lead, or research support team manually inspect a stratified sample from the weakest source types and IEEE-style inputs.',
   ];
+  const weightedLiftModel: WeightedLiftModel = {
+    targetStrictExternalAccuracyPct: 90,
+    currentStrictExternalAccuracyPct: strictEssentialAccuracyPct,
+    remainingGapPct: Number(Math.max(90 - strictEssentialAccuracyPct, 0).toFixed(2)),
+    bySourceType: buildWeightedLiftProjection(
+      bySourceTypeSummary.map((entry) => ({
+        key: entry.sourceType,
+        count: entry.count,
+        strictEssentialAccuracyPct: entry.strictEssentialAccuracyPct,
+      })),
+      corpus.records.length,
+    ),
+    byInputStyle: buildWeightedLiftProjection(
+      byInputStyleSummary.map((entry) => ({
+        key: entry.inputStyle,
+        count: entry.count,
+        strictEssentialAccuracyPct: entry.strictEssentialAccuracyPct,
+      })),
+      corpus.records.length,
+    ),
+  };
 
   const result: BenchmarkModeSummary = {
     mode,
@@ -1405,6 +1748,9 @@ async function runAcademicBenchmarkMode(mode: BenchmarkModeId): Promise<Benchmar
     actionNeededReasonCounts,
     validationIssueCounts: Object.fromEntries(Array.from(validationIssueCounts.entries()).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))),
     missingRequiredFieldCounts: Object.fromEntries(Array.from(missingRequiredFieldCounts.entries()).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))),
+    dominantFailureLedger,
+    nearPassLedger,
+    weightedLiftModel,
     fallbackRouting: {
       attemptedCount: llmFallbackAttemptedCount,
       acceptedCount: llmFallbackAcceptedCount,
@@ -1413,6 +1759,11 @@ async function runAcademicBenchmarkMode(mode: BenchmarkModeId): Promise<Benchmar
       attemptRatePct: toPercent(llmFallbackAttemptedCount, corpus.records.length),
       acceptRatePct: toPercent(llmFallbackAcceptedCount, llmFallbackAttemptedCount),
       rejectedRatePct: toPercent(llmFallbackRejectedCount, llmFallbackAttemptedCount),
+    },
+    fallbackReasonCounts: {
+      attempted: Object.fromEntries(Array.from(llmFallbackAttemptReasons.entries()).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))),
+      accepted: Object.fromEntries(Array.from(llmFallbackAcceptedReasons.entries()).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))),
+      rejected: Object.fromEntries(Array.from(llmFallbackRejectedReasons.entries()).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))),
     },
     typeConfusionMatrix,
     selectorDiagnostics: {
@@ -1437,18 +1788,39 @@ async function runAcademicBenchmarkMode(mode: BenchmarkModeId): Promise<Benchmar
     recommendedExternalPilot,
     batchRuns,
   };
-  if (previousLlmExtractor == null) delete process.env.ENABLE_LLM_EXTRACTOR;
-  else process.env.ENABLE_LLM_EXTRACTOR = previousLlmExtractor;
-  if (previousGrobidExtractor == null) delete process.env.ENABLE_GROBID_EXTRACTOR;
-  else process.env.ENABLE_GROBID_EXTRACTOR = previousGrobidExtractor;
   return result;
+  } finally {
+    if (previousLlmExtractor == null) delete process.env.ENABLE_LLM_EXTRACTOR;
+    else process.env.ENABLE_LLM_EXTRACTOR = previousLlmExtractor;
+    if (previousGrobidExtractor == null) delete process.env.ENABLE_GROBID_EXTRACTOR;
+    else process.env.ENABLE_GROBID_EXTRACTOR = previousGrobidExtractor;
+    if (previousEnrichConcurrency == null) delete process.env.V2_ENRICH_CONCURRENCY;
+    else process.env.V2_ENRICH_CONCURRENCY = previousEnrichConcurrency;
+    if (previousEnrichCitationTimeoutMs == null) delete process.env.V2_ENRICH_CITATION_TIMEOUT_MS;
+    else process.env.V2_ENRICH_CITATION_TIMEOUT_MS = previousEnrichCitationTimeoutMs;
+    if (previousEnrichTimeoutMs == null) delete process.env.V2_ENRICH_TIMEOUT_MS;
+    else process.env.V2_ENRICH_TIMEOUT_MS = previousEnrichTimeoutMs;
+    if (previousTruthConcurrency == null) delete process.env.V2_TRUTH_CONCURRENCY;
+    else process.env.V2_TRUTH_CONCURRENCY = previousTruthConcurrency;
+    if (previousProviderMaxRetries == null) delete process.env.V2_PROVIDER_MAX_RETRIES;
+    else process.env.V2_PROVIDER_MAX_RETRIES = previousProviderMaxRetries;
+    if (previousProviderMaxRetryAfterMs == null) delete process.env.V2_PROVIDER_MAX_RETRY_AFTER_MS;
+    else process.env.V2_PROVIDER_MAX_RETRY_AFTER_MS = previousProviderMaxRetryAfterMs;
+  }
 }
 
-export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
-  const deterministic = await runAcademicBenchmarkMode('strict_deterministic');
-  const hybridAvailable = Boolean(process.env.OPENAI_API_KEY);
+export async function runAcademicBenchmark(options?: {
+  deterministicAdapters?: V2AdapterBundle;
+  hybridAdapters?: V2AdapterBundle;
+}): Promise<AcademicBenchmarkReport> {
+  const deterministic = await runAcademicBenchmarkMode('strict_deterministic', {
+    adapters: options?.deterministicAdapters ?? createDefaultAdapters(),
+  });
+  const hybridAvailable = isAcademicBenchmarkHybridEnabled() && Boolean(process.env.OPENAI_API_KEY);
   const hybrid = hybridAvailable
-    ? await runAcademicBenchmarkMode('production_hybrid_extract')
+    ? await runAcademicBenchmarkMode('production_hybrid_extract', {
+      adapters: options?.hybridAdapters ?? createDefaultAdapters(),
+    })
     : undefined;
 
   return {
@@ -1464,8 +1836,10 @@ export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
       scope: Array.from(new Set(deterministic.bySourceType.map((entry) => entry.sourceType))),
       notes: [
         'The corpus contains 1,000 real citations drawn from Crossref and frozen locally on the generation date shown above.',
-        'The primary score uses the deterministic v2 pipeline with enrichment, LLM extraction, and GROBID disabled for repeatability.',
-        'The secondary hybrid run enables GPT-5.4 nano extract fallback only; it is reported separately and must not replace the deterministic business-facing KPI.',
+        isAcademicBenchmarkEnrichEnabled()
+          ? 'The primary score uses the deterministic v2 pipeline with enrichment enabled and LLM extraction and GROBID disabled.'
+          : 'The primary score uses the deterministic v2 pipeline with enrichment, LLM extraction, and GROBID disabled for repeatability.',
+        'The secondary hybrid run enables GPT-5.4 nano extract fallback only when ACADEMIC_BENCHMARK_ENABLE_HYBRID=1; it is reported separately and must not replace the deterministic business-facing KPI.',
         'Strict external readiness requires referenceType, year, title, firstAuthor, venue, non-empty output, and identity integrity to all pass.',
         'The legacy-comparable score is a frozen field-average reference for internal comparison only.',
       ],
@@ -1481,7 +1855,11 @@ export async function runAcademicBenchmark(): Promise<AcademicBenchmarkReport> {
     actionNeededReasonCounts: deterministic.actionNeededReasonCounts,
     validationIssueCounts: deterministic.validationIssueCounts,
     missingRequiredFieldCounts: deterministic.missingRequiredFieldCounts,
+    dominantFailureLedger: deterministic.dominantFailureLedger,
+    nearPassLedger: deterministic.nearPassLedger,
+    weightedLiftModel: deterministic.weightedLiftModel,
     fallbackRouting: deterministic.fallbackRouting,
+    fallbackReasonCounts: deterministic.fallbackReasonCounts,
     ieeeFailureBreakdown: deterministic.ieeeFailureBreakdown,
     typeConfusionMatrix: deterministic.typeConfusionMatrix,
     selectorDiagnostics: deterministic.selectorDiagnostics,
@@ -1522,11 +1900,12 @@ async function main(): Promise<void> {
     legacy_comparable: report.legacy_comparable,
     production_hybrid_extract: report.production_hybrid_extract
       ? {
-          strict_external: report.production_hybrid_extract.strict_external,
-          legacy_comparable: report.production_hybrid_extract.legacy_comparable,
-          fallbackRouting: report.production_hybrid_extract.fallbackRouting,
-          deltaFromStrictDeterministic: report.production_hybrid_extract.deltaFromStrictDeterministic,
-        }
+        strict_external: report.production_hybrid_extract.strict_external,
+        legacy_comparable: report.production_hybrid_extract.legacy_comparable,
+        fallbackRouting: report.production_hybrid_extract.fallbackRouting,
+        fallbackReasonCounts: report.production_hybrid_extract.fallbackReasonCounts,
+        deltaFromStrictDeterministic: report.production_hybrid_extract.deltaFromStrictDeterministic,
+      }
       : undefined,
     byBatchSize: report.byBatchSize,
   }, null, 2));

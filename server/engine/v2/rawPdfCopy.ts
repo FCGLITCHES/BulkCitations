@@ -20,10 +20,13 @@ import { compactUriDoiSpacing, normalizeDoiValue, normalizeUnicodeText, normaliz
 export const OPENER_THRESHOLD = V2_THRESHOLD_POLICY.split.openerThreshold;
 export const OVERSIZED_WORKING_CHUNK_CHARS = V2_THRESHOLD_POLICY.split.oversizedWorkingChunkChars;
 export const OVERSIZED_WORKING_CHUNK_LINES = V2_THRESHOLD_POLICY.split.oversizedWorkingChunkLines;
+const BOUNDARY_OPENER_THRESHOLD = 0.3;
 
 const NUMERIC_CITATION_MARKER_PATTERN = /^(?:\[\d+\]|\d+[.)])\s+/;
 const SURNAME_INITIAL_OPENER_PATTERN = /^[\p{Lu}][\p{L}\p{M}'’.-]+,\s+[A-Z](?:[.\-\s]*[A-Z])*\.?(?:\s|,|&)/u;
 const SURNAME_FULL_NAME_OPENER_PATTERN = /^[\p{Lu}][\p{L}\p{M}'’.-]+,\s+[\p{Lu}][\p{L}\p{M}'’.-]+(?:\s+[\p{Lu}][\p{L}\p{M}'’.-]+){0,3}\.?(?:\s|,|["“”'])/u;
+const PARTICLE_SURNAME_INITIAL_OPENER_PATTERN = /^(?:de|del|della|di|dos|du|van|von|der|da|la|le)\s+[\p{Lu}][\p{L}\p{M}'’.-]+,\s+[A-Z](?:[.\-\s]*[A-Z])*\.?(?:\s|,|&|\()/u;
+const PARTICLE_SURNAME_FULL_NAME_OPENER_PATTERN = /^(?:de|del|della|di|dos|du|van|von|der|da|la|le)\s+[\p{Lu}][\p{L}\p{M}'’.-]+,\s+[\p{Lu}][\p{L}\p{M}'’.-]+(?:\s+[\p{Lu}][\p{L}\p{M}'’.-]+){0,3}\.?(?:\s|,|["“”']|\()/u;
 const ORG_AUTHOR_OPENER_PATTERN = /^[\p{Lu}][\p{L}\p{M}&'’.-]+(?:\s+(?:(?:of|and|for|the|in|on|at|by|de|van|du|der|da|del|di|la|le)\b|[\p{Lu}][\p{L}\p{M}&'’.-]+)){0,7}\.\s/u;
 const COMPACT_AUTHOR_RUN_OPENER_PATTERN = /^(?:[\p{Lu}][\p{L}\p{M}'’.-]+\s+[A-Z]{1,4}\.?,\s*){1,}[\p{Lu}][\p{L}\p{M}'’.-]+\s+[A-Z]{1,4}\.?/u;
 const VANCOUVER_AUTHOR_RUN_OPENER_PATTERN = /^(?:[\p{Lu}][\p{L}\p{M}'’.-]+\s+[A-Z](?:[.\-\s]*[A-Z])*(?:[.,])\s+){1,}[\p{Lu}][\p{L}\p{M}'’.-]+\s+[A-Z](?:[.\-\s]*[A-Z])*\.?/u;
@@ -74,6 +77,7 @@ type AllowlistEntry = {
   prefixAnchor?: string;
   source: string;
   createdAt: string;
+  provenance: string;
 };
 
 const PDF_COPY_ALLOWLIST: AllowlistEntry[] = [
@@ -84,6 +88,7 @@ const PDF_COPY_ALLOWLIST: AllowlistEntry[] = [
     prefixAnchor: 'pp.',
     source: 'Citations test 2.pdf:p1:Biggs-2015',
     createdAt: '2026-03-27',
+    provenance: 'legacy_unverified',
   },
   {
     brokenSpan: 'Journal of Applied P sychology',
@@ -91,6 +96,7 @@ const PDF_COPY_ALLOWLIST: AllowlistEntry[] = [
     fieldType: 'journal_tail',
     source: 'Citations test 2.pdf:p1:Brayfield-Rothe-1951',
     createdAt: '2026-03-27',
+    provenance: 'legacy_unverified',
   },
   {
     brokenSpan: 'Human R elations',
@@ -98,6 +104,7 @@ const PDF_COPY_ALLOWLIST: AllowlistEntry[] = [
     fieldType: 'journal_tail',
     source: 'Citations test 2.pdf:p1:Brough-2013',
     createdAt: '2026-03-27',
+    provenance: 'legacy_unverified',
   },
   {
     brokenSpan: 'American P sychologist',
@@ -105,6 +112,7 @@ const PDF_COPY_ALLOWLIST: AllowlistEntry[] = [
     fieldType: 'journal_tail',
     source: 'Citations test 2.pdf:p1:Dipboye-Flanagan-1979',
     createdAt: '2026-03-27',
+    provenance: 'legacy_unverified',
   },
 ];
 
@@ -161,6 +169,8 @@ function hasValidNumericMarkerLead(value: string): boolean {
 function hasAuthorLead(normalized: string): boolean {
   return SURNAME_INITIAL_OPENER_PATTERN.test(normalized)
     || SURNAME_FULL_NAME_OPENER_PATTERN.test(normalized)
+    || PARTICLE_SURNAME_INITIAL_OPENER_PATTERN.test(normalized)
+    || PARTICLE_SURNAME_FULL_NAME_OPENER_PATTERN.test(normalized)
     || COMPACT_AUTHOR_RUN_OPENER_PATTERN.test(normalized)
     || VANCOUVER_AUTHOR_RUN_OPENER_PATTERN.test(normalized)
     || SINGLE_AUTHOR_INITIAL_OPENER_PATTERN.test(normalized)
@@ -203,7 +213,8 @@ function parseableUriOrDoi(value: string): boolean {
 function isUriTailLine(line: RawLine): boolean {
   if (!parseableUriOrDoi(line.trimmed)) return false;
   if (ACCESS_DATE_PATTERN.test(line.trimmed)) return false;
-  if (/^(?:doi:|https?:\/\/|www\.)/i.test(line.trimmed)) return true;
+  const compacted = compactUriDoiSpacing(line.trimmed);
+  if (/^(?:doi:|https?:\/\/|www\.)/i.test(compacted)) return true;
 
   const normalized = normalizeLineForScoring(line.trimmed);
   if (hasAuthorLead(normalized)) return false;
@@ -219,7 +230,7 @@ function continuationSignalsForLine(normalized: string, nextNormalized: string |
   if ((normalized.endsWith('-') || normalized.endsWith('\u00ad')) && nextNormalized && /^[a-z]/u.test(nextNormalized)) {
     signals.push('wrapped_hyphen');
   }
-  if (nextNormalized && !/[.?!]$/.test(normalized)) {
+  if (nextNormalized && !/[.?!]$/.test(normalized) && !parseableUriOrDoi(normalized)) {
     signals.push('soft_wrap');
   }
   return signals;
@@ -272,7 +283,7 @@ function scoreLine(
     score += 0.25;
   }
   if (hasValidNumericLead && VANCOUVER_TAIL_PATTERN.test(normalized)) score += 0.25;
-  if (/^[a-z]/u.test(normalized) || /^(?:&|and|et\s+al\.?)/iu.test(normalized)) score -= 0.45;
+  if ((!authorOpener && /^[a-z]/u.test(normalized)) || /^(?:&|and|et\s+al\.?)/iu.test(normalized)) score -= 0.45;
   if (!YEAR_ANCHOR_PATTERN.test(normalized) && tokenCount(normalized) < 4) score -= 0.2;
   if (/^(?:In |pp?\.?|vol\.?|issue\b|doi:|https?:\/\/|www\.)/i.test(normalized)) score -= 0.15;
 
@@ -282,8 +293,8 @@ function scoreLine(
 function looksLikeBoundarySeed(normalized: string): boolean {
   if (!normalized) return false;
   if (BOUNDARY_CONTINUATION_PATTERN.test(normalized)) return false;
-  if (/^[\p{Ll}]/u.test(normalized)) return false;
   if (hasAuthorLead(normalized)) return true;
+  if (/^[\p{Ll}]/u.test(normalized)) return false;
 
   const tokens = tokenCount(normalized);
   if (tokens < 3) return false;
@@ -376,7 +387,11 @@ function startsNewCitation(
   if (!currentCandidate || currentCandidate.includedLineIndices.length === 0) return true;
   if (boundaryBefore) {
     const normalized = normalizeLineForScoring(line.text.trim());
-    if (hasValidNumericMarkerLead(line.text.trim()) || looksLikeBoundarySeed(normalized)) {
+    if (
+      hasValidNumericMarkerLead(line.text.trim())
+      || looksLikeBoundarySeed(normalized)
+      || line.rawOpenerScore >= BOUNDARY_OPENER_THRESHOLD
+    ) {
       return true;
     }
   }

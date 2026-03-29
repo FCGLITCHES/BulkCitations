@@ -1,0 +1,459 @@
+{
+  "generatedAt": "2026-03-29T04:34:17.697Z",
+  "targetCorpusSize": 1000,
+  "modes": [
+    {
+      "mode": "pdf_upload",
+      "targetCorpusSize": 1000,
+      "corpusSize": 108,
+      "corpusHash": "88236db93bf92f53375426490000764711a9178320f82a0fce0da8e183acbc2c",
+      "duplicateInputCount": 0,
+      "batchCount": 7,
+      "metrics": {
+        "countIntegrityPct": 98.15,
+        "requiredFieldsPct": 90.74,
+        "doiRetentionPct": 100,
+        "readyPct": 86.11,
+        "worthReviewingPct": 0,
+        "actionNeededPct": 13.89,
+        "contaminationFreePct": 63.89,
+        "partialChunkPct": 28.57,
+        "falseReadyPct": 0,
+        "corruptReviewPct": 0,
+        "nearReadyReviewPct": 100,
+        "singleLinkPct": 99.07,
+        "incompatibleFieldOverlapPct": 0.93
+      },
+      "contaminationByField": {
+        "title": 28,
+        "firstAuthorLast": 7,
+        "year": 30
+      },
+      "topFailingSamples": [
+        {
+          "batchId": "drug-ai-extended-chunk-1",
+          "citationIndex": 6,
+          "input": "20. Sahu A, Mishra J, Kushwaha N: Artificial intelligence (AI) in drugs and pharmaceuticals . Comb Chem High Throughput Screen. 2022, 25:1818-37. 10.2174/1386207325666211207153943",
+          "output": "Sahu, A., & Mishra, J. (n.d.). Kushwaha N: Artificial intelligence (AI) in drugs, pharmaceuticals.",
+          "reasons": [
+            "missing_required_fields"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-1",
+          "citationIndex": 7,
+          "input": "21. Djoumbou-Feunang Y, Fiamoncini J, Gil-de-la-Fuente A, Greiner R, Manach C, Wishart DS: BioTransformer: a comprehensive computational tool for small molecule metabolism prediction and metabolite identification. J Cheminform. 2019, 11: 10.1186/s13321-018-0324-5",
+          "output": "Throughput Screen. (2022). 25, 1818-1837.",
+          "reasons": [
+            "missing_required_fields",
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-1",
+          "citationIndex": 8,
+          "input": "22. Kumar A, Kini SG, Rathi E: A recent appraisal of artificial intelligence and in silico ADMET prediction in the early stages of drug discovery. Mini Rev Med Chem. 2021, 21:2788-800. 10.2174/1389557521666210401091147",
+          "output": "Djoumbou-Feunang, Y., Fiamoncini, J., Gil-de-la-Fuente, A., Greiner, R., Manach, C., & Wishart, D. S. (2019). BioTransformer: a comprehensive computational tool for small molecule metabolism prediction and metabolite identification. J Cheminform, 11.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-1",
+          "citationIndex": 9,
+          "input": "23. Wu F, Zhou Y, Li L, et al.: Computational approaches in preclinical studies on drug discovery and development. Front Chem. 2020, 8: 10.3389/fchem.2020.007â€26",
+          "output": "Kumar, A., Kini, S. G., & Rathi, E. (2021). A recent appraisal of artificial intelligence and in silico ADMET prediction in the early stages of drug discovery. Mini Rev Med Chem, 21, 2788-2800.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-1",
+          "citationIndex": 10,
+          "input": "24. Daina A, Michielin O, Zoete V: SwissADME: a free web tool to evaluate pharmacokinetics, drug-likeness and medicinal chemistry friendliness of small molecules. Sci Rep. 2017, 7:10.1038/srep42717",
+          "output": "Wu, F., Zhou, Y., Li, L., et al. (2020). Computational approaches in preclinical studies on drug discovery and development. Front Chem, 8.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-1",
+          "citationIndex": 11,
+          "input": "25. Zhang D, Luo G, Ding X, Lu C: Preclinical experimental models of drug metabolism and disposition in drug discovery and development. Acta Pharm Sin B. 2012, 2:549-61. 10.1016/j.apsb.2012.10.004",
+          "output": "Daina, A., Michielin, O., & Zoete, V. (2017). SwissADME: a free web tool to evaluate pharmacokinetics, drug-likeness and medicinal chemistry friendliness of small molecules. Sci Rep, 7.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-1",
+          "citationIndex": 12,
+          "input": "26. Shi H, Tian S, Li Y, Li D, Yu H, Zhen X, Hou T: Absorption, distribution, metabolism, excretion, and toxicity evaluation in drug discovery. 14. Prediction of human pregnane X receptor activators by using naive Bayesian classification technique. Chem Res Toxicol. 2015, 28:116-25. 10.1021/tx500389q",
+          "output": "Zhang, D., Luo, G., Ding, X., & Lu, C. (2012). Preclinical experimental models of drug metabolism and disposition in drug discovery and development. Acta Pharm Sin B, 2, 549-561.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-1",
+          "citationIndex": 13,
+          "input": "27. Ekins S, Nikolsky Y, Nikolskaya T: Techniques: application of systems biology to absorption, distribution, metabolism, excretion and toxicity. Trends Pharmacol Sci. 2005, 26:202-9. 10.1016/j.tips.2005.02.006",
+          "output": "Shi, H., Tian, S., Li, Y., Li, D., Yu, H., Zhen, X., & Hou, T. (2015). Absorption, distribution, metabolism, excretion, and toxicity evaluation in drug discovery. 14. Prediction of Human Pregnane Xreceptor Activators by Using Naive Bayesian Classification Technique. Chem Res Toxicol, 28, 116-125.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-1",
+          "citationIndex": 14,
+          "input": "28. Maltarollo VG, Gertrudes JC, Oliveira PR, Honorio KM: Applying machine learning techniques for ADME￾Tox prediction: a review. Expert Opin Drug Metab Toxicol. 2015, 11:259-71. 10.1517/17425255.2015.980814",
+          "output": "Ekins, S., Nikolsky, Y., & Nikolskaya, T. (2005). Techniques: application of systems biology to absorption, distribution, metabolism, excretion and toxicity. Trends Pharmacol Sci, 26, 202-209.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-1",
+          "citationIndex": 15,
+          "input": "29. Falcón-Cano G, Molina C, Cabrera-Pérez MÁ: Reliable prediction of Caco-2 permeability by supervised recursive machine learning approaches. Pharmaceutics. 2022, 14:10.3390/pharmaceutics14101998",
+          "output": "Maltarollo, V. G., Gertrudes, J. C., Oliveira, P. R., & Honorio, K. M. (2015). Applying machine learning techniques for ADMEÿþTox prediction: a review. Expert Opin Drug Metab Toxicol, 11, 259-271.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-1",
+          "citationIndex": 16,
+          "input": "30. Wu Z, Lei T, Shen C, Wang Z, Cao D, Hou T: ADMET evaluation in drug discovery. 19. Reliable prediction of human cytochrome P450 inhibition using artificial intelligence approaches. J Chem Inf Model. 2019, 59:4587-601. 10.1021/acs.jcim.9b00801",
+          "output": "Falcón-Cano, G., Molina, C., & Cabrera-Pérez, M. Á. (2022). Reliable prediction of Caco-2 permeability by supervised recursive machine learning approaches. Pharmaceutics, 14.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-1",
+          "citationIndex": 17,
+          "input": "31. Zhang Y, Lei X, Pan Y, Wu FX: Drug repositioning with GraphSAGE and clustering constraints based on drug and disease networks. Front Pharmacol. 2022, 13:10.3389/fphar.2022.872785",
+          "output": "Wu, Z., Lei, T., Shen, C., Wang, Z., Cao, D., & Hou, T. (2019). A DMET evaluation in drug discovery. 19. Reliable Prediction of Human Cytochrome Inhibition Using Artificial Intelligence Approaches. J Chem Inf Model, 59, 4587-4601.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-1",
+          "citationIndex": 18,
+          "input": "32. Wang J, Wang W, Yan C, Luo J, Zhang G: Predicting drug-disease association based on ensemble strategy . Front Genet. 2021, 12:10.3389/fgene.2021.666575",
+          "output": "Zhang, Y., Lei, X., Pan, Y., & Wu, F. X. (2022). Drug repositioning with GraphSAGE and clustering constraints based on drug and disease networks. Front Pharmacol, 13.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-1",
+          "citationIndex": 19,
+          "input": "33. Kang H, Hou L, Gu Y, Lu X, Li J, Li Q: Drug-disease association prediction with literature based multi￾feature fusion. Front Pharmacol. 2023, 14:10.3389/fphar.2023.1205144",
+          "output": "Wang, J., Wang, W., Yan, C., Luo, J., & Zhang, G. (2021). Predicting drug-disease association based on ensemble strategy. Front Genet, 12.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-1",
+          "citationIndex": 20,
+          "input": "",
+          "output": "Kang, H., Hou, L., Gu, Y., Lu, X., Li, J., & Li, Q. (2023). Drug-disease association prediction with literature based multiÿþfeature fusion. Front Pharmacol, 14.",
+          "reasons": [
+            "extra_output"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-2",
+          "citationIndex": 3,
+          "input": "37. Napolitano F, Zhao Y, Moreira VM, Tagliaferri R, Kere J, D'Amato M, Greco D: Drug repositioning: a machine-learning approach through data integration. J Cheminform. 2â€013, 5: 10.1186/1758-2946-5-30",
+          "output": "Napolitano, F., Zhao, Y., Moreira, V. M., Tagliaferri, R., Kere, J., D'Amato, M., & Greco, D. (2013). Drug repositioning: a machine-learning approach through data integration. J Cheminform, 5.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-2",
+          "citationIndex": 11,
+          "input": "45. Bate A, Hobbiger SF: Artificial intelligence, real-world automation and the safety of medicines . Drug Saf.",
+          "output": "Bate, A., intelligence, H. S. A., & medicines, R. W. A. A. T. S. O. (n.d.). Drug Saf.",
+          "reasons": [
+            "missing_required_fields"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 2,
+          "input": "95. 10.1080/07391102.2019.1654925",
+          "output": "Uddin, S., Khan, A., Hossain, M. E., & Moni, M. A. (2019). Comparing different supervised machine learning algorithms for disease prediction. BMC Med Inform Decis Mak, 19.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 3,
+          "input": "56. Uddin S, Khan A, Hossain ME, Moni MA: Comparing different supervised machine learning algorithms for disease prediction. BMC Med Inform Decis Mak. 2019, 19: 10.1186/s12911-019-1004-8",
+          "output": "Barardo, D. G., Newby, D., Thornton, D., Ghafourian, T., de Magalhães, J. P., & Freitas, A. A. (2017). Machine learning for predicting lifespan-extending chemical compounds. Aging (Albany NY), 9, 1721-1737.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 4,
+          "input": "57. Barardo DG, Newby D, Thornton D, Ghafourian T, de Magalhães JP, Freitas AA: Machine learning for predicting lifespan-extending chemical compounds. Aging (Albany NY). 2017, 9:1721-37. 10.18632/aging.101264",
+          "output": "Vamathevan, J., Clark, D., Czodrowski, P., et al. (2019). Applications of machine learning in drug discovery and development. Nat Rev Drug Discov, 18, 463-477.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        }
+      ],
+      "baselinePath": "D:\\Coding\\Citing\\scripts\\data\\pdf-upload-baseline.json",
+      "deltaFromBaseline": {
+        "countIntegrityPct": 0,
+        "requiredFieldsPct": 0,
+        "doiRetentionPct": 0,
+        "readyPct": 0,
+        "worthReviewingPct": 0,
+        "actionNeededPct": 0,
+        "contaminationFreePct": 0,
+        "partialChunkPct": 0,
+        "falseReadyPct": 0,
+        "corruptReviewPct": 0,
+        "nearReadyReviewPct": 0,
+        "singleLinkPct": 0,
+        "incompatibleFieldOverlapPct": 0
+      }
+    },
+    {
+      "mode": "pdf_copy_paste",
+      "targetCorpusSize": 1000,
+      "corpusSize": 108,
+      "corpusHash": "0ab44914b7d22ebaa1fa7a55d9113ef78ce4f23d0cf7ccd16cda8e1916195955",
+      "duplicateInputCount": 0,
+      "batchCount": 7,
+      "metrics": {
+        "countIntegrityPct": 99.07,
+        "requiredFieldsPct": 93.52,
+        "doiRetentionPct": 100,
+        "readyPct": 91.67,
+        "worthReviewingPct": 0,
+        "actionNeededPct": 8.33,
+        "contaminationFreePct": 75,
+        "partialChunkPct": 42.86,
+        "falseReadyPct": 0,
+        "corruptReviewPct": 0,
+        "nearReadyReviewPct": 100,
+        "singleLinkPct": 99.07,
+        "incompatibleFieldOverlapPct": 0.93
+      },
+      "contaminationByField": {
+        "title": 17,
+        "firstAuthorLast": 8,
+        "year": 17
+      },
+      "topFailingSamples": [
+        {
+          "batchId": "drug-ai-extended-chunk-2",
+          "citationIndex": 3,
+          "input": "37. Napolitano F, Zhao Y, Moreira VM, Tagliaferri R, Kere J, D'Amato M, Greco D: Drug repositioning: a machine-learning approach through data integration. J Cheminform. 2â€013, 5: 10.1186/1758-2946-5-30",
+          "output": "Napolitano, F., Zhao, Y., Moreira, V. M., Tagliaferri, R., Kere, J., D'Amato, M., & Greco, D. (2013). Drug repositioning: a machine-learning approach through data integration. J Cheminform, 5.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-2",
+          "citationIndex": 7,
+          "input": "41. Intelligent clinical trials. (2020). https://www2.deloitte.com/content/dam/insights/us/articles/22934_intelligent-clinical￾trials/DI_Intelligent-clinical-....",
+          "output": "Intelligent clinical trials. (2020). https://www2.deloitte.com/content/dam/insights/us/articles/22934_intelligent-clinicaltrials/DI_Intelligent-clinical-.",
+          "reasons": [
+            "missing_required_fields"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-2",
+          "citationIndex": 11,
+          "input": "45. Bate A, Hobbiger SF: Artificial intelligence, real-world automation and the safety of medicines . Drug Saf.",
+          "output": "Bate, A., intelligence, H. S. A., & medicines, R. W. A. A. T. S. O. (n.d.). Drug Saf.",
+          "reasons": [
+            "missing_required_fields"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 2,
+          "input": "95. 10.1080/07391102.2019.1654925",
+          "output": "Uddin, S., Khan, A., Hossain, M. E., & Moni, M. A. (2019). Comparing different supervised machine learning algorithms for disease prediction. BMC Med Inform Decis Mak, 19.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 3,
+          "input": "56. Uddin S, Khan A, Hossain ME, Moni MA: Comparing different supervised machine learning algorithms for disease prediction. BMC Med Inform Decis Mak. 2019, 19: 10.1186/s12911-019-1004-8",
+          "output": "Barardo, D. G., Newby, D., Thornton, D., Ghafourian, T., de Magalhães, J. P., & Freitas, A. A. (2017). Machine learning for predicting lifespan-extending chemical compounds. Aging (Albany NY), 9, 1721-1737.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 4,
+          "input": "57. Barardo DG, Newby D, Thornton D, Ghafourian T, de Magalhães JP, Freitas AA: Machine learning for predicting lifespan-extending chemical compounds. Aging (Albany NY). 2017, 9:1721-37. 10.18632/aging.101264",
+          "output": "Vamathevan, J., Clark, D., Czodrowski, P., et al. (2019). Applications of machine learning in drug discovery and development. Nat Rev Drug Discov, 18, 463-477.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 5,
+          "input": "58. Vamathevan J, Clark D, Czodrowski P, et al.: Applications of machine learning in drug discovery and development. Nat Rev Drug Discov. 2019, 18:463-77. 10.1038/s41573-019-0024-5",
+          "output": "Peng, J., Jury, E. C., Dönnes, P., & Ciurtin, C. (2021). Machine learning techniques for personalised medicine approaches in immune-mediated chronic inflammatory diseases: applications and challenges. Front Pharmacol, 12.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 6,
+          "input": "59. Peng J, Jury EC, Dönnes P, Ciurtin C: Machine learning techniques for personalised medicine approaches in immune-mediated chronic inflammatory diseases: applications and challenges. Front Pharmacol. 2021, 12:10.3389/fphar.2021.720694",
+          "output": "Abbasi Mesrabadi, H., Faez, K., & Pirgazi, J. (2023). Drug-target interaction prediction based on protein features, using wrapper feature selection. Sci Rep, 13.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 7,
+          "input": "60. Abbasi Mesrabadi H, Faez K, Pirgazi J: Drug-target interaction prediction based on protein features, using wrapper feature selection. Sci Rep. 2023, 13:10.1038/s41598-023-30026-y",
+          "output": "Sachdev, K., & Gupta, M. K. (2019). A comprehensive review of feature based methods for drug target interaction prediction. J Biomed Inform, 93.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 8,
+          "input": "61. Sachdev K, Gupta MK: A comprehensive review of feature based methods for drug target interaction prediction. J Biomed Inform. 2019, 93: 10.1016/j.jbi.2019.103159",
+          "output": "Wolfgang, M., Weißensteiner, M., Clarke, P., Hsiao, W. K., & Khinast, J. G. (2020). Deep convolutional neural networks: Outperforming established algorithms in the evaluation of industrial optical coherence tomography (OCT) images of pharmaceutical coatings. Int J Pharm X, 2.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 9,
+          "input": "62. Wolfgang M, Weißensteiner M, Clarke P, Hsiao WK, Khinast JG: Deep convolutional neural networks: Outperforming established algorithms in the evaluation of industrial optical coherence tomography (OCT) images of pharmaceutical coatings. Int J Pharm X. 2020, 2:10.1016/j.ijpx.2020.100058",
+          "output": "Gupta, R., Srivastava, D., Sahu, M., Tiwari, S., Ambasta, R. K., & Kumar, P. (2021). Artificial intelligence to deep learning: machine intelligence approach for drug discovery. Mol Divers, 25, 1315-1360.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 10,
+          "input": "63. Gupta R, Srivastava D, Sahu M, Tiwari S, Ambasta RK, Kumar P: Artificial intelligence to deep learning: machine intelligence approach for drug discovery. Mol Divers. 2021, 25:1315-60. 10.1007/s11030-021- 10217-3",
+          "output": "Koras, K., Juraeva, D., Kreis, J., Mazur, J., Staub, E., & Szczurek, E. (2020). Feature selection strategies for drug sensitivity prediction. Sci Rep, 10.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 11,
+          "input": "64. Koras K, Juraeva D, Kreis J, Mazur J, Staub E, Szczurek E: Feature selection strategies for drug sensitivity prediction. Sci Rep. 2020, 10:10.1038/s41598-020-65927-9",
+          "output": "Pudjihartono, N., Fadason, T., Kempa-Liehr, A. W., & O'Sullivan, J. M. (2022). A review of feature selection methods for machine learning-based disease risk prediction. Front Bioinform, 2.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 12,
+          "input": "65. Pudjihartono N, Fadason T, Kempa-Liehr AW, O'Sullivan JM: A review of feature selection methods for machine learning-based disease risk prediction. Front Bioinform. 2022, 2: 10.3389/fbinf.2022.927312",
+          "output": "Ali, M., & Aittokallio, T. (2019). Machine learning and feature selection for drug response prediction in precision oncology applications. Biophys Rev, 11, 31-39.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 13,
+          "input": "66. Ali M, Aittokallio T: Machine learning and feature selection for drug response prediction in precision oncology applications. Biophys Rev. 2019, 11:31-9. 10.1007/s12551-018-0446-z",
+          "output": "Lai, P. K., Fernando, A., Cloutier, T. K., et al. (2021). Machine learning feature selection for predicting high concentration therapeutic antibody aggregation. J Pharm Sci, 110, 1583-1591.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 14,
+          "input": "67. Lai PK, Fernando A, Cloutier TK, et al.: Machine learning feature selection for predicting high concentration therapeutic antibody aggregation. J Pharm Sci. 2021, 110:1583-91. 10.1016/j.xphs.2020.12.014",
+          "output": "Chen, R., Liu, X., Jin, S., Lin, J., & Liu, J. (2018). Machine learning for drug-target interaction prediction. Molecules, 23.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 15,
+          "input": "68. Chen R, Liu X, Jin S, Lin J, Liu J: Machine learning for drug-target interaction prediction. Molecules. 2018, 23:10.3390/molecules23092208",
+          "output": "Alaimo, S., Giugno, R., & Pulvirenti, A. (2016). Recommendation techniques for drug-target interaction prediction and drug repositioning. Methods Mol Biol, 14(15), 441-462.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 16,
+          "input": "69. Alaimo S, Giugno R, Pulvirenti A: Recommendation techniques for drug-target interaction prediction and drug repositioning. Methods Mol Biol. 2016, 1415:441-62. 10.1007/978-1-4939-3572-7_23",
+          "output": "Yu, W., Jiang, Z., Wang, J., & Tao, R. (2011). Using feature selection technique for drug-target interaction networks prediction. Curr Med Chem, 18, 5687-5693.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 17,
+          "input": "70. Yu W, Jiang Z, Wang J, Tao R: Using feature selection technique for drug-target interaction networks prediction. Curr Med Chem. 2011, 18:5687-93. 10.2174/092986711798347270",
+          "output": "Murdoch, B. (2021). Privacy and artificial intelligence: challenges for protecting health information in a new era. BMC Med Ethics, 22.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-3",
+          "citationIndex": 18,
+          "input": "71. Murdoch B: Privacy and artificial intelligence: challenges for protecting health information in a new era . BMC Med Ethics. 2021, 22:10.1186/s12910-021-00687-3",
+          "output": "Bak, M., Madai, V. I., Fritzsche, M. C., Mayrhofer, M. T., & McLennan, S. (2022). You can't have AI both ways: balancing health data privacy and access fairly. Front Genet, 13.",
+          "reasons": [
+            "contamination_detected"
+          ]
+        }
+      ],
+      "baselinePath": "D:\\Coding\\Citing\\scripts\\data\\pdf-copypaste-baseline.json",
+      "deltaFromBaseline": {
+        "countIntegrityPct": 0,
+        "requiredFieldsPct": 0,
+        "doiRetentionPct": 0,
+        "readyPct": 0,
+        "worthReviewingPct": 0,
+        "actionNeededPct": 0,
+        "contaminationFreePct": 0,
+        "partialChunkPct": 0,
+        "falseReadyPct": 0,
+        "corruptReviewPct": 0,
+        "nearReadyReviewPct": 0,
+        "singleLinkPct": 0,
+        "incompatibleFieldOverlapPct": 0
+      }
+    }
+  ]
+}

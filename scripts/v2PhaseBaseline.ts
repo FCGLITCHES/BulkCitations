@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { createDefaultAdapters } from '../server/engine/v2/adapters.js';
+import type { V2AdapterBundle } from '../server/engine/v2/contracts.js';
 import {
   buildChunkedReadyCorpusPlan,
   type ChunkedReadyMode,
@@ -55,6 +57,7 @@ type BaselineManifest = {
 };
 
 const MANIFEST_PATH = path.resolve(process.cwd(), 'scripts/data/v2-phase-baseline.json');
+const DEFAULT_STEP_TIMEOUT_MS = 20 * 60 * 1000;
 const STRICT_FLOORS = {
   essential_accuracy_floor: 0.384,
   count_integrity_floor: 0.803,
@@ -67,7 +70,40 @@ function computePercent(numerator: number, denominator: number): number {
   return Number((numerator / denominator).toFixed(4));
 }
 
-async function measureReadyMode(mode: ChunkedReadyMode): Promise<ControlledCorpusObserved> {
+function getStepTimeoutMs(): number {
+  const parsed = Number.parseInt(process.env.V2_BASELINE_STEP_TIMEOUT_MS ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_STEP_TIMEOUT_MS;
+}
+
+async function withStepTimeout<T>(label: string, task: () => Promise<T>): Promise<T> {
+  const timeoutMs = getStepTimeoutMs();
+  const start = Date.now();
+  console.log(`[v2-phase-baseline] ${label} starting timeoutMs=${timeoutMs}`);
+  let timeoutHandle: NodeJS.Timeout | undefined;
+
+  try {
+    const result = await Promise.race([
+      task(),
+      new Promise<T>((_, reject) => {
+        timeoutHandle = setTimeout(() => {
+          reject(new Error(`[v2-phase-baseline] ${label} exceeded timeout after ${timeoutMs}ms`));
+        }, timeoutMs);
+      }),
+    ]);
+    console.log(`[v2-phase-baseline] ${label} done durationMs=${Date.now() - start}`);
+    return result;
+  } catch (error) {
+    console.error(`[v2-phase-baseline] ${label} failed durationMs=${Date.now() - start}`);
+    throw error;
+  } finally {
+    if (timeoutHandle) clearTimeout(timeoutHandle);
+  }
+}
+
+async function measureReadyMode(
+  mode: ChunkedReadyMode,
+  adapters?: V2AdapterBundle,
+): Promise<ControlledCorpusObserved> {
   const chunks = buildChunkedReadyCorpusPlan(mode);
   let total = 0;
   let ready = 0;
@@ -77,7 +113,9 @@ async function measureReadyMode(mode: ChunkedReadyMode): Promise<ControlledCorpu
   let partialChunks = 0;
   let badChunks = 0;
 
-  for (const chunk of chunks) {
+  for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex += 1) {
+    const chunk = chunks[chunkIndex];
+    console.log(`[v2-phase-baseline] controlled mode=${mode} chunk=${chunkIndex + 1}/${chunks.length} starting`);
     const { response } = await processV2Conversion({
       sourceType: 'text',
       content: chunk.content,
@@ -88,8 +126,12 @@ async function measureReadyMode(mode: ChunkedReadyMode): Promise<ControlledCorpu
       group: false,
       debug: false,
     }, {
+      adapters,
       executionMode: 'sync',
     });
+    console.log(
+      `[v2-phase-baseline] controlled mode=${mode} chunk=${chunkIndex + 1}/${chunks.length} done actual=${response.citations.length}/${chunk.expectedCount} partial=${response.processingPath.partialResult ? 'yes' : 'no'}`,
+    );
 
     if (response.processingPath.partialResult) partialChunks += 1;
     if (response.stats.input_count !== chunk.expectedCount || response.citations.length !== chunk.expectedCount) badChunks += 1;
@@ -120,12 +162,15 @@ async function collectManifest(): Promise<BaselineManifest> {
   process.env.ENABLE_LLM_EXTRACTOR = '0';
   process.env.ENABLE_GROBID_EXTRACTOR = '0';
 
-  const [academic, structured, semiStructured, rawUnstructured] = await Promise.all([
-    runAcademicBenchmark(),
-    measureReadyMode('structured'),
-    measureReadyMode('semi_structured'),
-    measureReadyMode('raw_unstructured'),
-  ]);
+  const academicAdapters = createDefaultAdapters();
+  const controlledAdapters = createDefaultAdapters();
+
+  const academic = await withStepTimeout('academic_benchmark', () => runAcademicBenchmark({
+    deterministicAdapters: academicAdapters,
+  }));
+  const structured = await withStepTimeout('controlled_structured', () => measureReadyMode('structured', controlledAdapters));
+  const semiStructured = await withStepTimeout('controlled_semi_structured', () => measureReadyMode('semi_structured', controlledAdapters));
+  const rawUnstructured = await withStepTimeout('controlled_raw_unstructured', () => measureReadyMode('raw_unstructured', controlledAdapters));
 
   return {
     generatedAt: new Date().toISOString(),

@@ -121,6 +121,58 @@ describe('strict enrich stage', () => {
     expect(result.citations[0]?.resolution?.rejectedReasons).toContain('local_only_author_optional_reference');
   });
 
+  it('disables local-only website skips when hard blockers are present', async () => {
+    const citation = {
+      ...createEmptyCitation('Understanding quantum computing https://www.technologyreview.com/2022/04/03/quantum-computing. (2022). https://www.technologyreview.com/2022/04/03/quantum-computing'),
+      referenceType: 'website',
+      authors: createFieldValue([], 'extracted', 0.1, 'extract'),
+      title: createFieldValue('Understanding quantum computing https://www.technologyreview.com/2022/04/03/quantum-computing', 'extracted', 0.93, 'extract'),
+      year: createFieldValue(2022, 'extracted', 0.95, 'extract'),
+      url: createFieldValue('https://www.technologyreview.com/2022/04/03/quantum-computing', 'extracted', 0.95, 'extract'),
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    } as any;
+    const provider = makeProvider();
+    const extractor = {
+      extract: vi.fn(async () => {
+        throw new Error('repair extractor unavailable');
+      }),
+    } as any;
+
+    const result = await createEnrichStage(provider, cache as any, extractor).run(makeContext(citation));
+
+    expect(provider.searchOpenAlexByTitle).toHaveBeenCalled();
+    expect(result.citations[0]?.resolution?.escalatedForBlockers).toBe(true);
+    expect(result.citations[0]?.resolution?.repairFailed).toBe(true);
+    expect(result.citations[0]?.resolution?.rejectedReasons).not.toContain('local_only_author_optional_reference');
+  });
+
+  it('keeps local-only report skips enabled when only one soft blocker is present', async () => {
+    const citation = {
+      ...createEmptyCitation('European Commission. (2022). Artificial intelligence act: Regulatory framework proposal. Publications Office of the European Union (COM(2021) 206 final).'),
+      referenceType: 'report',
+      authors: createFieldValue([], 'extracted', 0.1, 'extract'),
+      title: createFieldValue('Artificial intelligence act: Regulatory framework proposal', 'extracted', 0.94, 'extract'),
+      year: createFieldValue(2022, 'extracted', 0.96, 'extract'),
+      publisher: createFieldValue('Publications Office of the European Union (COM(2021) 206 final)', 'extracted', 0.92, 'extract'),
+      institution: createFieldValue('European Commission', 'extracted', 0.92, 'extract'),
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    } as any;
+    const provider = makeProvider();
+
+    const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citation));
+
+    expect(provider.searchOpenAlexByTitle).not.toHaveBeenCalled();
+    expect(result.citations[0]?.resolution?.status).toBe('provider_no_coverage');
+    expect(result.citations[0]?.resolution?.rejectedReasons).toContain('local_only_author_optional_reference');
+    expect(result.citations[0]?.resolution?.escalatedForBlockers).toBe(false);
+  });
+
   it('routes scholarly website landing pages through DOI-backed authority recovery instead of keeping them local-only', async () => {
     const citation = {
       ...createEmptyCitation('Tapping into the drug discovery potential of AI. (2021). https://www.nature.com/articles/d43747-021-00045-7.'),
@@ -160,7 +212,7 @@ describe('strict enrich stage', () => {
     expect(enriched?.referenceType).toBe('website');
   });
 
-  it('skips provider calls for strong DOI-backed local parses in larger synchronous batches', async () => {
+  it('still performs DOI authority resolution for strong local parses in larger synchronous batches', async () => {
     const baseCitation = makeCitation({
       volume: createFieldValue('40', 'extracted', 0.93, 'extract'),
       issue: createFieldValue('12', 'extracted', 0.92, 'extract'),
@@ -194,15 +246,10 @@ describe('strict enrich stage', () => {
     }));
     const result = await createEnrichStage(provider, cache as any, {} as any).run(makeContext(citations));
 
-    expect(provider.lookupByDoi).not.toHaveBeenCalled();
+    expect(provider.lookupByDoi).toHaveBeenCalledTimes(1);
     for (const citation of result.citations) {
-      expect(citation?.resolution).toBeUndefined();
-      expect(citation?.enrichment?.status).toBe('skipped');
-      expect(citation?.enrichment?.raw).toEqual(
-        expect.objectContaining({
-          strongLocalSkipReason: 'strong_local_doi_skip',
-        }),
-      );
+      expect(citation?.resolution?.status).toBe('verified');
+      expect(citation?.enrichment?.status).toBe('fetched');
     }
   });
 

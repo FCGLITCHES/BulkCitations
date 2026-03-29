@@ -1,14 +1,10 @@
-import { fileTypeFromBuffer } from 'file-type';
-import * as pdfParseModule from 'pdf-parse-new';
 import type { InputProfile } from '@shared/schema';
 import type { V2Stage } from '../contracts.js';
 import { createStageDiagnostic, normalizeDoiValue, normalizeWhitespace } from '../utils.js';
-
-const pdfParse: (buffer: Buffer) => Promise<{ text: string }> =
-  typeof pdfParseModule === 'function' ? pdfParseModule : (pdfParseModule?.default ?? pdfParseModule);
+import { extractPdfTextFromBuffer, extractPdfTextFromFile, PdfProcessingError } from '../../../pdfProcessing.js';
 
 export const INGESTION_LIMITS = {
-  maxBytes: 5_000_000,
+  maxTextBytes: 5_000_000,
   maxCitationCount: 2_000,
   maxUrlLength: 2_048,
   maxDoiListItems: 500,
@@ -222,26 +218,6 @@ function classifyInputProfile(text: string): InputProfile {
   };
 }
 
-async function extractPdfText(buffer: Buffer): Promise<string> {
-  const detected = await fileTypeFromBuffer(buffer);
-  if (!detected || detected.mime !== 'application/pdf') {
-    ingestFailure('invalid_mime_type');
-  }
-  try {
-    const result = await pdfParse(buffer);
-    const text = (result.text ?? '').trim();
-    if (text.length < 20) {
-      ingestFailure('pdf_no_extractable_text');
-    }
-    return text;
-  } catch (error) {
-    const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-    if (message.includes('password') || message.includes('encrypted')) ingestFailure('pdf_encrypted');
-    if (message.includes('invalid') || message.includes('truncated')) ingestFailure('pdf_truncated');
-    ingestFailure('pdf_parse_error');
-  }
-}
-
 function validateUrlSafety(rawUrl: string): URL {
   if (rawUrl.length > INGESTION_LIMITS.maxUrlLength) ingestFailure('url_too_long');
   const parsed = new URL(rawUrl);
@@ -258,54 +234,76 @@ export function createIngestStage(): V2Stage {
     async run(context) {
       const startedAt = Date.now();
       const { sourceType, content } = context.request;
-      if (Buffer.byteLength(content, 'utf8') > INGESTION_LIMITS.maxBytes) {
-        ingestFailure('input_too_large');
-      }
       let rawItems: string[] = [];
 
-      switch (sourceType) {
-        case 'text':
-          rawItems = [content.trim()];
-          break;
-        case 'doi_list':
-          rawItems = content
-            .split(/[\r?\n,;]+/)
-            .map((line) => line.trim())
-            .filter(Boolean)
-            .map((line) => normalizeDoi(line))
-            .filter((line): line is string => Boolean(line));
-          if (rawItems.length > INGESTION_LIMITS.maxDoiListItems) ingestFailure('doi_list_too_large');
-          break;
-        case 'bib':
-          rawItems = splitBibRecords(content);
-          break;
-        case 'ris':
-          rawItems = splitRisRecords(content);
-          break;
-        case 'pdf_base64': {
-          const buffer = Buffer.from(content, 'base64');
-          rawItems = [await extractPdfText(buffer)];
-          break;
-        }
-        case 'url': {
-          const [{ JSDOM }, { Readability }] = await Promise.all([
-            import('jsdom'),
-            import('@mozilla/readability'),
-          ]);
-          const safeUrl = validateUrlSafety(content);
-          const response = await fetch(safeUrl, { method: 'GET', signal: AbortSignal.timeout(10_000) });
-          const html = await response.text();
-          const dom = new JSDOM(html, { url: safeUrl.toString() });
-          const article = new Readability(dom.window.document).parse();
-          const extracted = normalizeWhitespace(article?.textContent ?? '');
-          if (extracted.length < 50) {
-            ingestFailure('url_no_content_extracted');
+      try {
+        switch (sourceType) {
+          case 'text':
+            if (Buffer.byteLength(content, 'utf8') > INGESTION_LIMITS.maxTextBytes) {
+              ingestFailure('input_too_large');
+            }
+            rawItems = [content.trim()];
+            break;
+          case 'doi_list':
+            if (Buffer.byteLength(content, 'utf8') > INGESTION_LIMITS.maxTextBytes) {
+              ingestFailure('input_too_large');
+            }
+            rawItems = content
+              .split(/[\r?\n,;]+/)
+              .map((line) => line.trim())
+              .filter(Boolean)
+              .map((line) => normalizeDoi(line))
+              .filter((line): line is string => Boolean(line));
+            if (rawItems.length > INGESTION_LIMITS.maxDoiListItems) ingestFailure('doi_list_too_large');
+            break;
+          case 'bib':
+            if (Buffer.byteLength(content, 'utf8') > INGESTION_LIMITS.maxTextBytes) {
+              ingestFailure('input_too_large');
+            }
+            rawItems = splitBibRecords(content);
+            break;
+          case 'ris':
+            if (Buffer.byteLength(content, 'utf8') > INGESTION_LIMITS.maxTextBytes) {
+              ingestFailure('input_too_large');
+            }
+            rawItems = splitRisRecords(content);
+            break;
+          case 'pdf_base64': {
+            const buffer = Buffer.from(content, 'base64');
+            rawItems = [(await extractPdfTextFromBuffer(buffer)).text];
+            break;
           }
-          rawItems = [extracted];
-          break;
+          case 'pdf_file':
+            rawItems = [(await extractPdfTextFromFile(content)).text];
+            break;
+          case 'url': {
+            const [{ JSDOM }, { Readability }] = await Promise.all([
+              import('jsdom'),
+              import('@mozilla/readability'),
+            ]);
+            const safeUrl = validateUrlSafety(content);
+            const response = await fetch(safeUrl, { method: 'GET', signal: AbortSignal.timeout(10_000) });
+            const html = await response.text();
+            const dom = new JSDOM(html, { url: safeUrl.toString() });
+            const article = new Readability(dom.window.document).parse();
+            const extracted = normalizeWhitespace(article?.textContent ?? '');
+            if (extracted.length < 50) {
+              ingestFailure('url_no_content_extracted');
+            }
+            rawItems = [extracted];
+            break;
+          }
+          default:
+            if (Buffer.byteLength(content, 'utf8') > INGESTION_LIMITS.maxTextBytes) {
+              ingestFailure('input_too_large');
+            }
+            rawItems = [content.trim()];
         }
-        default:
-          rawItems = [content.trim()];
+      } catch (error) {
+        if (error instanceof PdfProcessingError) {
+          ingestFailure(error.code);
+        }
+        throw error;
       }
 
       if (rawItems.length > INGESTION_LIMITS.maxCitationCount) {

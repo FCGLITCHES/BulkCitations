@@ -51,4 +51,33 @@ describe('raw PDF-copy helper contracts', () => {
     expect(chunks).toHaveLength(2);
     expect(chunks[1]?.splitArtifact.cleanedChunk).toContain('Hepatitis B in general practice');
   });
+
+  it('starts a new citation when an APA thesis opener begins with a lowercase surname particle after a boundary', () => {
+    const raw = [
+      'Qiao, M., and D. L. Jindrich. "Compensations during Unsteady Locomotion." Integrative and Comparative Biology, vol. 54, no. 6, 2014, pp. 1109-1121. doi: 10.1093/icb/icu058',
+      '',
+      'de Oliveira, Wagner (2021). Simulação para a avaliação do desempenho do sistema de proteção de distância de uma linha de transmissão de 500 KV [Doctoral dissertation, Universidade Estadual de Campinas]. https://doi.org/10.47749/t/unicamp.2012.899614',
+    ].join('\n');
+
+    const chunks = splitRawReferenceBlock(raw, []);
+
+    expect(chunks).toHaveLength(2);
+    expect(chunks[1]?.splitArtifact.cleanedChunk).toContain('de Oliveira, Wagner (2021)');
+    expect(chunks[1]?.splitArtifact.cleanedChunk).toContain('Universidade Estadual de Campinas');
+  });
+
+  it('starts a new citation after a blank boundary when a publisher-led book is followed by a Vancouver author run', () => {
+    const raw = [
+      'Darwin C. On the origin of species by means of natural selection. London: John Murray; 1859.',
+      '',
+      'Page MJ, McKenzie JE, Bossuyt PM, Boutron I, Hoffmann TC, Mulrow CD, et al. The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. BMJ. 2021;372:n71. doi:10.1136/bmj.n71',
+    ].join('\n');
+
+    const chunks = splitRawReferenceBlock(raw, []);
+
+    expect(chunks).toHaveLength(2);
+    expect(chunks[0]?.splitArtifact.cleanedChunk).toContain('On the origin of species');
+    expect(chunks[1]?.splitArtifact.cleanedChunk).toContain('The PRISMA 2020 statement');
+    expect(chunks[1]?.splitArtifact.cleanedChunk).not.toContain('John Murray');
+  });
 });

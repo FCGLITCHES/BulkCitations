@@ -213,8 +213,11 @@ function buildBreakdown(
       vetoed: false,
       vetoReasons: [],
       requiredCoveredCount: 0,
+      requiredTotalCount: 0,
       expectedCoveredCount: 0,
+      expectedTotalCount: 0,
       optionalCoveredCount: 0,
+      optionalTotalCount: 0,
       contaminationPenalty: 0,
       consensusScore: 0,
       sourceTypeCoherence: 0,
@@ -234,7 +237,9 @@ function buildBreakdown(
     || hasField(attempt.candidate, 'issue')
     || hasCredibleLocator;
   const venueValue = normalizeWhitespace(bestVenueFromParsed(attempt.candidate.parsed) ?? '');
+  const primaryAuthor = normalizeWhitespace(attempt.candidate.parsed.authors?.[0] ?? '');
   const hasInstitutionalVenueOnly = Boolean(venueValue) && INSTITUTIONAL_CONTAINER_SIGNAL.test(venueValue);
+  const hasInstitutionalAuthorLead = Boolean(primaryAuthor) && INSTITUTIONAL_CONTAINER_SIGNAL.test(primaryAuthor);
   const venueLooksPublisherTail = PLACE_PUBLISHER_VENUE_SIGNAL.test(venueValue) || YEAR_TAIL_VENUE_SIGNAL.test(venueValue);
   const urlBackedNonSerialVenue = Boolean(normalizeWhitespace(attempt.candidate.parsed.url ?? ''))
     && !hasExplicitSerialStructure
@@ -250,19 +255,41 @@ function buildBreakdown(
   const titleLooksLikeReportMetadata = REPORT_METADATA_SIGNAL.test(
     normalizeWhitespace(attempt.candidate.parsed.title ?? ''),
   );
+  const titleContainsBrokenReportNote = /\(\s*Report No\b/i.test(
+    normalizeWhitespace(attempt.candidate.parsed.title ?? ''),
+  );
   const venueLooksMetadataLike = !attempt.candidate.plausibility.venue.plausible
     || VERSION_VENUE_SIGNAL.test(venueValue)
     || venueLooksPublisherTail;
+  const placeValue = normalizeWhitespace(attempt.candidate.parsed.placeOfPublication ?? '');
+  const journalLooksLikeReportIdentifier = /^[A-Z]{2,}(?:-[A-Z0-9]{2,})+$/i.test(venueValue);
+  const placeContainsReportIdentifier = /\b[A-Z]{2,}(?:-[A-Z0-9]{2,})+\)?/i.test(placeValue);
+  const reportLikeJournalMetadata = (venueLooksPublisherTail || titleLooksLikeReportMetadata || hasInstitutionalVenueOnly)
+    && Boolean(normalizeWhitespace(
+      attempt.candidate.parsed.publisher
+      ?? attempt.candidate.parsed.institution
+      ?? attempt.candidate.parsed.url
+      ?? '',
+    ))
+    && hasInstitutionalAuthorLead;
+  const brokenReportLikeJournalFallback = hasInstitutionalAuthorLead
+    && (titleContainsBrokenReportNote || journalLooksLikeReportIdentifier || placeContainsReportIdentifier);
 
   if (
     attempt.candidate.claimedType === 'journal'
-    && !hasSerialStructure
     && (
-      Boolean(normalizeWhitespace(attempt.candidate.parsed.publisher ?? attempt.candidate.parsed.institution ?? ''))
-      || Boolean(normalizeWhitespace(attempt.candidate.parsed.url ?? ''))
-      || hasInstitutionalVenueOnly
-      || venueLooksMetadataLike
-      || titleLooksLikeReportMetadata
+      (
+        !hasSerialStructure
+        && (
+          Boolean(normalizeWhitespace(attempt.candidate.parsed.publisher ?? attempt.candidate.parsed.institution ?? ''))
+          || Boolean(normalizeWhitespace(attempt.candidate.parsed.url ?? ''))
+          || hasInstitutionalVenueOnly
+          || venueLooksMetadataLike
+          || titleLooksLikeReportMetadata
+        )
+      )
+      || reportLikeJournalMetadata
+      || brokenReportLikeJournalFallback
     )
   ) {
     vetoReasons.push('venue');
@@ -294,8 +321,11 @@ function buildBreakdown(
     vetoed: vetoReasons.length > 0,
     vetoReasons,
     requiredCoveredCount,
+    requiredTotalCount: profile.required.length,
     expectedCoveredCount,
+    expectedTotalCount: profile.expected.length,
     optionalCoveredCount,
+    optionalTotalCount: profile.optional.length,
     contaminationPenalty: contaminationPenalty(attempt.candidate),
     consensusScore: consensusScore(attempt.candidate, consensus),
     sourceTypeCoherence: sourceTypeCoherence(attempt.candidate),

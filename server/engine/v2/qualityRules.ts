@@ -315,6 +315,22 @@ export function hasCanonicalMalformedAuthors(authors: CanonicalAuthor[]): boolea
   return suspiciousCount > 0 && suspiciousCount >= Math.ceil(authors.length / 3);
 }
 
+function stripTrailingVenueArtifacts(value: string | null | undefined): string | undefined {
+  const normalized = normalizeWhitespace(value ?? '');
+  if (!normalized) return undefined;
+
+  const cleaned = normalizeWhitespace(
+    normalized
+      .replace(/,\s*vol\.?$/i, '')
+      .replace(/\s+vol\.?$/i, '')
+      .replace(/,\s*no\.?$/i, '')
+      .replace(/\s+no\.?$/i, '')
+      .replace(/[.;,:-]+$/g, ''),
+  );
+
+  return cleaned || undefined;
+}
+
 export function sanitizeParsedReference(
   parsed: ParsedReference,
   referenceType: string,
@@ -348,15 +364,15 @@ export function sanitizeParsedReference(
     ...parsed,
     title: sanitizedTitle,
     year: normalizedYearValue,
-    journal: normalizeKnownContainerName(normalizeWhitespace(parsed.journal ?? '')) || undefined,
+    journal: stripTrailingVenueArtifacts(normalizeKnownContainerName(normalizeWhitespace(parsed.journal ?? ''))),
     volume: normalizeWhitespace(parsed.volume ?? '') || undefined,
     issue: normalizeWhitespace(parsed.issue ?? '') || undefined,
     pages,
     'article-number': articleNumber,
     publisher: normalizeWhitespace(parsed.publisher ?? '') || undefined,
     url: urlDuplicatesDoi(normalizedUrlValue, normalizedDoiValue) ? undefined : normalizedUrlValue,
-    conferenceTitle: normalizeKnownContainerName(normalizeWhitespace(parsed.conferenceTitle ?? '')) || undefined,
-    bookTitle: normalizeKnownContainerName(normalizeWhitespace(parsed.bookTitle ?? '')) || undefined,
+    conferenceTitle: stripTrailingVenueArtifacts(normalizeKnownContainerName(normalizeWhitespace(parsed.conferenceTitle ?? ''))),
+    bookTitle: stripTrailingVenueArtifacts(normalizeKnownContainerName(normalizeWhitespace(parsed.bookTitle ?? ''))),
     institution: normalizeWhitespace(parsed.institution ?? '') || undefined,
     edition: normalizeWhitespace(parsed.edition ?? '') || undefined,
     editor: normalizeWhitespace(parsed.editor ?? '') || undefined,

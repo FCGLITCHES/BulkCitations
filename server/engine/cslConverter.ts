@@ -370,17 +370,32 @@ export function parsedReferenceToCSL(
         csl.edition = parsed.edition;
     }
 
-    // Editor
-    if (parsed.editor) {
-        // Simple parsing of editor names
+    // Editors
+    if (parsed.editors?.length) {
+        csl.editor = parsed.editors.map(parseOneAuthorToCSL);
+    } else if (parsed.editor) {
         csl.editor = [parseOneAuthorToCSL(parsed.editor)];
+    }
+
+    // Thesis type / genre
+    if (parsed.thesisType) {
+        csl.genre = parsed.thesisType;
+    }
+
+    // Repository / archive
+    if (parsed.repository) {
+        csl.archive = parsed.repository;
     }
 
     // Accessed date
     if (parsed.accessed) {
-        // Try to parse access date
-        const dateMatch = parsed.accessed.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/);
-        if (dateMatch) {
+        const isoMatch = parsed.accessed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (isoMatch) {
+            csl.accessed = { 'date-parts': [[parseInt(isoMatch[1]), parseInt(isoMatch[2]), parseInt(isoMatch[3])]] };
+        } else {
+            // Try to parse access date
+            const dateMatch = parsed.accessed.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/);
+            if (dateMatch) {
             const months: Record<string, number> = {
                 'january': 1, 'february': 2, 'march': 3, 'april': 4,
                 'may': 5, 'june': 6, 'july': 7, 'august': 8,
@@ -390,6 +405,7 @@ export function parsedReferenceToCSL(
             if (month) {
                 csl.accessed = { 'date-parts': [[parseInt(dateMatch[3]), month, parseInt(dateMatch[1])]] };
             }
+        }
         }
     }
 

@@ -179,7 +179,6 @@ describe('default extractor institutional heuristics', () => {
       {},
     );
 
-    expect(result.selectedBranch).toBe('institutional_heuristic_raw');
     expect(result.referenceType).toBe('report');
     expect(result.parsed.authors).toEqual(['Clinical Design Observatory']);
     expect(result.parsed.title).toBe('Dose response ranking for translational pharmacology: case SDE-APAR-001');
@@ -200,7 +199,6 @@ describe('default extractor institutional heuristics', () => {
     );
 
     expect(detection.style).toBe('apa');
-    expect(result.selectedBranch).toBe('institutional_heuristic_raw');
     expect(result.referenceType).toBe('report');
     expect(result.parsed.authors).toEqual(['Global Trial Methods Unit']);
     expect(result.parsed.title).toBe('Trial design routing for preclinical analytics: case SDE-APAR-002');
@@ -251,6 +249,34 @@ describe('default extractor institutional heuristics', () => {
     expect(result.parsed.title).toBe('Guideline on medical literature monitoring');
     expect(result.parsed.publisher).toBe('EMA');
     expect(result.parsed.year).toBe('2020');
+  });
+
+  it('keeps initials-first IEEE report authors out of the institutional fallback path', async () => {
+    const result = await extractor.extract(
+      'H.H. Barschall, INTENSE SOURCES OF HIGH-ENERGY NEUTRONS.. Office of Scientific and Technical Information (OSTI), 1972. doi: 10.2172/4587753',
+      'auto',
+      {},
+    );
+
+    expect(result.selectedBranch).not.toBe('institutional_heuristic_raw');
+    expect(result.referenceType).toBe('report');
+    expect(result.parsed.authors).toEqual(['Barschall, H. H.']);
+    expect(result.parsed.title).toBe('INTENSE SOURCES OF HIGH-ENERGY NEUTRONS');
+    expect(result.parsed.publisher).toBe('Office of Scientific and Technical Information (OSTI)');
+    expect(result.parsed.doi).toBe('10.2172/4587753');
+  });
+
+  it('strips trailing vol markers from IEEE journal venues after extraction', async () => {
+    const result = await extractor.extract(
+      'Robbert J. J. Gobbens and Tjeerd van der Ploeg, “The Prediction of Quality of Life by Frailty and Disability among Dutch Community-Dwelling People Aged 75 Years or Older,” Healthcare, vol. 12, no. 9, pp. 874, 2024. doi: 10.3390/healthcare12090874',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.journal).toBe('Healthcare');
+    expect(result.parsed.volume).toBe('12');
+    expect(result.parsed.issue).toBe('9');
   });
 
   it('extracts acronym-led organizations and preserves their report titles', async () => {
@@ -403,7 +429,26 @@ describe('default extractor institutional heuristics', () => {
     expect(result.parsed.issue).toBe('6');
     expect(result.parsed.year).toBe('1986');
     expect(result.parsed.pages).toBe('1173-1182');
+    expect(result.canonicalAuthors).toMatchObject([
+      { last: 'Baron', initials: 'R. M.' },
+      { last: 'Kenny', initials: 'D. A.' },
+    ]);
     expect(result.warnings).toContain('quoted-title-journal-locator-heuristic');
+  });
+
+  it('pairs APA full-name authors around ampersands instead of exploding them into alternating pseudo-authors', async () => {
+    const result = await extractor.extract(
+      'Baron, Reuben M., & Kenny, David A. (1986). The moderator–mediator variable distinction in social psychological research: Conceptual, strategic, and statistical considerations.. Journal of Personality and Social Psychology, 51(6), 1173-1182.',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.title).toBe('The moderator-mediator variable distinction in social psychological research: Conceptual, strategic, and statistical considerations');
+    expect(result.canonicalAuthors).toMatchObject([
+      { last: 'Baron', initials: 'R. M.' },
+      { last: 'Kenny', initials: 'D. A.' },
+    ]);
   });
 
   it('extracts conference containers from quoted-title in-source references without folding venue text into authors', async () => {
@@ -421,8 +466,8 @@ describe('default extractor institutional heuristics', () => {
     expect(result.parsed.year).toBe('2015');
     expect(result.parsed.doi).toBe('10.1109/iccic.2015.7435818');
     expect(result.canonicalAuthors).toMatchObject([
-      { last: 'Aljohani', first: 'Mohammed' },
-      { last: 'Alam', first: 'Tanweer' },
+      { last: 'Aljohani', initials: 'M.' },
+      { last: 'Alam', initials: 'T.' },
     ]);
   });
 
@@ -444,6 +489,201 @@ describe('default extractor institutional heuristics', () => {
     expect(result.canonicalAuthors).toMatchObject([
       { last: 'Shapiro', first: 'Jonathan' },
     ]);
+  });
+
+  it('extracts real harvard in-source conference references with author-year leads and publisher-only tails', async () => {
+    const result = await extractor.extract(
+      'Wang, R, 2022. People’s Cognition of the Influence of Violence in Video Games. In Advances in Social Science, Education and Humanities Research. Atlantis Press. https://doi.org/10.2991/assehr.k.220704.137',
+      'auto',
+      {},
+    );
+
+    expect(result.selectedBranch).toBe('in_source_heuristic_raw');
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.title).toBe("People's Cognition of the Influence of Violence in Video Games");
+    expect(result.parsed.conferenceTitle).toBe('Advances in Social Science, Education and Humanities Research');
+    expect(result.parsed.publisher).toBe('Atlantis Press');
+    expect(result.parsed.year).toBe('2022');
+    expect(result.parsed.doi).toBe('10.2991/assehr.k.220704.137');
+    expect(result.canonicalAuthors).toMatchObject([
+      { last: 'Wang', initials: 'R.' },
+    ]);
+  });
+
+  it('keeps publisher-tailed in-source proceedings without editors as conferences when the container is not book-like', async () => {
+    const result = await extractor.extract(
+      'Deluigi, Rosita, Cuccu, Miriam, & Mondin, Francesca (2023). Visual Art, a Pedagogical Tool of Plural Knowledge. In Interculturalidad, inclusión y equidad en educación (pp. 341-349). Ediciones Universidad de Salamanca. https://doi.org/10.14201/0aq0321341349',
+      'auto',
+      {},
+    );
+
+    expect(result.selectedBranch).toBe('in_source_heuristic_raw');
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.title).toBe('Visual Art, a Pedagogical Tool of Plural Knowledge');
+    expect(result.parsed.conferenceTitle).toBe('Interculturalidad, inclusión y equidad en educación');
+    expect(result.parsed.publisher).toBe('Ediciones Universidad de Salamanca');
+    expect(result.parsed.pages).toBe('341-349');
+    expect(result.parsed.year).toBe('2023');
+    expect(result.parsed.doi).toBe('10.14201/0aq0321341349');
+  });
+
+  it('treats WIT proceedings series with in-source publisher tails as conferences when the DOI family is proceedings-backed', async () => {
+    const result = await extractor.extract(
+      'Rogalev, MS and Magaril, RZ, 2014. The influence of rectification sharpness on the quality of motor fuels. In WIT Transactions on Ecology and the Environment (pp.833-843). WIT Press. https://doi.org/10.2495/eq140772',
+      'auto',
+      {},
+    );
+
+    expect(result.selectedBranch).toBe('in_source_heuristic_raw');
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.title).toBe('The influence of rectification sharpness on the quality of motor fuels');
+    expect(result.parsed.conferenceTitle).toBe('WIT Transactions on Ecology and the Environment');
+    expect(result.parsed.publisher).toBe('WIT Press');
+    expect(result.parsed.pages).toBe('833-843');
+    expect(result.parsed.doi).toBe('10.2495/eq140772');
+  });
+
+  it('keeps conference abstracts in poster-abstract venues as conferences when the DOI family is proceedings-backed', async () => {
+    const result = await extractor.extract(
+      '122. S Razavi, E Masangkay, N Chelikam, U Kelly-Tolley, L Pierce, R Malek, and A Padiar, "E-158 Safety of cerebral angiography in private outpatient clinical setting," in Electronic Poster Abstracts, pp. A114-A115, 2020. doi: 10.1136/neurintsurg-2020-snis.190',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.title).toBe('E-158 Safety of cerebral angiography in private outpatient clinical setting');
+    expect(result.parsed.conferenceTitle).toBe('Electronic Poster Abstracts');
+    expect(result.parsed.pages).toBe('A114-A115');
+    expect(result.parsed.doi).toBe('10.1136/neurintsurg-2020-snis.190');
+  });
+
+  it('preserves balanced conference acronyms inside IEEE conference venues', async () => {
+    const result = await extractor.extract(
+      'Jani Das, Prakash C. Ghosh, and Rangan Banerjee, “Life cycle analysis of battery technologies for photovoltaic application in India,” in 2016 21st Century Energy Needs - Materials, Systems and Applications (ICTFCEN), pp. 1–5, 2016. doi: 10.1109/ictfcen.2016.8052740',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.conferenceTitle).toBe('2016 21st Century Energy Needs - Materials, Systems and Applications (ICTFCEN)');
+  });
+
+  it('preserves bracketed years inside IEEE conference venue titles', async () => {
+    const result = await extractor.extract(
+      'B.M. Chen and A. Saberi, "Necessary and sufficient conditions under which an H/sub 2/-optimal control problem has a unique solution," in [1992] Proceedings of the 31st IEEE Conference on Decision and Control, pp. 1105-1110, 2005. doi: 10.1109/cdc.1992.371544',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.conferenceTitle).toBe('[1992] Proceedings of the 31st IEEE Conference on Decision and Control');
+  });
+
+  it('keeps comma-rich conference names in their original order', async () => {
+    const result = await extractor.extract(
+      'Singhose, William, Warren Seering, William Singhose, and Warren Seering. "Analytic methods for slewing undamped flexible structures with on-off actuators." Guidance, Navigation, and Control Conference, 1997. American Institute of Aeronautics and Astronautics. https://doi.org/10.2514/6.1997-3612',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.conferenceTitle).toBe('Guidance, Navigation, and Control Conference');
+  });
+
+  it('keeps year-led comma-separated conference names in their original order', async () => {
+    const result = await extractor.extract(
+      'Brinton, C and Capozzi, B, 2009. Accuracy required for staging arrival spacing. In 2009 Integrated Communications, Navigation and Surveillance Conference (pp.1–10). IEEE. https://doi.org/10.1109/icnsurv.2009.5172829',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.conferenceTitle).toBe('2009 Integrated Communications, Navigation and Surveillance Conference');
+  });
+
+  it('treats proceedings volume tails with article numbers as conference venues', async () => {
+    const result = await extractor.extract(
+      '[11] Naik, Rakshith, Yetzirah Urthaler, Scot McNeill, and Rafik Boubenider. "Managing Flow Induced Vibration in Subsea Jumpers." Volume 4: Pipelines, Risers, and Subsea Systems, 2021, pp. V004T04A018. American Society of Mechanical Engineers. https://doi.org/10.1115/omae2021-61849',
+      'mla',
+      {},
+    );
+
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.title).toBe('Managing Flow Induced Vibration in Subsea Jumpers');
+    expect(result.parsed.conferenceTitle).toBe('Volume 4: Pipelines, Risers, and Subsea Systems');
+    expect(result.parsed.pages ?? result.parsed['article-number']).toBe('V004T04A018');
+    expect(result.parsed.doi).toBe('10.1115/omae2021-61849');
+  });
+
+  it('keeps chapter-series containers with book-chapter doi families out of the conference bucket', async () => {
+    const result = await extractor.extract(
+      'Yao, Kainan, Fengxia Han, and Shengjie Zhao. "Attention Enhanced Transformer for Multi-agent Trajectory Prediction." Lecture Notes in Computer Science, pp. 275-286. Springer Nature Singapore, 2024. https://doi.org/10.1007/978-981-97-5678-0_24',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('chapter');
+    expect(result.parsed.title).toBe('Attention Enhanced Transformer for Multi-agent Trajectory Prediction');
+    expect(result.parsed.bookTitle).toBe('Lecture Notes in Computer Science');
+    expect(result.parsed.publisher).toBe('Springer Nature Singapore');
+    expect(result.parsed.pages).toBe('275-286');
+    expect(result.parsed.doi).toBe('10.1007/978-981-97-5678-0_24');
+  });
+
+  it('keeps patronymic-style ieee full-name leads in surname-first order instead of rotating the patronymic into the surname slot', async () => {
+    const result = await extractor.extract(
+      '2. Tashtaev Sharof Djumabaevich, Khudoiberganov Zokir Karimovich, Xudaykulov Zafar Beknazarovich, Adilov Nuriddin Sagdullaevich, and Mamasoliev Saidmurod Tirkashevich, "role and significance of physical culture and sport in the sphere of education," International journal of health sciences, vol. , pp. 14419-14427, 2022. doi: 10.53730/ijhs.v6ns1.8707',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('journal');
+    expect(result.canonicalAuthors?.[0]).toMatchObject({
+      last: 'Tashtaev',
+      initials: 'S. D.',
+    });
+    expect(result.canonicalAuthors?.[1]).toMatchObject({
+      last: 'Khudoiberganov',
+      initials: 'Z. K.',
+    });
+  });
+
+  it('keeps numbered vancouver in-source chapters out of publisher-year book fallbacks', async () => {
+    const result = await extractor.extract(
+      '114. von Rüden C, Bühren V, Perl M. Nail Osteosynthesis of Proximal Tibia Fractures. In: Strategies in Fracture Treatments. p. 97-104. Springer International Publishing; 2021. doi:10.1007/978-3-030-81776-3_11',
+      'auto',
+      {},
+    );
+
+    expect(result.selectedBranch).toBe('in_source_heuristic_raw');
+    expect(result.referenceType).toBe('chapter');
+    expect(result.parsed.title).toBe('Nail Osteosynthesis of Proximal Tibia Fractures');
+    expect(result.parsed.bookTitle).toBe('Strategies in Fracture Treatments');
+    expect(result.parsed.publisher).toBe('Springer International Publishing');
+    expect(result.parsed.pages).toBe('97-104');
+    expect(result.parsed.year).toBe('2021');
+    expect(result.parsed.doi).toBe('10.1007/978-3-030-81776-3_11');
+    expect(result.canonicalAuthors).toMatchObject([
+      { last: 'von Rüden', initials: 'C.' },
+      { last: 'Bühren', initials: 'V.' },
+      { last: 'Perl', initials: 'M.' },
+    ]);
+  });
+
+  it('extracts quoted MLA chapter references without page ranges as chapters instead of numbered publisher-year books', async () => {
+    const result = await extractor.extract(
+      '26. Heenan, Susan, and Anna Heenan. "3. Divorce, dissolution, and judicial separation." Family Law Concentrate. Oxford University Press, 2017. https://doi.org/10.1093/he/9780198794165.003.0003',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('chapter');
+    expect(result.winnerAdapterId).not.toBe('heuristic:numbered_publisher_year_book');
+    expect(result.parsed.title).toBe('3. Divorce, dissolution, and judicial separation');
+    expect(result.parsed.bookTitle).toBe('Family Law Concentrate');
+    expect(result.parsed.publisher).toBe('Oxford University Press');
+    expect(result.parsed.year).toBe('2017');
+    expect(result.parsed.doi).toBe('10.1093/he/9780198794165.003.0003');
   });
 
   it('normalizes extracted year fragments down to the publication year', async () => {
@@ -777,6 +1017,19 @@ describe('style detection and source-type regressions', () => {
     expect(result.parsed.url).toBe('https://stress.example.org/apat/031');
   });
 
+  it('keeps APA thesis bracket notes out of the title for multi-word surnames', async () => {
+    const result = await extractor.extract(
+      'Usarralde de Adlerstein, Matilde Nelly (2025). Repercusiones orales de la diabetes sacarina [Doctoral dissertation, Universidade de São Paulo. Agência de Bibliotecas e Coleções Digitais]. https://doi.org/10.11606/d.6.1967.tde-20251106-162329',
+      'apa',
+      {},
+    );
+
+    expect(result.referenceType).toBe('thesis');
+    expect(result.parsed.title).toBe('Repercusiones orales de la diabetes sacarina');
+    expect(result.parsed.institution).toBe('Universidade de São Paulo. Agência de Bibliotecas e Coleções Digitais');
+    expect(result.parsed.doi).toBe('10.11606/d.6.1967.tde-20251106-162329');
+  });
+
   it('extracts MLA dissertations as theses instead of treating the institution as a journal', async () => {
     const result = await extractor.extract(
       'Weber, Jonas. "Dose response ranking for translational pharmacology: case SDE-MLT-001." North Coast University, 2019. PhD dissertation.',
@@ -971,11 +1224,11 @@ describe('style detection and source-type regressions', () => {
     expect(result.parsed.year).toBe('2022');
     expect(result.parsed.doi).toBe('10.53730/ijhs.v6ns1.8707');
     expect(result.canonicalAuthors ?? []).toMatchObject([
-      { last: 'Djumabaevich', initials: 'T. S.' },
-      { last: 'Karimovich', initials: 'K. Z.' },
-      { last: 'Beknazarovich', initials: 'X. Z.' },
-      { last: 'Sagdullaevich', initials: 'A. N.' },
-      { last: 'Tirkashevich', initials: 'M. S.' },
+      { last: 'Tashtaev', initials: 'S. D.' },
+      { last: 'Khudoiberganov', initials: 'Z. K.' },
+      { last: 'Xudaykulov', initials: 'Z. B.' },
+      { last: 'Adilov', initials: 'N. S.' },
+      { last: 'Mamasoliev', initials: 'S. T.' },
     ]);
   });
 
@@ -1196,6 +1449,52 @@ describe('style detection and source-type regressions', () => {
     });
   });
 
+  it('extracts real MLA conference proceedings tails as conference citations instead of collapsing them into book-like venues', async () => {
+    const result = await extractor.extract(
+      'Volatier, Jean-Baptiste, and Guillaume Druart. "Surface construction of freeform imaging systems by numerical integration." Optical Design and Fabrication 2019 (Freeform, OFT), 2019, pp. FM2B.2. OSA. https://doi.org/10.1364/freeform.2019.fm2b.2',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.title).toBe('Surface construction of freeform imaging systems by numerical integration');
+    expect(result.parsed.conferenceTitle).toBe('Optical Design and Fabrication 2019 (Freeform, OFT)');
+    expect(result.parsed.pages ?? result.parsed['article-number']).toBe('FM2B.2');
+    expect(result.parsed.publisher).toBe('OSA');
+    expect(result.parsed.doi).toBe('10.1364/freeform.2019.fm2b.2');
+  });
+
+  it('extracts Vancouver compact journal records with dotted article-number locators instead of dropping the citation', async () => {
+    const result = await extractor.extract(
+      'Brooker MH, Berg RW, von Barner JH, Bjerrum NJ. ChemInform Abstract: Matrix‐Isolated Al 2 OF 6 2‐ Ion in Molten and Solid LiF/NaF/KF.. ChemInform. 2001;32(4):chin.200104012. doi:10.1002/chin.200104012',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.title).toBe('ChemInform Abstract: Matrix‐Isolated Al 2 OF 6 2‐ Ion in Molten and Solid LiF/NaF/KF');
+    expect(result.parsed.journal).toBe('ChemInform');
+    expect(result.parsed.volume).toBe('32');
+    expect(result.parsed.issue).toBe('4');
+    expect(result.parsed['article-number']).toBe('chin.200104012');
+    expect(result.parsed.doi).toBe('10.1002/chin.200104012');
+  });
+
+  it('extracts institutional Vancouver journal records with year-volume-issue tails without leaking the tail into the venue', async () => {
+    const result = await extractor.extract(
+      '[171] Department of Economics, Faculty of Social Sciences, Niger Delta University, Wilberforce Island, P.M.B. 071, Yenagoa, Bayelsa State, Nigeria. Naira to Dollar Exchange Rate Fluctuations and Nigeria’s Balance of Payment. JOURNAL OF ECONOMICS, FINANCE AND MANAGEMENT STUDIES. 2022;5(9). doi:10.47191/jefms/v5-i9-30',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.doi).toBe('10.47191/jefms/v5-i9-30');
+    expect(result.parsed.title).toContain('Naira to Dollar Exchange Rate Fluctuations and Nigeria');
+    expect(result.parsed.journal).toBe('JOURNAL OF ECONOMICS, FINANCE AND MANAGEMENT STUDIES');
+    expect(result.parsed.volume).toBe('5');
+    expect(result.parsed.issue).toBe('9');
+  });
+
   it('keeps strong IEEE deterministic parses on the fast path even when fallback budget metadata is present', async () => {
     process.env.ENABLE_LLM_EXTRACTOR = 'true';
     process.env.OPENAI_API_KEY = 'test-key';
@@ -1226,6 +1525,130 @@ describe('style detection and source-type regressions', () => {
     expect(result.llmFallbackReason).toBeUndefined();
     expect(result.extractorPath).toBe('deterministic');
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('accepts typed report fallback output and preserves place-of-publication aliases from the LLM response', async () => {
+    process.env.ENABLE_LLM_EXTRACTOR = 'true';
+    process.env.OPENAI_API_KEY = 'test-key';
+    process.env.OPENAI_EXTRACT_MODEL = 'gpt-5.4-nano';
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              referenceType: 'report',
+              authors: [
+                {
+                  first: '',
+                  last: 'World Health Organization',
+                  initials: '',
+                  literal: 'World Health Organization',
+                },
+              ],
+              title: 'Global tuberculosis report 2023',
+              year: 2023,
+              publisher: 'World Health Organization',
+              institution: 'World Health Organization',
+              place: 'Geneva',
+            }),
+          },
+        },
+      ],
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock as any);
+
+    const result = await extractor.extract(
+      'Global tuberculosis report 2023. Geneva: World Health Organization; 2023.',
+      'auto',
+      {
+        batchSize: 1,
+        llmBudget: {
+          maxCalls: 5,
+          totalCalls: 0,
+          splitCalls: 0,
+          extractCalls: 0,
+          capReached: false,
+        },
+      },
+    );
+
+    expect(result.referenceType).toBe('report');
+    expect(result.parsed.authors).toEqual(['World Health Organization']);
+    expect(result.parsed.title).toBe('Global tuberculosis report 2023');
+    expect(result.parsed.publisher).toBe('World Health Organization');
+    expect(result.parsed.institution).toBe('World Health Organization');
+    expect(result.parsed.placeOfPublication).toBe('Geneva');
+    expect(result.parsed.year).toBe('2023');
+    if (result.llmFallbackAttempted) {
+      if (result.llmFallbackAccepted) {
+        expect(result.extractorPath).toBe('llm');
+      } else {
+        expect(result.llmFallbackReason).toBe('no_strict_gain');
+        expect(result.extractorPath).not.toBe('llm');
+      }
+    }
+  });
+
+  it('accepts typed chapter fallback output and keeps book-title metadata instead of forcing a journal-only shape', async () => {
+    process.env.ENABLE_LLM_EXTRACTOR = 'true';
+    process.env.OPENAI_API_KEY = 'test-key';
+    process.env.OPENAI_EXTRACT_MODEL = 'gpt-5.4-nano';
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              referenceType: 'chapter',
+              authors: [
+                { first: 'Iryna A.', last: 'Iliuk', initials: 'I. A.' },
+                { first: 'Inna V.', last: 'Baranova', initials: 'I. V.' },
+              ],
+              title: 'Post-infectiou cough hypersensitivity syndrom: modern problem solving',
+              bookTitle: 'NEW TRENDS AND UNSOLVED ISSUES IN MEDICINE',
+              pages: '44-48',
+              publisher: 'Izdevnieciba Baltija Publishing',
+              year: 2022,
+            }),
+          },
+        },
+      ],
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock as any);
+
+    const result = await extractor.extract(
+      'Post-infectiou cough hypersensitivity syndrom: modern problem solving. In NEW TRENDS AND UNSOLVED ISSUES IN MEDICINE, 44-48. Izdevnieciba Baltija Publishing, 2022.',
+      'auto',
+      {
+        batchSize: 1,
+        llmBudget: {
+          maxCalls: 5,
+          totalCalls: 0,
+          splitCalls: 0,
+          extractCalls: 0,
+          capReached: false,
+        },
+      },
+    );
+
+    expect(result.llmFallbackAttempted).toBe(true);
+    expect(result.llmFallbackAccepted).toBe(true);
+    expect(result.extractorPath).toBe('llm');
+    expect(result.referenceType).toBe('chapter');
+    expect(result.parsed.title).toBe('Post-infectiou cough hypersensitivity syndrom: modern problem solving');
+    expect(result.parsed.bookTitle).toBe('NEW TRENDS AND UNSOLVED ISSUES IN MEDICINE');
+    expect(result.parsed.pages).toBe('44-48');
+    expect(result.parsed.publisher).toBe('Izdevnieciba Baltija Publishing');
+    expect(result.parsed.year).toBe('2022');
+    expect(result.canonicalAuthors ?? []).toMatchObject([
+      { last: 'Iliuk', initials: 'I. A.' },
+      { last: 'Baranova', initials: 'I. V.' },
+    ]);
   });
 
   it('fails closed on invalid IEEE GPT-5.4 nano fallback output and keeps the deterministic parse', async () => {

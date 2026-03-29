@@ -137,7 +137,7 @@ describe('v2 validation false-positive regression checks', () => {
 
     expect(issueCodes).not.toContain('locator_missing_from_source');
     expect(result.quality?.bucket).toBe('ready');
-    expect(result.quality?.bucketReasons).toContain('Verified by DOI against Crossref.');
+    expect(result.quality?.bucketReasons).toContain('Citation passed readiness gates.');
   });
 
   it('still flags dropped locators when the input had them and the output lost them', async () => {
@@ -279,7 +279,7 @@ describe('v2 validation false-positive regression checks', () => {
 
     const result = await validateAndScore(citation);
     expect(result.quality?.bucket).toBe('ready');
-    expect(result.quality?.bucketReasons).toContain('High-confidence local parse with no exact provider coverage.');
+    expect(result.quality?.bucketReasons).toContain('Citation passed readiness gates.');
   });
 
   it('allows short but valid report titles to stay ready when only provider errors remain', async () => {
@@ -319,7 +319,7 @@ describe('v2 validation false-positive regression checks', () => {
     const result = await validateAndScore(citation);
 
     expect(result.quality?.bucket).toBe('ready');
-    expect(result.quality?.bucketReasons).toContain('High-confidence local parse remained ready despite unresolved authority verification.');
+    expect(result.quality?.bucketReasons).toContain('Citation passed readiness gates.');
   });
 
   it('allows title-led websites with strong local evidence to reach ready without authors', async () => {
@@ -356,7 +356,7 @@ describe('v2 validation false-positive regression checks', () => {
 
     const result = await validateAndScore(citation);
     expect(result.quality?.bucket).toBe('ready');
-    expect(result.quality?.bucketReasons).toContain('High-confidence local parse with no exact provider coverage.');
+    expect(result.quality?.bucketReasons).toContain('Citation passed readiness gates.');
   });
 
   it('does not emit truncated_group_author for already-stable institutional authors', async () => {
@@ -422,9 +422,7 @@ describe('v2 validation false-positive regression checks', () => {
 
     const result = await validateAndScore(citation);
     expect(result.quality?.bucket).toBe('ready');
-    expect(result.quality?.bucketReasons).toEqual(expect.arrayContaining([
-      expect.stringMatching(/High-confidence .*parse/i),
-    ]));
+    expect(result.quality?.bucketReasons).toContain('Citation passed readiness gates.');
   });
 
   it('allows clean duplicate citations with unresolved authority matches to stay ready when only benign resolution warnings remain', async () => {
@@ -476,7 +474,7 @@ describe('v2 validation false-positive regression checks', () => {
 
     const result = await validateAndScore(citation);
     expect(result.quality?.bucket).toBe('ready');
-    expect(result.quality?.bucketReasons).toContain('High-confidence local parse remained ready despite unresolved authority verification.');
+    expect(result.quality?.bucketReasons).toContain('Citation passed readiness gates.');
   });
 
   it('allows clean conference citations with no exact provider match to stay ready when venue and title evidence remain strong', async () => {
@@ -519,7 +517,7 @@ describe('v2 validation false-positive regression checks', () => {
 
     const result = await validateAndScore(citation);
     expect(result.quality?.bucket).toBe('ready');
-    expect(result.quality?.bucketReasons).toContain('High-confidence local parse remained ready despite unresolved authority verification.');
+    expect(result.quality?.bucketReasons).toContain('Citation passed readiness gates.');
   });
 
   it('allows clean conference citations with provider errors to stay ready when local evidence remains strong', async () => {
@@ -565,7 +563,7 @@ describe('v2 validation false-positive regression checks', () => {
 
     const result = await validateAndScore(citation);
     expect(result.quality?.bucket).toBe('ready');
-    expect(result.quality?.bucketReasons).toContain('High-confidence local parse remained ready despite unresolved authority verification.');
+    expect(result.quality?.bucketReasons).toContain('Citation passed readiness gates.');
   });
 
   it('allows acronym venues like BMJ to stay ready when unresolved authority warnings are otherwise clean', async () => {
@@ -606,6 +604,63 @@ describe('v2 validation false-positive regression checks', () => {
     const result = await validateAndScore(citation);
 
     expect(result.quality?.bucket).toBe('ready');
-    expect(result.quality?.bucketReasons).toContain('High-confidence local parse remained ready despite unresolved authority verification.');
+    expect(result.quality?.bucketReasons).toContain('Citation passed readiness gates.');
+  });
+
+  it('routes repeated edition books into worth_reviewing instead of ready', async () => {
+    const citation = {
+      ...createEmptyCitation('Goodfellow, I., Bengio, Y., & Courville, A. (2020). Reinforcement Learning: An Introduction (2nd ed.)(2nd ed.). Oxford University Press.'),
+      referenceType: 'book',
+      authors: createFieldValue([
+        { first: 'I.', last: 'Goodfellow', initials: 'I.' },
+        { first: 'Y.', last: 'Bengio', initials: 'Y.' },
+        { first: 'A.', last: 'Courville', initials: 'A.' },
+      ], 'extracted', 0.95, 'extract'),
+      title: createFieldValue('Reinforcement Learning: An Introduction (2nd ed.)', 'extracted', 0.92, 'extract'),
+      year: createFieldValue(2020, 'extracted', 0.96, 'extract'),
+      publisher: createFieldValue('Oxford University Press', 'extracted', 0.91, 'extract'),
+      edition: createFieldValue('2nd ed.', 'extracted', 0.9, 'extract'),
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    };
+
+    const result = await validateAndScore(citation);
+
+    expect(result.quality?.readyBlockers).toContain('edition_repeated');
+    expect(result.quality?.bucket).toBe('worth_reviewing');
+  });
+
+  it('routes DOI leakage and duplicate link targets into action_needed instead of ready', async () => {
+    const citation = {
+      ...createEmptyCitation('Lee, C. W., Park, S. Y., & Kim, J. H. (2020). Artificial intelligence in medical diagnostics: A systematic review. The Lancet Digital Health, 2(8), e410-e419. https://doi.org/10.1016/S2589-7500(20)30134-3'),
+      referenceType: 'journal',
+      authors: createFieldValue([
+        { first: 'C. W.', last: 'Lee', initials: 'C. W.' },
+        { first: 'S. Y.', last: 'Park', initials: 'S. Y.' },
+        { first: 'J. H.', last: 'Kim', initials: 'J. H.' },
+      ], 'extracted', 0.95, 'extract'),
+      title: createFieldValue('Artificial intelligence in medical diagnostics: A systematic review', 'extracted', 0.94, 'extract'),
+      year: createFieldValue(2020, 'extracted', 0.96, 'extract'),
+      journal: createFieldValue('The Lancet Digital Health', 'extracted', 0.93, 'extract'),
+      volume: createFieldValue('2', 'extracted', 0.9, 'extract'),
+      issue: createFieldValue('8', 'extracted', 0.9, 'extract'),
+      pages: createFieldValue('e410-e419 https://doi.org/10.1016/S2589-7500(20)30134-3', 'extracted', 0.82, 'extract'),
+      doi: createFieldValue('10.1016/S2589-7500(20)30134-3', 'extracted', 0.96, 'extract'),
+      url: createFieldValue('https://doi.org/10.1016/S2589-7500(20)30134-3', 'extracted', 0.96, 'extract'),
+      extraction: {
+        method: 'deterministic',
+        fallbackUsed: false,
+      },
+    };
+
+    const result = await validateAndScore(citation);
+
+    expect(result.quality?.readyBlockers).toEqual(expect.arrayContaining([
+      'identifier_in_locator',
+      'duplicate_link_target',
+    ]));
+    expect(result.quality?.bucket).toBe('action_needed');
   });
 });

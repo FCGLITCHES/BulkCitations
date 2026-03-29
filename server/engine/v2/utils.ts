@@ -103,7 +103,10 @@ export function createEmptyCitation(raw: string): CanonicalCitation {
     bookTitle: createFieldValue(null, 'extracted', 0, 'split'),
     institution: createFieldValue(null, 'extracted', 0, 'split'),
     edition: createFieldValue(null, 'extracted', 0, 'split'),
+    editors: createFieldValue([], 'extracted', 0, 'split'),
     editor: createFieldValue(null, 'extracted', 0, 'split'),
+    thesisType: createFieldValue(null, 'extracted', 0, 'split'),
+    repository: createFieldValue(null, 'extracted', 0, 'split'),
     detectedStyle: createFieldValue(null, 'extracted', 0, 'split'),
     validationIssues: [],
     duplicate: null,
@@ -305,6 +308,7 @@ export function normalizeUnicodeText(value: string): string {
 
 export function compactUriDoiSpacing(value: string): string {
   return value
+    .replace(/\bh\s*t\s*t\s*p\s*(s)?\s*:\s*\/\s*\//gi, (_match, secureFlag) => `http${secureFlag ? 's' : ''}://`)
     .replace(/\bhttps?\s*:\s*\/\s*\//gi, (match) => match.replace(/\s+/g, ''))
     .replace(/\bwww\s*\.\s*/gi, 'www.')
     .replace(/\bdoi\s*:\s*10\.\s*(\d{4,})\s*\/\s*/gi, 'doi:10.$1/')
@@ -454,6 +458,7 @@ function initialsFromWords(words: string[]): string | null {
 function normalizeCompactedGivenNames(value: string): string {
   return normalizeWhitespace(
     fixUnicodeText(value)
+      .replace(/\b([\p{Lu}]{2,3})\b/gu, (_match, token: string) => token.split('').join(' '))
       .replace(/([\p{Ll}])([\p{Lu}]\.)/gu, '$1 $2')
       .replace(/([\p{Ll}])([\p{Lu}])(?=$|\s)/gu, '$1 $2'),
   );
@@ -621,6 +626,10 @@ function buildPairedAuthorsFromAlternatingTokens(tokens: string[]): string[] {
 }
 
 function splitAuthorBlob(author: string): string[] {
+  const rawNormalized = normalizeWhitespace(fixUnicodeText(author));
+  const invertedConjoinedAuthors = splitConjoinedInvertedAuthorBlobs(rawNormalized);
+  if (invertedConjoinedAuthors) return invertedConjoinedAuthors;
+
   const normalized = normalizeGroupAuthor(fixUnicodeText(author)
     .replace(/\s+(?:and|&)\s+/gi, ', ')
     .replace(/\s*,\s*/g, ', ')
@@ -641,6 +650,10 @@ function splitAuthorBlob(author: string): string[] {
   const repairedGroupTokens = repairGroupAuthorFragments(commaTokens);
   if (repairedGroupTokens.length !== commaTokens.length) {
     return repairedGroupTokens;
+  }
+  const recombinedInvertedTokens = recombineInvertedAuthorCommaTokens(commaTokens);
+  if (recombinedInvertedTokens && recombinedInvertedTokens.length !== commaTokens.length) {
+    return recombinedInvertedTokens;
   }
   if (commaTokens.length >= 4 && commaTokens.length % 2 === 0 && looksLikeSurnameGivenAlternatingArray(commaTokens)) {
     return buildPairedAuthorsFromAlternatingTokens(commaTokens);
@@ -679,6 +692,74 @@ function splitAuthorBlob(author: string): string[] {
     return commaTokens;
   }
   return [normalized];
+}
+
+function splitConjoinedInvertedAuthorBlobs(author: string): string[] | null {
+  const normalized = normalizeWhitespace(author);
+  if (!normalized || !/\s+(?:and|&)\s+/i.test(normalized) || !normalized.includes(',')) return null;
+
+  const segments = normalized
+    .split(/\s+(?:and|&)\s+/i)
+    .map((segment) => normalizeWhitespace(segment))
+    .filter(Boolean);
+  if (segments.length < 2) return null;
+
+  const everySegmentLooksInverted = segments.every((segment) => {
+    const parts = segment
+      .split(',')
+      .map((part) => normalizeWhitespace(part))
+      .filter(Boolean);
+    if (parts.length !== 2) return false;
+    const [surname, given] = parts;
+    return Boolean(
+      surname
+      && given
+      && looksLikeSurnameToken(surname)
+      && looksLikeGivenNamesToken(given),
+    );
+  });
+
+  return everySegmentLooksInverted ? segments : null;
+}
+
+function looksLikeCompactInitialToken(token: string): boolean {
+  const normalized = normalizeWhitespace(token).replace(/\s+/g, '');
+  if (!normalized) return false;
+  return INITIALS_TOKEN_PATTERN.test(normalized) || /^[\p{Lu}]{1,4}$/u.test(normalized);
+}
+
+function recombineInvertedAuthorCommaTokens(tokens: string[]): string[] | null {
+  const normalizedTokens = normalizeAuthorTokens(tokens);
+  if (normalizedTokens.length < 4) return null;
+
+  const recombined: string[] = [];
+  let changed = false;
+
+  for (let index = 0; index < normalizedTokens.length; index += 1) {
+    const current = normalizedTokens[index];
+    const next = normalizedTokens[index + 1];
+    const third = normalizedTokens[index + 2];
+    const fourth = normalizedTokens[index + 3];
+
+    if (current && next && looksLikeSurnameToken(current) && looksLikeGivenNamesToken(next)) {
+      if (third && looksLikeCompactInitialToken(third) && (!fourth || looksLikeSurnameToken(fourth))) {
+        recombined.push(`${current}, ${next} ${third}`);
+        index += 2;
+        changed = true;
+        continue;
+      }
+      if (!third || looksLikeSurnameToken(third)) {
+        recombined.push(`${current}, ${next}`);
+        index += 1;
+        changed = true;
+        continue;
+      }
+    }
+
+    recombined.push(current);
+  }
+
+  return changed ? recombined : null;
 }
 
 function expandAuthorBlobs(authors: Array<string | CanonicalAuthor>): Array<string | CanonicalAuthor> {
@@ -785,7 +866,7 @@ export function parseInitialsFirstAuthor(author: string): CanonicalAuthor | null
   return {
     first: null,
     last: normalizePersonLastName(match[2]),
-    initials: normalizeWhitespace(match[1]),
+    initials: dottedInitials(match[1]) ?? normalizeWhitespace(match[1]),
   };
 }
 
@@ -1064,24 +1145,31 @@ function normalizePersonLastName(value: string): string {
 }
 
 export function canonicalToParsedReference(citation: CanonicalCitation): ParsedReference {
-  const locator = classifyLocatorToken(citation.pages.value ?? '');
+  const locator = classifyLocatorToken(citation.pages?.value ?? '');
+  const editors = (citation.editors?.value ?? []).map(canonicalAuthorToDisplay).filter(Boolean);
   return {
-    authors: citation.authors.value.map(canonicalAuthorToDisplay),
-    title: citation.title.value ?? undefined,
-    year: citation.year.value != null ? String(citation.year.value) : undefined,
-    journal: citation.journal.value ? normalizeKnownContainerName(citation.journal.value) : undefined,
-    volume: citation.volume.value ?? undefined,
-    issue: citation.issue.value ?? undefined,
+    authors: (citation.authors?.value ?? []).map(canonicalAuthorToDisplay),
+    editors: editors.length > 0 ? editors : undefined,
+    title: citation.title?.value ?? undefined,
+    year: citation.year?.value != null ? String(citation.year.value) : undefined,
+    journal: citation.journal?.value ? normalizeKnownContainerName(citation.journal.value) : undefined,
+    volume: citation.volume?.value ?? undefined,
+    issue: citation.issue?.value ?? undefined,
     pages: locator.kind === 'pages' ? locator.value ?? undefined : undefined,
     'article-number': locator.kind === 'article-number' ? locator.value ?? undefined : undefined,
-    doi: citation.doi.value ?? undefined,
-    publisher: citation.publisher.value ?? undefined,
-    url: citation.url.value ?? undefined,
-    conferenceTitle: citation.conferenceTitle.value ? normalizeKnownContainerName(citation.conferenceTitle.value) : undefined,
-    bookTitle: citation.bookTitle.value ? normalizeKnownContainerName(citation.bookTitle.value) : undefined,
-    institution: citation.institution.value ?? undefined,
-    edition: citation.edition.value ?? undefined,
-    editor: citation.editor.value ? canonicalAuthorToDisplay(parseAuthorToCanonical(citation.editor.value)) : undefined,
+    doi: citation.doi?.value ?? undefined,
+    publisher: citation.publisher?.value ?? undefined,
+    placeOfPublication: citation.placeOfPublication?.value ?? undefined,
+    url: citation.url?.value ?? undefined,
+    conferenceTitle: citation.conferenceTitle?.value ? normalizeKnownContainerName(citation.conferenceTitle.value) : undefined,
+    bookTitle: citation.bookTitle?.value ? normalizeKnownContainerName(citation.bookTitle.value) : undefined,
+    institution: citation.institution?.value ?? undefined,
+    edition: citation.edition?.value ?? undefined,
+    editor: citation.editor?.value
+      ? canonicalAuthorToDisplay(parseAuthorToCanonical(citation.editor.value))
+      : (editors[0] ?? undefined),
+    thesisType: citation.thesisType?.value ?? undefined,
+    repository: citation.repository?.value ?? undefined,
   };
 }
 

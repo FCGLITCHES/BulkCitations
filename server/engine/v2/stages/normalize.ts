@@ -6,7 +6,9 @@ import type {
   NormalizationMetadata,
 } from '@shared/schema';
 import { isGroupAuthor, normalizeGroupAuthor, normalizeKnownContainerName } from '../../shared/citationSemantics.js';
+import { cleanConferenceTitleFragment } from '../containerHints.js';
 import { detectResidualArtifactsByField } from '../rawPdfCopy.js';
+import { canonicalIdentifierTarget, extractIdentifierHits } from '../readyBlockers.js';
 import type { V2Stage } from '../contracts.js';
 import { normalizeLocatorValue } from '../qualityRules.js';
 import {
@@ -44,6 +46,44 @@ function normalizeNullableField(
     },
     changed: true,
   };
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function buildFlexibleLiteralPattern(value: string): string {
+  return escapeRegExp(normalizeWhitespace(value))
+    .replace(/\\\s+/g, '\\s+')
+    .replace(/[-\u2010-\u2015]/g, '[-\\u2010-\\u2015]');
+}
+
+function normalizeConferenceTitleField(citation: CanonicalCitation): string {
+  const source = citation.conferenceTitle.value ?? '';
+  if (!source) return source;
+
+  let cleaned = cleanConferenceTitleFragment(fixUnicodeText(source));
+  const publisher = normalizeWhitespace(fixUnicodeText(citation.publisher.value ?? ''));
+  const locator = normalizeLocatorValue(citation.pages.value ?? '') ?? normalizeWhitespace(fixUnicodeText(citation.pages.value ?? ''));
+  const year = citation.year.value != null ? String(citation.year.value) : '';
+
+  if (publisher) {
+    const escapedPublisher = buildFlexibleLiteralPattern(publisher);
+    cleaned = cleaned.replace(new RegExp(`(?:[,.;:]\\s*|\\s+)${escapedPublisher}[,.;:]*$`, 'iu'), '');
+  }
+
+  if (locator) {
+    const escapedLocator = buildFlexibleLiteralPattern(locator);
+    cleaned = cleaned.replace(new RegExp(`(?:[,.;:]\\s*)${escapedLocator}[,.;:]*$`, 'iu'), '');
+    cleaned = cleaned.replace(new RegExp(`(?:[,.;:]\\s*)(?:pp?\\.?\\s*)${escapedLocator}[,.;:]*$`, 'iu'), '');
+    if (year) {
+      const escapedYear = escapeRegExp(year);
+      cleaned = cleaned.replace(new RegExp(`(?:[,.;:]\\s*)${escapedYear}\\s*[;,:]\\s*(?:pp?\\.?\\s*)?${escapedLocator}[,.;:]*$`, 'iu'), '');
+      cleaned = cleaned.replace(new RegExp(`(?:[,.;:]\\s*)${escapedYear}\\s*,\\s*(?:pp?\\.?\\s*)?${escapedLocator}[,.;:]*$`, 'iu'), '');
+    }
+  }
+
+  return normalizeKnownContainerName(normalizeWhitespace(cleaned.replace(/^[,.;:\- ]+|[,.;:\- ]+$/g, '')));
 }
 
 function normalizeAuthors(field: FieldValue<CanonicalAuthor[]>): { field: FieldValue<CanonicalAuthor[]>; changed: boolean } {
@@ -116,6 +156,27 @@ function normalizeEditionValue(value: string): string {
     .replace(/^fourth\s+ed\.?$/i, '4th ed.');
 }
 
+function stripIdentifierSpans(value: string | null | undefined): string {
+  let nextValue = value ?? '';
+  for (const hit of extractIdentifierHits(nextValue)) {
+    nextValue = nextValue.split(hit.raw).join(' ');
+  }
+  return normalizeWhitespace(nextValue.replace(/\s+([,.;:])/g, '$1').replace(/^[,.;:\- ]+|[,.;:\- ]+$/g, ''));
+}
+
+function maybeCreateNormalizedField(
+  field: FieldValue<string | null>,
+  value: string | null,
+): FieldValue<string | null> {
+  if (field.value === value) return field;
+  return {
+    value,
+    source: 'normalized',
+    confidence: field.confidence,
+    stageId: 'normalize',
+  };
+}
+
 export function createNormalizeStage(): V2Stage {
   return {
     id: 'normalize',
@@ -156,7 +217,7 @@ export function createNormalizeStage(): V2Stage {
           const publisherResult = normalizeNullableField(citation.publisher, fixUnicodeText, 'normalize');
           const urlResult = normalizeNullableField(citation.url, (value) => normalizeWhitespace(value).replace(/\.$/, ''), 'normalize');
           const doiResult = normalizeNullableField(citation.doi, normalizeDoiValue, 'normalize');
-          const conferenceResult = normalizeNullableField(citation.conferenceTitle, normalizeKnownContainerName, 'normalize');
+          const conferenceResult = normalizeNullableField(citation.conferenceTitle, () => normalizeConferenceTitleField(citation), 'normalize');
           const bookTitleResult = normalizeNullableField(citation.bookTitle, normalizeKnownContainerName, 'normalize');
           const institutionResult = normalizeNullableField(citation.institution, (value) => {
             const fixed = fixUnicodeText(value);
@@ -193,6 +254,57 @@ export function createNormalizeStage(): V2Stage {
               preparedWorkingChunk?.repairMisses ?? [],
               preparedWorkingChunk?.residualArtifacts ?? [],
             ),
+          };
+
+          const normalizedDoiTarget = canonicalIdentifierTarget(normalizedCitation.doi.value);
+          const normalizedUrlTarget = canonicalIdentifierTarget(normalizedCitation.url.value);
+          const promotedDoiFromUrl = !normalizedCitation.doi.value && normalizedUrlTarget?.kind === 'doi'
+            ? normalizeDoiValue(normalizedCitation.url.value ?? '')
+            : null;
+          if (promotedDoiFromUrl) {
+            normalizedCitation = {
+              ...normalizedCitation,
+              doi: maybeCreateNormalizedField(normalizedCitation.doi, promotedDoiFromUrl),
+            };
+          }
+
+          if (normalizedCitation.doi.value) {
+            normalizedCitation = {
+              ...normalizedCitation,
+              url: maybeCreateNormalizedField(normalizedCitation.url, null),
+            };
+          } else if (
+            normalizedUrlTarget
+            && normalizedDoiTarget
+            && normalizedUrlTarget.target === normalizedDoiTarget.target
+          ) {
+            normalizedCitation = {
+              ...normalizedCitation,
+              url: maybeCreateNormalizedField(normalizedCitation.url, null),
+            };
+          }
+
+          const cleanedTitle = stripIdentifierSpans(normalizedCitation.title.value);
+          const cleanedJournal = stripIdentifierSpans(normalizedCitation.journal.value);
+          const cleanedConference = stripIdentifierSpans(normalizedCitation.conferenceTitle.value);
+          const cleanedBookTitle = stripIdentifierSpans(normalizedCitation.bookTitle.value);
+          const cleanedPublisher = stripIdentifierSpans(normalizedCitation.publisher.value);
+          const cleanedInstitution = stripIdentifierSpans(normalizedCitation.institution.value);
+          const cleanedVolume = stripIdentifierSpans(normalizedCitation.volume.value);
+          const cleanedIssue = stripIdentifierSpans(normalizedCitation.issue.value);
+          const cleanedPages = stripIdentifierSpans(normalizedCitation.pages.value);
+
+          normalizedCitation = {
+            ...normalizedCitation,
+            title: maybeCreateNormalizedField(normalizedCitation.title, cleanedTitle || null),
+            journal: maybeCreateNormalizedField(normalizedCitation.journal, cleanedJournal || null),
+            conferenceTitle: maybeCreateNormalizedField(normalizedCitation.conferenceTitle, cleanedConference || null),
+            bookTitle: maybeCreateNormalizedField(normalizedCitation.bookTitle, cleanedBookTitle || null),
+            publisher: maybeCreateNormalizedField(normalizedCitation.publisher, cleanedPublisher || null),
+            institution: maybeCreateNormalizedField(normalizedCitation.institution, cleanedInstitution || null),
+            volume: maybeCreateNormalizedField(normalizedCitation.volume, cleanedVolume || null),
+            issue: maybeCreateNormalizedField(normalizedCitation.issue, cleanedIssue || null),
+            pages: maybeCreateNormalizedField(normalizedCitation.pages, cleanedPages || null),
           };
 
           if (publisherResult.field.value && isGroupAuthor(publisherResult.field.value)) {

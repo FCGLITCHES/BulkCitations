@@ -1,0 +1,779 @@
+{
+  "request": {
+    "batchSize": 50,
+    "batchIndex": 1,
+    "limit": 20
+  },
+  "durationMs": 2036.25,
+  "inputProfile": {
+    "structure": "semi_structured",
+    "confidence": 0.7777777777777778,
+    "inputType": "mixed_styles",
+    "estimatedCount": 50,
+    "hasDois": true,
+    "hasUrls": true,
+    "styleHints": [
+      "numbered_list",
+      "conference_tail"
+    ],
+    "signals": [
+      "numbered_lines",
+      "author_line_starts",
+      "doi_density",
+      "doi_heavy",
+      "conference_tail_markers",
+      "mixed_style_markers",
+      "long_prose_lines"
+    ]
+  },
+  "stats": {
+    "input_count": 49,
+    "unique_count": 49,
+    "duplicate_count": 0,
+    "enriched_count": 0,
+    "avg_confidence": 0.95,
+    "retracted_count": 0,
+    "llm_fallback_count": 8
+  },
+  "stageTimings": [
+    {
+      "stageId": "ingest",
+      "status": "success",
+      "durationMs": 10,
+      "workUnits": 1,
+      "timeoutMs": 3000
+    },
+    {
+      "stageId": "split",
+      "status": "success",
+      "durationMs": 67,
+      "workUnits": 50,
+      "timeoutMs": 151500
+    },
+    {
+      "stageId": "detect",
+      "status": "success",
+      "durationMs": 303,
+      "workUnits": 50,
+      "timeoutMs": 5750
+    },
+    {
+      "stageId": "extract",
+      "status": "success",
+      "durationMs": 1357,
+      "workUnits": 50,
+      "timeoutMs": 12800
+    },
+    {
+      "stageId": "enrich",
+      "status": "success",
+      "durationMs": 1,
+      "workUnits": 50,
+      "timeoutMs": 187500
+    },
+    {
+      "stageId": "normalize",
+      "status": "success",
+      "durationMs": 17,
+      "workUnits": 50,
+      "timeoutMs": 7000
+    },
+    {
+      "stageId": "validate",
+      "status": "success",
+      "durationMs": 8,
+      "workUnits": 50,
+      "timeoutMs": 10400
+    },
+    {
+      "stageId": "truth",
+      "status": "success",
+      "durationMs": 7,
+      "workUnits": 50,
+      "timeoutMs": 15500
+    },
+    {
+      "stageId": "dedup",
+      "status": "success",
+      "durationMs": 0,
+      "workUnits": 50,
+      "timeoutMs": 30000
+    },
+    {
+      "stageId": "group",
+      "status": "skipped",
+      "durationMs": 0,
+      "workUnits": 0,
+      "timeoutMs": 0
+    },
+    {
+      "stageId": "score",
+      "status": "success",
+      "durationMs": 4,
+      "workUnits": 50,
+      "timeoutMs": 6500
+    },
+    {
+      "stageId": "render",
+      "status": "success",
+      "durationMs": 260,
+      "workUnits": 50,
+      "timeoutMs": 24500
+    },
+    {
+      "stageId": "respond",
+      "status": "success",
+      "durationMs": 0,
+      "workUnits": 49,
+      "timeoutMs": 2000
+    }
+  ],
+  "pipelineLogTail": [
+    {
+      "stageId": "normalize",
+      "status": "success",
+      "message": "Normalized 49 citation(s).",
+      "details": {
+        "citationCount": 49
+      },
+      "durationMs": 17,
+      "timestamp": "2026-03-28T20:56:04.521Z"
+    },
+    {
+      "stageId": "validate",
+      "status": "success",
+      "message": "Validated 49 citation(s).",
+      "details": {
+        "citationCount": 49
+      },
+      "durationMs": 7,
+      "timestamp": "2026-03-28T20:56:04.529Z"
+    },
+    {
+      "stageId": "truth",
+      "status": "success",
+      "message": "No approved truth matched this batch.",
+      "details": {
+        "citationCount": 49,
+        "appliedCount": 0
+      },
+      "durationMs": 7,
+      "timestamp": "2026-03-28T20:56:04.536Z"
+    },
+    {
+      "stageId": "dedup",
+      "status": "skipped",
+      "message": "Deduplication disabled for this request.",
+      "timestamp": "2026-03-28T20:56:04.536Z"
+    },
+    {
+      "stageId": "group",
+      "status": "skipped",
+      "message": "Stage 'group' is disabled in the active v2 registry.",
+      "timestamp": "2026-03-28T20:56:04.536Z"
+    },
+    {
+      "stageId": "score",
+      "status": "success",
+      "message": "Calculated quality scores for 49 citation(s).",
+      "details": {
+        "citationCount": 49
+      },
+      "durationMs": 4,
+      "timestamp": "2026-03-28T20:56:04.540Z"
+    },
+    {
+      "stageId": "render",
+      "status": "success",
+      "message": "Rendered 49 citation(s) in apa.",
+      "details": {
+        "citationCount": 49,
+        "outputStyle": "apa"
+      },
+      "durationMs": 260,
+      "timestamp": "2026-03-28T20:56:04.800Z"
+    },
+    {
+      "stageId": "respond",
+      "status": "success",
+      "message": "Built the v2 response envelope.",
+      "details": {
+        "citationCount": 49,
+        "duplicateCount": 0
+      },
+      "durationMs": 0,
+      "timestamp": "2026-03-28T20:56:04.800Z"
+    }
+  ],
+  "countIntegrity": {
+    "expected": 50,
+    "actual": 49,
+    "missing": 1
+  },
+  "matchedSummary": {
+    "render_ok": 49,
+    "extract_branch:deterministic_raw": 41,
+    "extract_branch:in_source_heuristic_raw": 8
+  },
+  "missingExamples": [
+    {
+      "recordIndex": 37,
+      "recordId": "journal-0033-10-1002-chin-200104012",
+      "sourceType": "journal",
+      "inputStyle": "vancouver",
+      "perturbation": "base",
+      "expectedTitle": "ChemInform Abstract: Matrix‐Isolated Al 2 OF 6 2‐ Ion in Molten and Solid LiF/NaF/KF.",
+      "expectedVenue": "ChemInform",
+      "rawPreview": "Brooker MH, Berg RW, von Barner JH, Bjerrum NJ. ChemInform Abstract: Matrix‐Isolated Al 2 OF 6 2‐ Ion in Molten and Solid LiF/NaF/KF.. Ch...",
+      "likelyAbsorbedBy": []
+    }
+  ],
+  "firstActualCitations": [
+    {
+      "citationIndex": 0,
+      "referenceType": "conference",
+      "title": "ENDOSCOPIC DRAINAGE OF PANCREATIC AND PERI-PANCREATIC Collections: a RETROSPECTIVE ANALYSIS",
+      "venue": "Endoscopy",
+      "rendered": "Correia, C., N Almeida, F. P., D Gomes, A. F., & A Rosa, P. F. (2020). ENDOSCOPIC DRAINAGE OF PANCREATIC AND PERI-PANCREATIC Collections:...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 261,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Correia, C, N Almeida, F Portela, D Gomes, A Fernandes, A Rosa, and P Figueiredo. “ENDOSCOPIC DRAINAGE OF PANCREATIC AND PERI-PANCREATIC ..."
+      },
+      "extract": {
+        "selectedBranch": "in_source_heuristic_raw",
+        "selectionReason": "unanimous_diversity_guard",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 1,
+      "referenceType": "thesis",
+      "title": "Profilaxia antibiótica na biópsia prostática transretal: revisão sistemática com metanálise",
+      "venue": "Universidade Estadual de Campinas",
+      "rendered": "Luís Zani, E. (2021). Profilaxia antibiótica na biópsia prostática transretal: revisão sistemática com metanálise. Universidade Estadual ...",
+      "qualityBucket": "worth_reviewing",
+      "renderWarnings": [
+        "warning:apa:author_particle_handling"
+      ],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 225,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Luís Zani, Emerson (2021). Profilaxia antibiótica na biópsia prostática transretal: revisão sistemática com metanálise [Doctoral disserta..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "lexicographic_veto_coverage_contamination_consensus",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 2,
+      "referenceType": "journal",
+      "title": "Closure to \" Dynamics of Jets in Two‐Layer Stratified Fluids \" by Philip J. W. Roberts and P. Reid Matthews (September, 1984, Vol. 110, No. 4)",
+      "venue": "Journal of Hydraulic Engineering",
+      "rendered": "Roberts, P. J. W., & Matthews, P. R. (1986). Closure to \" Dynamics of Jets in Two‐Layer Stratified Fluids \" by Philip J. W. Roberts and P...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 308,
+        "lineCount": 2,
+        "cleanedChunkPreview": "Philip J. W. Roberts and P. Reid Matthews, \"Closure to “ Dynamics of Jets in Two‐Layer Stratified Fluids ” by Philip J. W. Roberts and P...."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "single_survivor_after_required_field_veto",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 3,
+      "referenceType": "journal",
+      "title": "Characterization of Microorganisms Isolated from Petroleum Hydrocarbon Polluted Soil",
+      "venue": "Bulletin of University of Agricultural Sciences and Veterinary Medicine Cluj-Napoca. Animal Science and Biotechnologies 73, /",
+      "rendered": "Criste, A., Henţ, T., Giuburuncă, M., Zăhan, M., Niste, M., Fiţ, N., & Mitrea, M. (2016). Characterization of Microorganisms Isolated fro...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_author_year_start"
+        ],
+        "flags": [],
+        "chunkLength": 378,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Criste, Adriana, Tabita Henţ, Mihaela Giuburuncă, Marius Zăhan, Monica Niste, Nicodim Fiţ, and Mihai Mitrea. \"Characterization of Microor..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "single_survivor_after_required_field_veto",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 4,
+      "referenceType": "journal",
+      "title": "CHARING-CROSS Hospital. COMPOUND COMMINUTED FRACTURE INVOLVING THE Ankle-joint; a NTISEPTIC Treatment; RECOVERY",
+      "venue": "The Lancet",
+      "rendered": "BELLAMY. (1878). CHARING-CROSS Hospital. COMPOUND COMMINUTED FRACTURE INVOLVING THE Ankle-joint; a NTISEPTIC Treatment; RECOVERY. The Lan...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 216,
+        "lineCount": 1,
+        "cleanedChunkPreview": "BELLAMY. \"CHARING-CROSS HOSPITAL. COMPOUND COMMINUTED FRACTURE INVOLVING THE ANKLE-JOINT ; ANTISEPTIC TREATMENT; RECOVERY.\" The Lancet, v..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "unanimous_diversity_guard",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 5,
+      "referenceType": "conference",
+      "title": "Liquid crystal digital scanner-based HMD",
+      "venue": "SPIE Proceedings",
+      "rendered": "Fruehauf, N., Aye, T. M., Yu, K., Zou, Y., & Savant, G. D. (2000). Liquid crystal digital scanner-based HMD. In SPIE Proceedings (pp. 2-1...",
+      "qualityBucket": "worth_reviewing",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_author_year_start"
+        ],
+        "flags": [],
+        "chunkLength": 202,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Fruehauf, Norbert, Aye, Tin M., Yu, Kevin, Zou, Yunlu, & Savant, Gajendra D. (2000). Liquid crystal digital scanner-based HMD . In SPIE P..."
+      },
+      "extract": {
+        "selectedBranch": "in_source_heuristic_raw",
+        "selectionReason": "all_candidates_vetoed_fallback_to_best_available",
+        "extractorPath": "deterministic",
+        "warningFlags": [
+          "surname_given_alternation_detected"
+        ]
+      }
+    },
+    {
+      "citationIndex": 6,
+      "referenceType": "journal",
+      "title": "Blessing's Bead (review)",
+      "venue": "Bulletin of the Center for Children's Books",
+      "rendered": "Stevenson, D. (2010). Blessing's Bead (review). Bulletin of the Center for Children's Books, 63(6), 243-243.",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 144,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Stevenson, D, 2010. Blessing’s Bead (review). Bulletin of the Center for Children's Books, 63(6), pp.243-243. https://doi.org/10.1353/bcc..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "unanimous_diversity_guard",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 7,
+      "referenceType": "journal",
+      "title": "Demography, Feedback, and Decision-Making for Economic and Social Development",
+      "venue": "The Milbank Memorial Fund Quarterly",
+      "rendered": "Morse, J. W., Linder, F. E., Silver, G. A., Bogue, D. J., Stavenhagen, R., & Paddock, W. C. (1964). Demography, Feedback, and Decision-Ma...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 260,
+        "lineCount": 2,
+        "cleanedChunkPreview": "John W. Morse, F. E. Linder, G. A. Silver, D. J. Bogue, R. Stavenhagen, and W. C. Paddock, \"Demography, Feedback, and Decision-Making for..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "single_survivor_after_required_field_veto",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 8,
+      "referenceType": "journal",
+      "title": "Takotsubo cardiomyopathy: a rare case report highlighting seizure presentation in a 27-year-old female",
+      "venue": "Annals of Medicine & Surgery",
+      "rendered": "Alsadi, M. O. (2025). Takotsubo cardiomyopathy: a rare case report highlighting seizure presentation in a 27-year-old female. Annals of M...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_author_year_start"
+        ],
+        "flags": [],
+        "chunkLength": 359,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Alsadi, Mohammad Obada, John Latifa, Dani Alokla, Mohamad Ismaeel Darkaznli, Lulyah Al Almallah, Fatema Channan, and Momen Jamal AlSallou..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "single_survivor_after_required_field_veto",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 9,
+      "referenceType": "journal",
+      "title": "Recession and Ice Surface Elevation Changes of Baranowski Glacier and Its Impact on Proglacial Relief (King George Island, West Antarctica)",
+      "venue": "Geosciences",
+      "rendered": "Sziło, J., & Józef Bialik, R. (2018). Recession and Ice Surface Elevation Changes of Baranowski Glacier and Its Impact on Proglacial Reli...",
+      "qualityBucket": "ready",
+      "renderWarnings": [
+        "warning:apa:author_particle_handling"
+      ],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_numbering"
+        ],
+        "flags": [],
+        "chunkLength": 260,
+        "lineCount": 1,
+        "cleanedChunkPreview": "50. Joanna Sziło and Robert Józef Bialik, \"Recession and Ice Surface Elevation Changes of Baranowski Glacier and Its Impact on Proglacial..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "unanimous_diversity_guard",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 10,
+      "referenceType": "journal",
+      "title": "Implementation of Ibis Pain X Application in Fashion Design Learning Based on Students' Learning Interests",
+      "venue": "INOVTEK Polbeng - Seri Informatika",
+      "rendered": "Raudatul Jannah, I. F. (2025). Implementation of Ibis Pain X Application in Fashion Design Learning Based on Students' Learning Interests...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_author_year_start"
+        ],
+        "flags": [],
+        "chunkLength": 290,
+        "lineCount": 2,
+        "cleanedChunkPreview": "Raudatul Jannah, Ita Fitriati, Ika Irawati, Nur Fitrianingsih, and Nurhairunnisah. \"Implementation of Ibis Pain X Application in Fashion ..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "unanimous_diversity_guard",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 11,
+      "referenceType": "journal",
+      "title": "Boron additions and M 3 B 2 precipitation in an Fe-Ni-Cr-W-AI-Ti alloy",
+      "venue": "Materials at High Temperatures",
+      "rendered": "Yuqing, L., Bangwei, X., & Qikai, L. (1992). Boron additions and M 3 B 2 precipitation in an Fe-Ni-Cr-W-AI-Ti alloy. Materials at High Te...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_numbering"
+        ],
+        "flags": [],
+        "chunkLength": 194,
+        "lineCount": 1,
+        "cleanedChunkPreview": "[123] Yuqing L, Bangwei X, Qikai L. Boron additions and M 3 B 2 precipitation in an Fe-Ni-Cr-W-AI-Ti alloy. Materials at High Temperature..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "unanimous_diversity_guard",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 12,
+      "referenceType": "book",
+      "title": "Heinrich Heines Krankheit und Leidensgeschichte: Eine kritische Studie",
+      "venue": "De Gruyter",
+      "rendered": "Rahmer, S. (1901). Heinrich Heines Krankheit und Leidensgeschichte: Eine kritische Studie. De Gruyter.",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_author_year_start"
+        ],
+        "flags": [],
+        "chunkLength": 147,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Rahmer, Sigismund (1901). Heinrich Heines Krankheit und Leidensgeschichte: Eine kritische Studie. De Gruyter. https://doi.org/10.1515/978..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "lexicographic_veto_coverage_contamination_consensus",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 13,
+      "referenceType": "journal",
+      "title": "The dynamics of platelet volume in sepsis",
+      "venue": "Journal of Contemporary Clinical Practice",
+      "rendered": "Dragnea, E. M. (2016). The dynamics of platelet volume in sepsis. Journal of Contemporary Clinical Practice, 2(2), 75-76.",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_numbering"
+        ],
+        "flags": [],
+        "chunkLength": 175,
+        "lineCount": 1,
+        "cleanedChunkPreview": "[331] Dragnea, Elena-Mihaela (2016). The dynamics of platelet volume in sepsis. Journal of Contemporary Clinical Practice, 2(2), 75-76. h..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "lexicographic_veto_coverage_contamination_consensus",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 14,
+      "referenceType": "journal",
+      "title": "Adaptive Stress Response to Repeated Bouts of Downhill Running: Salivary Cortisol and α-Amylase",
+      "venue": "Medicine & Science in Sports & Exercise",
+      "rendered": "Bach, C. W., Dyer, B., Ormsbee, M. J., & McKune, A. J. (2014). Adaptive Stress Response to Repeated Bouts of Downhill Running: Salivary C...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_author_year_start"
+        ],
+        "flags": [],
+        "chunkLength": 281,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Bach, Christopher W., Dyer, Barry, Ormsbee, Michael J., & McKune, Andrew J. (2014). Adaptive Stress Response to Repeated Bouts of Downhil..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "all_candidates_vetoed_fallback_to_best_available",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 15,
+      "referenceType": "conference",
+      "title": "Distributed Average Consensus Algorithm for Damage Assessment of Power Distribution System",
+      "venue": "2020 IEEE Power & Energy Society Innovative Smart Grid Technologies Conference (ISGT)",
+      "rendered": "Poudel, S., Sun, H., Nikovski, D., & Zhang, J. (2020). Distributed Average Consensus Algorithm for Damage Assessment of Power Distributio...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 309,
+        "lineCount": 2,
+        "cleanedChunkPreview": "Poudel, Shiva, Hongbo Sun, Daniel Nikovski, and Jinyun Zhang. \"Distributed Average Consensus Algorithm for Damage Assessment of Power Dis..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "lexicographic_veto_coverage_contamination_consensus",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 16,
+      "referenceType": "journal",
+      "title": "Production of Ceramics Based on the Y2O3-ZrO2-HfO2 System for Casting Molds",
+      "venue": "Russian Journal of Inorganic Chemistry",
+      "rendered": "Karachevtsev, F. N., & Stolyarova, V. L. (2019). Production of Ceramics Based on the Y2O3-ZrO2-HfO2 System for Casting Molds. Russian Jou...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_author_year_start"
+        ],
+        "flags": [],
+        "chunkLength": 243,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Folomeikin, Yu. I., Karachevtsev, F. N., & Stolyarova, V. L. (2019). Production of Ceramics Based on the Y2O3–ZrO2–HfO2 System for Castin..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "single_survivor_after_required_field_veto",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 17,
+      "referenceType": "journal",
+      "title": "XENOGRAFTS OF RAT ISLETS INTO DIABETIC Mice: AN EVALUATION OF NEW SMALLER CAPSULES",
+      "venue": "Transplantation",
+      "rendered": "L. U. M., ZHAO-PING, MARTIN KRESTOW, ISABELLA T. TAI, IVAN VACEK, & ANTHONY M. SUN. (1992). XENOGRAFTS OF RAT ISLETS INTO DIABETIC Mice: ...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 269,
+        "lineCount": 1,
+        "cleanedChunkPreview": "LUM, ZHAO-PING, MARTIN KRESTOW, ISABELLA T. TAI, IVAN VACEK, and ANTHONY M. SUN. \"XENOGRAFTS OF RAT ISLETS INTO DIABETIC MICE: AN EVALUAT..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "all_candidates_vetoed_fallback_to_best_available",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 18,
+      "referenceType": "journal",
+      "title": "Analysis of the water state monitoring regulatory support in Ukraine",
+      "venue": "Scientific Bulletin of UNFU",
+      "rendered": "Дева, Л. Р. & Байцар, Р. І. (2022). Analysis of the water state monitoring regulatory support in Ukraine. Scientific Bulletin of UNFU, 32...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_continuation_seed"
+        ],
+        "flags": [],
+        "chunkLength": 158,
+        "lineCount": 1,
+        "cleanedChunkPreview": "Дева ЛР, Байцар РІ. Analysis of the water state monitoring regulatory support in Ukraine. Scientific Bulletin of UNFU. 2022;32(2):33-39. ..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "unanimous_diversity_guard",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    },
+    {
+      "citationIndex": 19,
+      "referenceType": "thesis",
+      "title": "Atlantic Mackerel (Scomber scombrus) Population and Habitat Trends in the Northwest Atlantic",
+      "venue": "University of Rhode Island",
+      "rendered": "McManus, M. (2020). Atlantic Mackerel (Scomber scombrus) Population and Habitat Trends in the Northwest Atlantic. University of Rhode Isl...",
+      "qualityBucket": "ready",
+      "renderWarnings": [],
+      "split": {
+        "reasons": [
+          "profile_mixed_style_markers",
+          "profile_conference_tail_markers",
+          "profile_doi_heavy",
+          "structural_numbering"
+        ],
+        "flags": [],
+        "chunkLength": 217,
+        "lineCount": 1,
+        "cleanedChunkPreview": "26. McManus, M, 2020. Atlantic Mackerel (Scomber scombrus) Population and Habitat Trends in the Northwest Atlantic. Doctoral dissertation..."
+      },
+      "extract": {
+        "selectedBranch": "deterministic_raw",
+        "selectionReason": "lexicographic_veto_coverage_contamination_consensus",
+        "extractorPath": "deterministic",
+        "warningFlags": []
+      }
+    }
+  ]
+}

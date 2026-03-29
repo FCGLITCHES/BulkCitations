@@ -40,6 +40,15 @@ describe('field plausibility', () => {
     });
   });
 
+  it('flags postal-style location tails as implausible titles', () => {
+    expect(assessTitle({
+      title: '071, Yenagoa, Bayelsa State, Nigeria',
+    })).toMatchObject({
+      plausible: false,
+      reason: 'title_looks_like_address_tail',
+    });
+  });
+
   it('flags sentence-like author blobs but keeps single-initial inverted authors plausible', () => {
     expect(assessAuthors({
       authors: ['World Health Organization. Global tuberculosis report 2023. Geneva: World Health Organization;'],
@@ -54,6 +63,14 @@ describe('field plausibility', () => {
 
     expect(assessAuthors({
       authors: ['Rossi, L.', 'Al-Harbi, S.', 'Haddad, L.'],
+    }).plausible).toBe(true);
+
+    expect(assessAuthors({
+      authors: ['Usarralde de Adlerstein, Matilde Nelly'],
+    }).plausible).toBe(true);
+
+    expect(assessAuthors({
+      authors: ['Usarralde de Adlerstein, M. N.'],
     }).plausible).toBe(true);
   });
 

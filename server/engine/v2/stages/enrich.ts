@@ -38,6 +38,7 @@ import {
   nowIso,
   parseAuthorsForStyle,
 } from '../utils.js';
+import { analyzeReadyBlockers } from '../readyBlockers.js';
 import { providerSourceTypeToCanonical } from '../sourceTypes.js';
 
 const PROVIDER_LIMIT = 5;
@@ -464,6 +465,7 @@ function strongLocalResolutionSkipReason(
   batchSize: number,
 ): 'strong_local_doi_skip' | 'strong_local_sync_skip' | 'strong_local_batch_skip' | null {
   if (executionMode !== 'sync') return null;
+  if (citation.doi.value) return null;
   if (scholarlyWebsiteNeedsAuthority(citation)) return null;
 
   const venueConfidence = Math.max(
@@ -490,9 +492,6 @@ function strongLocalResolutionSkipReason(
     return 'strong_local_batch_skip';
   }
   if (citation.extraction?.fallbackUsed || citation.extraction?.method === 'hybrid') return null;
-  if (citation.doi.value && citation.doi.confidence >= 0.95 && batchSize >= 8) {
-    return 'strong_local_doi_skip';
-  }
   if (LOCAL_ONLY_SYNC_REFERENCE_TYPES.includes(citation.referenceType)) {
     return 'strong_local_sync_skip';
   }
@@ -597,23 +596,106 @@ async function applyGrobidRecoveryExtraction(
   };
 }
 
+async function applyBlockerRepairExtraction(
+  citation: CanonicalCitation,
+  extractor: ExtractorAdapter,
+  inputStyle: string,
+  rawInput: string,
+  options: Parameters<ExtractorAdapter["extract"]>[2],
+): Promise<CanonicalCitation | null> {
+  const baseline = analyzeReadyBlockers(citation);
+  if (baseline.codes.length === 0) return null;
+
+  const result = await extractor.extract(rawInput, inputStyle, options);
+  const authorParseResult = result.canonicalAuthors
+    ? {
+      authors: result.canonicalAuthors,
+      parserMode: result.authorParserMode ?? 'none',
+      warningFlags: result.authorWarningFlags ?? [],
+      rejectedCandidates: result.rejectedCandidates ?? [],
+    }
+    : parseAuthorsForStyle(result.parsed.authors ?? [], result.detectedStyle ?? inputStyle);
+  const yearValue = result.parsed.year ? Number.parseInt(result.parsed.year, 10) : null;
+
+  const preferStringField = (
+    current: typeof citation.title,
+    nextValue: string | null | undefined,
+    nextConfidence: number,
+  ) => nextValue
+    ? createFieldValue(nextValue, 'extracted', Math.max(current.confidence, nextConfidence), 'extract')
+    : current;
+
+  const recoveredCitation: CanonicalCitation = {
+    ...citation,
+    referenceType: result.referenceType === 'unknown' ? citation.referenceType : result.referenceType,
+    authors: authorParseResult.authors.length > 0
+      ? createFieldValue(authorParseResult.authors, 'extracted', Math.max(citation.authors.confidence, result.fieldConfidence.authors ?? 0), 'extract')
+      : citation.authors,
+    title: preferStringField(citation.title, result.parsed.title ?? null, result.fieldConfidence.title ?? 0),
+    year: Number.isFinite(yearValue)
+      ? createFieldValue(Number(yearValue), 'extracted', Math.max(citation.year.confidence, result.fieldConfidence.year ?? 0), 'extract')
+      : citation.year,
+    journal: preferStringField(citation.journal, result.parsed.journal ?? null, result.fieldConfidence.journal ?? 0),
+    volume: preferStringField(citation.volume, result.parsed.volume ?? null, result.fieldConfidence.volume ?? 0),
+    issue: preferStringField(citation.issue, result.parsed.issue ?? null, result.fieldConfidence.issue ?? 0),
+    pages: preferStringField(citation.pages, result.parsed.pages ?? result.parsed['article-number'] ?? null, result.fieldConfidence.pages ?? 0),
+    doi: preferStringField(citation.doi, result.parsed.doi ?? null, result.fieldConfidence.doi ?? 0),
+    publisher: preferStringField(citation.publisher, result.parsed.publisher ?? null, result.fieldConfidence.publisher ?? 0),
+    url: preferStringField(citation.url, result.parsed.url ?? null, result.fieldConfidence.url ?? 0),
+    conferenceTitle: preferStringField(citation.conferenceTitle, result.parsed.conferenceTitle ?? null, result.fieldConfidence.journal ?? 0),
+    bookTitle: preferStringField(citation.bookTitle, result.parsed.bookTitle ?? null, result.fieldConfidence.journal ?? 0),
+    institution: preferStringField(citation.institution, result.parsed.institution ?? null, result.fieldConfidence.publisher ?? 0),
+    edition: preferStringField(citation.edition, result.parsed.edition ?? null, result.fieldConfidence.publisher ?? 0),
+    editor: preferStringField(citation.editor, result.parsed.editor ?? null, result.fieldConfidence.authors ?? 0),
+    extraction: {
+      method: result.method,
+      fallbackUsed: true,
+      extractorPath: result.extractorPath,
+      selectedBranch: result.selectedBranch,
+      selectionReason: result.selectionReason ?? 'blocker_repair_reextract',
+      authorParserMode: result.authorParserMode ?? authorParseResult.parserMode,
+      rejectedCandidates: [
+        ...(citation.extraction?.rejectedCandidates ?? []),
+        ...authorParseResult.rejectedCandidates,
+      ],
+      llmFallbackAttempted: citation.extraction?.llmFallbackAttempted ?? result.method !== 'deterministic',
+      llmFallbackAccepted: result.method !== 'deterministic',
+      llmFallbackReason: 'blocker_repair_reextract',
+    },
+  };
+
+  const recovered = analyzeReadyBlockers(recoveredCitation);
+  const improved = recovered.hardCodes.length < baseline.hardCodes.length
+    || (
+      recovered.hardCodes.length === baseline.hardCodes.length
+      && recovered.codes.length < baseline.codes.length
+    );
+
+  return improved ? recoveredCitation : null;
+}
+
 function providerOrderForCitation(citation: CanonicalCitation): ProviderKey[] {
   const doiHint = citation.doi.value ?? deriveDoiHintFromUrl(citation.url.value);
-  if (doiHint) {
-    return isBiomedical(citation) && ['journal', 'preprint', 'unknown', 'website'].includes(citation.referenceType)
-      ? ['doi', 'crossref', 'pubmed', 'openalex']
-      : ['doi', 'crossref', 'openalex'];
-  }
-  if (isBiomedical(citation) && ['journal', 'preprint', 'unknown'].includes(citation.referenceType)) {
-    return ['crossref', 'pubmed', 'openalex'];
-  }
-  if (scholarlyWebsiteNeedsAuthority(citation)) {
-    return ['crossref', 'openalex'];
-  }
-  if (['report', 'book', 'website', 'chapter'].includes(citation.referenceType) || isCorporateHeavy(citation)) {
-    return ['openalex', 'crossref'];
-  }
-  return ['crossref', 'openalex'];
+  const providerOrder = (() => {
+    if (doiHint) {
+      return ['doi'] as ProviderKey[];
+    }
+    if (isBiomedical(citation) && ['journal', 'preprint', 'unknown'].includes(citation.referenceType)) {
+      return ['crossref', 'pubmed', 'openalex'] as ProviderKey[];
+    }
+    if (scholarlyWebsiteNeedsAuthority(citation)) {
+      return ['crossref', 'openalex'] as ProviderKey[];
+    }
+    if (['report', 'book', 'website', 'chapter'].includes(citation.referenceType) || isCorporateHeavy(citation)) {
+      return ['openalex', 'crossref'] as ProviderKey[];
+    }
+    return ['crossref', 'openalex'] as ProviderKey[];
+  })();
+
+  return providerOrder.filter((providerKey) => {
+    if (providerKey === 'doi') return true;
+    return !/^(1|true|yes|on)$/i.test(process.env[`V2_DISABLE_${providerKey.toUpperCase()}`] ?? '');
+  });
 }
 
 async function fetchProviderCandidates(
@@ -622,6 +704,9 @@ async function fetchProviderCandidates(
   doiHint: string | null,
   providerKey: ProviderKey,
 ): Promise<ResolutionCandidateRecord[]> {
+  if (providerKey !== 'doi' && /^(1|true|yes|on)$/i.test(process.env[`V2_DISABLE_${providerKey.toUpperCase()}`] ?? '')) {
+    return [];
+  }
   switch (providerKey) {
     case 'doi':
       return doiHint ? provider.lookupByDoi(doiHint) : [];
@@ -741,6 +826,10 @@ function applyResolutionPayload(
   payload: CachedResolutionPayload,
   resolutionProviderId: string,
   sourceMode: 'cache' | 'shared' | 'direct',
+  options?: {
+    escalatedForBlockers?: boolean;
+    repairFailed?: boolean;
+  },
 ): { citation: CanonicalCitation; appliedFields: string[]; conflictFields: string[] } {
   let nextCitation = citation;
   let appliedFields: string[] = [];
@@ -765,11 +854,14 @@ function applyResolutionPayload(
           matchStrategy: payload.matchStrategy,
           acceptedCandidate: payload.acceptedCandidate,
         }),
+        queryEvidence: buildResolutionQueryEvidence(citation),
         candidateCount: payload.candidateCount,
         rejectedReasons: payload.rejectedReasons,
         appliedFields,
         conflictFields,
         yearToleranceApplied: payload.yearToleranceApplied,
+        escalatedForBlockers: options?.escalatedForBlockers ?? false,
+        repairFailed: options?.repairFailed ?? false,
       },
       enrichment: buildEnrichmentFromResolution(
         payload.acceptedCandidate
@@ -793,6 +885,101 @@ function applyResolutionPayload(
     appliedFields,
     conflictFields,
   };
+}
+
+async function maybeApplyBlockerRepair(
+  citation: CanonicalCitation,
+  extractor: ExtractorAdapter,
+  inputStyle: string,
+  rawInput: string,
+  options: Parameters<ExtractorAdapter["extract"]>[2],
+  blockerDrivenEscalation: boolean,
+): Promise<{ citation: CanonicalCitation; repaired: boolean; repairFailed: boolean }> {
+  if (!blockerDrivenEscalation) {
+    return { citation, repaired: false, repairFailed: false };
+  }
+
+  if (citation.resolution?.acceptedCandidate) {
+    return {
+      citation: {
+        ...citation,
+        resolution: {
+          ...citation.resolution,
+          escalatedForBlockers: true,
+          repairFailed: false,
+        },
+      },
+      repaired: false,
+      repairFailed: false,
+    };
+  }
+
+  if (analyzeReadyBlockers(citation).codes.length === 0) {
+    return {
+      citation: {
+        ...citation,
+        resolution: citation.resolution
+          ? {
+            ...citation.resolution,
+            escalatedForBlockers: true,
+            repairFailed: false,
+          }
+          : citation.resolution,
+      },
+      repaired: false,
+      repairFailed: false,
+    };
+  }
+
+  try {
+    const repairedCitation = await applyBlockerRepairExtraction(citation, extractor, inputStyle, rawInput, options);
+    if (!repairedCitation) {
+      return {
+        citation: {
+          ...citation,
+          resolution: citation.resolution
+            ? {
+              ...citation.resolution,
+              escalatedForBlockers: true,
+              repairFailed: true,
+            }
+            : citation.resolution,
+        },
+        repaired: false,
+        repairFailed: true,
+      };
+    }
+
+    return {
+      citation: {
+        ...repairedCitation,
+        resolution: repairedCitation.resolution
+          ? {
+            ...repairedCitation.resolution,
+            escalatedForBlockers: true,
+            repairFailed: false,
+          }
+          : repairedCitation.resolution,
+      },
+      repaired: true,
+      repairFailed: false,
+    };
+  } catch {
+    return {
+      citation: {
+        ...citation,
+        resolution: citation.resolution
+          ? {
+            ...citation.resolution,
+            escalatedForBlockers: true,
+            repairFailed: true,
+          }
+          : citation.resolution,
+      },
+      repaired: false,
+      repairFailed: true,
+    };
+  }
 }
 
 function buildEnrichmentFromResolution(
@@ -954,6 +1141,40 @@ export function createEnrichStage(
           }
         }
 
+        if (!selected.accepted && citation.raw) {
+          const rawFallbackQuery: ResolutionSearchQuery = {
+            ...resolutionQuery,
+            title: citation.raw,
+            firstAuthorSurname: undefined,
+            groupAuthorLiteral: undefined,
+          };
+          for (const providerKey of ['crossref', 'openalex'] as const) {
+            try {
+              const candidates = await fetchProviderCandidates(
+                resolutionProvider,
+                rawFallbackQuery,
+                null,
+                providerKey,
+              );
+              if (candidates.length > 0) {
+                localFallbacks.push(`enrich:${providerKey}_raw_citation_fallback`);
+              }
+              successfulProviderCount += 1;
+              allCandidates.push(...candidates);
+              selected = chooseBestResolutionCandidate(citation, allCandidates);
+              if (selected.accepted && !selected.ambiguous) {
+                break;
+              }
+            } catch (error) {
+              providerError = true;
+              providerErrorCount += 1;
+              localPartialResult = true;
+              localFallbacks.push(`enrich:${providerKey}_raw_provider_error`);
+              rejectedReasons.push(`${providerKey}_raw_provider_error:${error instanceof Error ? error.message : String(error)}`);
+            }
+          }
+        }
+
         rejectedReasons.push(
           ...selected.evaluated
             .filter((entry) => !entry.accepted)
@@ -1076,10 +1297,20 @@ export function createEnrichStage(
           }
         }
 
+        const resolutionDoiHint = candidateCitation.doi.value ?? deriveDoiHintFromUrl(candidateCitation.url.value);
         const queryEvidence = buildResolutionQueryEvidence(candidateCitation);
         const urlBackedWebsiteEvidence = candidateCitation.referenceType === 'website' && Boolean(queryEvidence.url);
-        const localOnlyResolutionFallback = canUseLocalOnlyResolutionFallback(candidateCitation, queryEvidence);
-        if (!queryEvidence.titlePresent || (!queryEvidence.firstAuthorSurname && !queryEvidence.groupAuthorLiteral && !localOnlyResolutionFallback && !urlBackedWebsiteEvidence)) {
+        const preEnrichBlockers = analyzeReadyBlockers(candidateCitation);
+        const blockerDrivenEscalation = preEnrichBlockers.hardCodes.length > 0 || preEnrichBlockers.softCodes.length >= 2;
+        const localOnlyResolutionFallback = !blockerDrivenEscalation
+          && canUseLocalOnlyResolutionFallback(candidateCitation, queryEvidence);
+        if (
+          !resolutionDoiHint
+          && (
+            !queryEvidence.titlePresent
+            || (!queryEvidence.firstAuthorSurname && !queryEvidence.groupAuthorLiteral && !localOnlyResolutionFallback && !urlBackedWebsiteEvidence)
+          )
+        ) {
           const nextCitation = attachCitationDebug({
             ...candidateCitation,
             resolution: {
@@ -1145,7 +1376,11 @@ export function createEnrichStage(
           };
         }
 
-        const strongLocalSkipReason = strongLocalResolutionSkipReason(candidateCitation, context.executionMode, batchSize);
+        const strongLocalSkipReason = blockerDrivenEscalation
+          ? null
+          : resolutionDoiHint
+          ? null
+          : strongLocalResolutionSkipReason(candidateCitation, context.executionMode, batchSize);
         if (strongLocalSkipReason) {
           const skipMessage = strongLocalSkipReason === 'strong_local_doi_skip'
             ? 'Skipped network resolution because the citation already has a strong local DOI-backed parse.'
@@ -1195,15 +1430,41 @@ export function createEnrichStage(
         };
         const cached = await cache.get<CachedResolutionPayload>(cacheKey);
         if (cached) {
-          const hydrated = applyResolutionPayload(candidateCitation, cached, resolutionProvider.id, 'cache');
-          const cachedCitation = attachCitationDebug(hydrated.citation, 'enrich', {
+          const hydrated = applyResolutionPayload(candidateCitation, cached, resolutionProvider.id, 'cache', {
+            escalatedForBlockers: blockerDrivenEscalation,
+          });
+          const repaired = await maybeApplyBlockerRepair(
+            hydrated.citation,
+            extractor,
+            candidateCitation.detectedStyle.value ?? context.request.inputStyle,
+            context.workingChunkByCitationId[citation.id]?.joinedText ?? citation.raw,
+            {
+              inputProfile: context.inputProfile,
+              detectionConfidence: candidateCitation.detectedStyle.confidence,
+              batchSize,
+              executionMode: context.executionMode,
+              splitArtifact: context.splitArtifactsByCitationId[citation.id],
+              llmBudget: context.llmBudget,
+              debugEnabled: context.debugEnabled,
+            },
+            blockerDrivenEscalation,
+          );
+          if (repaired.repaired) {
+            localFallbacks.push('enrich:blocker_repair_reextract');
+          } else if (repaired.repairFailed) {
+            localFallbacks.push('enrich:blocker_repair_failed');
+            localPartialResult = true;
+          }
+          const cachedCitation = attachCitationDebug(repaired.citation, 'enrich', {
             status: cached.status,
             providerOrder: ['cache'],
             cacheHit: true,
             candidateCount: cached.candidateCount,
             appliedFields: hydrated.appliedFields,
             conflictFields: hydrated.conflictFields,
-            warningFlags: hydrated.conflictFields,
+            warningFlags: [...hydrated.conflictFields, ...preEnrichBlockers.codes],
+            escalatedForBlockers: blockerDrivenEscalation,
+            repairFailed: repaired.repairFailed,
           }, context.debugEnabled);
           logStructuredDebug(context, 'enrich', citationIndex, cachedCitation, {
             providerOrder: ['cache'],
@@ -1220,6 +1481,8 @@ export function createEnrichStage(
               cacheKey,
               appliedFields: hydrated.appliedFields,
               conflictFields: hydrated.conflictFields,
+              escalatedForBlockers: blockerDrivenEscalation,
+              repairFailed: repaired.repairFailed,
             })),
             fallbacksUsed: localFallbacks,
             partialResult: localPartialResult,
@@ -1263,8 +1526,33 @@ export function createEnrichStage(
           resolved.payload,
           resolutionProvider.id,
           sharedExecution ? 'shared' : 'direct',
+          {
+            escalatedForBlockers: blockerDrivenEscalation,
+          },
         );
-        let nextCitation = hydrated.citation;
+        const repaired = await maybeApplyBlockerRepair(
+          hydrated.citation,
+          extractor,
+          candidateCitation.detectedStyle.value ?? context.request.inputStyle,
+          context.workingChunkByCitationId[citation.id]?.joinedText ?? citation.raw,
+          {
+            inputProfile: context.inputProfile,
+            detectionConfidence: candidateCitation.detectedStyle.confidence,
+            batchSize,
+            executionMode: context.executionMode,
+            splitArtifact: context.splitArtifactsByCitationId[citation.id],
+            llmBudget: context.llmBudget,
+            debugEnabled: context.debugEnabled,
+          },
+          blockerDrivenEscalation,
+        );
+        if (repaired.repaired) {
+          localFallbacks.push('enrich:blocker_repair_reextract');
+        } else if (repaired.repairFailed) {
+          localFallbacks.push('enrich:blocker_repair_failed');
+          localPartialResult = true;
+        }
+        let nextCitation = repaired.citation;
         let stageStatus: 'success' | 'warning' = 'warning';
         let stageMessage = 'No exact external match was accepted for this citation.';
 
@@ -1295,8 +1583,10 @@ export function createEnrichStage(
           appliedFields: hydrated.appliedFields,
           conflictFields: hydrated.conflictFields,
           yearToleranceApplied: nextCitation.resolution?.yearToleranceApplied ?? false,
-          warningFlags: hydrated.conflictFields,
+          warningFlags: [...hydrated.conflictFields, ...preEnrichBlockers.codes],
           sharedExecution,
+          escalatedForBlockers: blockerDrivenEscalation,
+          repairFailed: repaired.repairFailed,
         }, context.debugEnabled);
         logStructuredDebug(context, 'enrich', citationIndex, nextCitation, {
           providerOrder: resolved.providerOrder,
@@ -1309,6 +1599,7 @@ export function createEnrichStage(
           selectedBranch: undefined,
           selectionReason: nextCitation.resolution?.status,
           sharedExecution,
+          escalatedForBlockers: blockerDrivenEscalation,
         });
 
         return {
@@ -1319,6 +1610,8 @@ export function createEnrichStage(
             appliedFields: hydrated.appliedFields,
             conflictFields: hydrated.conflictFields,
             sharedExecution,
+            escalatedForBlockers: blockerDrivenEscalation,
+            repairFailed: repaired.repairFailed,
           })),
           fallbacksUsed: localFallbacks,
           partialResult: localPartialResult,

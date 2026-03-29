@@ -286,6 +286,7 @@ export function buildResolutionQueryEvidence(citation: CanonicalCitation): Resol
   return {
     titlePresent: Boolean(title.normalized),
     titleTokenCount: title.tokens.length,
+    titleNormalized: title.normalized || null,
     firstAuthorSurname: primaryAuthor.firstAuthorSurname,
     groupAuthorLiteral: primaryAuthor.groupAuthorLiteral,
     year: citation.year.value,
@@ -693,6 +694,8 @@ export function buildResolutionMetadata(
     appliedFields: [],
     conflictFields: [],
     yearToleranceApplied: false,
+    escalatedForBlockers: false,
+    repairFailed: false,
     queryEvidence: buildResolutionQueryEvidence(citation),
     ...overrides,
   };

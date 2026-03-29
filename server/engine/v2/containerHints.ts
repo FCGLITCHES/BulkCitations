@@ -8,15 +8,23 @@ import { bestVenueFromParsed, proceedingsSignal } from './qualityRules.js';
 import { normalizeWhitespace } from './utils.js';
 
 const REPORT_PUBLISHER_SIGNAL = /\b(?:organization|agency|administration|department|ministry|office|commission|council|bank|foundation|university|institute|society|association|bureau|federal reserve|inter-american development bank|world health organization|un women|openai)\b/i;
+const STRONG_REPORT_PUBLISHER_SIGNAL = /\b(?:office of scientific and technical information|defense technical information center|national bureau of economic research|national institute of standards and technology|inter-american development bank|federal reserve bank|nuclear regulatory commission|natural resources canada|akademiya2063|researchhub technologies|sae international)\b/i;
 const REPORT_TITLE_SIGNAL = /\b(?:report|guideline|working paper|policy brief|technical note|white paper|manual|handbook|statement|case study)\b/i;
+const REPORT_TITLE_OVERRIDE_SIGNAL = /\b(?:report|guideline|working paper|policy brief|briefs?|technical note|white paper|statement|case study|forecasts?)\b/i;
 const BOOK_TITLE_SIGNAL = /\b(?:handbook|manual|guide|style guide|textbook|companion)\b/i;
 const THESIS_SIGNAL = /\b(?:(?:doctoral|phd|master'?s?)\s+)?(?:dissertation|thesis)\b/i;
+const REPORT_DOI_SIGNAL = /^(?:10\.2172\/|10\.21236\/|10\.6028\/|10\.3386\/w\d+|10\.20955\/wp\.|10\.18235\/|10\.54067\/acpf\.|10\.4095\/|10\.55277\/researchhub\.|10\.4271\/)/i;
 const SERIAL_PAGES_TAIL_PATTERN = /(?:^|[.;,:]\s*:?\s*)(?<pages>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?|e\d{4,}|n\d+)\s*$/i;
 const SERIAL_VOLUME_ISSUE_TAIL_PATTERN = /(?:^|,\s*)(?<volume>\d+)\((?<issue>[A-Za-z0-9-]+)\)\s*$/i;
 const SERIAL_VOLUME_TAIL_PATTERN = /(?:^|,\s*)(?<volume>\d+)\s*$/i;
+const SERIAL_SEMICOLON_VOLUME_ISSUE_TAIL_PATTERN = /(?:^|[.;]\s*(?:1[5-9]\d{2}|20\d{2})\s*[;,:]\s*)(?<volume>\d+)\((?<issue>[A-Za-z0-9-]+)\)\s*$/i;
+const SERIAL_SEMICOLON_VOLUME_TAIL_PATTERN = /(?:^|[.;]\s*(?:1[5-9]\d{2}|20\d{2})\s*[;,:]\s*)(?<volume>\d+)\s*$/i;
 const SERIAL_YEAR_TAIL_PATTERN = /(?:^|[.;,]\s*)(?<year>(?:1[5-9]\d{2}|20\d{2}))(?:(?:\s*[;,:]\s*)|$)/i;
 const JOURNAL_LIKE_SIGNAL = /\b(?:journal|review|transactions|letters|proceedings|science signaling|endoscopy|medicine|psychiatry|neurological sciences)\b/i;
 const DOI_OR_URL_TAIL_PATTERN = /\b(?:doi:\s*)?10\.\d{4,}\/\S+\b|https?:\/\/\S+/gi;
+const PUBLISHER_NAME_SIGNAL = /\b(?:ieee|acm|springer|elsevier|wiley|routledge|sage|taylor\s*&\s*francis|oxford university press|cambridge university press|crc press|mdpi|pearson|mcgraw-hill|palgrave|american society of mechanical engineers|thieme|press|verlag|editions?|editora|publishers?|federation)\b/i;
+const SERIAL_TAIL_PATTERN = /(?:,\s*\d+(?:\([A-Za-z0-9-]+\))?(?:,\s*[A-Za-z]?\d[\w.-]*(?:\s*[-–]\s*[A-Za-z]?\d[\w.-]*)?)?|[.;]\s*(?:1[5-9]\d{2}|20\d{2})\s*[;,:]\s*\d+(?:\([A-Za-z0-9-]+\))?(?::\s*[A-Za-z0-9][\w.-]*(?:\s*[-–]\s*[A-Za-z0-9][\w.-]*)?)?)\s*$/i;
+const SERIAL_LOCATOR_ONLY_TAIL_PATTERN = /(?:,\s*[A-Za-z]?\d[\w.-]*(?:\s*[-–]\s*[A-Za-z]?\d[\w.-]*)?)\s*$/i;
 
 function stripLeadingDecoration(value: string): string {
   let cleaned = normalizeWhitespace(value);
@@ -41,8 +49,55 @@ function cleanVenueFragment(value: string): string {
   }
 
   let cleaned = normalizeWhitespace(normalized.slice(0, end));
+  cleaned = normalizeWhitespace(
+    cleaned
+      .replace(SERIAL_TAIL_PATTERN, '')
+      .replace(SERIAL_LOCATOR_ONLY_TAIL_PATTERN, ''),
+  );
   if (cleaned.toLowerCase().startsWith('in ')) cleaned = normalizeWhitespace(cleaned.slice(3));
   return cleaned.replace(/[,:;.-]+$/g, '').trim();
+}
+
+export function cleanConferenceTitleFragment(value: string): string {
+  let cleaned = normalizeWhitespace(value).replace(DOI_OR_URL_TAIL_PATTERN, '');
+  if (!cleaned) return cleaned;
+
+  cleaned = cleaned
+    .replace(/,\s*pp?\.?\s*[A-Za-z]?\d[\w.-]*(?:\s*[-–]\s*[A-Za-z]?\d[\w.-]*)?(?:\.\s*[^.]+)?$/i, '')
+    .replace(/,\s*(?:1[5-9]\d{2}|20\d{2})(?:,\s*pp?\.?\s*[A-Za-z]?\d[\w.-]*(?:\s*[-–]\s*[A-Za-z]?\d[\w.-]*)?)?(?:\.\s*[^.]+)?$/i, '')
+    .replace(/(?:,\s*|\.\s*)(?:1[5-9]\d{2}|20\d{2})\s*[;,:]\s*(?:pp?\.?\s*)?[A-Za-z0-9][\w.-]*(?:\s*[-–]\s*[A-Za-z0-9][\w.-]*)?(?:\.\s*[^.]+)?$/i, '')
+    .replace(/(?:,\s*)(?:pp?\.?\s*)?\d+\s*[-–]\s*\d+(?:\.\s*[^.]+)?$/i, '')
+    .replace(/\.\s*(?:19|20)\d{2}\s*$/i, '')
+    .replace(/^in\s+/i, '')
+    .trim();
+
+  const sentenceParts = cleaned
+    .split(/\.\s+/)
+    .map((part) => normalizeWhitespace(part))
+    .filter(Boolean);
+  if (sentenceParts.length >= 2) {
+    const trailingPart = sentenceParts[sentenceParts.length - 1] ?? '';
+    if (PUBLISHER_NAME_SIGNAL.test(trailingPart)) {
+      sentenceParts.pop();
+      cleaned = sentenceParts.join('. ');
+    }
+  }
+
+  const commaParts = cleaned
+    .split(',')
+    .map((part) => normalizeWhitespace(part))
+    .filter(Boolean);
+  if (commaParts.length >= 2) {
+    const trailingPart = commaParts[commaParts.length - 1] ?? '';
+    if (
+      PUBLISHER_NAME_SIGNAL.test(trailingPart)
+      && !/\b(?:conference|symposium|workshop|congress|meeting|proceedings|forum|summit|colloquium|poster abstracts?|electronic poster abstracts?)\b/i.test(trailingPart)
+    ) {
+      cleaned = commaParts.slice(0, -1).join(', ');
+    }
+  }
+
+  return normalizeWhitespace(cleaned.replace(/^[,.;:\- ]+|[,.;:\- ]+$/g, ''));
 }
 
 function looksLikeJournalVenuePublisher(value: string): boolean {
@@ -86,7 +141,13 @@ function recoverSerialFieldsFromVenue(parsed: ParsedReference): ParsedReference 
     if (!next.volume) next.volume = volumeIssueMatch.groups.volume;
     if (!next.issue) next.issue = volumeIssueMatch.groups.issue;
   } else {
-    const volumeMatch = serialSource.match(SERIAL_VOLUME_TAIL_PATTERN);
+    const semicolonVolumeIssueMatch = serialSource.match(SERIAL_SEMICOLON_VOLUME_ISSUE_TAIL_PATTERN);
+    if (semicolonVolumeIssueMatch?.groups) {
+      if (!next.volume) next.volume = semicolonVolumeIssueMatch.groups.volume;
+      if (!next.issue) next.issue = semicolonVolumeIssueMatch.groups.issue;
+    }
+    const volumeMatch = serialSource.match(SERIAL_VOLUME_TAIL_PATTERN)
+      ?? serialSource.match(SERIAL_SEMICOLON_VOLUME_TAIL_PATTERN);
     if (!next.volume && volumeMatch?.groups?.volume) {
       next.volume = volumeMatch.groups.volume;
     }
@@ -118,15 +179,59 @@ function cleanInstitutionFragment(value: string): string {
   return cleaned;
 }
 
+function looksCommercialBookPublisher(value: string): boolean {
+  const normalized = normalizeWhitespace(value);
+  if (!normalized) return false;
+  return PUBLISHER_NAME_SIGNAL.test(normalized)
+    || /\bon behalf of\b/i.test(normalized)
+    || /\b(?:press|publishers?|verlag|editora|ediciones?|imprint)\b/i.test(normalized);
+}
+
+function splitTrailingPublisherFromBookTitle(bookTitle: string): { bookTitle: string; publisher?: string } {
+  const normalized = normalizeWhitespace(bookTitle);
+  if (!normalized || !normalized.includes(',')) return { bookTitle };
+
+  const parts = normalized.split(',').map((part) => normalizeWhitespace(part)).filter(Boolean);
+  if (parts.length < 2) return { bookTitle: normalized };
+
+  const publisherCandidate = parts[parts.length - 1] ?? '';
+  if (!PUBLISHER_NAME_SIGNAL.test(publisherCandidate)) {
+    return { bookTitle: normalized };
+  }
+
+  const titleCandidate = normalizeWhitespace(parts.slice(0, -1).join(', '));
+  if (!titleCandidate) return { bookTitle: normalized };
+
+  return {
+    bookTitle: titleCandidate,
+    publisher: publisherCandidate,
+  };
+}
+
 function inferContainerKind(
   parsed: ParsedReference,
   referenceType: CanonicalReferenceType,
   venue: string,
 ): { kind: ExtractionContainerHints['containerKindHint']; confidence: number } {
   const lowerVenue = venue.toLowerCase();
+  const explicitContainerVenue = normalizeWhitespace(parsed.journal ?? parsed.conferenceTitle ?? parsed.bookTitle ?? '');
   const locator = normalizeWhitespace(parsed.pages ?? parsed['article-number'] ?? '');
   const publisherOrInstitution = normalizeWhitespace(parsed.institution ?? parsed.publisher ?? '');
   const title = normalizeWhitespace(parsed.title ?? '');
+  const doi = normalizeWhitespace(parsed.doi ?? '');
+  const reportTitleLike = REPORT_TITLE_OVERRIDE_SIGNAL.test(title)
+    || /\bbriefs?\s+no\.?\s*\d+\b/i.test(title);
+  const bookClaimLikely = referenceType === 'book'
+    || Boolean(parsed.edition)
+    || BOOK_TITLE_SIGNAL.test(title);
+  const strongReportEvidence = referenceType === 'report'
+    || STRONG_REPORT_PUBLISHER_SIGNAL.test(publisherOrInstitution)
+    || REPORT_DOI_SIGNAL.test(doi)
+    || reportTitleLike
+    || (REPORT_TITLE_SIGNAL.test(title) && !BOOK_TITLE_SIGNAL.test(title));
+  const weakInstitutionalReportEvidence = REPORT_PUBLISHER_SIGNAL.test(publisherOrInstitution)
+    && !looksCommercialBookPublisher(publisherOrInstitution)
+    && !bookClaimLikely;
 
   if (
     parsed.conferenceTitle
@@ -158,7 +263,7 @@ function inferContainerKind(
 
   if (
     parsed.url
-    && !venue
+    && !explicitContainerVenue
     && !parsed.volume
     && !parsed.issue
     && !locator
@@ -170,36 +275,40 @@ function inferContainerKind(
   }
 
   if (
-    referenceType === 'book'
-    && !venue
+    publisherOrInstitution
+    && !explicitContainerVenue
     && !parsed.volume
     && !parsed.issue
     && !locator
     && !parsed.bookTitle
     && !parsed.conferenceTitle
-    && (parsed.edition || BOOK_TITLE_SIGNAL.test(title) || publisherOrInstitution)
+    && (
+      strongReportEvidence
+      || weakInstitutionalReportEvidence
+    )
   ) {
-    return { kind: 'book', confidence: 0.92 };
+    return { kind: 'report', confidence: referenceType === 'report' ? 0.94 : 0.88 };
   }
 
   if (
-    publisherOrInstitution
-    && !venue
+    referenceType === 'book'
+    && !explicitContainerVenue
     && !parsed.volume
     && !parsed.issue
     && !locator
     && !parsed.bookTitle
     && !parsed.conferenceTitle
-    && (referenceType === 'report' || REPORT_PUBLISHER_SIGNAL.test(publisherOrInstitution) || REPORT_TITLE_SIGNAL.test(title))
+    && !reportTitleLike
+    && (parsed.edition || BOOK_TITLE_SIGNAL.test(title) || publisherOrInstitution)
   ) {
-    return { kind: 'report', confidence: referenceType === 'report' ? 0.94 : 0.88 };
+    return { kind: 'book', confidence: 0.92 };
   }
 
   if (referenceType === 'report' && (parsed.institution || parsed.publisher)) {
     return { kind: 'report', confidence: 0.78 };
   }
 
-  if (referenceType === 'website' && parsed.url && !venue) {
+  if (referenceType === 'website' && parsed.url && !explicitContainerVenue) {
     return { kind: 'website', confidence: 0.76 };
   }
 
@@ -229,6 +338,7 @@ export function buildContainerHints(
     || lowerVenue.includes('(pp.')
     || lowerVenue.includes(' vol.')
     || lowerVenue.includes(' no.')
+    || SERIAL_TAIL_PATTERN.test(venue)
   );
   const venueContaminated = Boolean(venue) && (
     lowerVenue.startsWith('in ')
@@ -282,6 +392,25 @@ export function resolveWinnerContainer(
   let next: ParsedReference = { ...parsed };
   let hints = buildContainerHints(next, referenceType);
 
+  if (next.bookTitle) {
+    const editedBookTitleMatch = normalizeWhitespace(next.bookTitle).match(/^(?<bookTitle>.+?),\s+edited by\s+(?<editor>.+?)(?:,\s*(?<pages>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?))?$/i);
+    if (editedBookTitleMatch?.groups) {
+      next.bookTitle = normalizeWhitespace(editedBookTitleMatch.groups.bookTitle ?? '') || next.bookTitle;
+      next.editor = normalizeWhitespace(next.editor ?? editedBookTitleMatch.groups.editor ?? '') || next.editor;
+      if (!next.pages && editedBookTitleMatch.groups.pages) {
+        next.pages = normalizeWhitespace(editedBookTitleMatch.groups.pages).replace(/\s*[-–]\s*/g, '-');
+      }
+    }
+
+    if (!next.publisher) {
+      const splitBookTitle = splitTrailingPublisherFromBookTitle(next.bookTitle);
+      next.bookTitle = splitBookTitle.bookTitle;
+      if (splitBookTitle.publisher) {
+        next.publisher = splitBookTitle.publisher;
+      }
+    }
+  }
+
   const thesisTitleMatch = normalizeWhitespace(next.title ?? '').match(
     /^(?<title>.+?)\s*[\[(](?:(?:doctoral|phd|master'?s?)\s+)?(?:dissertation|thesis)\s*,\s*(?<institution>[^\])]+)[\])]\.?$/i,
   );
@@ -311,6 +440,14 @@ export function resolveWinnerContainer(
     next = recoverSerialFieldsFromVenue(next);
   }
 
+  if (
+    (referenceType === 'journal' || hints.containerKindHint === 'journal')
+    && next.journal
+    && SERIAL_TAIL_PATTERN.test(next.journal)
+  ) {
+    next.journal = normalizeKnownContainerName(cleanVenueFragment(next.journal));
+  }
+
   if (next.publisher) {
     const cleanedPublisher = stripLeadingDecoration(next.publisher);
     if (cleanedPublisher) next.publisher = cleanedPublisher;
@@ -318,11 +455,19 @@ export function resolveWinnerContainer(
     next.publisher = hints.copyrightPublisherCandidate;
   }
 
+  if (!next.placeOfPublication && next.publisher) {
+    const placePublisherMatch = normalizeWhitespace(next.publisher).match(/^(?<place>[^:]+):\s*(?<publisher>.+)$/);
+    if (placePublisherMatch?.groups) {
+      next.placeOfPublication = normalizeWhitespace(placePublisherMatch.groups.place ?? '') || next.placeOfPublication;
+      next.publisher = normalizeWhitespace(placePublisherMatch.groups.publisher ?? '') || next.publisher;
+    }
+  }
+
   if (next.journal && hints.venueContaminated) {
     next.journal = normalizeKnownContainerName(cleanVenueFragment(next.journal));
   }
-  if (next.conferenceTitle && hints.venueContaminated) {
-    next.conferenceTitle = normalizeKnownContainerName(cleanVenueFragment(next.conferenceTitle));
+  if (next.conferenceTitle && (referenceType === 'conference' || hints.containerKindHint === 'conference' || hints.venueContaminated)) {
+    next.conferenceTitle = normalizeKnownContainerName(cleanConferenceTitleFragment(next.conferenceTitle));
   }
   if (next.bookTitle && hints.venueContaminated) {
     next.bookTitle = normalizeKnownContainerName(cleanVenueFragment(next.bookTitle));

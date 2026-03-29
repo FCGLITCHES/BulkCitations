@@ -15,7 +15,7 @@ import type { ApprovedCanonicalFields } from './reportTypes';
 
 // ── v2 Canonical Engine Types ──
 
-export type V2SourceType = 'text' | 'bib' | 'ris' | 'pdf_base64' | 'url' | 'doi_list';
+export type V2SourceType = 'text' | 'bib' | 'ris' | 'pdf_base64' | 'pdf_file' | 'url' | 'doi_list';
 export type V2FieldSource = 'extracted' | 'authority' | 'merged' | 'user' | 'normalized';
 export type V2StageId =
   | 'ingest'
@@ -154,6 +154,7 @@ export interface ResolutionAcceptedCandidate {
 export interface ResolutionQueryEvidence {
   titlePresent: boolean;
   titleTokenCount: number;
+  titleNormalized?: string | null;
   firstAuthorSurname?: string;
   groupAuthorLiteral?: string;
   year?: number | null;
@@ -173,6 +174,8 @@ export interface ResolutionMetadata {
   appliedFields: string[];
   conflictFields: string[];
   yearToleranceApplied: boolean;
+  escalatedForBlockers?: boolean;
+  repairFailed?: boolean;
   queryEvidence: ResolutionQueryEvidence;
 }
 
@@ -185,6 +188,7 @@ export interface CitationQualityScore {
   flags: string[];
   missingRequired: string[];
   missingOptional: string[];
+  readyBlockers: string[];
   bucket: CitationReviewBucket;
   bucketReasons: string[];
 }
@@ -281,8 +285,11 @@ export interface CandidateScoreBreakdown {
   vetoed: boolean;
   vetoReasons: string[];
   requiredCoveredCount: number;
+  requiredTotalCount: number;
   expectedCoveredCount: number;
+  expectedTotalCount: number;
   optionalCoveredCount: number;
+  optionalTotalCount: number;
   contaminationPenalty: number;
   consensusScore: number;
   sourceTypeCoherence: number;
@@ -399,7 +406,10 @@ export interface CanonicalCitation {
   bookTitle: FieldValue<string | null>;
   institution: FieldValue<string | null>;
   edition: FieldValue<string | null>;
+  editors: FieldValue<CanonicalAuthor[]>;
   editor: FieldValue<string | null>;
+  thesisType: FieldValue<"Doctoral dissertation" | "Master's thesis" | null>;
+  repository: FieldValue<string | null>;
   detectedStyle: FieldValue<string | null>;
   split?: SplitMetadata;
   extraction?: ExtractionMetadata;

@@ -9,6 +9,7 @@ import {
 import {
   addCitationStageLog,
   attachCitationDebug,
+  canonicalAuthorToDisplay,
   createFieldValue,
   createStageDiagnostic,
   isVerboseDebugEnabled,
@@ -78,6 +79,10 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           }
           : parseAuthorsForStyle(result.parsed.authors ?? [], result.detectedStyle ?? effectiveStyle);
         const yearValue = result.parsed.year ? Number.parseInt(result.parsed.year, 10) : null;
+        const parsedEditors = (result.parsed.editors ?? []).filter((editor) => Boolean(editor?.last || editor?.literal));
+        const fallbackEditor = parsedEditors.length > 0
+          ? canonicalAuthorToDisplay(parsedEditors[0]!)
+          : (result.parsed.editor ?? null);
         if (result.fallbackUsed) {
           fallbacksUsed.push(`extract:${result.method}`);
         }
@@ -116,12 +121,16 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           pages: createFieldValue(result.parsed.pages ?? result.parsed['article-number'] ?? null, 'extracted', result.fieldConfidence.pages ?? 0, 'extract'),
           doi: createFieldValue(result.parsed.doi ?? null, 'extracted', result.fieldConfidence.doi ?? 0, 'extract'),
           publisher: createFieldValue(result.parsed.publisher ?? null, 'extracted', result.fieldConfidence.publisher ?? 0, 'extract'),
+          placeOfPublication: createFieldValue(result.parsed.placeOfPublication ?? null, 'extracted', result.fieldConfidence.publisher ?? 0, 'extract'),
           url: createFieldValue(result.parsed.url ?? null, 'extracted', result.fieldConfidence.url ?? 0, 'extract'),
           conferenceTitle: createFieldValue(result.parsed.conferenceTitle ?? null, 'extracted', result.fieldConfidence.journal ?? 0, 'extract'),
           bookTitle: createFieldValue(result.parsed.bookTitle ?? null, 'extracted', result.fieldConfidence.journal ?? 0, 'extract'),
           institution: createFieldValue(result.parsed.institution ?? null, 'extracted', result.fieldConfidence.publisher ?? 0, 'extract'),
           edition: createFieldValue(result.parsed.edition ?? null, 'extracted', result.fieldConfidence.publisher ?? 0, 'extract'),
-          editor: createFieldValue(result.parsed.editor ?? null, 'extracted', result.fieldConfidence.authors ?? 0, 'extract'),
+          editors: createFieldValue(parsedEditors, 'extracted', result.fieldConfidence.authors ?? 0, 'extract'),
+          editor: createFieldValue(fallbackEditor, 'extracted', result.fieldConfidence.authors ?? 0, 'extract'),
+          thesisType: createFieldValue(result.parsed.thesisType ?? null, 'extracted', result.fieldConfidence.publisher ?? 0, 'extract'),
+          repository: createFieldValue(result.parsed.repository ?? null, 'extracted', result.fieldConfidence.publisher ?? 0, 'extract'),
           institutionMapping: result.referenceType === 'thesis'
             ? result.parsed.institution
               ? {
@@ -185,6 +194,12 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
           llmFallbackFieldsImproved: result.llmFallbackFieldsImproved,
           llmFallbackStrictPassDelta: result.llmFallbackStrictPassDelta,
           llmFallbackFirstAuthorConfidence: result.llmFallbackFirstAuthorConfidence,
+          llmRawExtraction: result.debug?.llm_raw_extraction,
+          llmBeforeParsed: result.debug?.llm_before_parsed,
+          llmCandidateAfterMerge: result.debug?.llm_candidate_after_merge,
+          llmFailureMessage: result.debug?.llm_failure_message,
+          llmTrigger: result.debug?.llm_trigger,
+          llmInferenceNote: result.parsed.inferenceNote,
           preparedWorkingChunk: {
             joinedText: preparedWorkingChunk.joinedText,
             fieldHints: preparedWorkingChunk.fieldHints,
@@ -306,16 +321,16 @@ export function createExtractStage(extractor: ExtractorAdapter): V2Stage {
         .filter((outcome) => outcome.recovered)
         .map((outcome) => outcome.timedOut ? 'extract:item-timeout' : 'extract:item-error');
       fallbacksUsed.push(...recoveredFallbacks);
+      const extractionDegraded = recoveredFallbacks.length > 0 || fallbacksUsed.includes('extract:llm_cap_reached');
 
       return {
         ...context,
         citations,
         workingChunkByCitationId,
         fallbacksUsed,
-        partialResult: context.partialResult || fallbacksUsed.length > context.fallbacksUsed.length,
+        partialResult: context.partialResult || extractionDegraded,
         partialReasons: [...new Set([
           ...context.partialReasons,
-          ...(fallbacksUsed.length > context.fallbacksUsed.length ? ['extract:fallback_used'] : []),
           ...(fallbacksUsed.includes('extract:llm_cap_reached') ? ['extract:llm_cap_reached'] : []),
           ...recoveredFallbacks,
         ])],

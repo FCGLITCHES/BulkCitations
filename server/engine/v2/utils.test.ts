@@ -8,6 +8,7 @@ import {
   normalizeCanonicalAuthor,
   parseAuthorsForStyle,
 } from './utils.js';
+import { classifyLocatorToken } from '../shared/citationSemantics.js';
 import { postCslCleanup } from './stages/render.js';
 
 describe('v2 author rescue utilities', () => {
@@ -83,6 +84,31 @@ describe('v2 author rescue utilities', () => {
     expect(result.authors).toMatchObject([
       { last: 'Baron', first: 'Reuben M.', initials: 'R. M.' },
       { last: 'Kenny', first: 'David A.', initials: 'D. A.' },
+    ]);
+  });
+
+  it('expands compact initial clusters in inverted harvard author strings', () => {
+    const result = parseAuthorsForStyle(['Ceci, SJ and Bruck, M'], 'harvard');
+
+    expect(result.authors).toMatchObject([
+      { last: 'Ceci', initials: 'S. J.' },
+      { last: 'Bruck', initials: 'M.' },
+    ]);
+  });
+
+  it('recombines comma-heavy inverted full-name author blobs before canonicalization', () => {
+    const result = parseAuthorsForStyle([
+      'Flanders, Corey E., Wright, Mya, Khandpur, Saachi, Kuhn, Sara, Anderson, RaeAnn E., Robinson, Margaret, VanKim, Nicole',
+    ], 'apa');
+
+    expect(result.authors).toMatchObject([
+      { last: 'Flanders', first: 'Corey E.', initials: 'C. E.' },
+      { last: 'Wright', first: 'Mya', initials: 'M.' },
+      { last: 'Khandpur', first: 'Saachi', initials: 'S.' },
+      { last: 'Kuhn', first: 'Sara', initials: 'S.' },
+      { last: 'Anderson', first: 'RaeAnn E.', initials: 'R. E.' },
+      { last: 'Robinson', first: 'Margaret', initials: 'M.' },
+      { last: 'VanKim', first: 'Nicole', initials: 'N.' },
     ]);
   });
 
@@ -177,6 +203,12 @@ describe('v2 author rescue utilities', () => {
   it('preserves valid DOI suffix parentheses in historical DOI formats', () => {
     expect(normalizeDoiValue('10.1016/0030-4018(76)90095-x')).toBe('10.1016/0030-4018(76)90095-x');
     expect(normalizeDoiValue('https://doi.org/10.1016/0030-4018(76)90095-x)')).toBe('10.1016/0030-4018(76)90095-x');
+  });
+
+  it('treats dotted alphanumeric proceedings and abstract locators as article numbers', () => {
+    expect(classifyLocatorToken('FM2B.2')).toEqual({ kind: 'article-number', value: 'FM2B.2' });
+    expect(classifyLocatorToken('chin.200104012')).toEqual({ kind: 'article-number', value: 'chin.200104012' });
+    expect(classifyLocatorToken('V002T29A056')).toEqual({ kind: 'article-number', value: 'V002T29A056' });
   });
 
   it('keeps uppercase unicode surnames as surnames instead of exploding them into initials', () => {

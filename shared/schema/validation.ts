@@ -141,7 +141,7 @@ export const adminApprovalSchema = z.object({
 export type AdminApprovalRequest = z.infer<typeof adminApprovalSchema>;
 
 export const v2ConversionRequestSchema = z.object({
-  sourceType: z.enum(['text', 'bib', 'ris', 'pdf_base64', 'url', 'doi_list']),
+  sourceType: z.enum(['text', 'bib', 'ris', 'pdf_base64', 'pdf_file', 'url', 'doi_list']),
   content: z.string().min(1),
   inputStyle: z.string().optional().default('auto'),
   outputStyle: z.string().optional().default('apa'),

@@ -447,6 +447,8 @@ type ActiveTruthIndex = {
 
 let allTruthsCache: CachedTruthList | null = null;
 let activeTruthIndexCache: ActiveTruthIndex | null = null;
+let allTruthsLoadPromise: Promise<TruthEntry[]> | null = null;
+let activeTruthIndexLoadPromise: Promise<ActiveTruthIndex> | null = null;
 
 function cacheIsFresh(expiresAt: number): boolean {
   return expiresAt > Date.now();
@@ -455,6 +457,8 @@ function cacheIsFresh(expiresAt: number): boolean {
 function invalidateTruthCaches(): void {
   allTruthsCache = null;
   activeTruthIndexCache = null;
+  allTruthsLoadPromise = null;
+  activeTruthIndexLoadPromise = null;
 }
 
 async function getAllTruths(forceRefresh = false): Promise<TruthEntry[]> {
@@ -462,12 +466,26 @@ async function getAllTruths(forceRefresh = false): Promise<TruthEntry[]> {
     return allTruthsCache.truths;
   }
 
-  const truths = await truthStorage.listTruths();
-  allTruthsCache = {
-    truths,
-    expiresAt: Date.now() + TRUTH_CACHE_TTL_MS,
-  };
-  return truths;
+  if (!forceRefresh && allTruthsLoadPromise) {
+    return allTruthsLoadPromise;
+  }
+
+  const loadPromise = truthStorage.listTruths()
+    .then((truths) => {
+      allTruthsCache = {
+        truths,
+        expiresAt: Date.now() + TRUTH_CACHE_TTL_MS,
+      };
+      return truths;
+    })
+    .finally(() => {
+      if (allTruthsLoadPromise === loadPromise) {
+        allTruthsLoadPromise = null;
+      }
+    });
+
+  allTruthsLoadPromise = loadPromise;
+  return loadPromise;
 }
 
 function pushIndexedTruth(map: Map<string, TruthEntry[]>, key: string | null, truth: TruthEntry): void {
@@ -485,46 +503,60 @@ async function getActiveTruthIndex(forceRefresh = false): Promise<ActiveTruthInd
     return activeTruthIndexCache;
   }
 
-  const truths = await getAllTruths(forceRefresh);
-  const activeByFamily = new Map<string, TruthEntry>();
-
-  for (const truth of truths.sort((left, right) => right.validatedAt.localeCompare(left.validatedAt))) {
-    if (!activeByFamily.has(truth.truthFamilyId)) {
-      activeByFamily.set(truth.truthFamilyId, truth);
-    }
+  if (!forceRefresh && activeTruthIndexLoadPromise) {
+    return activeTruthIndexLoadPromise;
   }
 
-  const activeTruths = Array.from(activeByFamily.values());
-  const byFingerprint = new Map<string, TruthEntry[]>();
-  const byDoi = new Map<string, TruthEntry[]>();
-  const byWorkKey = new Map<string, TruthEntry[]>();
+  const loadPromise = getAllTruths(forceRefresh)
+    .then((truths) => {
+      const activeByFamily = new Map<string, TruthEntry>();
 
-  for (const truth of activeTruths) {
-    const aliases = truth.aliases ?? buildAliases(truth);
-    for (const alias of aliases) {
-      if (alias.aliasType === 'fingerprint') {
-        pushIndexedTruth(byFingerprint, alias.aliasValue, truth);
-        continue;
+      for (const truth of truths.sort((left, right) => right.validatedAt.localeCompare(left.validatedAt))) {
+        if (!activeByFamily.has(truth.truthFamilyId)) {
+          activeByFamily.set(truth.truthFamilyId, truth);
+        }
       }
-      if (alias.aliasType === 'doi') {
-        pushIndexedTruth(byDoi, alias.aliasValue, truth);
-        continue;
-      }
-      if (alias.aliasType === 'workKey') {
-        pushIndexedTruth(byWorkKey, alias.aliasValue, truth);
-      }
-    }
-  }
 
-  activeTruthIndexCache = {
-    truths: activeTruths,
-    byFingerprint,
-    byDoi,
-    byWorkKey,
-    expiresAt: Date.now() + TRUTH_CACHE_TTL_MS,
-  };
+      const activeTruths = Array.from(activeByFamily.values());
+      const byFingerprint = new Map<string, TruthEntry[]>();
+      const byDoi = new Map<string, TruthEntry[]>();
+      const byWorkKey = new Map<string, TruthEntry[]>();
 
-  return activeTruthIndexCache;
+      for (const truth of activeTruths) {
+        const aliases = truth.aliases ?? buildAliases(truth);
+        for (const alias of aliases) {
+          if (alias.aliasType === 'fingerprint') {
+            pushIndexedTruth(byFingerprint, alias.aliasValue, truth);
+            continue;
+          }
+          if (alias.aliasType === 'doi') {
+            pushIndexedTruth(byDoi, alias.aliasValue, truth);
+            continue;
+          }
+          if (alias.aliasType === 'workKey') {
+            pushIndexedTruth(byWorkKey, alias.aliasValue, truth);
+          }
+        }
+      }
+
+      activeTruthIndexCache = {
+        truths: activeTruths,
+        byFingerprint,
+        byDoi,
+        byWorkKey,
+        expiresAt: Date.now() + TRUTH_CACHE_TTL_MS,
+      };
+
+      return activeTruthIndexCache;
+    })
+    .finally(() => {
+      if (activeTruthIndexLoadPromise === loadPromise) {
+        activeTruthIndexLoadPromise = null;
+      }
+    });
+
+  activeTruthIndexLoadPromise = loadPromise;
+  return loadPromise;
 }
 
 export async function loadTruths(): Promise<TruthEntry[]> {
