@@ -19,6 +19,7 @@
     "stress:sde:generate": "tsx scripts/generateSdeStress250.ts",
     "stress:sde": "tsx scripts/stressSdeV2.ts",
     "report:real-ready": "tsx scripts/reportRealReadyCorpus.ts",
+    "report:score-calibration": "tsx scripts/scoreCalibrationReport.ts",
     "report:pdf-ready": "tsx scripts/pdfReadyBenchmark.ts report",
     "debug:llm-batch": "tsx scripts/debugLlmBatch.ts",
     "debug:llm-extractor": "tsx scripts/debugLlmExtractor.ts",

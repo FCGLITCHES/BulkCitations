@@ -177,6 +177,22 @@ function maybeCreateNormalizedField(
   };
 }
 
+function recoverJournalTitleFromRawCitation(citation: CanonicalCitation): string | null {
+  const journal = normalizeWhitespace(citation.journal.value ?? '');
+  const title = normalizeWhitespace(citation.title.value ?? '');
+  if (!journal || !title) return null;
+  if (normalizeWhitespace(journal).toLowerCase() !== normalizeWhitespace(title).toLowerCase()) return null;
+
+  const raw = normalizeWhitespace(citation.raw);
+  if (!raw) return null;
+
+  const journalPattern = buildFlexibleLiteralPattern(journal).replace(/\./g, '\\.?');
+  const match = raw.match(new RegExp(`^[\\s\\S]*?\\.\\s+(?<title>.+?)\\.\\s+${journalPattern}\\.\\s+(?:1[5-9]\\d{2}|20\\d{2})[;,.]`, 'iu'));
+  const recoveredTitle = normalizeWhitespace(match?.groups?.title ?? '');
+  if (!recoveredTitle || recoveredTitle.toLowerCase() === journal.toLowerCase()) return null;
+  return recoveredTitle;
+}
+
 export function createNormalizeStage(): V2Stage {
   return {
     id: 'normalize',
@@ -306,6 +322,27 @@ export function createNormalizeStage(): V2Stage {
             issue: maybeCreateNormalizedField(normalizedCitation.issue, cleanedIssue || null),
             pages: maybeCreateNormalizedField(normalizedCitation.pages, cleanedPages || null),
           };
+
+          const recoveredRawJournalTitle = recoverJournalTitleFromRawCitation(normalizedCitation);
+          if (recoveredRawJournalTitle) {
+            normalizedCitation = {
+              ...normalizedCitation,
+              title: maybeCreateNormalizedField(normalizedCitation.title, recoveredRawJournalTitle),
+            };
+          }
+
+          const publisherLooksLikeLocator = normalizeLocatorValue(normalizedCitation.publisher.value ?? '');
+          if (
+            normalizedCitation.referenceType === 'journal'
+            && publisherLooksLikeLocator
+            && !normalizedCitation.pages.value
+          ) {
+            normalizedCitation = {
+              ...normalizedCitation,
+              pages: maybeCreateNormalizedField(normalizedCitation.pages, publisherLooksLikeLocator),
+              publisher: maybeCreateNormalizedField(normalizedCitation.publisher, null),
+            };
+          }
 
           if (publisherResult.field.value && isGroupAuthor(publisherResult.field.value)) {
             normalizedCitation = {

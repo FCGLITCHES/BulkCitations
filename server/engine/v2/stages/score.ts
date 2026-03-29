@@ -2,7 +2,15 @@ import type { CanonicalCitation, CitationQualityScore } from '@shared/schema';
 import type { V2Stage } from '../contracts.js';
 import { runStageTasksSequentiallyWithIsolation } from '../stageIsolation.js';
 import { addCitationStageLog, average, createStageDiagnostic } from '../utils.js';
-import { getMissingExpectedFields, getMissingRequiredFields, getRequirementProfile } from '../qualityRules.js';
+import {
+  collectScoreObservationCodes,
+  evaluateScoreField,
+  getMissingExpectedFields,
+  getMissingRequiredFields,
+  getRequirementProfile,
+  getScoreProfile,
+  observationPenaltyForCodes,
+} from '../qualityRules.js';
 import {
   analyzeReadyBlockers,
   deriveResolutionBucketState,
@@ -26,7 +34,7 @@ function buildFieldScores(citation: CanonicalCitation): Record<string, number> {
   return {
     authors: citation.authors.confidence,
     title: citation.title.confidence,
-    year: citation.year.value != null ? Math.max(citation.year.confidence, 0.85) : citation.year.confidence,
+    year: citation.year.confidence,
     journal: citation.journal.confidence,
     conferenceTitle: citation.conferenceTitle.confidence,
     bookTitle: citation.bookTitle.confidence,
@@ -38,27 +46,11 @@ function buildFieldScores(citation: CanonicalCitation): Record<string, number> {
     institution: citation.institution.confidence,
     url: citation.url.confidence,
     edition: citation.edition.confidence,
+    placeOfPublication: citation.placeOfPublication.confidence,
+    repository: citation.repository.confidence,
+    thesisType: citation.thesisType.confidence,
     editor: citation.editor.confidence,
   };
-}
-
-function getVenueScore(citation: CanonicalCitation, fieldScores: Record<string, number>): number {
-  switch (citation.referenceType) {
-    case 'conference':
-      return Math.max(fieldScores.conferenceTitle, fieldScores.bookTitle, fieldScores.journal, fieldScores.publisher);
-    case 'chapter':
-      return Math.max(fieldScores.bookTitle, fieldScores.publisher);
-    case 'thesis':
-      return Math.max(fieldScores.institution, fieldScores.publisher);
-    case 'report':
-      return Math.max(fieldScores.institution, fieldScores.publisher, fieldScores.journal);
-    case 'website':
-      return Math.max(fieldScores.publisher, fieldScores.journal, fieldScores.url);
-    case 'book':
-      return Math.max(fieldScores.publisher, fieldScores.bookTitle);
-    default:
-      return Math.max(fieldScores.journal, fieldScores.publisher, fieldScores.bookTitle);
-  }
 }
 
 function canIgnoreMissingVerifiedVenue(citation: CanonicalCitation): boolean {
@@ -79,78 +71,82 @@ function effectiveRequiredFields(citation: CanonicalCitation): string[] {
   return profile.required.filter((field) => field !== 'venue');
 }
 
-function scoreForRequiredField(
-  citation: CanonicalCitation,
-  fieldScores: Record<string, number>,
-  field: string,
-): number {
-  switch (field) {
-    case 'authors':
-      return citation.authors.value.length > 0 ? fieldScores.authors : 0;
-    case 'title':
-      return citation.title.value ? fieldScores.title : 0;
-    case 'year':
-      return citation.year.value != null ? fieldScores.year : 0;
-    case 'venue':
-      return getVenueScore(citation, fieldScores);
-    case 'publisher':
-      return citation.publisher.value ? fieldScores.publisher : 0;
-    case 'institution':
-      return citation.institution.value ? Math.max(fieldScores.institution, fieldScores.publisher) : 0;
-    case 'bookTitle':
-      return citation.bookTitle.value ? Math.max(fieldScores.bookTitle, fieldScores.publisher) : 0;
-    case 'url':
-      return citation.url.value ? fieldScores.url : 0;
-    default:
-      return 0;
-  }
-}
-
 function computeOverall(
   citation: CanonicalCitation,
-  fieldScores: Record<string, number>,
   requiredFields: string[],
-): number {
-  const requiredScores = requiredFields.map((field) => scoreForRequiredField(citation, fieldScores, field));
+): { overall: number; observationCodes: string[]; acceptableRequiredCount: number; presentExpectedCount: number } {
+  const profileSelection = getScoreProfile(citation.referenceType);
+  const profile = profileSelection.profile;
+  const requiredEvaluations = requiredFields.map((field) => evaluateScoreField(citation, field, profile));
+  const requiredScores = requiredEvaluations.map((evaluation) => evaluation.scoreCredit);
   const requiredAverage = requiredScores.length > 0 ? average(requiredScores) : 0;
   const requiredCompleteness = requiredFields.length === 0
     ? 1
-    : requiredScores.filter((score) => score > 0).length / requiredFields.length;
+    : requiredEvaluations.reduce((sum, evaluation) => sum + evaluation.completenessCredit, 0) / requiredFields.length;
 
-  const expectedValues = [
-    citation.volume.value ? fieldScores.volume : 0,
-    citation.issue.value ? fieldScores.issue : 0,
-    citation.pages.value ? fieldScores.pages : 0,
-    citation.doi.value ? fieldScores.doi : 0,
-    citation.url.value ? fieldScores.url : 0,
-    citation.publisher.value && ['conference', 'chapter', 'report', 'book', 'thesis'].includes(citation.referenceType)
-      ? fieldScores.publisher
-      : 0,
-  ];
-  const expectedAverage = expectedValues.length > 0 ? average(expectedValues) : 0;
-  const expectedCompleteness = expectedValues.length === 0
+  const expectedFields = Object.keys(profile.expectedFieldWeights);
+  const expectedEvaluations = expectedFields.map((field) => ({
+    evaluation: evaluateScoreField(citation, field, profile),
+    weight: profile.expectedFieldWeights[field] ?? 0,
+  }));
+  const totalExpectedWeight = expectedEvaluations.reduce((sum, entry) => sum + entry.weight, 0);
+  const expectedAverage = totalExpectedWeight <= 0
     ? 1
-    : expectedValues.filter((score) => score > 0).length / expectedValues.length;
+    : Number((
+      expectedEvaluations.reduce((sum, entry) => sum + (entry.evaluation.scoreCredit * entry.weight), 0) / totalExpectedWeight
+    ).toFixed(4));
+  const expectedCompleteness = totalExpectedWeight <= 0
+    ? 1
+    : Number((
+      expectedEvaluations.reduce((sum, entry) => sum + (entry.evaluation.completenessCredit * entry.weight), 0) / totalExpectedWeight
+    ).toFixed(4));
+  const observationCodes = collectScoreObservationCodes(citation, profileSelection);
+  const observationPenalty = observationPenaltyForCodes(observationCodes);
 
-  let overall = (requiredAverage * 0.72)
-    + (requiredCompleteness * 0.18)
-    + (expectedAverage * 0.05)
-    + (expectedCompleteness * 0.05);
+  let overall = (requiredAverage * profile.weights.requiredAverage)
+    + (requiredCompleteness * profile.weights.requiredCompleteness)
+    + (expectedAverage * profile.weights.expectedAverage)
+    + (expectedCompleteness * profile.weights.expectedCompleteness)
+    - observationPenalty;
 
-  if (citation.extraction?.method === 'llm') overall = Math.max(0, overall - 0.03);
-  if (citation.extraction?.method === 'hybrid') overall = Math.max(0, overall - 0.02);
-  if (citation.extraction?.fallbackUsed) overall = Math.max(0, overall - 0.02);
   if (isVerifiedResolution(citation)) overall = Math.min(1, overall + 0.03);
+  if (citation.resolution?.repairFailed) {
+    overall -= 0.08;
+  } else if (
+    citation.resolution?.escalatedForBlockers
+    && !citation.resolution?.acceptedCandidate
+  ) {
+    overall -= 0.04;
+  } else if (
+    citation.extraction?.llmFallbackAttempted
+    && !citation.extraction?.llmFallbackAccepted
+    && !citation.extraction?.llmFallbackSkippedByBudget
+    && !citation.extraction?.llmFallbackSkippedForTruth
+    && !citation.extraction?.llmFallbackReusedFromCluster
+  ) {
+    // Accepted rescue has no extra penalty. That does not guarantee the post-repair
+    // score stays above the pre-repair score; cleaner repaired fields can still
+    // score lower under the normal field-based formula.
+    overall -= 0.03;
+  }
 
-  return Number(Math.max(0, Math.min(1, overall)).toFixed(2));
+  return {
+    overall: Number(Math.max(0, Math.min(1, overall)).toFixed(2)),
+    observationCodes,
+    acceptableRequiredCount: requiredEvaluations.filter((evaluation) => evaluation.state === 'acceptable').length,
+    presentExpectedCount: expectedEvaluations.filter((entry) => entry.evaluation.state !== 'missing').length,
+  };
 }
 
 function bucketReasons(
   readyBlockers: ReadyBlockerCode[],
+  observationCodes: string[],
   hardUnresolved: boolean,
   softUnresolvedAfterEscalation: boolean,
   repairFailed: boolean,
   missingRequired: string[],
+  acceptableRequiredShortfall: boolean,
+  expectedPresenceShortfall: boolean,
   overall: number,
 ): string[] {
   const reasons: string[] = [];
@@ -160,6 +156,12 @@ function bucketReasons(
   if (missingRequired.length > 0) {
     reasons.push(`Missing required fields: ${missingRequired.join(', ')}.`);
   }
+  if (acceptableRequiredShortfall) {
+    reasons.push('Too many required fields remained weak to meet the ready threshold.');
+  }
+  if (expectedPresenceShortfall) {
+    reasons.push('Expected support fields were too sparse to meet the ready threshold.');
+  }
   if (hardUnresolved) {
     reasons.push('Authority evidence contradicted the original identity fields.');
   }
@@ -168,6 +170,9 @@ function bucketReasons(
   }
   if (repairFailed) {
     reasons.push('Blocker-driven rescue could not produce a usable repaired citation.');
+  }
+  if (observationCodes.length > 0) {
+    reasons.push(`Non-blocking observations reduced confidence: ${observationCodes.join(', ')}.`);
   }
   if (overall < REVIEW_CONFIDENCE_FLOOR) {
     reasons.push('Parse confidence and completeness remained below the review floor.');
@@ -200,13 +205,19 @@ function buildFlags(
   return [...new Set(flags)];
 }
 
-function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
+export function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   const fieldScores = buildFieldScores(citation);
   const rawMissingRequired = getMissingRequiredFields(citation);
   const missingRequired = effectiveMissingRequiredFields(citation, rawMissingRequired);
   const missingOptional = getMissingExpectedFields(citation);
   const requiredFields = effectiveRequiredFields(citation);
-  const overall = computeOverall(citation, fieldScores, requiredFields);
+  const profileSelection = getScoreProfile(citation.referenceType);
+  const {
+    overall,
+    observationCodes,
+    acceptableRequiredCount,
+    presentExpectedCount: rawPresentExpectedCount,
+  } = computeOverall(citation, requiredFields);
   const blockerAnalysis = analyzeReadyBlockers(citation);
   const readyBlockers = blockerAnalysis.codes;
   const hardBlockers = blockerAnalysis.hardCodes;
@@ -214,6 +225,13 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   const { hardUnresolved, softUnresolvedAfterEscalation } = deriveResolutionBucketState(citation);
   const repairFailed = citation.resolution?.repairFailed === true;
   const hasRequiredFields = missingRequired.length === 0;
+  const publisherSupportSurrogatePresent = profileSelection.profileKey === 'book'
+    && evaluateScoreField(citation, 'publisher', profileSelection.profile).state !== 'missing';
+  const presentExpectedCount = publisherSupportSurrogatePresent
+    ? Math.max(rawPresentExpectedCount, 1)
+    : rawPresentExpectedCount;
+  const acceptableRequiredShortfall = acceptableRequiredCount < profileSelection.profile.readyAcceptableRequiredMinimum;
+  const expectedPresenceShortfall = presentExpectedCount < profileSelection.profile.readyExpectedFieldMinimum;
 
   let bucket: CitationQualityScore['bucket'];
   if (
@@ -227,6 +245,8 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
   } else if (
     readyBlockers.length === 0
     && hasRequiredFields
+    && !acceptableRequiredShortfall
+    && !expectedPresenceShortfall
     && overall >= READY_CONFIDENCE_FLOOR
     && !repairFailed
     && !hardUnresolved
@@ -255,13 +275,17 @@ function scoreCitation(citation: CanonicalCitation): CitationQualityScore {
     missingRequired,
     missingOptional,
     readyBlockers,
+    observationCodes,
     bucket,
     bucketReasons: bucketReasons(
       readyBlockers,
+      observationCodes,
       hardUnresolved,
       softUnresolvedAfterEscalation,
       repairFailed,
       missingRequired,
+      acceptableRequiredShortfall,
+      expectedPresenceShortfall,
       overall,
     ),
   };
@@ -277,6 +301,7 @@ function fallbackQuality(citation: CanonicalCitation, message: string, timedOut:
     missingRequired: getMissingRequiredFields(citation),
     missingOptional: getMissingExpectedFields(citation),
     readyBlockers: [],
+    observationCodes: [],
     bucket: 'action_needed',
     bucketReasons: [
       timedOut

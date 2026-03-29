@@ -256,4 +256,20 @@ describe('v2 author rescue utilities', () => {
       { literal: 'UN Women', last: 'UN Women' },
     ]);
   });
+
+  it('keeps uppercase given names intact in inverted surname-first thesis authors', () => {
+    const result = parseAuthorsForStyle(['CLARA QUARESMA PEREIRA DA SILVA, ANA'], 'apa');
+
+    expect(result.authors).toMatchObject([
+      { last: 'CLARA QUARESMA PEREIRA da SILVA', first: 'ANA', initials: 'A.' },
+    ]);
+  });
+
+  it('keeps compound surname-first thesis authors as a single person instead of splitting them into two authors', () => {
+    const result = parseAuthorsForStyle(['Luís Zani, Emerson'], 'apa');
+
+    expect(result.authors).toMatchObject([
+      { last: 'Luís Zani', first: 'Emerson', initials: 'E.' },
+    ]);
+  });
 });

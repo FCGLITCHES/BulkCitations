@@ -58,6 +58,31 @@ function cleanVenueFragment(value: string): string {
   return cleaned.replace(/[,:;.-]+$/g, '').trim();
 }
 
+function hasSerialJournalEvidence(parsed: ParsedReference): boolean {
+  return Boolean(
+    normalizeWhitespace(parsed.issue ?? '')
+    || (
+      normalizeWhitespace(parsed.volume ?? '')
+      && normalizeWhitespace(parsed.pages ?? parsed['article-number'] ?? '')
+    ),
+  );
+}
+
+function looksSerialJournalContainerCandidate(value: string | undefined, parsed: ParsedReference): boolean {
+  const cleaned = cleanVenueFragment(value ?? '');
+  if (!cleaned) return false;
+  if (proceedingsSignal(cleaned)) return false;
+  if (/\b(?:conference|symposium|workshop|congress|meeting|forum|summit|colloquium|poster abstracts?|electronic poster abstracts?)\b/i.test(cleaned)) {
+    return false;
+  }
+  if (!hasSerialJournalEvidence(parsed)) return false;
+  return Boolean(
+    JOURNAL_LIKE_SIGNAL.test(cleaned)
+    || normalizeWhitespace(parsed.issue ?? '')
+    || /[:&]/.test(cleaned)
+  );
+}
+
 export function cleanConferenceTitleFragment(value: string): string {
   let cleaned = normalizeWhitespace(value).replace(DOI_OR_URL_TAIL_PATTERN, '');
   if (!cleaned) return cleaned;
@@ -391,6 +416,32 @@ export function resolveWinnerContainer(
 ): { parsed: ParsedReference; containerHints: ExtractionContainerHints } {
   let next: ParsedReference = { ...parsed };
   let hints = buildContainerHints(next, referenceType);
+
+  if (next.bookTitle) {
+    const cleanedBookTitle = cleanVenueFragment(next.bookTitle);
+    if (cleanedBookTitle && cleanedBookTitle !== next.bookTitle) {
+      next.bookTitle = normalizeKnownContainerName(cleanedBookTitle);
+    }
+  }
+  if (next.conferenceTitle) {
+    const cleanedConferenceTitle = cleanConferenceTitleFragment(next.conferenceTitle);
+    if (cleanedConferenceTitle && cleanedConferenceTitle !== next.conferenceTitle) {
+      next.conferenceTitle = normalizeKnownContainerName(cleanedConferenceTitle);
+    }
+  }
+
+  const serialContainerCandidate = [
+    next.journal ? undefined : next.bookTitle,
+    next.journal ? undefined : next.conferenceTitle,
+  ]
+    .map((value) => normalizeWhitespace(value ?? ''))
+    .find((value) => looksSerialJournalContainerCandidate(value, next));
+
+  if (serialContainerCandidate) {
+    next.journal = normalizeKnownContainerName(cleanVenueFragment(serialContainerCandidate));
+    if (normalizeWhitespace(next.bookTitle ?? '') === serialContainerCandidate) next.bookTitle = undefined;
+    if (normalizeWhitespace(next.conferenceTitle ?? '') === serialContainerCandidate) next.conferenceTitle = undefined;
+  }
 
   if (next.bookTitle) {
     const editedBookTitleMatch = normalizeWhitespace(next.bookTitle).match(/^(?<bookTitle>.+?),\s+edited by\s+(?<editor>.+?)(?:,\s*(?<pages>[A-Za-z]?\d+(?:\s*[-–]\s*[A-Za-z]?\d+)?))?$/i);

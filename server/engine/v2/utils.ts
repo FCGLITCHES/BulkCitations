@@ -445,6 +445,9 @@ function initialsFromWords(words: string[]): string | null {
           .map((part) => Array.from(part)[0]?.toUpperCase() ?? '')
           .filter(Boolean);
       }
+      if (/^[\p{Lu}]{3,4}$/u.test(withoutDots) && /[AEIOUYÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÄËÏÖÜÃÕÅÆØ]/u.test(withoutDots)) {
+        return [Array.from(withoutDots)[0]?.toUpperCase() ?? ''].filter(Boolean);
+      }
       if (DOTTED_INITIALS_PATTERN.test(compact) || /^[\p{Lu}]{2,3}$/u.test(withoutDots)) {
         return withoutDots.split('').map((part) => part.toUpperCase());
       }
@@ -457,9 +460,18 @@ function initialsFromWords(words: string[]): string | null {
 }
 
 function normalizeCompactedGivenNames(value: string): string {
+  const expandUppercaseToken = (token: string): string => {
+    const normalizedToken = normalizeWhitespace(token);
+    if (!/^[\p{Lu}]{2,4}$/u.test(normalizedToken)) return normalizedToken;
+    if (normalizedToken.length >= 3 && /[AEIOUYÁÉÍÓÚÀÈÌÒÙÂÊÎÔÛÄËÏÖÜÃÕÅÆØ]/u.test(normalizedToken)) {
+      return normalizedToken;
+    }
+    return normalizedToken.split('').join(' ');
+  };
+
   return normalizeWhitespace(
     fixUnicodeText(value)
-      .replace(/\b([\p{Lu}]{2,3})\b/gu, (_match, token: string) => token.split('').join(' '))
+      .replace(/\b([\p{Lu}]{2,4})\b/gu, (_match, token: string) => expandUppercaseToken(token))
       .replace(/([\p{Ll}])([\p{Lu}]\.)/gu, '$1 $2')
       .replace(/([\p{Ll}])([\p{Lu}])(?=$|\s)/gu, '$1 $2'),
   );

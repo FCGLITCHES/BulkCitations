@@ -1,0 +1,147 @@
+{
+  "generatedAt": "2026-03-29T15:08:45.910Z",
+  "corpusId": "operational_accuracy_cases_v1",
+  "corpusType": "single_frozen_sample",
+  "gatingStatus": "pending_second_corpus_sample",
+  "types": [
+    {
+      "type": "journal",
+      "count": 6,
+      "averageOverall": 0.92,
+      "bucketDistribution": {
+        "ready": 6,
+        "worth_reviewing": 0,
+        "action_needed": 0
+      },
+      "requiredStateRates": {
+        "missing": 0,
+        "weak": 0,
+        "acceptable": 100
+      },
+      "expectedStateRates": {
+        "missing": 8.33,
+        "weak": 0,
+        "acceptable": 91.67
+      },
+      "expectedFieldMissPatterns": {
+        "issue": 2
+      },
+      "observationCodeFrequencies": {},
+      "acceptedGptRescueCount": 0,
+      "positiveRescueCount": 0,
+      "negativeRescueCount": 0,
+      "meanPositiveDelta": 0,
+      "meanNegativeDelta": 0
+    },
+    {
+      "type": "book",
+      "count": 3,
+      "averageOverall": 0.81,
+      "bucketDistribution": {
+        "ready": 3,
+        "worth_reviewing": 0,
+        "action_needed": 0
+      },
+      "requiredStateRates": {
+        "missing": 0,
+        "weak": 0,
+        "acceptable": 100
+      },
+      "expectedStateRates": {
+        "missing": 50,
+        "weak": 0,
+        "acceptable": 50
+      },
+      "expectedFieldMissPatterns": {
+        "edition": 3
+      },
+      "observationCodeFrequencies": {},
+      "acceptedGptRescueCount": 0,
+      "positiveRescueCount": 0,
+      "negativeRescueCount": 0,
+      "meanPositiveDelta": 0,
+      "meanNegativeDelta": 0
+    },
+    {
+      "type": "report",
+      "count": 6,
+      "averageOverall": 0.95,
+      "bucketDistribution": {
+        "ready": 6,
+        "worth_reviewing": 0,
+        "action_needed": 0
+      },
+      "requiredStateRates": {
+        "missing": 0,
+        "weak": 0,
+        "acceptable": 100
+      },
+      "expectedStateRates": {
+        "missing": 0,
+        "weak": 0,
+        "acceptable": 100
+      },
+      "expectedFieldMissPatterns": {},
+      "observationCodeFrequencies": {},
+      "acceptedGptRescueCount": 0,
+      "positiveRescueCount": 0,
+      "negativeRescueCount": 0,
+      "meanPositiveDelta": 0,
+      "meanNegativeDelta": 0
+    },
+    {
+      "type": "chapter",
+      "count": 3,
+      "averageOverall": 0.91,
+      "bucketDistribution": {
+        "ready": 3,
+        "worth_reviewing": 0,
+        "action_needed": 0
+      },
+      "requiredStateRates": {
+        "missing": 0,
+        "weak": 0,
+        "acceptable": 100
+      },
+      "expectedStateRates": {
+        "missing": 0,
+        "weak": 0,
+        "acceptable": 100
+      },
+      "expectedFieldMissPatterns": {},
+      "observationCodeFrequencies": {},
+      "acceptedGptRescueCount": 0,
+      "positiveRescueCount": 0,
+      "negativeRescueCount": 0,
+      "meanPositiveDelta": 0,
+      "meanNegativeDelta": 0
+    },
+    {
+      "type": "website",
+      "count": 4,
+      "averageOverall": 0.71,
+      "bucketDistribution": {
+        "ready": 2,
+        "worth_reviewing": 0,
+        "action_needed": 2
+      },
+      "requiredStateRates": {
+        "missing": 25,
+        "weak": 0,
+        "acceptable": 75
+      },
+      "expectedStateRates": {
+        "missing": 0,
+        "weak": 0,
+        "acceptable": 0
+      },
+      "expectedFieldMissPatterns": {},
+      "observationCodeFrequencies": {},
+      "acceptedGptRescueCount": 0,
+      "positiveRescueCount": 0,
+      "negativeRescueCount": 0,
+      "meanPositiveDelta": 0,
+      "meanNegativeDelta": 0
+    }
+  ]
+}

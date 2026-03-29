@@ -60,6 +60,53 @@ describe('default extractor institutional heuristics', () => {
     expect(result.parsed.conferenceTitle).toBeUndefined();
   });
 
+  it('promotes serial containers leaked into bookTitle back into journals for chicago journal references', async () => {
+    const result = await extractor.extract(
+      'Park, Hyun Oh, Jun Young Choi, In Seok Jang, Jong Duk Kim, Jong Woo Kim, Joung Hun Byun, Sung Hwan Kim, Jun Ho Yang, Seong Ho Moon, Ki Nyun Kim, Dong Hun Kang, Jae Jun Jung, See Min Choi, Ji Yoon Kim, and Chung Eun Lee. "Perforation of inferior vena cava and duodenum by strut of inferior vena cava filter: A case report." Medicine 98, no. 47 (2019): e17835. https://doi.org/10.1097/md.0000000000017835',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('journal');
+    expect(result.parsed.journal).toBe('Medicine');
+    expect(result.parsed.bookTitle).toBeUndefined();
+    expect(result.parsed.conferenceTitle).toBeUndefined();
+  });
+
+  it('keeps SPIE proceedings references on the conference path while recovering the proceedings venue cleanly', async () => {
+    const result = await extractor.extract(
+      'Fruehauf, Norbert, Aye, Tin M., Yu, Kevin, Zou, Yunlu, & Savant, Gajendra D. (2000). <title>Liquid crystal digital scanner-based HMD</title>. In SPIE Proceedings (pp. 2-10). SPIE. doi: 10.1117/12.389136',
+      'auto',
+      {},
+    );
+
+    expect(result.referenceType).toBe('conference');
+    expect(result.parsed.conferenceTitle).toBe('SPIE Proceedings');
+    expect(result.parsed.journal).toBeUndefined();
+  });
+
+  it('keeps APA thesis surname-first authors as single authors instead of splitting given names into new authors', async () => {
+    const result = await extractor.extract(
+      'Luís Zani, Emerson (2021). Profilaxia antibiótica na biópsia prostática transretal: revisão sistemática com metanálise [Doctoral dissertation, Universidade Estadual de Campinas]. https://doi.org/10.47749/t/unicamp.2011.800745',
+      'apa',
+      { detectionConfidence: 0.95 },
+    );
+
+    expect(result.referenceType).toBe('thesis');
+    expect(result.parsed.authors).toEqual(['Luís Zani, E.']);
+  });
+
+  it('keeps uppercase APA thesis given names as initials instead of exploding them into multi-initial blobs', async () => {
+    const result = await extractor.extract(
+      'CLARA QUARESMA PEREIRA DA SILVA, ANA (2023). CULTURA POPULAR E (RE)PRODUÇÕES DE MASCULINIDADES HEGEMÔNICAS: ESTUDO DE CASO DA SÉRIE FRIENDS [Doctoral dissertation, Faculdades Catolicas]. https://doi.org/10.17771/pucrio.acad.64355',
+      'apa',
+      { detectionConfidence: 0.95 },
+    );
+
+    expect(result.referenceType).toBe('thesis');
+    expect(result.parsed.authors).toEqual(['CLARA QUARESMA PEREIRA da SILVA, A.']);
+  });
+
   it('does not promote author-year publisher-tail books into reports without report evidence', async () => {
     const result = await extractor.extract(
       'Ong, WJ, 2017. Language as Hermeneutic: A Primer on the Word and Digitization. Cornell University Press. https://doi.org/10.7591/9781501714504',

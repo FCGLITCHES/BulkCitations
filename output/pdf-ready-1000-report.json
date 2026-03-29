@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-29T04:34:17.697Z",
+  "generatedAt": "2026-03-29T14:54:13.890Z",
   "targetCorpusSize": 1000,
   "modes": [
     {
@@ -11,13 +11,13 @@
       "batchCount": 7,
       "metrics": {
         "countIntegrityPct": 98.15,
-        "requiredFieldsPct": 90.74,
+        "requiredFieldsPct": 91.67,
         "doiRetentionPct": 100,
-        "readyPct": 86.11,
+        "readyPct": 73.15,
         "worthReviewingPct": 0,
-        "actionNeededPct": 13.89,
+        "actionNeededPct": 26.85,
         "contaminationFreePct": 63.89,
-        "partialChunkPct": 28.57,
+        "partialChunkPct": 0,
         "falseReadyPct": 0,
         "corruptReviewPct": 0,
         "nearReadyReviewPct": 100,
@@ -177,6 +177,15 @@
         },
         {
           "batchId": "drug-ai-extended-chunk-2",
+          "citationIndex": 7,
+          "input": "41. Intelligent clinical trials. (2020). https://www2.deloitte.com/content/dam/insights/us/articles/22934_intelligent-clinical￾trials/DI_Intelligent-clinical-....",
+          "output": "trials, I. C. (2020). / DI_Intelligent-clinical. DI_Intelligent-Clinical. https://www2.deloitte.com/content/dam/insights/us/articles/22934_intelligent-clinicalÿþtrials/.",
+          "reasons": [
+            "incompatible_field_overlap"
+          ]
+        },
+        {
+          "batchId": "drug-ai-extended-chunk-2",
           "citationIndex": 11,
           "input": "45. Bate A, Hobbiger SF: Artificial intelligence, real-world automation and the safety of medicines . Drug Saf.",
           "output": "Bate, A., intelligence, H. S. A., & medicines, R. W. A. A. T. S. O. (n.d.). Drug Saf.",
@@ -201,27 +210,18 @@
           "reasons": [
             "contamination_detected"
           ]
-        },
-        {
-          "batchId": "drug-ai-extended-chunk-3",
-          "citationIndex": 4,
-          "input": "57. Barardo DG, Newby D, Thornton D, Ghafourian T, de Magalhães JP, Freitas AA: Machine learning for predicting lifespan-extending chemical compounds. Aging (Albany NY). 2017, 9:1721-37. 10.18632/aging.101264",
-          "output": "Vamathevan, J., Clark, D., Czodrowski, P., et al. (2019). Applications of machine learning in drug discovery and development. Nat Rev Drug Discov, 18, 463-477.",
-          "reasons": [
-            "contamination_detected"
-          ]
         }
       ],
       "baselinePath": "D:\\Coding\\Citing\\scripts\\data\\pdf-upload-baseline.json",
       "deltaFromBaseline": {
         "countIntegrityPct": 0,
-        "requiredFieldsPct": 0,
+        "requiredFieldsPct": 0.93,
         "doiRetentionPct": 0,
-        "readyPct": 0,
+        "readyPct": -12.96,
         "worthReviewingPct": 0,
-        "actionNeededPct": 0,
+        "actionNeededPct": 12.96,
         "contaminationFreePct": 0,
-        "partialChunkPct": 0,
+        "partialChunkPct": -28.57,
         "falseReadyPct": 0,
         "corruptReviewPct": 0,
         "nearReadyReviewPct": 0,
@@ -240,16 +240,16 @@
         "countIntegrityPct": 99.07,
         "requiredFieldsPct": 93.52,
         "doiRetentionPct": 100,
-        "readyPct": 91.67,
+        "readyPct": 81.48,
         "worthReviewingPct": 0,
-        "actionNeededPct": 8.33,
+        "actionNeededPct": 18.52,
         "contaminationFreePct": 75,
-        "partialChunkPct": 42.86,
+        "partialChunkPct": 0,
         "falseReadyPct": 0,
         "corruptReviewPct": 0,
         "nearReadyReviewPct": 100,
         "singleLinkPct": 99.07,
-        "incompatibleFieldOverlapPct": 0.93
+        "incompatibleFieldOverlapPct": 0
       },
       "contaminationByField": {
         "title": 17,
@@ -443,16 +443,16 @@
         "countIntegrityPct": 0,
         "requiredFieldsPct": 0,
         "doiRetentionPct": 0,
-        "readyPct": 0,
+        "readyPct": -10.19,
         "worthReviewingPct": 0,
-        "actionNeededPct": 0,
+        "actionNeededPct": 10.19,
         "contaminationFreePct": 0,
-        "partialChunkPct": 0,
+        "partialChunkPct": -42.86,
         "falseReadyPct": 0,
         "corruptReviewPct": 0,
         "nearReadyReviewPct": 0,
         "singleLinkPct": 0,
-        "incompatibleFieldOverlapPct": 0
+        "incompatibleFieldOverlapPct": -0.93
       }
     }
   ]

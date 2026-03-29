@@ -1,6 +1,6 @@
 # PDF Ready Benchmark Report
 
-Generated: 2026-03-29T04:34:17.697Z
+Generated: 2026-03-29T14:54:13.890Z
 Target corpus size: 1000
 
 ## pdf_upload
@@ -9,13 +9,13 @@ Target corpus size: 1000
 - Corpus hash: `88236db93bf92f53375426490000764711a9178320f82a0fce0da8e183acbc2c`
 - Duplicate inputs: 0
 - Count integrity: 98.15% (delta 0.00%)
-- Required fields: 90.74% (delta 0.00%)
+- Required fields: 91.67% (delta 0.93%)
 - DOI retention: 100.00% (delta 0.00%)
-- Ready: 86.11% (delta 0.00%)
+- Ready: 73.15% (delta -12.96%)
 - Worth reviewing: 0.00%
-- Action needed: 13.89%
+- Action needed: 26.85%
 - Contamination free: 63.89%
-- Partial chunk rate: 28.57%
+- Partial chunk rate: 0.00%
 - False ready: 0.00% (delta 0.00%)
 - Corrupt review: 0.00% (delta 0.00%)
 - Near-ready review: 100.00% (delta 0.00%)
@@ -64,16 +64,16 @@ Target corpus size: 1000
 - Count integrity: 99.07% (delta 0.00%)
 - Required fields: 93.52% (delta 0.00%)
 - DOI retention: 100.00% (delta 0.00%)
-- Ready: 91.67% (delta 0.00%)
+- Ready: 81.48% (delta -10.19%)
 - Worth reviewing: 0.00%
-- Action needed: 8.33%
+- Action needed: 18.52%
 - Contamination free: 75.00%
-- Partial chunk rate: 42.86%
+- Partial chunk rate: 0.00%
 - False ready: 0.00% (delta 0.00%)
 - Corrupt review: 0.00% (delta 0.00%)
 - Near-ready review: 100.00% (delta 0.00%)
 - Single-link output: 99.07% (delta 0.00%)
-- Incompatible overlap: 0.93% (delta 0.00%)
+- Incompatible overlap: 0.00% (delta -0.93%)
 - Contamination counts: title=17, firstAuthorLast=8, year=17
 
 ### Top failing samples

@@ -221,7 +221,7 @@ function extractConferenceFromRaw(rawNormalized: string | undefined): string | u
 function extractProceedingsTail(rawNormalized: string | undefined): string | undefined {
   const normalized = normalizeWhitespace(rawNormalized ?? '');
   if (!normalized) return undefined;
-  const match = normalized.match(/\b(?<tail>(?:proceedings|proc\.?|book of abstracts|electronic poster abstracts?)\b[^.;]*(?:\.\s*[^.;]+)?)/i);
+  const match = normalized.match(/\b(?<tail>(?:[A-Z][A-Za-z0-9&.-]{1,20}\s+)?(?:proceedings|proc\.?|book of abstracts|electronic poster abstracts?)\b[^.;]*(?:\.\s*[^.;]+)?)/i);
   return splitConferenceTailComponents(match?.groups?.tail ?? '').conferenceTitle;
 }
 

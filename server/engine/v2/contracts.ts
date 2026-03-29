@@ -218,6 +218,7 @@ export interface ExtractorAdapter {
     llmFallbackFieldsImproved?: string[];
     llmFallbackStrictPassDelta?: number;
     llmFallbackFirstAuthorConfidence?: number;
+    llmFallbackNoOpAccepted?: boolean;
     debug?: Record<string, unknown>;
     fieldConfidence: Partial<Record<'authors' | 'title' | 'year' | 'journal' | 'volume' | 'issue' | 'pages' | 'doi' | 'publisher' | 'url', number>>;
     warnings: string[];

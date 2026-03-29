@@ -17,6 +17,19 @@ type ChunkResult = {
   worthReviewingCount: number;
   actionNeededCount: number;
   partialResult: boolean;
+      nonReadySamples?: Array<{
+        referenceType: string;
+        raw: string;
+        bucket: string | undefined;
+        overall: number | undefined;
+        reasons: string[] | undefined;
+        title?: string | null;
+        journal?: string | null;
+        conferenceTitle?: string | null;
+        bookTitle?: string | null;
+        publisher?: string | null;
+        institution?: string | null;
+      }>;
 };
 
 type AggregateResult = {
@@ -67,6 +80,24 @@ async function runChunkedReadyCorpus(mode: ChunkedReadyMode): Promise<AggregateR
       worthReviewingCount: chunkWorthReviewingCount,
       actionNeededCount: chunkActionNeededCount,
       partialResult: response.processingPath.partialResult ?? false,
+      nonReadySamples: process.env.DEBUG_READY_CORPUS === '1'
+        ? response.citations
+          .filter((citation) => citation.quality?.bucket !== 'ready')
+          .slice(0, 5)
+          .map((citation) => ({
+            referenceType: citation.referenceType,
+            raw: citation.raw,
+            bucket: citation.quality?.bucket,
+            overall: citation.quality?.overall,
+            reasons: citation.quality?.bucketReasons,
+            title: citation.title.value,
+            journal: citation.journal.value,
+            conferenceTitle: citation.conferenceTitle.value,
+            bookTitle: citation.bookTitle.value,
+            publisher: citation.publisher.value,
+            institution: citation.institution.value,
+          }))
+        : undefined,
     });
   }
 
@@ -104,6 +135,21 @@ function expectAllChunksProcessed(aggregate: AggregateResult): void {
     expect(chunk.actualCount).toBe(chunk.expectedCount);
     expect(chunk.readyCount + chunk.worthReviewingCount + chunk.actionNeededCount).toBe(chunk.expectedCount);
     expect(chunk.partialResult).toBe(false);
+  }
+
+  if (process.env.DEBUG_READY_CORPUS === '1') {
+    const sampleChunks = aggregate.chunks
+      .filter((chunk) => (chunk.actionNeededCount + chunk.worthReviewingCount) > 0)
+      .slice(0, 3)
+      .map((chunk) => ({
+        chunkIndex: chunk.chunkIndex,
+        readyCount: chunk.readyCount,
+        worthReviewingCount: chunk.worthReviewingCount,
+        actionNeededCount: chunk.actionNeededCount,
+        nonReadySamples: chunk.nonReadySamples,
+      }));
+    // Helpful for diagnosing cross-suite regressions without changing normal test output.
+    console.log(JSON.stringify(sampleChunks, null, 2));
   }
 }
 

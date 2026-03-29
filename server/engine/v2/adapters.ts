@@ -5776,6 +5776,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       | undefined;
     let llmFallbackFieldsImproved: string[] = [];
     let llmFallbackStrictPassDelta = 0;
+    let llmFallbackNoOpAccepted = false;
     let llmRawExtraction: LlmExtraction | null = null;
     let llmMergedCandidateParsed: ParsedReference | null = null;
     let llmBeforeParsed: ParsedReference | null = null;
@@ -5960,7 +5961,12 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
                   mergedSelection = candidateSelection;
                   selectedReferenceType = candidateReferenceType;
                   typeResolution = hybridResolution;
-                  selectedFieldConfidence = candidateFieldConfidence;
+                  llmFallbackNoOpAccepted = mergedOutputIsNoOp(beforeParsed, candidateSelection)
+                    && acceptance.fieldsImproved.length === 0
+                    && acceptance.strictPassDelta <= 0;
+                  selectedFieldConfidence = llmFallbackNoOpAccepted
+                    ? beforeFieldConfidence
+                    : candidateFieldConfidence;
                   extractorPath = 'llm';
                   llmApplied = true;
                   llmFallbackAccepted = true;
@@ -6232,6 +6238,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
       llmFallbackFieldsImproved,
       llmFallbackStrictPassDelta,
       llmFallbackFirstAuthorConfidence: llmTrigger.firstAuthorConfidence,
+      llmFallbackNoOpAccepted,
       fieldConfidence: selectedFieldConfidence,
       warnings,
       debug: options?.debugEnabled
@@ -6290,6 +6297,7 @@ class DefaultExtractorAdapter implements ExtractorAdapter {
             llm_fallback_fields_improved: llmFallbackFieldsImproved,
             llm_fallback_strict_pass_delta: llmFallbackStrictPassDelta,
             llm_fallback_first_author_confidence: llmTrigger.firstAuthorConfidence,
+            llm_fallback_no_op_accepted: llmFallbackNoOpAccepted,
             llm_raw_extraction: llmRawExtraction,
             llm_before_parsed: llmBeforeParsed,
             llm_candidate_after_merge: llmMergedCandidateParsed,

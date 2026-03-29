@@ -189,6 +189,7 @@ export interface CitationQualityScore {
   missingRequired: string[];
   missingOptional: string[];
   readyBlockers: string[];
+  observationCodes?: string[];
   bucket: CitationReviewBucket;
   bucketReasons: string[];
 }
@@ -234,6 +235,7 @@ export interface ExtractionMetadata {
   llmFallbackFieldsImproved?: string[];
   llmFallbackStrictPassDelta?: number;
   llmFallbackFirstAuthorConfidence?: number;
+  llmFallbackNoOpAccepted?: boolean;
 }
 
 export interface ValidationMetadata {

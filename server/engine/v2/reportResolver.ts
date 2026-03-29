@@ -175,7 +175,13 @@ export function resolveReportMetadata(options: {
     );
 
   const reportTitleLike = REPORT_TITLE_SIGNAL.test(nextTitle) && !BOOKISH_TITLE_SIGNAL.test(nextTitle);
-  const strongReportEvidence = REPORT_DOI_SIGNAL.test(doi) || reportTitleLike;
+  const strongReportEvidence = REPORT_DOI_SIGNAL.test(doi) || (
+    reportTitleLike
+    && !serialStructure
+    && !nextJournal
+    && !normalizeWhitespace(parsed.volume ?? '')
+    && !normalizeWhitespace(parsed.issue ?? '')
+  );
   const safeInstitutionalReportEvidence = Boolean(institutionSource)
     && !normalizeWhitespace(parsed.url ?? '')
     && !serialStructure

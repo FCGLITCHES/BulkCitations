@@ -120,7 +120,7 @@ const REQUIREMENT_PROFILES: Record<string, RequirementProfile> = {
   },
   book: {
     required: ['authors', 'title', 'year', 'publisher'],
-    expected: ['edition'],
+    expected: ['edition', 'placeOfPublication'],
     optional: ['doi', 'url'],
   },
   conference: {
@@ -171,7 +171,7 @@ const SCORE_PROFILES: Record<ScoreProfileKey, ScoreProfile> = {
     },
     acceptableConfidenceFloors: {
       title: 0.72,
-      authors: 0.76,
+      authors: 0.72,
       year: 0.78,
       venue: 0.68,
       locator: 0.62,
@@ -198,7 +198,8 @@ const SCORE_PROFILES: Record<ScoreProfileKey, ScoreProfile> = {
       expectedCompleteness: 0.18,
     },
     expectedFieldWeights: {
-      edition: 1,
+      edition: 0.4,
+      placeOfPublication: 0.6,
     },
     acceptableConfidenceFloors: {
       title: 0.72,
@@ -819,6 +820,8 @@ function hasCitationField(citation: CanonicalCitation, field: string): boolean {
       return Boolean(citation.bookTitle.value);
     case 'edition':
       return Boolean(citation.edition.value);
+    case 'placeOfPublication':
+      return Boolean(citation.placeOfPublication.value);
     case 'url':
       return Boolean(citation.url.value);
     case 'doi':
@@ -827,3 +830,466 @@ function hasCitationField(citation: CanonicalCitation, field: string): boolean {
       return false;
   }
 }
+
+function normalizeScoreText(value: string | null | undefined): string {
+  return normalizeWhitespace(value ?? '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function scoreTextTokenCount(value: string | null | undefined): number {
+  return normalizeScoreText(value)
+    .split(/\s+/)
+    .filter(Boolean)
+    .length;
+}
+
+function isAbbreviationOnlyVenue(value: string | null | undefined): boolean {
+  const normalized = normalizeWhitespace(value ?? '');
+  if (!normalized) return false;
+  if (/^(?:BMJ|JAMA|NEJM|PNAS|IEEE|ACM|EMA|WHO|ICCIC|ICML|ICLR|CVPR|ECCV|ICCV|AAAI|IJCAI|ACL|EMNLP|NAACL|COLING|SIGIR|KDD|UIST|CHI|CSCW|ISMB|RECOMB|NEURIPS|NIPS)$/i.test(normalized)) {
+    return false;
+  }
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  if (tokens.length === 0 || tokens.length > 6) return false;
+  return tokens.every((token) => /^[A-Z]{1,8}\.?$/u.test(token));
+}
+
+function normalizedAuthorSummary(authors: CanonicalAuthor[]): string {
+  return authors
+    .map((author) => normalizeWhitespace(author.literal ?? [author.last, author.first ?? author.initials ?? ''].filter(Boolean).join(', ')))
+    .filter(Boolean)
+    .join(' | ');
+}
+
+function getVenueValue(citation: CanonicalCitation): string | null {
+  switch (citation.referenceType) {
+    case 'journal':
+      return citation.journal.value;
+    case 'conference':
+      return citation.conferenceTitle.value ?? citation.bookTitle.value ?? citation.journal.value ?? citation.publisher.value;
+    case 'chapter':
+      return citation.bookTitle.value ?? citation.publisher.value;
+    case 'thesis':
+      return citation.institution.value ?? citation.publisher.value;
+    case 'report':
+      return citation.institution.value ?? citation.publisher.value ?? citation.journal.value;
+    case 'website':
+      return citation.publisher.value ?? citation.journal.value;
+    case 'book':
+      return citation.publisher.value ?? citation.bookTitle.value;
+    default:
+      return citation.journal.value ?? citation.bookTitle.value ?? citation.publisher.value;
+  }
+}
+
+function getVenueConfidence(citation: CanonicalCitation): number {
+  switch (citation.referenceType) {
+    case 'conference':
+      return Math.max(citation.conferenceTitle.confidence, citation.bookTitle.confidence, citation.journal.confidence, citation.publisher.confidence);
+    case 'chapter':
+      return Math.max(citation.bookTitle.confidence, citation.publisher.confidence);
+    case 'thesis':
+      return Math.max(citation.institution.confidence, citation.publisher.confidence);
+    case 'report':
+      return Math.max(citation.institution.confidence, citation.publisher.confidence, citation.journal.confidence);
+    case 'website':
+      return Math.max(citation.publisher.confidence, citation.journal.confidence, citation.url.confidence);
+    case 'book':
+      return Math.max(citation.publisher.confidence, citation.bookTitle.confidence);
+    default:
+      return Math.max(citation.journal.confidence, citation.publisher.confidence, citation.bookTitle.confidence);
+  }
+}
+
+function getFieldCategory(field: string): ScoreFieldCategory {
+  switch (field) {
+    case 'title':
+      return 'title';
+    case 'authors':
+      return 'authors';
+    case 'year':
+      return 'year';
+    case 'journal':
+    case 'conferenceTitle':
+    case 'bookTitle':
+    case 'venue':
+      return 'venue';
+    case 'volume':
+    case 'issue':
+    case 'pages':
+    case 'locator':
+      return 'locator';
+    case 'doi':
+    case 'url':
+      return 'identifier';
+    default:
+      return 'support';
+  }
+}
+
+function getFieldConfidence(citation: CanonicalCitation, field: string): number {
+  switch (field) {
+    case 'authors':
+      return citation.authors.confidence;
+    case 'title':
+      return citation.title.confidence;
+    case 'year':
+      return citation.year.confidence;
+    case 'venue':
+      return getVenueConfidence(citation);
+    case 'journal':
+      return citation.journal.confidence;
+    case 'conferenceTitle':
+      return citation.conferenceTitle.confidence;
+    case 'bookTitle':
+      return citation.bookTitle.confidence;
+    case 'volume':
+      return citation.volume.confidence;
+    case 'issue':
+      return citation.issue.confidence;
+    case 'locator':
+    case 'pages':
+      return citation.pages.confidence;
+    case 'doi':
+      return citation.doi.confidence;
+    case 'url':
+      return citation.url.confidence;
+    case 'publisher':
+      return citation.publisher.confidence;
+    case 'institution':
+      return citation.institution.confidence;
+    case 'edition':
+      return citation.edition.confidence;
+    case 'placeOfPublication':
+      return citation.placeOfPublication.confidence;
+    default:
+      return 0;
+  }
+}
+
+function getFieldRawValue(citation: CanonicalCitation, field: string): unknown {
+  switch (field) {
+    case 'authors':
+      return citation.authors.value;
+    case 'title':
+      return citation.title.value;
+    case 'year':
+      return citation.year.value;
+    case 'venue':
+      return getVenueValue(citation);
+    case 'journal':
+      return citation.journal.value;
+    case 'conferenceTitle':
+      return citation.conferenceTitle.value;
+    case 'bookTitle':
+      return citation.bookTitle.value;
+    case 'volume':
+      return citation.volume.value;
+    case 'issue':
+      return citation.issue.value;
+    case 'locator':
+    case 'pages':
+      return citation.pages.value;
+    case 'doi':
+      return citation.doi.value;
+    case 'url':
+      return citation.url.value;
+    case 'publisher':
+      return citation.publisher.value;
+    case 'institution':
+      return citation.institution.value;
+    case 'edition':
+      return citation.edition.value;
+    case 'placeOfPublication':
+      return citation.placeOfPublication.value;
+    default:
+      return null;
+  }
+}
+
+function getFieldNormalizedValue(citation: CanonicalCitation, field: string): string {
+  const rawValue = getFieldRawValue(citation, field);
+  if (field === 'authors') {
+    return normalizedAuthorSummary((rawValue as CanonicalAuthor[]) ?? []);
+  }
+  if (field === 'year') {
+    return rawValue == null ? '' : String(rawValue);
+  }
+  return normalizeScoreText(typeof rawValue === 'string' ? rawValue : String(rawValue ?? ''));
+}
+
+function weakTitle(value: string | null | undefined, confidence: number, floor: number): boolean {
+  const normalized = normalizeScoreText(value);
+  const tokenCount = scoreTextTokenCount(value);
+  if (/^(?:short|sample|example|test)\s+title$/i.test(normalized)) return true;
+  if (tokenCount <= 1) return confidence < Math.max(0.88, floor + 0.08);
+  if (tokenCount === 2) return false;
+  return false;
+}
+
+function weakAuthors(authors: CanonicalAuthor[]): boolean {
+  if (authors.length === 0) return false;
+  const firstAuthor = authors[0];
+  const surname = normalizeWhitespace(firstAuthor?.last ?? '');
+  if (!surname || surname.length === 1) return true;
+  const hasGivenName = Boolean(normalizeWhitespace(firstAuthor?.first ?? '') || normalizeWhitespace(firstAuthor?.initials ?? ''));
+  if (hasGivenName) return false;
+  const literal = normalizeWhitespace(firstAuthor?.literal ?? '');
+  const surnameTokens = surname.split(/\s+/).filter(Boolean);
+  if (literal || surnameTokens.length >= 2) {
+    return false;
+  }
+  return true;
+}
+
+function weakYear(value: number | null | undefined): boolean {
+  if (value == null) return false;
+  const currentYear = new Date().getUTCFullYear();
+  return value < 100 || value > currentYear + 2;
+}
+
+function weakVenue(value: string | null | undefined, confidence: number): boolean {
+  return confidence < 0.5 || isAbbreviationOnlyVenue(value);
+}
+
+function weakLocator(value: string | null | undefined): boolean {
+  const normalized = normalizeWhitespace(value ?? '');
+  if (!normalized) return false;
+  if (normalized.length === 1 && !/\d/.test(normalized)) return true;
+  return classifyLocatorToken(normalized).kind === 'title_fragment';
+}
+
+function weakIdentifier(field: 'doi' | 'url', value: string | null | undefined): boolean {
+  const normalized = normalizeWhitespace(value ?? '');
+  if (!normalized) return false;
+  if (field === 'doi') {
+    return !/^10\.\d{4,9}\/\S+$/i.test(normalizeDoiValue(normalized));
+  }
+  return !/^https?:\/\/\S+$/i.test(normalized);
+}
+
+function weakSupport(value: string | null | undefined, confidence: number): boolean {
+  const normalized = normalizeWhitespace(value ?? '');
+  if (!normalized) return false;
+  const truncated = normalized.length <= 2;
+  return confidence < 0.45 || isPlaceholderValue(normalized) || truncated;
+}
+
+export function evaluateScoreField(
+  citation: CanonicalCitation,
+  field: string,
+  profile?: ScoreProfile,
+): ScoreFieldEvaluation {
+  const selectedProfile = profile ?? getScoreProfile(citation.referenceType).profile;
+  const category = getFieldCategory(field);
+  const confidence = getFieldConfidence(citation, field);
+  const normalizedValue = getFieldNormalizedValue(citation, field);
+  const present = field === 'authors'
+    ? citation.authors.value.length > 0
+    : field === 'year'
+      ? citation.year.value != null
+      : field === 'locator'
+        ? Boolean(citation.pages.value)
+        : Boolean(getFieldRawValue(citation, field));
+
+  if (!present || !normalizedValue) {
+    return {
+      field,
+      category,
+      state: 'missing',
+      present: false,
+      confidence,
+      scoreCredit: 0,
+      completenessCredit: 0,
+      normalizedValue: '',
+    };
+  }
+
+  let weak = false;
+  switch (category) {
+    case 'title':
+      weak = weakTitle(citation.title.value, confidence, selectedProfile.acceptableConfidenceFloors.title)
+        || confidence < selectedProfile.acceptableConfidenceFloors.title;
+      break;
+    case 'authors':
+      weak = weakAuthors(citation.authors.value) || confidence < selectedProfile.acceptableConfidenceFloors.authors;
+      break;
+    case 'year':
+      weak = weakYear(citation.year.value) || confidence < selectedProfile.acceptableConfidenceFloors.year;
+      break;
+    case 'venue':
+      weak = weakVenue(String(getFieldRawValue(citation, field) ?? ''), confidence)
+        || confidence < selectedProfile.acceptableConfidenceFloors.venue;
+      break;
+    case 'locator':
+      weak = weakLocator(String(getFieldRawValue(citation, field) ?? ''))
+        || confidence < selectedProfile.acceptableConfidenceFloors.locator;
+      break;
+    case 'identifier':
+      weak = weakIdentifier(field === 'doi' ? 'doi' : 'url', String(getFieldRawValue(citation, field) ?? ''))
+        || confidence < selectedProfile.acceptableConfidenceFloors.identifier;
+      break;
+    case 'support':
+      weak = weakSupport(String(getFieldRawValue(citation, field) ?? ''), confidence)
+        || confidence < selectedProfile.acceptableConfidenceFloors.support;
+      break;
+  }
+
+  if (!weak) {
+    return {
+      field,
+      category,
+      state: 'acceptable',
+      present: true,
+      confidence,
+      scoreCredit: confidence,
+      completenessCredit: 1,
+      normalizedValue,
+    };
+  }
+
+  const credit = selectedProfile.weakStatePartialCredit[category];
+  return {
+    field,
+    category,
+    state: 'weak',
+    present: true,
+    confidence,
+    scoreCredit: Number((confidence * credit).toFixed(4)),
+    completenessCredit: credit,
+    normalizedValue,
+  };
+}
+
+function contiguousOverlap(left: string | null | undefined, right: string | null | undefined, minTokens: number): boolean {
+  const leftTokens = normalizeScoreText(left).split(/\s+/).filter(Boolean);
+  const rightTokens = normalizeScoreText(right).split(/\s+/).filter(Boolean);
+  if (leftTokens.length < minTokens || rightTokens.length < minTokens) return false;
+  const rightJoined = rightTokens.join(' ');
+  for (let index = 0; index <= leftTokens.length - minTokens; index += 1) {
+    const span = leftTokens.slice(index, index + minTokens).join(' ');
+    if (rightJoined.includes(span)) return true;
+  }
+  return false;
+}
+
+function looksSupportTypeMismatch(value: string | null | undefined): boolean {
+  const normalized = normalizeWhitespace(value ?? '');
+  if (!normalized) return false;
+  return /^https?:\/\//i.test(normalized) || /^10\.\d{4,9}\//i.test(normalized) || /^\d+$/.test(normalized);
+}
+
+export function collectScoreObservationCodes(
+  citation: CanonicalCitation,
+  profileSelection?: ScoreProfileSelection,
+): ObservationCode[] {
+  const selection = profileSelection ?? getScoreProfile(citation.referenceType);
+  const codes: ObservationCode[] = [];
+  const required = getRequirementProfile(citation.referenceType).required;
+  const requiredEvaluations = required.map((field) => evaluateScoreField(citation, field, selection.profile));
+  const presentRequired = requiredEvaluations.filter((evaluation) => evaluation.present);
+
+  if (selection.usedFallback) {
+    codes.push('score_profile_fallback');
+  }
+
+  if (presentRequired.length >= 2) {
+    const averageConfidence = presentRequired.reduce((sum, evaluation) => sum + evaluation.confidence, 0) / presentRequired.length;
+    if (presentRequired.some((evaluation) => evaluation.confidence <= averageConfidence - 0.25)) {
+      codes.push('field_confidence_outlier');
+    }
+  }
+
+  if (
+    citation.referenceType !== 'chapter'
+    && citation.referenceType !== 'website'
+    && contiguousOverlap(citation.title.value, getVenueValue(citation), 3)
+  ) {
+    codes.push('venue_title_partial_overlap');
+  }
+
+  if (
+    citation.referenceType === 'journal'
+    && (
+      evaluateScoreField(citation, 'volume', selection.profile).state === 'weak'
+      || evaluateScoreField(citation, 'issue', selection.profile).state === 'weak'
+      || evaluateScoreField(citation, 'locator', selection.profile).state === 'weak'
+    )
+  ) {
+    codes.push('locator_unusual_shape');
+  }
+
+  if (
+    evaluateScoreField(citation, 'doi', selection.profile).state === 'weak'
+    || evaluateScoreField(citation, 'url', selection.profile).state === 'weak'
+  ) {
+    codes.push('identifier_weak_shape');
+  }
+
+  if (
+    looksSupportTypeMismatch(citation.publisher.value)
+    || looksSupportTypeMismatch(citation.institution.value)
+    || looksSupportTypeMismatch(citation.edition.value)
+  ) {
+    codes.push('support_field_type_mismatch');
+  }
+
+  return [...new Set(codes)];
+}
+
+export function observationPenaltyForCodes(codes: ObservationCode[]): number {
+  const contradictionCount = [...new Set(codes)]
+    .map((code) => OBSERVATION_CODE_REGISTRY[code])
+    .filter((definition) => definition?.penaltyType === 'contradiction')
+    .length;
+  return Math.min(OBSERVATION_PENALTY_CAP, contradictionCount * OBSERVATION_PENALTY_PER_CODE);
+}
+
+export function validateScoreConfiguration(config?: {
+  requirementProfiles?: Record<string, RequirementProfile>;
+  scoreProfiles?: Record<string, ScoreProfile>;
+  observationRegistry?: Record<string, ObservationCodeDefinition>;
+}): void {
+  const requirementProfiles = config?.requirementProfiles ?? REQUIREMENT_PROFILES;
+  const scoreProfiles = config?.scoreProfiles ?? SCORE_PROFILES;
+  const observationRegistry = config?.observationRegistry ?? OBSERVATION_CODE_REGISTRY;
+
+  for (const definition of Object.values(observationRegistry)) {
+    if (definition.penaltyType !== 'contradiction' && definition.penaltyType !== 'informational') {
+      throw new Error(`Observation code ${definition.code} is missing a valid penaltyType.`);
+    }
+  }
+
+  for (const [referenceType, profile] of Object.entries(scoreProfiles)) {
+    const weightSum = Object.values(profile.weights).reduce((sum, value) => sum + value, 0);
+    if (Math.abs(weightSum - 1) > 0.0001) {
+      throw new Error(`Score profile ${referenceType} weights must sum to 1.0.`);
+    }
+
+    const requirementProfile = requirementProfiles[referenceType];
+    if (!requirementProfile) {
+      throw new Error(`Missing requirement profile for score profile ${referenceType}.`);
+    }
+
+    for (const expectedField of requirementProfile.expected) {
+      if (!(expectedField in profile.expectedFieldWeights)) {
+        throw new Error(`Score profile ${referenceType} is missing expected field weight for ${expectedField}.`);
+      }
+    }
+
+    for (const expectedField of Object.keys(profile.expectedFieldWeights)) {
+      if (!requirementProfile.expected.includes(expectedField)) {
+        throw new Error(`Score profile ${referenceType} defines orphan expected field weight ${expectedField}.`);
+      }
+    }
+
+    if (Object.keys(profile.expectedFieldWeights).length > 0 && profile.readyExpectedFieldMinimum < 1) {
+      throw new Error(`Score profile ${referenceType} must require at least one expected field when expected weights are defined.`);
+    }
+  }
+}
+
+validateScoreConfiguration();
