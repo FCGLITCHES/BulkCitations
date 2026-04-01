@@ -26,7 +26,8 @@ export interface ConversionRequest {
   outputStyle: string;
   isPro?: boolean;
   enrichWithAuthority?: boolean;
-  engineVersion?: "v1" | "v2";
+  engineVersion?: "v1" | "v2" | "v3";
+  visitorId?: string;
 }
 
 export const CITATION_STYLES = [

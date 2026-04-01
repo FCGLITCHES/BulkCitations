@@ -114,6 +114,24 @@ export type {
   V2ConversionResponse,
 } from './schema/v2Types';
 
+// ── V3 engine types ──
+export type {
+  V3StageId,
+  V3LockClass,
+  V3FieldProvenance,
+  V3StageContract,
+  V3FieldLock,
+  V3FieldProvenanceEntry,
+  V3MergeTraceEntry,
+  V3ScoreContribution,
+  V3ScoreFieldOrigin,
+  V3AuthorityAdjustment,
+  V3RenderMetadata,
+  V3Citation,
+  V3ProcessingPath,
+  V3ConversionResponse,
+} from './schema/v3Types';
+
 // ── Validation schemas & runtime utilities ──
 export {
   normalizeCitationStyle,

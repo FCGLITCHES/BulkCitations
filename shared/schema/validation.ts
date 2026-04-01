@@ -26,7 +26,8 @@ export const conversionRequestSchema = z.object({
   outputStyle: z.string(),
   enrichWithAuthority: z.boolean().optional().default(false),
   isPro: z.boolean().optional().default(false),
-  engineVersion: z.enum(['v1', 'v2']).optional(),
+  engineVersion: z.enum(['v1', 'v2', 'v3']).optional(),
+  visitorId: z.string().optional(),
 }).superRefine((value, ctx) => {
   const hasReferences = Array.isArray(value.references) && value.references.some((reference) => reference.trim().length > 0);
   const hasContent = typeof value.content === 'string' && value.content.trim().length > 0;

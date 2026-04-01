@@ -39,7 +39,7 @@ interface ReferenceOutputProps {
   convertedReferences: ConvertedReference[];
   clusters?: Cluster[];
   duplicateGroups?: DuplicateGroup[];
-  engineVersion?: "v1" | "v2";
+  engineVersion?: "v1" | "v2" | "v3";
   groupDuplicates?: boolean;
   onError: (error: string) => void;
   isPro?: boolean;
@@ -802,7 +802,7 @@ export default function ReferenceOutput({
   convertedReferences,
   clusters = [],
   duplicateGroups = [],
-  engineVersion = "v2",
+  engineVersion = "v3",
   groupDuplicates = true,
   onError,
   isPro = false,
@@ -841,7 +841,7 @@ export default function ReferenceOutput({
   }, [convertedReferences]);
 
   const detectedGroups = useMemo(() => {
-    if (engineVersion === "v2") {
+    if (engineVersion !== "v1") {
       return duplicateGroups.map((group) => ({
         groupId: group.groupId,
         primaryId: group.primaryId,

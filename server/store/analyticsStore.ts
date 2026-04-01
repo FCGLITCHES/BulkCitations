@@ -59,7 +59,7 @@ export interface AnalyticsSummary {
     styleDetectionFailed: number;
   };
   engines: Array<{
-    engine: 'v1' | 'v2' | 'unknown';
+    engine: 'v1' | 'v2' | 'v3' | 'unknown';
     starts: number;
     completed: number;
     failed: number;
@@ -313,7 +313,7 @@ function getMetadataNumber(
 }
 
 function normalizeAnalyticsEngine(value: AnalyticsMetadataValue | undefined): AnalyticsEngine {
-  if (value === 'v1' || value === 'v2') return value;
+  if (value === 'v1' || value === 'v2' || value === 'v3') return value;
   return 'unknown';
 }
 
@@ -371,7 +371,7 @@ function summarizeAnalytics(events: SiteAnalyticsEvent[], windowDays: number): A
     completed: number;
     failed: number;
   }>();
-  const engines = new Map<'v1' | 'v2' | 'unknown', {
+  const engines = new Map<'v1' | 'v2' | 'v3' | 'unknown', {
     starts: number;
     completed: number;
     failed: number;
@@ -652,7 +652,7 @@ function summarizeAnalytics(events: SiteAnalyticsEvent[], windowDays: number): A
       warnings: qualityWarnings,
       styleDetectionFailed: qualityStyleDetectionFailed,
     },
-    engines: (['v2', 'v1', 'unknown'] as const).map((engine) => ({
+    engines: (['v3', 'v2', 'v1', 'unknown'] as const).map((engine) => ({
       engine,
       starts: engines.get(engine)?.starts ?? 0,
       completed: engines.get(engine)?.completed ?? 0,

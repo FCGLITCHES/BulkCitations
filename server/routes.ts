@@ -9,6 +9,7 @@ import { storage } from "./storage";
 import reportsRouter from "./routes/reports";
 import historyRouter from "./routes/history";
 import v2Router from "./routes/v2";
+import v3Router from "./routes/v3";
 import {
   adminAccessRequestSchema,
   adminApprovalSchema,
@@ -26,11 +27,14 @@ import {
   type DuplicateGroup,
   type V2ConversionRequest,
   type V2ConversionResponse,
+  type V3ConversionResponse,
 } from "@shared/schema";
 import { reformatReferences, initCSLStyles } from "./engine/index";
 import { runAssertions } from "./engine/strictRenderer.js";
 import { processV2Conversion } from "./engine/v2/index.js";
 import { mapV2ResponseToLegacyRecords } from "./engine/v2/compat.js";
+import { processV3Conversion } from "./engine/v3/pipeline.js";
+import { mapV3ResponseToLegacyRecords } from "./engine/v3/compat.js";
 import { attachReferencePayloads } from "./engine/shared/referencePayloads.js";
 import { runSanityCheck } from "./engine/stages/sanityCheck.js";
 import { clusterCitations } from "../shared/clustering.js";
@@ -267,6 +271,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       clusters: undefined,
       duplicateGroups,
       engineVersion,
+      errors: undefined,
+    };
+  }
+
+  async function buildLegacyResponseFromV3(
+    v3Response: V3ConversionResponse,
+    request: { inputStyle: string; outputStyle: string },
+  ): Promise<ConversionResponse> {
+    const legacyRecords = mapV3ResponseToLegacyRecords(v3Response, request);
+    const storedRefs = await storage.createReferences(
+      legacyRecords.map((record) => record.storageData),
+    );
+    const convertResults: ConvertedReference[] = legacyRecords.map((record, idx) => attachReferencePayloads({
+      ...record.uiData,
+      id: storedRefs[idx].id.toString(),
+    }));
+
+    const uiRecordBySourceId = new Map(
+      legacyRecords.map((record, idx) => [record.sourceId, convertResults[idx]]),
+    );
+    const duplicateGroups: DuplicateGroup[] = v3Response.citations
+      .filter((citation) => citation.status === "merged" && citation.duplicate?.mergedFrom?.length)
+      .map((citation) => {
+        const members = (citation.duplicate?.mergedFrom ?? [])
+          .map((sourceId) => uiRecordBySourceId.get(sourceId))
+          .filter((member): member is ConvertedReference => Boolean(member));
+        const primarySourceId =
+          v3Response.duplicates.find((entry) => entry.mergedId === citation.id)?.originalId
+          ?? citation.duplicate?.mergedFrom?.[0]
+          ?? "";
+        const primaryId = uiRecordBySourceId.get(primarySourceId)?.id ?? members[0]?.id ?? "";
+        return {
+          groupId: citation.id,
+          primaryId,
+          method: citation.duplicate?.method ?? "structural",
+          members,
+        };
+      })
+      .filter((group) => group.members.length > 1 && Boolean(group.primaryId));
+
+    return {
+      convertedReferences: convertResults,
+      clusters: undefined,
+      duplicateGroups,
+      engineVersion: "v3",
       errors: undefined,
     };
   }
@@ -834,6 +883,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/admin/references", requireAdmin, async (req, res) => {
+    try {
+      const status = req.query.status as string;
+      const search = req.query.search as string;
+      const limit = Number.parseInt(String(req.query.limit ?? "50"), 10);
+      const offset = Number.parseInt(String(req.query.offset ?? "0"), 10);
+
+      const result = await v2JobStorage.listAllJobs({ status, search, limit, offset });
+      return res.json(result);
+    } catch (error) {
+      console.error("[admin] References listing failed:", error instanceof Error ? error.message : String(error));
+      return res.status(500).json({ message: "Failed to load archival references." });
+    }
+  });
+
   app.get("/api/admin/session", async (req, res) => {
     res.setHeader("Cache-Control", "no-store");
     res.json(await getAdminSessionStatus(req));
@@ -984,6 +1048,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/reports", reportsRouter);
   app.use("/api/history", historyRouter);
   app.use("/api/v2", v2Router);
+  app.use("/api/v3", v3Router);
 
   // Convert citations endpoint — thin wrapper around engine pipeline
   app.post("/api/convert", async (req, res) => {
@@ -994,9 +1059,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // this by default, while tests and internal callers can disable it for
       // deterministic local-only conversion.
       const shouldAttemptValidation = validatedData.enrichWithAuthority;
-      const useV2Engine = validatedData.engineVersion !== 'v1';
+      const requestedEngine = validatedData.engineVersion ?? 'v3';
 
-      if (!useV2Engine) {
+      if (requestedEngine === 'v1') {
         const sourceContent = String(validatedData.content ?? '').trim() || incomingReferences.join("\n\n");
         const { response: v1CompatResponse } = await processV2Conversion({
           sourceType: 'text',
@@ -1007,6 +1072,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           dedup: false,
           group: false,
           debug: false,
+          metadata: { visitorId: validatedData.visitorId },
         }, {
           executionMode: 'sync',
         });
@@ -1017,7 +1083,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const sourceContent = String(validatedData.content ?? '').trim() || incomingReferences.join("\n\n");
-      const { response: v2Response } = await processV2Conversion({
+      if (requestedEngine === 'v2') {
+        const { response: v2Response } = await processV2Conversion({
+          sourceType: 'text',
+          content: sourceContent,
+          inputStyle: validatedData.inputStyle,
+          outputStyle: validatedData.outputStyle,
+          enrich: shouldAttemptValidation,
+          dedup: true,
+          group: false,
+          debug: false,
+        }, {
+          executionMode: 'sync',
+        });
+        return res.json(await buildLegacyResponseFromV2(v2Response, {
+          inputStyle: validatedData.inputStyle,
+          outputStyle: validatedData.outputStyle,
+        }, 'v2'));
+      }
+
+      const { response: v3Response } = await processV3Conversion({
         sourceType: 'text',
         content: sourceContent,
         inputStyle: validatedData.inputStyle,
@@ -1026,13 +1111,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dedup: true,
         group: false,
         debug: false,
+        metadata: { visitorId: validatedData.visitorId },
       }, {
         executionMode: 'sync',
       });
-      res.json(await buildLegacyResponseFromV2(v2Response, {
+      return res.json(await buildLegacyResponseFromV3(v3Response, {
         inputStyle: validatedData.inputStyle,
         outputStyle: validatedData.outputStyle,
-      }, 'v2'));
+      }));
     } catch (error) {
       console.error('Validation error:', error instanceof Error ? error.message : String(error));
       res.status(400).json({
@@ -1063,6 +1149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const inputStyle = typeof req.body?.inputStyle === "string" ? req.body.inputStyle : "auto";
       const outputStyle = typeof req.body?.outputStyle === "string" ? req.body.outputStyle : "apa";
+      const visitorId = typeof req.body?.visitorId === "string" ? req.body.visitorId : undefined;
       const jobId = randomUUID();
       const tempPath = path.join(PDF_FILE_JOB_DIR, `${jobId}.pdf`);
       const expiresAt = getPdfJobExpiry();
@@ -1089,6 +1176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tempPath,
           originalFilename: file.originalname,
           byteSize,
+          visitorId,
         },
       };
 
@@ -1100,6 +1188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tempPath,
           originalFilename: file.originalname,
           byteSize,
+          visitorId,
         },
       });
 

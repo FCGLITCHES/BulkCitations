@@ -236,6 +236,10 @@ export function createIngestStage(): V2Stage {
       const { sourceType, content } = context.request;
       let rawItems: string[] = [];
 
+      if (typeof content !== 'string') {
+        ingestFailure('missing_content');
+      }
+
       try {
         switch (sourceType) {
           case 'text':

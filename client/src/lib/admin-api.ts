@@ -28,3 +28,9 @@ export async function adminFetch<T>(url: string, init: RequestInit = {}) {
 
   return payload as T;
 }
+export async function updateCitation<T>(jobId: string, index: number, data: any) {
+  return adminFetch<T>(`/api/v2/jobs/${jobId}/citations/${index}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}

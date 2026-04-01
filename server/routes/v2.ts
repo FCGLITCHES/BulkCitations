@@ -3,8 +3,12 @@ import { v2ConversionRequestSchema, v2ExportFormatSchema } from '@shared/schema'
 import { createDefaultAdapters, processV2Conversion } from '../engine/v2/index.js';
 import { buildSignedExportUrl, validateSignedExportUrl } from '../engine/v2/exportUrls.js';
 import { v2JobStorage } from '../v2JobStorage.js';
+import { recanonicalizeFromParsed } from '../engine/v2/utils.js';
+import { scoreCitation } from '../engine/v2/stages/score.js';
+import { validateCitationOffline } from '../engine/v2/stages/validate.js';
 
 const router = Router();
+// ... existing router setup ...
 const adapters = createDefaultAdapters();
 const AUTO_ASYNC_THRESHOLD = Number.parseInt(process.env.V2_AUTO_ASYNC_THRESHOLD ?? '75', 10);
 
@@ -29,26 +33,6 @@ router.post('/convert', async (req, res) => {
     if (shouldAutoAsync) {
       const job = await v2JobStorage.createQueuedJob(request);
 
-      queueMicrotask(async () => {
-        try {
-          await v2JobStorage.markProcessing(job.id);
-          const { response } = await processV2Conversion(request, { adapters, executionMode: 'async' });
-          await v2JobStorage.completeJob(job.id, {
-            ...response,
-            job_id: job.id,
-            exports: {
-              txt: buildSignedExportUrl(job.id, 'txt'),
-              bib: buildSignedExportUrl(job.id, 'bib'),
-              ris: buildSignedExportUrl(job.id, 'ris'),
-              csv: buildSignedExportUrl(job.id, 'csv'),
-              docx: buildSignedExportUrl(job.id, 'docx'),
-            },
-          });
-        } catch (error) {
-          await v2JobStorage.failJob(job.id, error instanceof Error ? error.message : String(error));
-        }
-      });
-
       return res.status(202).json({
         job_id: job.id,
         status: job.status,
@@ -72,26 +56,6 @@ router.post('/jobs', async (req, res) => {
   try {
     const request = v2ConversionRequestSchema.parse(req.body);
     const job = await v2JobStorage.createQueuedJob(request);
-
-    queueMicrotask(async () => {
-      try {
-        await v2JobStorage.markProcessing(job.id);
-        const { response } = await processV2Conversion(request, { adapters, executionMode: 'async' });
-        await v2JobStorage.completeJob(job.id, {
-          ...response,
-          job_id: job.id,
-          exports: {
-            txt: buildSignedExportUrl(job.id, 'txt'),
-            bib: buildSignedExportUrl(job.id, 'bib'),
-            ris: buildSignedExportUrl(job.id, 'ris'),
-            csv: buildSignedExportUrl(job.id, 'csv'),
-            docx: buildSignedExportUrl(job.id, 'docx'),
-          },
-        });
-      } catch (error) {
-        await v2JobStorage.failJob(job.id, error instanceof Error ? error.message : String(error));
-      }
-    });
 
     res.status(202).json({ job_id: job.id, status: job.status });
   } catch (error) {
@@ -139,6 +103,49 @@ router.get('/jobs/:jobId/export', async (req, res) => {
     res.status(400).json({
       message: 'Invalid v2 export request',
       error: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+router.patch('/jobs/:jobId/citations/:index', async (req, res) => {
+  const { jobId, index } = req.params;
+  const citationIndex = Number.parseInt(index, 10);
+  
+  try {
+    const job = await v2JobStorage.getJob(jobId);
+    if (!job || !job.response?.citations) {
+      return res.status(404).json({ message: 'Job or citations not found' });
+    }
+    
+    const existing = job.response.citations[citationIndex];
+    if (!existing) {
+      return res.status(404).json({ message: 'Citation index out of bounds' });
+    }
+
+    // 1. Sync the manual edits into the canonical structure
+    const updatedCanonical = recanonicalizeFromParsed(req.body, existing, 'manual-correction');
+    
+    // 2. Re-run Quality & Validation gates
+    updatedCanonical.quality = scoreCitation(updatedCanonical);
+    const { issues, metadata } = await validateCitationOffline(updatedCanonical);
+    updatedCanonical.validationIssues = issues;
+    updatedCanonical.validation = metadata;
+
+    // 3. Mark as manually corrected for audit
+    updatedCanonical.is_manually_corrected = true;
+
+    // 4. Save back to storage
+    const updatedJob = await v2JobStorage.updateJobCitation(jobId, citationIndex, updatedCanonical);
+    
+    res.json({
+      job_id: jobId,
+      status: updatedJob?.status,
+      citation: updatedCanonical
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Failed to update citation',
+      error: error instanceof Error ? error.message : String(error)
     });
   }
 });

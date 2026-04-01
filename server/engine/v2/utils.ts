@@ -1266,3 +1266,51 @@ export async function runWithTimeout<T>(label: string, promise: Promise<T>, time
     });
   });
 }
+
+export function recanonicalizeFromParsed(
+  parsed: ParsedReference,
+  existing: CanonicalCitation,
+  stageId: string = 'manual-correction'
+): CanonicalCitation {
+  const result = { ...existing };
+  
+  // 1. Map simple string fields
+  const fields = [
+    'title', 'journal', 'volume', 'issue', 'doi', 'publisher', 
+    'placeOfPublication', 'url', 'conferenceTitle', 'bookTitle', 
+    'institution', 'edition', 'thesisType', 'repository'
+  ] as const;
+  
+  for (const field of fields) {
+    if (parsed[field] !== undefined) {
+      (result as any)[field] = createFieldValue(parsed[field] as string || null, 'user', 1.0, stageId);
+    }
+  }
+
+  // 2. Map year
+  if (parsed.year !== undefined) {
+    result.year = createFieldValue(parsed.year ? Number.parseInt(parsed.year, 10) : null, 'user', 1.0, stageId);
+  }
+
+  // 3. Map authors
+  if (parsed.authors !== undefined) {
+    const canonicalAuthors = parsed.authors.map(a => parseAuthorToCanonical(a));
+    result.authors = createFieldValue(canonicalAuthors, 'user', 1.0, stageId);
+  }
+
+  // 4. Map editors
+  if (parsed.editors !== undefined) {
+    const canonicalEditors = parsed.editors.map(e => parseAuthorToCanonical(e));
+    result.editors = createFieldValue(canonicalEditors, 'user', 1.0, stageId);
+  } else if (parsed.editor !== undefined) {
+    result.editor = createFieldValue(parsed.editor || null, 'user', 1.0, stageId);
+  }
+
+  // 5. Map referenceType
+  if (parsed.referenceType !== undefined) {
+    result.referenceType = parsedReferenceTypeToCanonical(parsed.referenceType as any);
+  }
+
+  return result;
+}
+

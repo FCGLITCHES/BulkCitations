@@ -444,6 +444,7 @@ export interface CanonicalCitation {
   rendered?: CitationRenderedOutput;
   stageDebug?: V2CitationStageDebug;
   stageLog: StageDiagnostic[];
+  is_manually_corrected?: boolean;
 }
 
 export interface V2DuplicateEntry {

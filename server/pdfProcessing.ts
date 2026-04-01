@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { fileTypeFromBuffer } from 'file-type';
 import * as pdfParseModule from 'pdf-parse-new';
 import { normaliseEncoding } from './engine/stages/normaliseEncoding.js';
+import { extractTextML } from './engine/stages/phase1Ingestion.js';
 
 const pdfParse: (buffer: Buffer) => Promise<{ text: string }> =
   typeof pdfParseModule === 'function' ? pdfParseModule : (pdfParseModule?.default ?? pdfParseModule);
@@ -86,6 +87,18 @@ export async function extractPdfTextFromBuffer(buffer: Buffer): Promise<{ text: 
   }
 
   try {
+    try {
+      const mlResults = await extractTextML(buffer, "upload.pdf");
+      const combinedText = mlResults.map(r => r.rawString).join('\n\n');
+      const text = normalizeExtractedPdfText(combinedText);
+      if (text.length >= 20) {
+        return { text, byteSize: buffer.byteLength };
+      }
+    } catch(e) {
+      console.error("[PdfProcessing] ML Extraction failed, falling back to pdf-parse", e);
+    }
+    
+    // Fallback to pdfParse if ML fails
     const result = await pdfParse(buffer);
     const text = normalizeExtractedPdfText(result.text ?? '');
     if (text.length < 20) {

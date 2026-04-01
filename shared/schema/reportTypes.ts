@@ -83,7 +83,7 @@ export interface StageLogSummary {
 }
 
 export interface ReportEngineSnapshot {
-  engineVersion?: 'v1' | 'v2';
+  engineVersion?: 'v1' | 'v2' | 'v3';
   processingPath?: {
     stagesRun?: string[];
     fallbacksUsed?: string[];
@@ -127,7 +127,7 @@ export interface ReferenceExportPayload {
 }
 
 export interface ReferenceAnalyticsPayload {
-  engineVersion?: 'v1' | 'v2';
+  engineVersion?: 'v1' | 'v2' | 'v3';
   healthState?: HealthState;
   confidenceScore?: number;
   warningCount: number;

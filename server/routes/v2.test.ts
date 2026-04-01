@@ -1,6 +1,7 @@
 import express from 'express';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import v2Router from './v2.js';
+import { startV2BatchWorker, stopV2BatchWorker } from '../v2BatchWorker.js';
 
 describe('v2 routes', () => {
   let server: ReturnType<express.Express['listen']>;
@@ -10,6 +11,7 @@ describe('v2 routes', () => {
     const app = express();
     app.use(express.json());
     app.use('/api/v2', v2Router);
+    startV2BatchWorker({ concurrency: 1, pollIntervalMs: 25 });
 
     await new Promise<void>((resolve) => {
       server = app.listen(0, '127.0.0.1', () => {
@@ -24,6 +26,7 @@ describe('v2 routes', () => {
   });
 
   afterAll(async () => {
+    stopV2BatchWorker();
     await new Promise<void>((resolve, reject) => {
       server.close((error) => {
         if (error) reject(error);

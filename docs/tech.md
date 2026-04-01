@@ -30,11 +30,19 @@
 - **User-Facing Errors**: Use Sonner toasts for transient errors; inline alert components for validation errors.
 - **Rate Limiting**: 100 citations per hour for free tier; authenticated API keys for B2B tiers.
 
-## Intelligence Implementation (Phase 2-11)
-- **Format Detection**: `facebook/bart-large-mnli` (Zero-shot classification).
-- **Field Extraction**: `allenai/scibert_scivocab_uncased` NER + GPT-4o-mini fallback.
-- **Deduplication**: Qdrant (Vector Search) + `text-embedding-3-small`.
-- **Enrichment Waterfall**: Crossref (DOI/Fuzzy) → Semantic Scholar → PubMed.
+## Intelligence Implementation (New Engine Architecture)
+- **Ingestion**: `pdfplumber` and `python-docx` for structured extraction.
+- **Citation Splitting**: Regex boundary detection + Binary Line-Pair classifier.
+- **Format Detection**: Fine-tuned multi-label classifier (DistilBERT-base).
+- **Field Extraction**: SciBERT + CRF Sequence Labeler (`SIRIS-Lab/citation-parser-ENTITY`).
+- **Author Disambiguation**: Fine-tuned NER (`SIRIS-Lab/affilgood-NER-multilingual`).
+- **Reference Type Classification**: Fine-tuned multi-class classifier on CSL types.
+- **LLM Fallback**: GPT-4.1 nano for mandatory fields per source-type schema.
+- **Deduplication**: MinHash + LSH (Locality Sensitive Hashing) clustering.
+- **Enrichment Waterfall**: CrossRef → OpenAlex (additive-only rule).
+- **Quality Scoring**: Calibrated ML regression model.
+- **Authority**: CrossRef + Retraction Watch DB.
+- **Self-Improvement**: Post-pipeline Feedback Layer with Active Learning queues.
 
 ## Discouraged Patterns
 - **No Heavy Databases**: Avoid Postgres/Mongo for citation storage unless explicitly required for user accounts.

@@ -3,6 +3,7 @@ import express from 'express';
 import { pathToFileURL } from "url";
 import { registerRoutes } from './routes';
 import { setupVite, serveStatic, log } from './vite';
+import { startV2BatchWorker } from './v2BatchWorker';
 
 function isVercelRuntime() {
   const vercel = process.env.VERCEL?.toLowerCase();
@@ -33,7 +34,7 @@ export async function createApp(): Promise<{ app: express.Express; server: Await
           "form-action 'self'",
           "frame-ancestors 'none'",
           "img-src 'self' data: blob: https:",
-          "script-src 'self'",
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "font-src 'self' data: https://fonts.gstatic.com",
           "connect-src 'self'",
@@ -88,6 +89,11 @@ async function main() {
   const port = Number(process.env.PORT) || 5000;
   server.listen({ port, host: '0.0.0.0' }, () => {
     log(`serving on port ${port}`);
+    if (process.env.V2_DISABLE_BATCH_WORKER !== 'true') {
+      startV2BatchWorker({ concurrency: 2, pollIntervalMs: 2000 });
+    } else {
+      log('batch worker disabled via environment');
+    }
   });
 }
 

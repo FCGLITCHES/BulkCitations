@@ -12,6 +12,7 @@ import { ConversionRequest, ConversionResponse, INPUT_STYLES } from "@/lib/types
 import { useToast } from "@/hooks/use-toast";
 import { stripLeadingNumbering } from "@shared/stripNumbering";
 import { countEngineLikeInputReferences } from "@shared/liveReferenceDetection";
+import { getVisitorId } from "@/lib/analytics";
 
 interface ReferenceInputProps {
   onConversionResult: (response: ConversionResponse) => void;
@@ -21,7 +22,7 @@ interface ReferenceInputProps {
   isProcessing: boolean;
   isPro?: boolean;
   onOutputStyleChange?: (style: string) => void;
-  engineVersion?: "v1" | "v2";
+  engineVersion?: "v1" | "v2" | "v3";
   groupDuplicates?: boolean;
   onGroupDuplicatesChange?: (value: boolean) => void;
   /** Prefill from extension capture batch (one ref per block, joined with \n\n). */
@@ -36,7 +37,7 @@ export default function ReferenceInput({
   isProcessing,
   isPro = false,
   onOutputStyleChange,
-  engineVersion = "v2",
+  engineVersion = "v3",
   groupDuplicates = true,
   onGroupDuplicatesChange,
   initialCaptureText = "",
@@ -136,6 +137,7 @@ export default function ReferenceInput({
     formData.append('file', file);
     formData.append('inputStyle', inputStyle);
     formData.append('outputStyle', outputStyle);
+    formData.append('visitorId', getVisitorId());
 
     const response = await fetch('/api/convert-file', {
       method: 'POST',
@@ -236,9 +238,9 @@ export default function ReferenceInput({
       return;
     }
 
-    if (engineVersion === "v2") {
+    if (engineVersion !== "v1") {
       onProcessingStart(Math.max(referenceCount, 1));
-      if (nativePdfFile) {
+      if (nativePdfFile && engineVersion === "v2") {
         handleNativePdfConvert(nativePdfFile)
           .then((data) => {
             onConversionResult(data);
@@ -257,6 +259,7 @@ export default function ReferenceInput({
         isPro,
         enrichWithAuthority: false,
         engineVersion,
+        visitorId: getVisitorId(),
       });
       return;
     }
@@ -353,6 +356,7 @@ export default function ReferenceInput({
       isPro,
       enrichWithAuthority: false,
       engineVersion,
+      visitorId: getVisitorId(),
     });
   };
 
@@ -427,8 +431,16 @@ export default function ReferenceInput({
           className="hidden"
         />
 
+        <textarea 
+          className={`w-full bg-transparent border-none focus:ring-0 text-on-surface dark:text-slate-200 placeholder:text-outline/50 dark:placeholder:text-slate-500 font-mono text-xs sm:text-sm leading-relaxed z-10 outline-none pr-4 sm:pr-6 custom-scrollbar ${inputText.trim() ? 'min-h-[400px] sm:min-h-[500px] flex-grow resize-y' : 'h-48 resize-none mb-6'}`}
+          placeholder={!inputText.trim() ? "Paste your raw citations here...\n\ne.g. Smith, J. (2023). Future of Archiving. Oxford Journal..." : ""}
+          value={inputText}
+          onChange={(e) => handleInputChange(e.target.value)}
+          onClick={(e) => e.stopPropagation()}
+        />
+
         {!inputText.trim() ? (
-          <div className="flex flex-col items-center justify-center flex-grow pointer-events-none">
+          <div className="flex flex-col items-center justify-center flex-grow pointer-events-none mt-auto border-t border-surface-container dark:border-slate-700/50 pt-8">
             <div className="w-16 h-16 bg-surface-container dark:bg-slate-800 rounded-full flex items-center justify-center mb-6 group-hover:bg-primary-container group-hover:text-white dark:group-hover:bg-blue-600 transition-all duration-300">
               {isFileUploading ? (
                 <RotateCw className="animate-spin text-3xl dark:text-slate-400" />
@@ -436,21 +448,12 @@ export default function ReferenceInput({
                 <span className="material-symbols-outlined text-3xl dark:text-slate-400">upload_file</span>
               )}
             </div>
-            <h4 className="text-xl font-bold text-primary-container dark:text-blue-50 mb-2 text-center">Drag & drop files here</h4>
-            <p className="text-on-surface-variant dark:text-slate-400 text-center mb-8 text-sm sm:text-base">
+            <h4 className="text-xl font-bold text-primary-container dark:text-blue-50 mb-2 text-center">Or drag & drop files here</h4>
+            <p className="text-on-surface-variant dark:text-slate-400 text-center text-sm sm:text-base mb-2">
               Accepting PDF, DOCX, or plain TXT bibliographies
             </p>
-            <div className="w-full h-px bg-surface-container dark:bg-slate-800 mb-8"></div>
           </div>
         ) : null}
-        
-        <textarea 
-          className={`w-full bg-transparent border-none focus:ring-0 text-on-surface dark:text-slate-200 placeholder:text-outline/50 dark:placeholder:text-slate-500 font-mono text-xs sm:text-sm leading-relaxed z-10 outline-none pr-4 sm:pr-6 custom-scrollbar ${inputText.trim() ? 'min-h-[400px] sm:min-h-[500px] flex-grow resize-y' : 'h-48 mt-auto resize-none'}`}
-          placeholder={!inputText.trim() ? "Or paste your raw citations here...\n\ne.g. Smith, J. (2023). Future of Archiving. Oxford Journal..." : ""}
-          value={inputText}
-          onChange={(e) => handleInputChange(e.target.value)}
-          onClick={(e) => e.stopPropagation()}
-        />
       </div>
 
       {/* Citation Style Selection */}

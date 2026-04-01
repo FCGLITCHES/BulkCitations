@@ -33,7 +33,7 @@ describe('legacy /api/convert routing', () => {
     });
   });
 
-  it('routes /api/convert through v2 by default while keeping the legacy response shape', async () => {
+  it('routes /api/convert through v3 by default while keeping the legacy response shape', async () => {
     delete process.env.USE_V2_ENGINE;
 
     const response = await fetch(`${baseUrl}/api/convert`, {
@@ -52,14 +52,20 @@ describe('legacy /api/convert routing', () => {
 
     expect(response.ok).toBe(true);
     const payload = await response.json() as {
-      convertedReferences: Array<{ id: string; parsedData: { title?: string }; healthState?: string }>;
-      engineVersion?: 'v1' | 'v2';
+      convertedReferences: Array<{
+        id: string;
+        parsedData: { title?: string };
+        healthState?: string;
+        reportEngineSnapshot?: { engineVersion?: 'v1' | 'v2' | 'v3' };
+      }>;
+      engineVersion?: 'v1' | 'v2' | 'v3';
     };
-    expect(payload.engineVersion).toBe('v2');
+    expect(payload.engineVersion).toBe('v3');
     expect(payload.convertedReferences).toHaveLength(1);
     expect(payload.convertedReferences[0].id).toMatch(/^\d+$/);
     expect(payload.convertedReferences[0].parsedData.title).toBeTruthy();
     expect(payload.convertedReferences[0].healthState).toBeTruthy();
+    expect(payload.convertedReferences[0].reportEngineSnapshot?.engineVersion).toBe('v3');
   });
 
   it('accepts raw v2 content on /api/convert without requiring client-side reference splitting', async () => {
@@ -79,7 +85,7 @@ describe('legacy /api/convert routing', () => {
     expect(response.ok).toBe(true);
     const payload = await response.json() as {
       convertedReferences: Array<{ parsedData: { title?: string; doi?: string } }>;
-      engineVersion?: 'v1' | 'v2';
+      engineVersion?: 'v1' | 'v2' | 'v3';
     };
     expect(payload.engineVersion).toBe('v2');
     expect(payload.convertedReferences).toHaveLength(1);
@@ -108,7 +114,7 @@ describe('legacy /api/convert routing', () => {
     const payload = await response.json() as {
       convertedReferences: Array<{ id: string; parsedData: { title?: string } }>;
       clusters?: Array<{ members: Array<{ id: string }> }>;
-      engineVersion?: 'v1' | 'v2';
+      engineVersion?: 'v1' | 'v2' | 'v3';
     };
     expect(payload.engineVersion).toBe('v1');
     expect(payload.convertedReferences).toHaveLength(2);
@@ -138,7 +144,7 @@ describe('legacy /api/convert routing', () => {
     expect(response.ok).toBe(true);
     const payload = await response.json() as {
       convertedReferences: Array<{ id: string; convertedText: string }>;
-      engineVersion?: 'v1' | 'v2';
+      engineVersion?: 'v1' | 'v2' | 'v3';
     };
     expect(payload.engineVersion).toBe('v2');
     expect(payload.convertedReferences).toHaveLength(80);

@@ -50,6 +50,8 @@ export interface IV2JobStorage {
   failJob(id: string, error: string, errorCode?: string): Promise<void>;
   getJob(id: string): Promise<V2StoredJob | undefined>;
   listJobsByStatus(statuses: V2JobStatus[]): Promise<V2StoredJob[]>;
+  listAllJobs(options?: { status?: string; search?: string; limit?: number; offset?: number }): Promise<{ jobs: V2StoredJob[]; total: number }>;
+  updateJobCitation(id: string, index: number, citation: any): Promise<V2StoredJob | undefined>;
 }
 
 const v2JobsTable = pgTable('v2_jobs', {
@@ -148,8 +150,52 @@ class MemoryV2JobStorage implements IV2JobStorage {
   }
 
   async listJobsByStatus(statuses: V2JobStatus[]): Promise<V2StoredJob[]> {
-    const wanted = new Set(statuses);
-    return [...this.jobs.values()].filter((job) => wanted.has(job.status));
+    return [...this.jobs.values()].filter(j => statuses.includes(j.status));
+  }
+
+  async listAllJobs(options: { status?: string; search?: string; limit?: number; offset?: number } = {}): Promise<{ jobs: V2StoredJob[]; total: number }> {
+    let filtered = [...this.jobs.values()];
+    if (options.status && options.status !== 'All Health Status') {
+      const statusMap: Record<string, V2JobStatus> = {
+        'Ready': 'completed',
+        'Review': 'failed', // Simplified mapping for UI
+        'Action Needed': 'failed',
+      };
+      const target = statusMap[options.status] || (options.status as V2JobStatus);
+      filtered = filtered.filter((j) => j.status === target);
+    }
+    if (options.search) {
+      const q = options.search.toLowerCase();
+      filtered = filtered.filter(j => 
+        j.id.toLowerCase().includes(q) || 
+        (j.metadata?.institutionName as string)?.toLowerCase().includes(q) ||
+        (j.metadata?.originalFilename as string)?.toLowerCase().includes(q)
+      );
+    }
+    const total = filtered.length;
+    const start = options.offset ?? 0;
+    const limit = options.limit ?? 50;
+    const jobs = filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(start, start + limit);
+    return { jobs, total };
+  }
+  
+  async updateJobCitation(id: string, index: number, citation: any): Promise<V2StoredJob | undefined> {
+    const job = this.jobs.get(id);
+    if (!job || !job.response?.citations) return undefined;
+    
+    const nextCitations = [...job.response.citations];
+    nextCitations[index] = citation;
+    
+    const updated: V2StoredJob = {
+      ...job,
+      updatedAt: new Date(),
+      response: {
+        ...job.response,
+        citations: nextCitations,
+      },
+    };
+    this.jobs.set(id, updated);
+    return updated;
   }
 }
 
@@ -319,11 +365,50 @@ class PostgresV2JobStorage implements IV2JobStorage {
     return row ? this.rowToJob(row) : undefined;
   }
 
+  async listAllJobs(options: { status?: string; search?: string; limit?: number; offset?: number } = {}): Promise<{ jobs: V2StoredJob[]; total: number }> {
+    await this.ensureReady();
+    let query = this.db.select().from(v2JobsTable);
+    
+    // Total count query
+    const countResult = await this.db.select({ count: sql<number>`count(*)` }).from(v2JobsTable);
+    const total = Number(countResult[0]?.count ?? 0);
+
+    const limit = options.limit ?? 50;
+    const offset = options.offset ?? 0;
+
+    const rows = await this.db.select().from(v2JobsTable)
+      .orderBy(sql`created_at desc`)
+      .limit(limit)
+      .offset(offset);
+
+    return { jobs: rows.map(r => this.rowToJob(r)), total };
+  }
+
   async listJobsByStatus(statuses: V2JobStatus[]): Promise<V2StoredJob[]> {
     await this.ensureReady();
-    if (statuses.length === 0) return [];
     const rows = await this.db.select().from(v2JobsTable).where(inArray(v2JobsTable.status, statuses));
-    return rows.map((row) => this.rowToJob(row));
+    return rows.map(r => this.rowToJob(r));
+  }
+  
+  async updateJobCitation(id: string, index: number, citation: any): Promise<V2StoredJob | undefined> {
+    await this.ensureReady();
+    const job = await this.getJob(id);
+    if (!job || !job.response?.citations) return undefined;
+    
+    const nextCitations = [...job.response.citations];
+    nextCitations[index] = citation;
+    
+    const updatedResponse = {
+      ...job.response,
+      citations: nextCitations,
+    };
+    
+    await this.db.update(v2JobsTable).set({
+      response: updatedResponse as any,
+      updatedAt: new Date(),
+    }).where(eq(v2JobsTable.id, id));
+    
+    return this.getJob(id);
   }
 }
 
@@ -385,6 +470,14 @@ class ResilientV2JobStorage implements IV2JobStorage {
 
   async listJobsByStatus(statuses: V2JobStatus[]): Promise<V2StoredJob[]> {
     return this.runWithFallback((store) => store.listJobsByStatus(statuses));
+  }
+
+  async listAllJobs(options?: { status?: string; search?: string; limit?: number; offset?: number }): Promise<{ jobs: V2StoredJob[]; total: number }> {
+    return this.runWithFallback((store) => store.listAllJobs(options));
+  }
+
+  async updateJobCitation(id: string, index: number, citation: any): Promise<V2StoredJob | undefined> {
+    return this.runWithFallback((store) => store.updateJobCitation(id, index, citation));
   }
 }
 

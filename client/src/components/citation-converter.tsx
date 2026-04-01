@@ -1,7 +1,4 @@
 import { Suspense, lazy, startTransition, useDeferredValue, useEffect, useRef, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ReferenceInput from "./reference-input";
 import ProcessingStatus from "./processing-status";
 import ErrorToast from "./error-toast";
@@ -11,7 +8,6 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { appendHistoryItems, ensureHistorySync, syncPendingHistory } from "@/lib/history-sync";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { FileText } from "lucide-react";
 import { countEngineLikeInputReferences } from "@shared/liveReferenceDetection";
 
 const CAPTURE_BATCH_KEY = "bulkcitations_capture_batch";
@@ -33,20 +29,14 @@ function readCaptureBatch(): string {
   }
 }
 
-function readStoredEngineVersion(): "v1" | "v2" {
-  if (typeof window === "undefined") return "v2";
-  const saved = window.localStorage.getItem("bulkcitations_engine_version");
-  return saved === "v1" ? "v1" : "v2";
-}
-
 export default function CitationConverter() {
   const [convertedReferences, setConvertedReferences] = useState<ConvertedReference[]>([]);
   const [clusters, setClusters] = useState<ConversionResponse["clusters"]>(undefined);
   const [duplicateGroups, setDuplicateGroups] = useState<DuplicateGroup[]>([]);
   const [groupDuplicates, setGroupDuplicates] = useState(true);
   const [isPro, setIsPro] = useState(true); // Pro by default for development; wire to auth when ready
-  const [engineVersion, setEngineVersion] = useState<"v1" | "v2">(readStoredEngineVersion);
-  const [lastEngineUsed, setLastEngineUsed] = useState<"v1" | "v2">(readStoredEngineVersion);
+  const [engineVersion] = useState<"v3">("v3");
+  const [lastEngineUsed, setLastEngineUsed] = useState<"v1" | "v2" | "v3">("v3");
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState({ visible: false, title: "", message: "" });
   const [errorToast, setErrorToast] = useState({ visible: false, title: "", message: "", variant: "error" as "error" | "warning" });
@@ -87,10 +77,6 @@ export default function CitationConverter() {
     window.addEventListener("bulkcitations-capture-batch", onCaptureBatch);
     return () => window.removeEventListener("bulkcitations-capture-batch", onCaptureBatch);
   }, [toast]);
-
-  useEffect(() => {
-    window.localStorage.setItem("bulkcitations_engine_version", engineVersion);
-  }, [engineVersion]);
 
   useEffect(() => {
     if (isProcessing || convertedReferences.length > 0) {
@@ -314,23 +300,6 @@ export default function CitationConverter() {
             groupDuplicates={groupDuplicates}
             onGroupDuplicatesChange={setGroupDuplicates}
           />
-
-          <div className="mt-8 pt-4 border-t border-outline-variant/30 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end w-full">
-            <div className="space-y-1">
-              <Label className="text-xs font-bold uppercase tracking-widest text-outline dark:text-slate-400">
-                Engine Version
-              </Label>
-              <Select value={engineVersion} onValueChange={(value: "v1" | "v2") => setEngineVersion(value)}>
-                <SelectTrigger className="w-full sm:w-[180px] bg-surface-container-lowest dark:bg-slate-800 border-outline-variant dark:border-slate-700/50 dark:text-slate-200">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="v2">v2 recommended</SelectItem>
-                  <SelectItem value="v1">v1 legacy</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
         </motion.div>
 
         {/* Output Section */}

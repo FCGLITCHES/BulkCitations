@@ -1,4 +1,3 @@
-import { useLocation } from "wouter";
 import { LandingNavbar } from "@/components/landing-navbar";
 import { LandingFooter } from "@/components/landing-footer";
 import CitationConverter from "@/components/citation-converter";
@@ -6,6 +5,12 @@ import CitationConverter from "@/components/citation-converter";
 export default function Home() {
   return (
     <div className="bg-surface dark:bg-slate-950 font-body text-on-surface dark:text-slate-100 antialiased min-h-screen flex flex-col">
+      <div className="border-b border-amber-300 bg-amber-200 text-amber-950">
+        <div className="mx-auto flex max-w-screen-2xl items-center justify-center px-4 py-3 text-center text-sm font-semibold sm:px-6 lg:px-8">
+          This site is a work in progress. Feedback is appreciated.
+        </div>
+      </div>
+
       {/* TopNavBar */}
       <LandingNavbar />
 
