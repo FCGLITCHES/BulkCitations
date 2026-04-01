@@ -35,8 +35,8 @@ export default function CitationConverter() {
   const [duplicateGroups, setDuplicateGroups] = useState<DuplicateGroup[]>([]);
   const [groupDuplicates, setGroupDuplicates] = useState(true);
   const [isPro, setIsPro] = useState(true); // Pro by default for development; wire to auth when ready
-  const [engineVersion] = useState<"v3">("v3");
-  const [lastEngineUsed, setLastEngineUsed] = useState<"v1" | "v2" | "v3">("v3");
+  const [engineVersion] = useState<"v2">("v2");
+  const [lastEngineUsed, setLastEngineUsed] = useState<"v1" | "v2" | "v3">("v2");
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState({ visible: false, title: "", message: "" });
   const [errorToast, setErrorToast] = useState({ visible: false, title: "", message: "", variant: "error" as "error" | "warning" });

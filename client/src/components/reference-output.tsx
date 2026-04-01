@@ -802,7 +802,7 @@ export default function ReferenceOutput({
   convertedReferences,
   clusters = [],
   duplicateGroups = [],
-  engineVersion = "v3",
+  engineVersion = "v2",
   groupDuplicates = true,
   onError,
   isPro = false,

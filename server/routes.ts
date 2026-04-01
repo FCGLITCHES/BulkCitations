@@ -1059,7 +1059,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // this by default, while tests and internal callers can disable it for
       // deterministic local-only conversion.
       const shouldAttemptValidation = validatedData.enrichWithAuthority;
-      const requestedEngine = validatedData.engineVersion ?? 'v3';
+      const requestedEngine = validatedData.engineVersion ?? 'v2';
 
       if (requestedEngine === 'v1') {
         const sourceContent = String(validatedData.content ?? '').trim() || incomingReferences.join("\n\n");

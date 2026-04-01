@@ -33,9 +33,7 @@ describe('legacy /api/convert routing', () => {
     });
   });
 
-  it('routes /api/convert through v3 by default while keeping the legacy response shape', async () => {
-    delete process.env.USE_V2_ENGINE;
-
+  it('routes /api/convert through v2 by default while keeping the legacy response shape', async () => {
     const response = await fetch(`${baseUrl}/api/convert`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -60,11 +58,43 @@ describe('legacy /api/convert routing', () => {
       }>;
       engineVersion?: 'v1' | 'v2' | 'v3';
     };
-    expect(payload.engineVersion).toBe('v3');
+    expect(payload.engineVersion).toBe('v2');
     expect(payload.convertedReferences).toHaveLength(1);
     expect(payload.convertedReferences[0].id).toMatch(/^\d+$/);
     expect(payload.convertedReferences[0].parsedData.title).toBeTruthy();
     expect(payload.convertedReferences[0].healthState).toBeTruthy();
+    expect(payload.convertedReferences[0].reportEngineSnapshot?.engineVersion).toBe('v2');
+  });
+
+  it('still allows /api/convert callers to opt into v3 explicitly', async () => {
+    const response = await fetch(`${baseUrl}/api/convert`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        references: [
+          'Smith, J. (2020). The future of testing. Journal of Quality, 10(2), 11-19.',
+        ],
+        inputStyle: 'auto',
+        outputStyle: 'apa',
+        enrichWithAuthority: false,
+        isPro: false,
+        engineVersion: 'v3',
+      }),
+    });
+
+    expect(response.ok).toBe(true);
+    const payload = await response.json() as {
+      convertedReferences: Array<{
+        id: string;
+        parsedData: { title?: string };
+        reportEngineSnapshot?: { engineVersion?: 'v1' | 'v2' | 'v3' };
+      }>;
+      engineVersion?: 'v1' | 'v2' | 'v3';
+    };
+    expect(payload.engineVersion).toBe('v3');
+    expect(payload.convertedReferences).toHaveLength(1);
+    expect(payload.convertedReferences[0].id).toMatch(/^\d+$/);
+    expect(payload.convertedReferences[0].parsedData.title).toBeTruthy();
     expect(payload.convertedReferences[0].reportEngineSnapshot?.engineVersion).toBe('v3');
   });
 
