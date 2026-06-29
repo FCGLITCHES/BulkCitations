@@ -1,0 +1,47 @@
+name: Training Eval Smoke
+
+on:
+  push:
+    paths:
+      - "ml-service/**"
+      - "docs/training-export-schema.md"
+      - "package.json"
+      - ".github/workflows/training-eval-smoke.yml"
+  pull_request:
+    paths:
+      - "ml-service/**"
+      - "docs/training-export-schema.md"
+      - "package.json"
+      - ".github/workflows/training-eval-smoke.yml"
+
+jobs:
+  training-smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ML dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r ml-service/requirements.txt
+          python -m pip install pip-audit
+
+      - name: Audit ML dependency graph
+        run: |
+          python -m pip check
+          python -m pip_audit -r ml-service/requirements.txt
+
+      - name: Run ML regression tests
+        working-directory: ml-service
+        run: python -m pytest tests
+
+      - name: Validate training fixture
+        run: python ml-service/tools/stub_train.py ml-service/training/fixture_export.jsonl
+
+      - name: Run eval smoke
+        run: python ml-service/tools/eval_jsonl.py ml-service/training/fixture_export.jsonl

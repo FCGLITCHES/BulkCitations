@@ -1,0 +1,3490 @@
+{
+  "generated_at": "2026-04-14T15:39:54.456Z",
+  "mode": "full",
+  "profile": "heuristic-only",
+  "clean_debug": {
+    "by_structure": [
+      {
+        "structure_class": "structured",
+        "compared": 6000,
+        "soft_instance_f1": 0.9282,
+        "macro_soft_f1": 0.9581
+      },
+      {
+        "structure_class": "unstructured",
+        "compared": 0,
+        "soft_instance_f1": 0,
+        "macro_soft_f1": 0
+      }
+    ],
+    "type_accuracy": {
+      "correct": 5927,
+      "compared": 6000,
+      "accuracy": 0.9878
+    },
+    "style_accuracy": {
+      "correct": 5624,
+      "compared": 6000,
+      "accuracy": 0.9373
+    },
+    "style_family_accuracy": {
+      "correct": 5865,
+      "compared": 6000,
+      "accuracy": 0.9775
+    },
+    "adversarial_pair_accuracy": [
+      {
+        "pair_name": "apa7_vs_harvard-ctr",
+        "styles": [
+          "apa7",
+          "harvard-ctr"
+        ],
+        "correct": 1784,
+        "compared": 2000,
+        "accuracy": 0.892
+      },
+      {
+        "pair_name": "mla9_vs_chicago-notes-bib",
+        "styles": [
+          "mla9",
+          "chicago-notes-bib"
+        ],
+        "correct": 1857,
+        "compared": 2000,
+        "accuracy": 0.9285
+      },
+      {
+        "pair_name": "vancouver_vs_ieee",
+        "styles": [
+          "vancouver",
+          "ieee"
+        ],
+        "correct": 1983,
+        "compared": 2000,
+        "accuracy": 0.9915
+      }
+    ],
+    "adapter_coverage": [
+      {
+        "field": "title",
+        "expected_rows": 6864,
+        "predicted_non_empty_rows": 6855,
+        "coverage": 0.9987,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "url",
+        "expected_rows": 6864,
+        "predicted_non_empty_rows": 6824,
+        "coverage": 0.9942,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "year",
+        "expected_rows": 6864,
+        "predicted_non_empty_rows": 6843,
+        "coverage": 0.9969,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "journal/venue",
+        "expected_rows": 6072,
+        "predicted_non_empty_rows": 6000,
+        "coverage": 0.9881,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "doi",
+        "expected_rows": 5280,
+        "predicted_non_empty_rows": 5074,
+        "coverage": 0.961,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "authors",
+        "expected_rows": 4686,
+        "predicted_non_empty_rows": 4681,
+        "coverage": 0.9989,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "firstAuthor",
+        "expected_rows": 4686,
+        "predicted_non_empty_rows": 4681,
+        "coverage": 0.9989,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "publisher",
+        "expected_rows": 2298,
+        "predicted_non_empty_rows": 2194,
+        "coverage": 0.9547,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "pages",
+        "expected_rows": 1602,
+        "predicted_non_empty_rows": 1600,
+        "coverage": 0.9988,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "institution",
+        "expected_rows": 1560,
+        "predicted_non_empty_rows": 1495,
+        "coverage": 0.9583,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "isbn",
+        "expected_rows": 1482,
+        "predicted_non_empty_rows": 1352,
+        "coverage": 0.9123,
+        "hard_failure": false,
+        "warning": true
+      },
+      {
+        "field": "bookTitle",
+        "expected_rows": 792,
+        "predicted_non_empty_rows": 760,
+        "coverage": 0.9596,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "patent",
+        "expected_rows": 792,
+        "predicted_non_empty_rows": 792,
+        "coverage": 1,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "siteName",
+        "expected_rows": 792,
+        "predicted_non_empty_rows": 749,
+        "coverage": 0.9457,
+        "hard_failure": false,
+        "warning": true
+      },
+      {
+        "field": "issn",
+        "expected_rows": 774,
+        "predicted_non_empty_rows": 755,
+        "coverage": 0.9755,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "conferenceTitle",
+        "expected_rows": 762,
+        "predicted_non_empty_rows": 718,
+        "coverage": 0.9423,
+        "hard_failure": false,
+        "warning": true
+      },
+      {
+        "field": "volume",
+        "expected_rows": 750,
+        "predicted_non_empty_rows": 750,
+        "coverage": 1,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "issue",
+        "expected_rows": 744,
+        "predicted_non_empty_rows": 740,
+        "coverage": 0.9946,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "repository",
+        "expected_rows": 738,
+        "predicted_non_empty_rows": 712,
+        "coverage": 0.9648,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "thesisType",
+        "expected_rows": 738,
+        "predicted_non_empty_rows": 732,
+        "coverage": 0.9919,
+        "hard_failure": false,
+        "warning": false
+      }
+    ],
+    "contract_samples": [
+      {
+        "variant_id": "article-journal-1b52ebbd29cf8532:vancouver:noisy",
+        "required_fields": [
+          "title",
+          "year",
+          "journal/venue",
+          "volume",
+          "issue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "issue",
+          "journal/venue",
+          "title",
+          "url",
+          "volume",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "firstAuthor",
+          "journal/venue",
+          "title",
+          "url",
+          "volume",
+          "year"
+        ],
+        "missing_required_fields": [
+          "issue"
+        ]
+      },
+      {
+        "variant_id": "article-journal-5c9948d5633cc6fa:harvard-ctr:noisy",
+        "required_fields": [
+          "title",
+          "journal/venue",
+          "issue",
+          "pages"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "issue",
+          "journal/venue",
+          "pages",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "firstAuthor",
+          "journal/venue",
+          "pages",
+          "title",
+          "url",
+          "year"
+        ],
+        "missing_required_fields": [
+          "issue"
+        ]
+      },
+      {
+        "variant_id": "article-journal-8453c54e9f6ae5b4:ieee:clean",
+        "required_fields": [
+          "title",
+          "year",
+          "doi",
+          "url",
+          "journal/venue",
+          "issue",
+          "pages"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "issue",
+          "journal/venue",
+          "pages",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "bookTitle",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "pages",
+          "publisher",
+          "title",
+          "url",
+          "year"
+        ],
+        "missing_required_fields": [
+          "issue"
+        ]
+      },
+      {
+        "variant_id": "conference-paper-13ce715a5e621bcf:apa7:clean",
+        "required_fields": [
+          "title",
+          "year",
+          "doi",
+          "url",
+          "conferenceTitle",
+          "journal/venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "conferenceTitle",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "publisher",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "journal/venue",
+          "title",
+          "url",
+          "year"
+        ],
+        "missing_required_fields": [
+          "conferenceTitle"
+        ]
+      },
+      {
+        "variant_id": "conference-paper-13ce715a5e621bcf:harvard-ctr:clean",
+        "required_fields": [
+          "title",
+          "year",
+          "doi",
+          "url",
+          "publisher"
+        ],
+        "expected_keys": [
+          "authors",
+          "conferenceTitle",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "publisher",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "journal/venue",
+          "title",
+          "url",
+          "year"
+        ],
+        "missing_required_fields": [
+          "publisher"
+        ]
+      },
+      {
+        "variant_id": "conference-paper-13ce715a5e621bcf:chicago-notes-bib:clean",
+        "required_fields": [
+          "authors",
+          "title",
+          "year",
+          "doi",
+          "url",
+          "conferenceTitle",
+          "journal/venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "conferenceTitle",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "publisher",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "journal/venue",
+          "title",
+          "url",
+          "year"
+        ],
+        "missing_required_fields": [
+          "conferenceTitle"
+        ]
+      },
+      {
+        "variant_id": "conference-paper-13ce715a5e621bcf:vancouver:clean",
+        "required_fields": [
+          "title",
+          "year",
+          "doi",
+          "url",
+          "publisher"
+        ],
+        "expected_keys": [
+          "authors",
+          "conferenceTitle",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "publisher",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "journal/venue",
+          "title",
+          "url",
+          "year"
+        ],
+        "missing_required_fields": [
+          "publisher"
+        ]
+      },
+      {
+        "variant_id": "conference-paper-13ce715a5e621bcf:ieee:clean",
+        "required_fields": [
+          "title",
+          "year",
+          "doi",
+          "url",
+          "publisher"
+        ],
+        "expected_keys": [
+          "authors",
+          "conferenceTitle",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "publisher",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "journal/venue",
+          "title",
+          "url",
+          "year"
+        ],
+        "missing_required_fields": [
+          "publisher"
+        ]
+      },
+      {
+        "variant_id": "conference-paper-13ce715a5e621bcf:mla9:clean",
+        "required_fields": [
+          "authors",
+          "title",
+          "year",
+          "doi",
+          "url",
+          "conferenceTitle",
+          "journal/venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "conferenceTitle",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "publisher",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "journal/venue",
+          "title",
+          "url",
+          "year"
+        ],
+        "missing_required_fields": [
+          "conferenceTitle"
+        ]
+      },
+      {
+        "variant_id": "conference-paper-24d94ecbd989dc7d:apa7:clean",
+        "required_fields": [
+          "title",
+          "year",
+          "doi",
+          "url",
+          "conferenceTitle",
+          "journal/venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "conferenceTitle",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "publisher",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "journal/venue",
+          "title",
+          "url",
+          "year"
+        ],
+        "missing_required_fields": [
+          "conferenceTitle"
+        ]
+      },
+      {
+        "variant_id": "conference-paper-24d94ecbd989dc7d:harvard-ctr:clean",
+        "required_fields": [
+          "title",
+          "year",
+          "doi",
+          "url",
+          "publisher"
+        ],
+        "expected_keys": [
+          "authors",
+          "conferenceTitle",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "publisher",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "journal/venue",
+          "title",
+          "url",
+          "year"
+        ],
+        "missing_required_fields": [
+          "publisher"
+        ]
+      },
+      {
+        "variant_id": "conference-paper-24d94ecbd989dc7d:harvard-ctr:noisy",
+        "required_fields": [
+          "title",
+          "publisher"
+        ],
+        "expected_keys": [
+          "authors",
+          "conferenceTitle",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "publisher",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "conferenceTitle",
+          "firstAuthor",
+          "journal/venue",
+          "title",
+          "url",
+          "year"
+        ],
+        "missing_required_fields": [
+          "publisher"
+        ]
+      }
+    ],
+    "priority_fields": [
+      {
+        "field": "isbn",
+        "soft_f1": 0.32,
+        "tp": 240,
+        "fp": 968,
+        "fn": 52,
+        "missing_expected": 52,
+        "unsupported_predicted": 10
+      },
+      {
+        "field": "conferenceTitle",
+        "soft_f1": 0.9738,
+        "tp": 632,
+        "fp": 7,
+        "fn": 27,
+        "missing_expected": 27,
+        "unsupported_predicted": 742
+      },
+      {
+        "field": "authors",
+        "soft_f1": 0.9739,
+        "tp": 3912,
+        "fp": 210,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "publisher",
+        "soft_f1": 0.9807,
+        "tp": 1905,
+        "fp": 28,
+        "fn": 47,
+        "missing_expected": 47,
+        "unsupported_predicted": 2991
+      },
+      {
+        "field": "title",
+        "soft_f1": 0.9852,
+        "tp": 5825,
+        "fp": 175,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "institution",
+        "soft_f1": 0.986,
+        "tp": 1371,
+        "fp": 21,
+        "fn": 18,
+        "missing_expected": 18,
+        "unsupported_predicted": 540
+      },
+      {
+        "field": "bookTitle",
+        "soft_f1": 0.9871,
+        "tp": 649,
+        "fp": 1,
+        "fn": 16,
+        "missing_expected": 16,
+        "unsupported_predicted": 24
+      },
+      {
+        "field": "journal/venue",
+        "soft_f1": 0.9914,
+        "tp": 5243,
+        "fp": 84,
+        "fn": 7,
+        "missing_expected": 7,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "issn",
+        "soft_f1": 0.9949,
+        "tp": 677,
+        "fp": 0,
+        "fn": 7,
+        "missing_expected": 7,
+        "unsupported_predicted": 7
+      },
+      {
+        "field": "repository",
+        "soft_f1": 0.9955,
+        "tp": 660,
+        "fp": 0,
+        "fn": 6,
+        "missing_expected": 6,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "siteName",
+        "soft_f1": 0.9985,
+        "tp": 664,
+        "fp": 2,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 671
+      },
+      {
+        "field": "patent",
+        "soft_f1": 0.9992,
+        "tp": 665,
+        "fp": 1,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "year",
+        "soft_f1": 0.9998,
+        "tp": 5998,
+        "fp": 2,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "url",
+        "soft_f1": 0.9999,
+        "tp": 5999,
+        "fp": 1,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "doi",
+        "soft_f1": 1,
+        "tp": 4668,
+        "fp": 0,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      }
+    ],
+    "priority_cells": [
+      {
+        "citation_style": "harvard-ctr",
+        "reference_type": "article-journal",
+        "compared": 115,
+        "soft_instance_f1": 0.8348
+      },
+      {
+        "citation_style": "ieee",
+        "reference_type": "book",
+        "compared": 108,
+        "soft_instance_f1": 0.8519
+      },
+      {
+        "citation_style": "chicago-notes-bib",
+        "reference_type": "book-chapter",
+        "compared": 111,
+        "soft_instance_f1": 0.8649
+      },
+      {
+        "citation_style": "mla9",
+        "reference_type": "book-chapter",
+        "compared": 111,
+        "soft_instance_f1": 0.8649
+      },
+      {
+        "citation_style": "vancouver",
+        "reference_type": "book-chapter",
+        "compared": 111,
+        "soft_instance_f1": 0.8919
+      },
+      {
+        "citation_style": "mla9",
+        "reference_type": "article-journal",
+        "compared": 115,
+        "soft_instance_f1": 0.8957
+      },
+      {
+        "citation_style": "chicago-notes-bib",
+        "reference_type": "preprint",
+        "compared": 111,
+        "soft_instance_f1": 0.9009
+      },
+      {
+        "citation_style": "mla9",
+        "reference_type": "preprint",
+        "compared": 111,
+        "soft_instance_f1": 0.9009
+      },
+      {
+        "citation_style": "mla9",
+        "reference_type": "thesis",
+        "compared": 111,
+        "soft_instance_f1": 0.9009
+      },
+      {
+        "citation_style": "apa7",
+        "reference_type": "book",
+        "compared": 108,
+        "soft_instance_f1": 0.9074
+      },
+      {
+        "citation_style": "chicago-notes-bib",
+        "reference_type": "book",
+        "compared": 108,
+        "soft_instance_f1": 0.9074
+      },
+      {
+        "citation_style": "mla9",
+        "reference_type": "book",
+        "compared": 108,
+        "soft_instance_f1": 0.9074
+      }
+    ],
+    "style_mismatches": [
+      {
+        "expected_style": "mla9",
+        "detected_style": "unknown",
+        "count": 116
+      },
+      {
+        "expected_style": "apa7",
+        "detected_style": "unknown",
+        "count": 112
+      },
+      {
+        "expected_style": "apa7",
+        "detected_style": "harvard-ctr",
+        "count": 103
+      },
+      {
+        "expected_style": "mla9",
+        "detected_style": "chicago-notes-bib",
+        "count": 14
+      },
+      {
+        "expected_style": "vancouver",
+        "detected_style": "unknown",
+        "count": 9
+      },
+      {
+        "expected_style": "chicago-notes-bib",
+        "detected_style": "mla9",
+        "count": 9
+      },
+      {
+        "expected_style": "vancouver",
+        "detected_style": "ieee",
+        "count": 7
+      },
+      {
+        "expected_style": "mla9",
+        "detected_style": "harvard-ctr",
+        "count": 2
+      },
+      {
+        "expected_style": "chicago-notes-bib",
+        "detected_style": "apa7",
+        "count": 1
+      },
+      {
+        "expected_style": "chicago-notes-bib",
+        "detected_style": "harvard-ctr",
+        "count": 1
+      },
+      {
+        "expected_style": "harvard-ctr",
+        "detected_style": "unknown",
+        "count": 1
+      },
+      {
+        "expected_style": "ieee",
+        "detected_style": "vancouver",
+        "count": 1
+      }
+    ],
+    "style_failure_examples": [
+      {
+        "expected_style": "mla9",
+        "detected_style": "unknown",
+        "examples": [
+          {
+            "variant_id": "conference-paper-4981b50cef6fc24c:mla9:clean",
+            "reference_type": "conference-paper",
+            "detected_type": "conference-paper",
+            "formatted_string": "Edwards, Robert. “Baryon Resonance Determination Using LQCD.” 2013, BARYONS 2013, Glasgow, U.K., June 24, 2013, https://doi.org/10.2172/1992065.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-755b9b0c6a5d1aa8:mla9:clean",
+            "reference_type": "book-chapter",
+            "detected_type": "book-chapter",
+            "formatted_string": "Griffiths, Jane, and Adam Hanna. “Introduction.” Architectural Space and the Imagination, Springer International Publishing, 2020, pp. 1–16, https://doi.org/10.1007/978-3-030-36067-2_1.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-87f22682f4598d1c:mla9:clean",
+            "reference_type": "book-chapter",
+            "detected_type": "book-chapter",
+            "formatted_string": "Scholtz, Bauke, and Arjan Tijms. “Extensions.” The Definitive Guide to Jakarta Faces in Jakarta EE 10, Apress, 2022, pp. 499–518, https://doi.org/10.1007/978-1-4842-7310-4_15.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "thesis-384ffb193c34a59f:mla9:clean",
+            "reference_type": "thesis",
+            "detected_type": "thesis",
+            "formatted_string": "Melo Franco, Eliane. Estudo “in Vitro” Do Bochecho Pre-Escovação Plax Na Reatividade Do Fluor Com Esmalte Dental Humano. 2021, https://doi.org/10.47749/t/unicamp.1992.51275. Universidade Estadual de Campinas, Dissertation.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "expected_style": "apa7",
+        "detected_style": "unknown",
+        "examples": [
+          {
+            "variant_id": "book-d0b190d49a80f3c8:apa7:clean",
+            "reference_type": "book",
+            "detected_type": "book",
+            "formatted_string": "Bachrach, U., Saxena, A. K., Saxena, M., Leurs, R., Timmerman, H., Lee, B., Ciardelli, T. L., Margaglione, M., Grandone, E., Di Minno, G., Schultz, R. M., Whittake, V. P., Männistö, P. T., Ulmanen, I., Lundström, K., Taskinen, J., Tenhunen, J., Tilgmann, C., Kaakkola, S., & Wechter, W. J. (1992). Progress in Drug Research / Fortschritte der Arzneimittelforschung / Progrès des recherches pharmaceutiques. Birkhäuser Basel. https://doi.org/10.1007/978-3-0348-7144-0",
+            "warnings": [
+              "uncertain_publisher",
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "webpage-00a35ae549875b24:apa7:clean",
+            "reference_type": "webpage",
+            "detected_type": "webpage",
+            "formatted_string": "Export of UDP Options Information in IP Flow Information Export (IPFIX). (2025). RFC Editor. https://www.rfc-editor.org/rfc/rfc9870.html",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "webpage-02d23a55c7f1c255:apa7:clean",
+            "reference_type": "webpage",
+            "detected_type": "webpage",
+            "formatted_string": "Internet Engineering Task Force. (2018). The Transport Layer Security (TLS) Protocol Version 1.3. Internet Engineering Task Force. RFC Editor. https://www.rfc-editor.org/rfc/rfc8446",
+            "warnings": [
+              "uncertain_institution",
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "webpage-06336e77ec7fe31e:apa7:clean",
+            "reference_type": "webpage",
+            "detected_type": "webpage",
+            "formatted_string": "TLS Encrypted Client Hello. (2026). RFC Editor. https://www.rfc-editor.org/rfc/rfc9849.html",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "expected_style": "apa7",
+        "detected_style": "harvard-ctr",
+        "examples": [
+          {
+            "variant_id": "thesis-0184f09544078184:apa7:clean",
+            "reference_type": "thesis",
+            "detected_type": "thesis",
+            "formatted_string": "Botter Junior, W. (2021). Relações interfaciais de poli(dimetilsiloxano) com solidos inorganicos [Dissertation, Universidade Estadual de Campinas]. https://doi.org/10.47749/t/unicamp.1997.133750",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "thesis-028faba376d4c6fa:apa7:clean",
+            "reference_type": "thesis",
+            "detected_type": "thesis",
+            "formatted_string": "Antonio Fonseca Machado, P. (2021). Algebras geradas por menores de matrizes cataleticas [Dissertation, Universidade Estadual de Campinas]. https://doi.org/10.47749/t/unicamp.1997.114219",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "thesis-0334154149e8210e:apa7:clean",
+            "reference_type": "thesis",
+            "detected_type": "thesis",
+            "formatted_string": "Albers, U. (2022). Evolution and treatment of vitamin B12 deficiency as a risk factor for (cognitive and functional) neurodegenerative diseases in institutionalized elderly = Evolución y tratamiento de la deficiencia de vitamina B12 como factor de riesgo de enfermedades neurodegenerativas (cognitivas y funcionales) en las personas mayores institucionalizadas. [Dissertation, Universidad Politecnica de Madrid - University Library]. https://doi.org/10.20868/upm.thesis.14629",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "thesis-04c5599adab2e26d:apa7:clean",
+            "reference_type": "thesis",
+            "detected_type": "thesis",
+            "formatted_string": "Inácio Prado, P. (2021). Diferenciação morfologica em função da planta hospdeira em Tomoplagia tripunctata e Tomoplagia incompleta (Diptera: Tephritidae) [Dissertation, Universidade Estadual de Campinas]. https://doi.org/10.47749/t/unicamp.1994.74931",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "expected_style": "mla9",
+        "detected_style": "chicago-notes-bib",
+        "examples": [
+          {
+            "variant_id": "conference-paper-455b7336e1577097:mla9:clean",
+            "reference_type": "conference-paper",
+            "detected_type": "conference-paper",
+            "formatted_string": "Ent, Rolf. “Nuclear Physics at the Electron Ion Collider.” 2016, NAPAC2016, Chicago, IL, USA, October 9–14, 2016, https://doi.org/10.2172/1987321.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields",
+              "render_style_fallback"
+            ]
+          },
+          {
+            "variant_id": "webpage-02d23a55c7f1c255:mla9:clean",
+            "reference_type": "webpage",
+            "detected_type": "webpage",
+            "formatted_string": "Internet Engineering Task Force. “The Transport Layer Security (TLS) Protocol Version 1.3.” RFC Editor, Internet Engineering Task Force, 2018, https://www.rfc-editor.org/rfc/rfc8446.",
+            "warnings": [
+              "uncertain_institution",
+              "input_style_uncertain",
+              "missing_preferred_fields",
+              "render_style_fallback"
+            ]
+          },
+          {
+            "variant_id": "webpage-27947c124fa1d625:mla9:clean",
+            "reference_type": "webpage",
+            "detected_type": "webpage",
+            "formatted_string": "Mozilla Contributors. “Array.Prototype.Map().” MDN Web Docs, Mozilla Contributors, 2024, https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields",
+              "render_style_fallback"
+            ]
+          },
+          {
+            "variant_id": "webpage-36eb4b0ea5a8c520:mla9:clean",
+            "reference_type": "webpage",
+            "detected_type": "webpage",
+            "formatted_string": "React Team. “State: A Component’s Memory.” React, React Team, 2024, https://react.dev/learn/state-a-components-memory.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields",
+              "render_style_fallback"
+            ]
+          }
+        ]
+      },
+      {
+        "expected_style": "vancouver",
+        "detected_style": "unknown",
+        "examples": [
+          {
+            "variant_id": "article-journal-678ddffaa1e4eded:vancouver:clean",
+            "reference_type": "article-journal",
+            "detected_type": "article-journal",
+            "formatted_string": "[1]Зябриков ВВ. Систематизация ценностей деловой культуры России. Creative Economy 2015;9:1191. https://doi.org/10.18334/ce.9.9.1923.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "article-journal-90b31f8da8ebd833:vancouver:clean",
+            "reference_type": "article-journal",
+            "detected_type": "article-journal",
+            "formatted_string": "[1]Rino R, Aryadi M, Abidin Z. STRATEGI PENGELOLAAN PROGRAM PERHUTANAN SOSIAL DI KESATUAN PENGELOLAAN HUTAN LINDUNG SENGAYAM. Jurnal Hutan Tropis 2025;13:12. https://doi.org/10.20527/jht.v13i1.22176.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "webpage-27947c124fa1d625:vancouver:clean",
+            "reference_type": "webpage",
+            "detected_type": "webpage",
+            "formatted_string": "[1]Mozilla Contributors. Array.prototype.map(). MDN Web Docs 2024. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "webpage-36eb4b0ea5a8c520:vancouver:clean",
+            "reference_type": "webpage",
+            "detected_type": "webpage",
+            "formatted_string": "[1]React Team. State: A Component’s Memory. React 2024. https://react.dev/learn/state-a-components-memory.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "expected_style": "chicago-notes-bib",
+        "detected_style": "mla9",
+        "examples": [
+          {
+            "variant_id": "preprint-013a98d4a636ccea:chicago-notes-bib:clean",
+            "reference_type": "preprint",
+            "detected_type": "preprint",
+            "formatted_string": "Awang, Noor Azura, Nik Noor Haryatul Eleena Bt N. Mahmud, and Noor Ummi Hazirah Hani Zulkefli. “Optical Trapping Using Mode-Locked Fiber Laser Au-Np Coated Side-Polished Fiber.” Preprint, Elsevier BV, 2023. https://doi.org/10.2139/ssrn.4577205.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "preprint-0438341024d575b7:chicago-notes-bib:clean",
+            "reference_type": "preprint",
+            "detected_type": "preprint",
+            "formatted_string": "Hassan, A., A. A. M. Arafa, S. Z. Rida, M. A. Dagher, and Hamed M. El Sherbiny. “An Effective Technique for Solving Generalized Cahn-Hilliard (C-H) Problems.” Preprint, Research Square Platform LLC, 2023. https://doi.org/10.21203/rs.3.rs-2870128/v1.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "preprint-0658a1475e8a5845:chicago-notes-bib:clean",
+            "reference_type": "preprint",
+            "detected_type": "preprint",
+            "formatted_string": "Brizuela-Torres, Diego, Yves Zinngrebe, Mark D. A. Rounsevell, and Calum Brown. “Thirty Years of Drivers and Patterns of Land Use Change Across the Amazon Biome.” Preprint, Elsevier BV, 2023. https://doi.org/10.2139/ssrn.4591009.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "preprint-19ff91e02f546e21:chicago-notes-bib:clean",
+            "reference_type": "preprint",
+            "detected_type": "preprint",
+            "formatted_string": "Shen, Yusheng, and Kassandra M. Ori-McKenney. “Microtubule-Associated Proteins Orchestrate the Tubulin Code for Cellular Adaptation.” Preprint, Elsevier BV, 2023. https://doi.org/10.2139/ssrn.4502784.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "expected_style": "vancouver",
+        "detected_style": "ieee",
+        "examples": [
+          {
+            "variant_id": "thesis-1340436e0a9391fe:vancouver:clean",
+            "reference_type": "thesis",
+            "detected_type": "thesis",
+            "formatted_string": "[1]CAROLINA PEREIRA CASTELO BRANCO A. A ATITUDE E PERCEPÇÃO DO CONSUMIDOR EM RELAÇÃO A MARCAS ESPORTIVAS. Dissertation. Faculdades Catolicas, 2023. https://doi.org/10.17771/pucrio.acad.63534.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "thesis-190e82686045c380:vancouver:clean",
+            "reference_type": "thesis",
+            "detected_type": "thesis",
+            "formatted_string": "[1]Silva NF de. Body weight prediction of crossbred beef cattle through the image processing and machine learning algorithms. Dissertation. Pro-Reitoria de Pesquisa e Pos-Graduacai - UFV, 2023. https://doi.org/10.47328/ufvbbt.2022.729.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "thesis-3fc1fec9b1d96054:vancouver:clean",
+            "reference_type": "thesis",
+            "detected_type": "thesis",
+            "formatted_string": "[1]GONCALVES BEZERRA N. PLANEJAMENTO E GESTÃO DE CARREIRA: UM ESTUDO SOBRE A CARREIRA DO PROFISSIONAL DE XADREZ. Dissertation. Faculdades Catolicas, 2023. https://doi.org/10.17771/pucrio.acad.63352.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "thesis-51459f4646813bfe:vancouver:clean",
+            "reference_type": "thesis",
+            "detected_type": "thesis",
+            "formatted_string": "[1]Casanova E. Síntese de fala aplicada à geração de conjunto de dados para reconhecimento automático de fala. Dissertation. Universidade de Sao Paulo, Agencia USP de Gestao da Informacao Academica (AGUIA), 2022. https://doi.org/10.11606/t.55.2022.tde-02092022-142539.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "expected_style": "mla9",
+        "detected_style": "harvard-ctr",
+        "examples": [
+          {
+            "variant_id": "thesis-73dce4c3787011a9:mla9:clean",
+            "reference_type": "thesis",
+            "detected_type": "thesis",
+            "formatted_string": "Correa Coelho, Ricardo. A Linguagem Da Campanha Para a Prefeitura de São Paulo de 1985. 2021, https://doi.org/10.47749/t/unicamp.1991.36978. Universidade Estadual de Campinas, Dissertation.",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "thesis-78297b0273bda4b3:mla9:clean",
+            "reference_type": "thesis",
+            "detected_type": "thesis",
+            "formatted_string": "Ahearn, Rosemary. Moreton Island Community and Culture 1850-1995. 2022, https://doi.org/10.14264/996ecf4. University of Queensland Library, Dissertation.",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      }
+    ],
+    "type_mismatches": [
+      {
+        "expected_type": "conference-paper",
+        "detected_type": "article-journal",
+        "count": 27
+      },
+      {
+        "expected_type": "report",
+        "detected_type": "conference-paper",
+        "count": 18
+      },
+      {
+        "expected_type": "book-chapter",
+        "detected_type": "article-journal",
+        "count": 10
+      },
+      {
+        "expected_type": "book-chapter",
+        "detected_type": "conference-paper",
+        "count": 6
+      },
+      {
+        "expected_type": "article-journal",
+        "detected_type": "preprint",
+        "count": 6
+      },
+      {
+        "expected_type": "preprint",
+        "detected_type": "book",
+        "count": 5
+      },
+      {
+        "expected_type": "article-journal",
+        "detected_type": "book-chapter",
+        "count": 1
+      }
+    ],
+    "stripped_fields_by_type": [
+      {
+        "detected_type": "patent",
+        "field": "siteName",
+        "count": 665
+      },
+      {
+        "detected_type": "webpage",
+        "field": "publisher",
+        "count": 663
+      },
+      {
+        "detected_type": "preprint",
+        "field": "publisher",
+        "count": 657
+      },
+      {
+        "detected_type": "patent",
+        "field": "conferenceTitle",
+        "count": 648
+      },
+      {
+        "detected_type": "report",
+        "field": "publisher",
+        "count": 601
+      },
+      {
+        "detected_type": "patent",
+        "field": "publisher",
+        "count": 554
+      },
+      {
+        "detected_type": "article-journal",
+        "field": "publisher",
+        "count": 491
+      },
+      {
+        "detected_type": "preprint",
+        "field": "institution",
+        "count": 202
+      },
+      {
+        "detected_type": "conference-paper",
+        "field": "institution",
+        "count": 188
+      },
+      {
+        "detected_type": "preprint",
+        "field": "journal",
+        "count": 90
+      },
+      {
+        "detected_type": "article-journal",
+        "field": "institution",
+        "count": 66
+      },
+      {
+        "detected_type": "book-chapter",
+        "field": "institution",
+        "count": 54
+      },
+      {
+        "detected_type": "article-journal",
+        "field": "conferenceTitle",
+        "count": 46
+      },
+      {
+        "detected_type": "preprint",
+        "field": "conferenceTitle",
+        "count": 36
+      },
+      {
+        "detected_type": "book-chapter",
+        "field": "journal",
+        "count": 30
+      },
+      {
+        "detected_type": "book",
+        "field": "institution",
+        "count": 30
+      },
+      {
+        "detected_type": "thesis",
+        "field": "publisher",
+        "count": 25
+      },
+      {
+        "detected_type": "report",
+        "field": "journal",
+        "count": 24
+      },
+      {
+        "detected_type": "conference-paper",
+        "field": "volume",
+        "count": 17
+      },
+      {
+        "detected_type": "article-journal",
+        "field": "bookTitle",
+        "count": 16
+      },
+      {
+        "detected_type": "book-chapter",
+        "field": "volume",
+        "count": 13
+      },
+      {
+        "detected_type": "report",
+        "field": "pages",
+        "count": 12
+      },
+      {
+        "detected_type": "article-journal",
+        "field": "isbn",
+        "count": 10
+      },
+      {
+        "detected_type": "book-chapter",
+        "field": "issn",
+        "count": 7
+      }
+    ],
+    "field_failure_examples": [
+      {
+        "field": "authors",
+        "examples": [
+          {
+            "variant_id": "article-journal-0a30dff9e18398c6:apa7:clean",
+            "citation_style": "apa7",
+            "reference_type": "article-journal",
+            "detected_style": "apa7",
+            "detected_type": "article-journal",
+            "formatted_string": "Boberski, J., Reza Shaebani, M., & Wolf, D. E. (2014). Anisotropy of force distributions in sheared soft-particle systems. EPL (Europhysics Letters), 108(4), 44002. https://doi.org/10.1209/0295-5075/108/44002",
+            "expected_value": [
+              "Boberski, Jens",
+              "Reza Shaebani, M.",
+              "Wolf, Dietrich E."
+            ],
+            "predicted_value": [
+              "Boberski, J.",
+              "Shaebani, Reza",
+              "Wolf, M. and",
+              "D.E"
+            ],
+            "raw_predicted_value": [
+              "Boberski, J.",
+              "Shaebani, Reza",
+              "Wolf, M. and",
+              "D.E"
+            ],
+            "reason_bucket": "author_wrong_span",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "article-journal-0a30dff9e18398c6:harvard-ctr:clean",
+            "citation_style": "harvard-ctr",
+            "reference_type": "article-journal",
+            "detected_style": "harvard-ctr",
+            "detected_type": "article-journal",
+            "formatted_string": "Boberski, J., Reza Shaebani, M. and Wolf, D.E. (2014) “Anisotropy of force distributions in sheared soft-particle systems,” EPL (Europhysics Letters), 108(4), p. 44002. Available at: https://doi.org/10.1209/0295-5075/108/44002.",
+            "expected_value": [
+              "Boberski, Jens",
+              "Reza Shaebani, M.",
+              "Wolf, Dietrich E."
+            ],
+            "predicted_value": [
+              "Boberski, J.",
+              "Shaebani, Reza",
+              "Wolf, M. and",
+              "D.E"
+            ],
+            "raw_predicted_value": [
+              "Boberski, J.",
+              "Shaebani, Reza",
+              "Wolf, M. and",
+              "D.E"
+            ],
+            "reason_bucket": "author_wrong_span",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "article-journal-0a30dff9e18398c6:ieee:clean",
+            "citation_style": "ieee",
+            "reference_type": "article-journal",
+            "detected_style": "ieee",
+            "detected_type": "article-journal",
+            "formatted_string": "[1]J. Boberski, M. Reza Shaebani, and D. E. Wolf, “Anisotropy of force distributions in sheared soft-particle systems,” EPL (Europhysics Letters), vol. 108, no. 4, p. 44002, 2014, doi: 10.1209/0295-5075/108/44002.",
+            "expected_value": [
+              "Boberski, Jens",
+              "Reza Shaebani, M.",
+              "Wolf, Dietrich E."
+            ],
+            "predicted_value": [
+              "Boberski, J.",
+              "Shaebani, Reza",
+              "Wolf, M. and",
+              "D.E"
+            ],
+            "raw_predicted_value": [
+              "Boberski, J.",
+              "Shaebani, Reza",
+              "Wolf, M. and",
+              "D.E"
+            ],
+            "reason_bucket": "author_wrong_span",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "article-journal-0a30dff9e18398c6:mla9:clean",
+            "citation_style": "mla9",
+            "reference_type": "article-journal",
+            "detected_style": "mla9",
+            "detected_type": "article-journal",
+            "formatted_string": "Boberski, Jens, et al. “Anisotropy of Force Distributions in Sheared Soft-Particle Systems.” EPL (Europhysics Letters), vol. 108, no. 4, 2014, p. 44002, https://doi.org/10.1209/0295-5075/108/44002.",
+            "expected_value": [
+              "Boberski, Jens",
+              "Reza Shaebani, M.",
+              "Wolf, Dietrich E."
+            ],
+            "predicted_value": [
+              "Boberski, J.",
+              "Shaebani, Reza",
+              "Wolf, M. and",
+              "D.E"
+            ],
+            "raw_predicted_value": [
+              "Boberski, J.",
+              "Shaebani, Reza",
+              "Wolf, M. and",
+              "D.E"
+            ],
+            "reason_bucket": "author_wrong_span",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "article-journal-0a30dff9e18398c6:vancouver:clean",
+            "citation_style": "vancouver",
+            "reference_type": "article-journal",
+            "detected_style": "vancouver",
+            "detected_type": "article-journal",
+            "formatted_string": "[1]Boberski J, Reza Shaebani M, Wolf DE. Anisotropy of force distributions in sheared soft-particle systems. EPL (Europhysics Letters) 2014;108:44002. https://doi.org/10.1209/0295-5075/108/44002.",
+            "expected_value": [
+              "Boberski, Jens",
+              "Reza Shaebani, M.",
+              "Wolf, Dietrich E."
+            ],
+            "predicted_value": [
+              "Boberski, J.",
+              "Shaebani, Reza",
+              "Wolf, M. and",
+              "D.E"
+            ],
+            "raw_predicted_value": [
+              "Boberski, J.",
+              "Shaebani, Reza",
+              "Wolf, M. and",
+              "D.E"
+            ],
+            "reason_bucket": "author_wrong_span",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "field": "title",
+        "examples": [
+          {
+            "variant_id": "article-journal-022226b2452a4ba5:vancouver:clean",
+            "citation_style": "vancouver",
+            "reference_type": "article-journal",
+            "detected_style": "vancouver",
+            "detected_type": "article-journal",
+            "formatted_string": "[1]Кирчанов М. A Cat’s Lick: Democratisation and Minority Communities in the Post-Soviet Baltic by Timofey Agarin, and Continuity and Change in the Baltic Sea Region: Comparing Foreign Policies by David J. Galbreath, Ainius Lašas, Jeremy W. Lamoreaux (review). Ab Imperio 2011;2011:461–8. https://doi.org/10.1353/imp.2011.0081.",
+            "expected_value": "A Cat’s Lick: Democratisation and Minority Communities in the Post-Soviet Baltic by Timofey Agarin, and Continuity and Change in the Baltic Sea Region: Comparing Foreign Policies by David J. Galbreath, Ainius Lašas, Jeremy W. Lamoreaux (review)",
+            "predicted_value": "A Cat's Lick: Democratisation and Minority Communities in the Post-Soviet Baltic by Timofey Agarin, and Continuity and Change in the Baltic Sea Region: Comparing Foreign Policies by David J",
+            "raw_predicted_value": "A Cat's Lick: Democratisation and Minority Communities in the Post-Soviet Baltic by Timofey Agarin, and Continuity and Change in the Baltic Sea Region: Comparing Foreign Policies by David J",
+            "reason_bucket": "truncated_value",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "article-journal-1ebb4ae09cabd7dc:apa7:clean",
+            "citation_style": "apa7",
+            "reference_type": "article-journal",
+            "detected_style": "apa7",
+            "detected_type": "article-journal",
+            "formatted_string": "Pinto, D., Cádima, F. R., Coelho, J., & Dias, L. (2017). Novos usos e desafios para os videojogos: streaming, questões de género e assédio online. Media &amp; Jornalismo, 17(31), 165–176. https://doi.org/10.14195/2183-5462_31_11",
+            "expected_value": "Novos usos e desafios para os videojogos: streaming, questões de género e assédio online",
+            "predicted_value": "Novos usos e desafios para os videojogos: streaming",
+            "raw_predicted_value": "Novos usos e desafios para os videojogos: streaming",
+            "reason_bucket": "truncated_value",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "article-journal-30130aae973bbc7b:vancouver:clean",
+            "citation_style": "vancouver",
+            "reference_type": "article-journal",
+            "detected_style": "vancouver",
+            "detected_type": "article-journal",
+            "formatted_string": "[1]Bruun C. Vers une gestion intégrée de l’eau dans l’Empire romain ed. by E. Hermon (review). Mouseion: Journal of the Classical Association of Canada 2011;55:259–62. https://doi.org/10.1353/mou.2011.0029.",
+            "expected_value": "Vers une gestion intégrée de l’eau dans l’Empire romain ed. by E. Hermon (review)",
+            "predicted_value": "Vers une gestion intégrée de l'eau dans l'Empire romain ed",
+            "raw_predicted_value": "Vers une gestion intégrée de l'eau dans l'Empire romain ed",
+            "reason_bucket": "truncated_value",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "article-journal-35882be2624f3136:apa7:clean",
+            "citation_style": "apa7",
+            "reference_type": "article-journal",
+            "detected_style": "apa7",
+            "detected_type": "article-journal",
+            "formatted_string": "Ratnamiasih, I. & Widi Andini. (2023). ANALISIS BEBAN KERJA PADA PT. BPR SUBANG GEMI NASTITI (PERSERODA) KANTOR PUSAT OPERASIONAL DI KOTA SUBANG. Brainy: Jurnal Riset Mahasiswa, 4(1), 29–34. https://doi.org/10.23969/brainy.v4i1.54",
+            "expected_value": "ANALISIS BEBAN KERJA PADA PT. BPR SUBANG GEMI NASTITI (PERSERODA) KANTOR PUSAT OPERASIONAL DI KOTA SUBANG",
+            "predicted_value": "ANALISIS BEBAN KERJA PADA PT.",
+            "raw_predicted_value": "ANALISIS BEBAN KERJA PADA PT.",
+            "reason_bucket": "truncated_value",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "article-journal-35882be2624f3136:chicago-notes-bib:clean",
+            "citation_style": "chicago-notes-bib",
+            "reference_type": "article-journal",
+            "detected_style": "chicago-notes-bib",
+            "detected_type": "article-journal",
+            "formatted_string": "Ratnamiasih, Ina and Widi Andini. “ANALISIS BEBAN KERJA PADA PT. BPR SUBANG GEMI NASTITI (PERSERODA) KANTOR PUSAT OPERASIONAL DI KOTA SUBANG.” Brainy: Jurnal Riset Mahasiswa 4, no. 1 (2023): 29–34. https://doi.org/10.23969/brainy.v4i1.54.",
+            "expected_value": "ANALISIS BEBAN KERJA PADA PT. BPR SUBANG GEMI NASTITI (PERSERODA) KANTOR PUSAT OPERASIONAL DI KOTA SUBANG",
+            "predicted_value": "ANALISIS BEBAN KERJA PADA PT.",
+            "raw_predicted_value": "ANALISIS BEBAN KERJA PADA PT.",
+            "reason_bucket": "truncated_value",
+            "warnings": [
+              "missing_preferred_fields",
+              "render_style_fallback"
+            ]
+          }
+        ]
+      },
+      {
+        "field": "year",
+        "examples": [
+          {
+            "variant_id": "webpage-4ddf66c98a8c5d1d:ieee:clean",
+            "citation_style": "ieee",
+            "reference_type": "webpage",
+            "detected_style": "ieee",
+            "detected_type": "webpage",
+            "formatted_string": "[1]“CBOR Object Signing and Encryption (COSE) Header Parameter for Timestamp Tokens as Defined in RFC 3161,” RFC Editor. [Online]. Available: https://www.rfc-editor.org/rfc/rfc9921.html",
+            "expected_value": 2026,
+            "predicted_value": 3161,
+            "raw_predicted_value": 3161,
+            "reason_bucket": "publication_year_missed",
+            "warnings": [
+              "uncertain_institution",
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "webpage-96bf2d72a36a00b0:ieee:clean",
+            "citation_style": "ieee",
+            "reference_type": "webpage",
+            "detected_style": "ieee",
+            "detected_type": "webpage",
+            "formatted_string": "[1]“RTP Payload Format for JPEG 2000 Streaming with Sub-Codestream Latency,” RFC Editor. [Online]. Available: https://www.rfc-editor.org/rfc/rfc9828.html",
+            "expected_value": 2025,
+            "predicted_value": 2000,
+            "raw_predicted_value": 2000,
+            "reason_bucket": "publication_year_missed",
+            "warnings": [
+              "uncertain_institution",
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "field": "journal/venue",
+        "examples": [
+          {
+            "variant_id": "article-journal-022226b2452a4ba5:harvard-ctr:clean",
+            "citation_style": "harvard-ctr",
+            "reference_type": "article-journal",
+            "detected_style": "harvard-ctr",
+            "detected_type": "article-journal",
+            "formatted_string": "Кирчанов, М. (2011) “A Cat’s Lick: Democratisation and Minority Communities in the Post-Soviet Baltic by Timofey Agarin, and Continuity and Change in the Baltic Sea Region: Comparing Foreign Policies by David J. Galbreath, Ainius Lašas, Jeremy W. Lamoreaux (review),” Ab Imperio, 2011(3), pp. 461–468. Available at: https://doi.org/10.1353/imp.2011.0081.",
+            "expected_value": "Ab Imperio",
+            "predicted_value": "Galbreath, Ainius Lašas, Jeremy W. Lamoreaux (review),\" Ab Imperio",
+            "raw_predicted_value": "Galbreath, Ainius Lašas, Jeremy W. Lamoreaux (review),\" Ab Imperio",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "article-journal-0d603f677b1165f7:apa7:clean",
+            "citation_style": "apa7",
+            "reference_type": "article-journal",
+            "detected_style": "apa7",
+            "detected_type": "article-journal",
+            "formatted_string": "Tiwari, N. (2011). Merger Under The Regime of Competition Law: A Comparative Study of Indian Legal Framework With EC and UK. Bond Law Review, 23(1). https://doi.org/10.53300/001c.5580",
+            "expected_value": "Bond Law Review",
+            "predicted_value": "Bond Law Review 2011;23",
+            "raw_predicted_value": "Bond Law Review 2011;23",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "article-journal-0d603f677b1165f7:chicago-notes-bib:clean",
+            "citation_style": "chicago-notes-bib",
+            "reference_type": "article-journal",
+            "detected_style": "chicago-notes-bib",
+            "detected_type": "article-journal",
+            "formatted_string": "Tiwari, Neeraj. “Merger Under The Regime of Competition Law: A Comparative Study of Indian Legal Framework With EC and UK.” Bond Law Review 23, no. 1 (2011). https://doi.org/10.53300/001c.5580.",
+            "expected_value": "Bond Law Review",
+            "predicted_value": "Bond Law Review 2011;23",
+            "raw_predicted_value": "Bond Law Review 2011;23",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "missing_preferred_fields",
+              "render_style_fallback"
+            ]
+          },
+          {
+            "variant_id": "article-journal-0d603f677b1165f7:harvard-ctr:clean",
+            "citation_style": "harvard-ctr",
+            "reference_type": "article-journal",
+            "detected_style": "harvard-ctr",
+            "detected_type": "article-journal",
+            "formatted_string": "Tiwari, N. (2011) “Merger Under The Regime of Competition Law: A Comparative Study of Indian Legal Framework With EC and UK,” Bond Law Review, 23(1). Available at: https://doi.org/10.53300/001c.5580.",
+            "expected_value": "Bond Law Review",
+            "predicted_value": "Bond Law Review 2011;23",
+            "raw_predicted_value": "Bond Law Review 2011;23",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "article-journal-0d603f677b1165f7:ieee:clean",
+            "citation_style": "ieee",
+            "reference_type": "article-journal",
+            "detected_style": "ieee",
+            "detected_type": "article-journal",
+            "formatted_string": "[1]N. Tiwari, “Merger Under The Regime of Competition Law: A Comparative Study of Indian Legal Framework With EC and UK,” Bond Law Review, vol. 23, no. 1, 2011, doi: 10.53300/001c.5580.",
+            "expected_value": "Bond Law Review",
+            "predicted_value": "Bond Law Review 2011;23",
+            "raw_predicted_value": "Bond Law Review 2011;23",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "field": "conferenceTitle",
+        "examples": [
+          {
+            "variant_id": "conference-paper-13ce715a5e621bcf:apa7:clean",
+            "citation_style": "apa7",
+            "reference_type": "conference-paper",
+            "detected_style": "apa7",
+            "detected_type": "article-journal",
+            "formatted_string": "Paulo Santos da Silva, M., & de Paula Martins, C. (2023). FORMAÇÃO POR COMPETÊNCIAS TRANSVERSAIS DE ENGENHEIROS CIVIS NA GEOTECNIA: O PAPEL DA ATIVIDADE DE MONITORIA. Proceedings of the 51 Brasilian Congress of Engineering Education. https://doi.org/10.37702/2175-957x.cobenge.2023.4540",
+            "expected_value": "Proceedings of the 51 Brasilian Congress of Engineering Education",
+            "raw_predicted_value": "Proceedings of the 51 Brasilian Congress of Engineering Education",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "conference-paper-13ce715a5e621bcf:chicago-notes-bib:clean",
+            "citation_style": "chicago-notes-bib",
+            "reference_type": "conference-paper",
+            "detected_style": "chicago-notes-bib",
+            "detected_type": "article-journal",
+            "formatted_string": "Paulo Santos da Silva, Marcos, and Cátia de Paula Martins. “FORMAÇÃO POR COMPETÊNCIAS TRANSVERSAIS DE ENGENHEIROS CIVIS NA GEOTECNIA: O PAPEL DA ATIVIDADE DE MONITORIA.” Paper presented at Proceedings of the 51 Brasilian Congress of Engineering Education. 2023. https://doi.org/10.37702/2175-957x.cobenge.2023.4540.",
+            "expected_value": "Proceedings of the 51 Brasilian Congress of Engineering Education",
+            "raw_predicted_value": "Proceedings of the 51 Brasilian Congress of Engineering Education",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields",
+              "render_style_fallback"
+            ]
+          },
+          {
+            "variant_id": "conference-paper-13ce715a5e621bcf:harvard-ctr:clean",
+            "citation_style": "harvard-ctr",
+            "reference_type": "conference-paper",
+            "detected_style": "harvard-ctr",
+            "detected_type": "article-journal",
+            "formatted_string": "Paulo Santos da Silva, M. and de Paula Martins, C. (2023) “FORMAÇÃO POR COMPETÊNCIAS TRANSVERSAIS DE ENGENHEIROS CIVIS NA GEOTECNIA: O PAPEL DA ATIVIDADE DE MONITORIA.” Associação Brasileira de Educação em Engenharia. Available at: https://doi.org/10.37702/2175-957x.cobenge.2023.4540.",
+            "expected_value": "Proceedings of the 51 Brasilian Congress of Engineering Education",
+            "raw_predicted_value": "Proceedings of the 51 Brasilian Congress of Engineering Education",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "conference-paper-13ce715a5e621bcf:ieee:clean",
+            "citation_style": "ieee",
+            "reference_type": "conference-paper",
+            "detected_style": "ieee",
+            "detected_type": "article-journal",
+            "formatted_string": "[1]M. Paulo Santos da Silva and C. de Paula Martins, “FORMAÇÃO POR COMPETÊNCIAS TRANSVERSAIS DE ENGENHEIROS CIVIS NA GEOTECNIA: O PAPEL DA ATIVIDADE DE MONITORIA,” Associação Brasileira de Educação em Engenharia, 2023. doi: 10.37702/2175-957x.cobenge.2023.4540.",
+            "expected_value": "Proceedings of the 51 Brasilian Congress of Engineering Education",
+            "raw_predicted_value": "Proceedings of the 51 Brasilian Congress of Engineering Education",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "conference-paper-13ce715a5e621bcf:mla9:clean",
+            "citation_style": "mla9",
+            "reference_type": "conference-paper",
+            "detected_style": "mla9",
+            "detected_type": "article-journal",
+            "formatted_string": "Paulo Santos da Silva, Marcos, and Cátia de Paula Martins. “FORMAÇÃO POR COMPETÊNCIAS TRANSVERSAIS DE ENGENHEIROS CIVIS NA GEOTECNIA: O PAPEL DA ATIVIDADE DE MONITORIA.” 2023, Proceedings of the 51 Brasilian Congress of Engineering Education, https://doi.org/10.37702/2175-957x.cobenge.2023.4540.",
+            "expected_value": "Proceedings of the 51 Brasilian Congress of Engineering Education",
+            "raw_predicted_value": "Proceedings of the 51 Brasilian Congress of Engineering Education",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "field": "bookTitle",
+        "examples": [
+          {
+            "variant_id": "book-chapter-35cca959339406b4:chicago-notes-bib:clean",
+            "citation_style": "chicago-notes-bib",
+            "reference_type": "book-chapter",
+            "detected_style": "chicago-notes-bib",
+            "detected_type": "article-journal",
+            "formatted_string": "Wallinga, Marnix. “MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension.” In Studies in European Economic Law and Regulation. Springer International Publishing, 2020. https://doi.org/10.1007/978-3-030-54001-2_3.",
+            "expected_value": "Studies in European Economic Law and Regulation",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields",
+              "render_style_fallback"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-35cca959339406b4:harvard-ctr:clean",
+            "citation_style": "harvard-ctr",
+            "reference_type": "book-chapter",
+            "detected_style": "harvard-ctr",
+            "detected_type": "article-journal",
+            "formatted_string": "Wallinga, M. (2020) “MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension,” Studies in European Economic Law and Regulation. Springer International Publishing, pp. 71–113. Available at: https://doi.org/10.1007/978-3-030-54001-2_3.",
+            "expected_value": "Studies in European Economic Law and Regulation",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "uncertain_pages",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-35cca959339406b4:ieee:clean",
+            "citation_style": "ieee",
+            "reference_type": "book-chapter",
+            "detected_style": "ieee",
+            "detected_type": "article-journal",
+            "formatted_string": "[1]M. Wallinga, “MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension,” in Studies in European Economic Law and Regulation, Springer International Publishing, 2020, pp. 71–113. doi: 10.1007/978-3-030-54001-2_3.",
+            "expected_value": "Studies in European Economic Law and Regulation",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-35cca959339406b4:mla9:clean",
+            "citation_style": "mla9",
+            "reference_type": "book-chapter",
+            "detected_style": "mla9",
+            "detected_type": "article-journal",
+            "formatted_string": "Wallinga, Marnix. “MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension.” Studies in European Economic Law and Regulation, Springer International Publishing, 2020, pp. 71–113, https://doi.org/10.1007/978-3-030-54001-2_3.",
+            "expected_value": "Studies in European Economic Law and Regulation",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-35cca959339406b4:vancouver:clean",
+            "citation_style": "vancouver",
+            "reference_type": "book-chapter",
+            "detected_style": "vancouver",
+            "detected_type": "article-journal",
+            "formatted_string": "[1]Wallinga M. MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension. Studies in European Economic Law and Regulation, Springer International Publishing; 2020, p. 71–113. https://doi.org/10.1007/978-3-030-54001-2_3.",
+            "expected_value": "Studies in European Economic Law and Regulation",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "field": "publisher",
+        "examples": [
+          {
+            "variant_id": "book-chapter-0ae11ce81d7289e2:vancouver:clean",
+            "citation_style": "vancouver",
+            "reference_type": "book-chapter",
+            "detected_style": "vancouver",
+            "detected_type": "book-chapter",
+            "formatted_string": "[1]Bischoff A, Schürmann B. Higher Order Neural Networks in a Unified Learning Scheme. ICANN ’93, Springer London; 1993, p. 679–82. https://doi.org/10.1007/978-1-4471-2063-6_187.",
+            "expected_value": "Springer London",
+            "predicted_value": "93, Springer London",
+            "raw_predicted_value": "93, Springer London",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-243d55931c289bb9:chicago-notes-bib:clean",
+            "citation_style": "chicago-notes-bib",
+            "reference_type": "book-chapter",
+            "detected_style": "chicago-notes-bib",
+            "detected_type": "book-chapter",
+            "formatted_string": "Lesniak, Sonja. “Morgenstern, Christian.” In Kindlers Literatur Lexikon (KLL). J.B. Metzler, 2020. https://doi.org/10.1007/978-3-476-05728-0_12531-1.",
+            "expected_value": "J.B. Metzler",
+            "predicted_value": "Metzler",
+            "raw_predicted_value": "Metzler",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "missing_preferred_fields",
+              "render_style_fallback"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-243d55931c289bb9:ieee:clean",
+            "citation_style": "ieee",
+            "reference_type": "book-chapter",
+            "detected_style": "ieee",
+            "detected_type": "book-chapter",
+            "formatted_string": "[1]S. Lesniak, “Morgenstern, Christian,” in Kindlers Literatur Lexikon (KLL), J.B. Metzler, 2020, pp. 1–1. doi: 10.1007/978-3-476-05728-0_12531-1.",
+            "expected_value": "J.B. Metzler",
+            "predicted_value": "Metzler",
+            "raw_predicted_value": "Metzler",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "missing_preferred_fields",
+              "render_output_structurally_incomplete"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-243d55931c289bb9:mla9:clean",
+            "citation_style": "mla9",
+            "reference_type": "book-chapter",
+            "detected_style": "mla9",
+            "detected_type": "book-chapter",
+            "formatted_string": "Lesniak, Sonja. “Morgenstern, Christian.” Kindlers Literatur Lexikon (KLL), J.B. Metzler, 2020, pp. 1–1, https://doi.org/10.1007/978-3-476-05728-0_12531-1.",
+            "expected_value": "J.B. Metzler",
+            "predicted_value": "Metzler",
+            "raw_predicted_value": "Metzler",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-243d55931c289bb9:vancouver:clean",
+            "citation_style": "vancouver",
+            "reference_type": "book-chapter",
+            "detected_style": "vancouver",
+            "detected_type": "book-chapter",
+            "formatted_string": "[1]Lesniak S. Morgenstern, Christian. Kindlers Literatur Lexikon (KLL), J.B. Metzler; 2020, p. 1–1. https://doi.org/10.1007/978-3-476-05728-0_12531-1.",
+            "expected_value": "J.B. Metzler",
+            "predicted_value": "Metzler",
+            "raw_predicted_value": "Metzler",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "field": "institution",
+        "examples": [
+          {
+            "variant_id": "report-28f49c1d5c54b87c:apa7:clean",
+            "citation_style": "apa7",
+            "reference_type": "report",
+            "detected_style": "apa7",
+            "detected_type": "report",
+            "formatted_string": "Humphrey, B. (2019). Annual TRU Waste Inventory Update. [Spreadsheets]. Office of Scientific and Technical Information (OSTI). https://doi.org/10.2172/1762968",
+            "expected_value": "Office of Scientific and Technical Information (OSTI)",
+            "predicted_value": "[Spreadsheets",
+            "raw_predicted_value": "[Spreadsheets",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "uncertain_institution",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "report-2bc0bd580128ad0b:apa7:clean",
+            "citation_style": "apa7",
+            "reference_type": "report",
+            "detected_style": "apa7",
+            "detected_type": "conference-paper",
+            "formatted_string": "KRPOCH. (2017). International Scientific and Practical Conference: Psychological and Pedagogical Problems of Modern Specialist Formation, 2017. KRPOCH. https://doi.org/10.26697/pppmsf-17",
+            "expected_value": "KRPOCH",
+            "raw_predicted_value": "International Scientific and Practical Conference: Psychological and Pedagogical Problems of Modern Specialist Formation",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "report-2bc0bd580128ad0b:chicago-notes-bib:clean",
+            "citation_style": "chicago-notes-bib",
+            "reference_type": "report",
+            "detected_style": "chicago-notes-bib",
+            "detected_type": "conference-paper",
+            "formatted_string": "KRPOCH. International Scientific and Practical Conference: Psychological and Pedagogical Problems of Modern Specialist Formation, 2017. KRPOCH, 2017. https://doi.org/10.26697/pppmsf-17.",
+            "expected_value": "KRPOCH",
+            "raw_predicted_value": "International Scientific and Practical Conference: Psychological and Pedagogical Problems of Modern Specialist Formation",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields",
+              "render_style_fallback"
+            ]
+          },
+          {
+            "variant_id": "report-2bc0bd580128ad0b:harvard-ctr:clean",
+            "citation_style": "harvard-ctr",
+            "reference_type": "report",
+            "detected_style": "harvard-ctr",
+            "detected_type": "conference-paper",
+            "formatted_string": "KRPOCH (2017) International Scientific and Practical Conference: Psychological and Pedagogical Problems of Modern Specialist Formation, 2017. KRPOCH. Available at: https://doi.org/10.26697/pppmsf-17.",
+            "expected_value": "KRPOCH",
+            "raw_predicted_value": "(2017) International Scientific and Practical Conference: Psychological and Pedagogical Problems of Modern Specialist Formation",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "report-2bc0bd580128ad0b:ieee:clean",
+            "citation_style": "ieee",
+            "reference_type": "report",
+            "detected_style": "ieee",
+            "detected_type": "conference-paper",
+            "formatted_string": "[1]KRPOCH, “International Scientific and Practical Conference: Psychological and Pedagogical Problems of Modern Specialist Formation, 2017,” KRPOCH, 2017. doi: 10.26697/pppmsf-17.",
+            "expected_value": "KRPOCH",
+            "raw_predicted_value": "International Scientific and Practical Conference: Psychological and Pedagogical Problems of Modern Specialist Formation",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "field": "url",
+        "examples": [
+          {
+            "variant_id": "patent-a9805b55f76c7f43:vancouver:clean",
+            "citation_style": "vancouver",
+            "reference_type": "patent",
+            "detected_style": "vancouver",
+            "detected_type": "patent",
+            "formatted_string": "[1]Simulation test system and simulation test method. EP4443440B1, 2026.",
+            "expected_value": "https://patents.google.com/patent/CN115327949B/en",
+            "predicted_value": "https://patents.google.com/patent/EP4443440B1/en",
+            "raw_predicted_value": "https://patents.google.com/patent/EP4443440B1/en",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "field": "issn",
+        "examples": [
+          {
+            "variant_id": "article-journal-8453c54e9f6ae5b4:ieee:clean",
+            "citation_style": "ieee",
+            "reference_type": "article-journal",
+            "detected_style": "ieee",
+            "detected_type": "book-chapter",
+            "formatted_string": "[1]S. V. Matuykin and A. B. Frolova, “PROBLEMS AND MECHANISMS OF INVOLVING UNIVERSITIES IN THE ENGINEERING ACTIVITY OF INDUSTRIAL CLUSTERS,” Фундаментальные исследования (Fundamental research), no. №4 2019, pp. 78–83, 2019, doi: 10.17513/fr.42442.",
+            "expected_value": "1812-7339",
+            "raw_predicted_value": "18127339",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields",
+              "render_output_structurally_incomplete"
+            ]
+          },
+          {
+            "variant_id": "article-journal-948e45242169643f:apa7:clean",
+            "citation_style": "apa7",
+            "reference_type": "article-journal",
+            "detected_style": "apa7",
+            "detected_type": "preprint",
+            "formatted_string": "Gao, D. Z. (2023). Serbian Irredentism in Croatia. SSRN Electronic Journal. https://doi.org/10.2139/ssrn.4495496",
+            "expected_value": "1556-5068",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "article-journal-948e45242169643f:chicago-notes-bib:clean",
+            "citation_style": "chicago-notes-bib",
+            "reference_type": "article-journal",
+            "detected_style": "chicago-notes-bib",
+            "detected_type": "preprint",
+            "formatted_string": "Gao, De Zhong. “Serbian Irredentism in Croatia.” SSRN Electronic Journal, ahead of print, 2023. https://doi.org/10.2139/ssrn.4495496.",
+            "expected_value": "1556-5068",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields",
+              "render_style_fallback"
+            ]
+          },
+          {
+            "variant_id": "article-journal-948e45242169643f:harvard-ctr:clean",
+            "citation_style": "harvard-ctr",
+            "reference_type": "article-journal",
+            "detected_style": "harvard-ctr",
+            "detected_type": "preprint",
+            "formatted_string": "Gao, D.Z. (2023) “Serbian Irredentism in Croatia,” SSRN Electronic Journal [Preprint]. Available at: https://doi.org/10.2139/ssrn.4495496.",
+            "expected_value": "1556-5068",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "article-journal-948e45242169643f:ieee:clean",
+            "citation_style": "ieee",
+            "reference_type": "article-journal",
+            "detected_style": "vancouver",
+            "detected_type": "preprint",
+            "formatted_string": "[1]D. Z. Gao, “Serbian Irredentism in Croatia,” SSRN Electronic Journal, 2023, doi: 10.2139/ssrn.4495496.",
+            "expected_value": "1556-5068",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "field": "isbn",
+        "examples": [
+          {
+            "variant_id": "book-02d8e99e33e0b5e2:apa7:clean",
+            "citation_style": "apa7",
+            "reference_type": "book",
+            "detected_style": "apa7",
+            "detected_type": "book",
+            "formatted_string": "Taylor, M. (2015). Quantum Microscopy of Biological Systems. Springer International Publishing. https://doi.org/10.1007/978-3-319-18938-3",
+            "expected_value": "9783319189376",
+            "predicted_value": "9783319189383",
+            "raw_predicted_value": "9783319189383",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "uncertain_publisher",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "book-02d8e99e33e0b5e2:chicago-notes-bib:clean",
+            "citation_style": "chicago-notes-bib",
+            "reference_type": "book",
+            "detected_style": "chicago-notes-bib",
+            "detected_type": "book",
+            "formatted_string": "Taylor, Michael. Quantum Microscopy of Biological Systems. Springer International Publishing, 2015. https://doi.org/10.1007/978-3-319-18938-3.",
+            "expected_value": "9783319189376",
+            "predicted_value": "9783319189383",
+            "raw_predicted_value": "9783319189383",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "missing_preferred_fields",
+              "render_style_fallback"
+            ]
+          },
+          {
+            "variant_id": "book-02d8e99e33e0b5e2:harvard-ctr:clean",
+            "citation_style": "harvard-ctr",
+            "reference_type": "book",
+            "detected_style": "harvard-ctr",
+            "detected_type": "book",
+            "formatted_string": "Taylor, M. (2015) Quantum Microscopy of Biological Systems. Springer International Publishing. Available at: https://doi.org/10.1007/978-3-319-18938-3.",
+            "expected_value": "9783319189376",
+            "predicted_value": "9783319189383",
+            "raw_predicted_value": "9783319189383",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "uncertain_publisher",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "book-02d8e99e33e0b5e2:ieee:clean",
+            "citation_style": "ieee",
+            "reference_type": "book",
+            "detected_style": "ieee",
+            "detected_type": "book",
+            "formatted_string": "[1]M. Taylor, Quantum Microscopy of Biological Systems. Springer International Publishing, 2015. doi: 10.1007/978-3-319-18938-3.",
+            "expected_value": "9783319189376",
+            "predicted_value": "9783319189383",
+            "raw_predicted_value": "9783319189383",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "book-02d8e99e33e0b5e2:mla9:clean",
+            "citation_style": "mla9",
+            "reference_type": "book",
+            "detected_style": "mla9",
+            "detected_type": "book",
+            "formatted_string": "Taylor, Michael. Quantum Microscopy of Biological Systems. Springer International Publishing, 2015, https://doi.org/10.1007/978-3-319-18938-3.",
+            "expected_value": "9783319189376",
+            "predicted_value": "9783319189383",
+            "raw_predicted_value": "9783319189383",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "field": "patent",
+        "examples": [
+          {
+            "variant_id": "patent-a9805b55f76c7f43:harvard-ctr:clean",
+            "citation_style": "harvard-ctr",
+            "reference_type": "patent",
+            "detected_style": "harvard-ctr",
+            "detected_type": "patent",
+            "formatted_string": "“Simulation test system and simulation test method” (2026). Available at: https://patents.google.com/patent/CN115327949B/en.",
+            "expected_value": "EP4443440B1",
+            "predicted_value": "CN115327949B",
+            "raw_predicted_value": "CN115327949B",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "field": "siteName",
+        "examples": [
+          {
+            "variant_id": "webpage-7634ff49da72156a:ieee:clean",
+            "citation_style": "ieee",
+            "reference_type": "webpage",
+            "detected_style": "ieee",
+            "detected_type": "webpage",
+            "formatted_string": "[1]PostgreSQL Global Development Group, “PostgreSQL 17 Documentation,” PostgreSQL Documentation. [Online]. Available: https://www.postgresql.org/docs/17/",
+            "expected_value": "PostgreSQL Documentation",
+            "predicted_value": "postgresql.org",
+            "raw_predicted_value": "postgresql.org",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "webpage-7634ff49da72156a:vancouver:clean",
+            "citation_style": "vancouver",
+            "reference_type": "webpage",
+            "detected_style": "unknown",
+            "detected_type": "webpage",
+            "formatted_string": "[1]PostgreSQL Global Development Group. PostgreSQL 17 Documentation. PostgreSQL Documentation 2024. https://www.postgresql.org/docs/17/.",
+            "expected_value": "PostgreSQL Documentation",
+            "predicted_value": "postgresql.org",
+            "raw_predicted_value": "postgresql.org",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "field": "repository",
+        "examples": [
+          {
+            "variant_id": "preprint-8efc0b2edb9a748e:apa7:clean",
+            "citation_style": "apa7",
+            "reference_type": "preprint",
+            "detected_style": "apa7",
+            "detected_type": "book",
+            "formatted_string": "Ogata, Y. (2023). Spiral Rendering Virtual Reality Imaging on a Headset. Optica Publishing Group. https://doi.org/10.1364/opticaopen.24145644",
+            "expected_value": "Optica Publishing Group",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "uncertain_publisher",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "preprint-8efc0b2edb9a748e:chicago-notes-bib:clean",
+            "citation_style": "chicago-notes-bib",
+            "reference_type": "preprint",
+            "detected_style": "chicago-notes-bib",
+            "detected_type": "preprint",
+            "formatted_string": "Ogata, Yoichi. “Spiral Rendering Virtual Reality Imaging on a Headset.” Preprint, Optica Publishing Group, 2023. https://doi.org/10.1364/opticaopen.24145644.",
+            "expected_value": "Optica Publishing Group",
+            "reason_bucket": "container_missing",
+            "warnings": [
+              "missing_preferred_fields",
+              "render_style_fallback"
+            ]
+          },
+          {
+            "variant_id": "preprint-8efc0b2edb9a748e:harvard-ctr:clean",
+            "citation_style": "harvard-ctr",
+            "reference_type": "preprint",
+            "detected_style": "harvard-ctr",
+            "detected_type": "book",
+            "formatted_string": "Ogata, Y. (2023) “Spiral Rendering Virtual Reality Imaging on a Headset.” Optica Publishing Group. Available at: https://doi.org/10.1364/opticaopen.24145644.",
+            "expected_value": "Optica Publishing Group",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "uncertain_publisher",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "preprint-8efc0b2edb9a748e:ieee:clean",
+            "citation_style": "ieee",
+            "reference_type": "preprint",
+            "detected_style": "ieee",
+            "detected_type": "book",
+            "formatted_string": "[1]Y. Ogata, “Spiral Rendering Virtual Reality Imaging on a Headset,” 2023, Optica Publishing Group. doi: 10.1364/opticaopen.24145644.",
+            "expected_value": "Optica Publishing Group",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "uncertain_publisher",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "preprint-8efc0b2edb9a748e:mla9:clean",
+            "citation_style": "mla9",
+            "reference_type": "preprint",
+            "detected_style": "mla9",
+            "detected_type": "book",
+            "formatted_string": "Ogata, Yoichi. “Spiral Rendering Virtual Reality Imaging on a Headset.” Optica Publishing Group, 2023, https://doi.org/10.1364/opticaopen.24145644.",
+            "expected_value": "Optica Publishing Group",
+            "reason_bucket": "wrong_type_field",
+            "warnings": [
+              "uncertain_publisher",
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      }
+    ],
+    "sample_failures": [
+      {
+        "variant_id": "article-journal-35882be2624f3136:ieee:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "ieee",
+        "reference_type": "article-journal",
+        "detected_style": "ieee",
+        "detected_type": "article-journal",
+        "failed_required_fields": [
+          "title",
+          "journal/venue"
+        ],
+        "formatted_string": "[1]I. Ratnamiasih and Widi Andini, “ANALISIS BEBAN KERJA PADA PT. BPR SUBANG GEMI NASTITI (PERSERODA) KANTOR PUSAT OPERASIONAL DI KOTA SUBANG,” Brainy: Jurnal Riset Mahasiswa, vol. 4, no. 1, pp. 29–34, 2023, doi: 10.23969/brainy.v4i1.54.",
+        "expected_fields": {
+          "authors": [
+            "Ratnamiasih, Ina",
+            "Widi Andini"
+          ],
+          "title": "ANALISIS BEBAN KERJA PADA PT. BPR SUBANG GEMI NASTITI (PERSERODA) KANTOR PUSAT OPERASIONAL DI KOTA SUBANG",
+          "year": 2023,
+          "doi": "10.23969/brainy.v4i1.54",
+          "url": "https://doi.org/10.23969/brainy.v4i1.54",
+          "journal/venue": "Brainy: Jurnal Riset Mahasiswa",
+          "volume": "4",
+          "issue": "1",
+          "pages": "29-34"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Ratnamiasih, I.",
+            "Andini, Widi"
+          ],
+          "title": "ANALISIS BEBAN KERJA PADA PT",
+          "year": 2023,
+          "doi": "10.23969/brainy.v4i1.54",
+          "url": "https://doi.org/10.23969/brainy.v4i1.54",
+          "journal/venue": "BPR SUBANG GEMI NASTITI (PERSERODA) KANTOR PUSAT OPERASIONAL DI KOTA SUBANG,\" Brainy: Jurnal Riset Mahasiswa, vol",
+          "volume": "4",
+          "issue": "1",
+          "pages": "29–34"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Ratnamiasih, I.",
+            "Andini, Widi"
+          ],
+          "title": "ANALISIS BEBAN KERJA PADA PT",
+          "year": 2023,
+          "doi": "10.23969/brainy.v4i1.54",
+          "url": "https://doi.org/10.23969/brainy.v4i1.54",
+          "journal/venue": "BPR SUBANG GEMI NASTITI (PERSERODA) KANTOR PUSAT OPERASIONAL DI KOTA SUBANG,\" Brainy: Jurnal Riset Mahasiswa, vol",
+          "volume": "4",
+          "issue": "1",
+          "pages": "29–34"
+        },
+        "adapter_stripped_fields": [
+          "conferenceTitle",
+          "institution",
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "article-journal-35882be2624f3136:mla9:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "mla9",
+        "reference_type": "article-journal",
+        "detected_style": "mla9",
+        "detected_type": "article-journal",
+        "failed_required_fields": [
+          "title",
+          "journal/venue"
+        ],
+        "formatted_string": "Ratnamiasih, Ina and Widi Andini. “ANALISIS BEBAN KERJA PADA PT. BPR SUBANG GEMI NASTITI (PERSERODA) KANTOR PUSAT OPERASIONAL DI KOTA SUBANG.” Brainy: Jurnal Riset Mahasiswa, vol. 4, no. 1, 2023, pp. 29–34, https://doi.org/10.23969/brainy.v4i1.54.",
+        "expected_fields": {
+          "authors": [
+            "Ratnamiasih, Ina",
+            "Widi Andini"
+          ],
+          "title": "ANALISIS BEBAN KERJA PADA PT. BPR SUBANG GEMI NASTITI (PERSERODA) KANTOR PUSAT OPERASIONAL DI KOTA SUBANG",
+          "year": 2023,
+          "doi": "10.23969/brainy.v4i1.54",
+          "url": "https://doi.org/10.23969/brainy.v4i1.54",
+          "journal/venue": "Brainy: Jurnal Riset Mahasiswa",
+          "volume": "4",
+          "issue": "1",
+          "pages": "29-34"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Ratnamiasih, Ina",
+            "Andini, Widi"
+          ],
+          "title": "ANALISIS BEBAN KERJA PADA PT",
+          "year": 2023,
+          "doi": "10.23969/brainy.v4i1.54",
+          "url": "https://doi.org/10.23969/brainy.v4i1.54",
+          "journal/venue": "Brainy: Jurnal Riset Mahasiswa, vol",
+          "volume": "4",
+          "issue": "1",
+          "pages": "29–34"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Ratnamiasih, Ina",
+            "Andini, Widi"
+          ],
+          "title": "ANALISIS BEBAN KERJA PADA PT",
+          "year": 2023,
+          "doi": "10.23969/brainy.v4i1.54",
+          "url": "https://doi.org/10.23969/brainy.v4i1.54",
+          "journal/venue": "Brainy: Jurnal Riset Mahasiswa, vol",
+          "volume": "4",
+          "issue": "1",
+          "pages": "29–34"
+        },
+        "adapter_stripped_fields": [
+          "conferenceTitle",
+          "institution",
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "article-journal-4f240355be96cf4a:mla9:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "mla9",
+        "reference_type": "article-journal",
+        "detected_style": "mla9",
+        "detected_type": "article-journal",
+        "failed_required_fields": [
+          "journal/venue",
+          "volume"
+        ],
+        "formatted_string": "Al-Douri, Y. “Erratum to ‘The Pressure Effect of the Bulk Modulus Seen by the Charge Density in CdX Compounds’ [Mater. Chem. Phys. 78 (2003) 625–629].” Materials Chemistry and Physics, vol. 82, no. 2, 2003, p. 499, https://doi.org/10.1016/s0254-0584(03)00244-x.",
+        "expected_fields": {
+          "authors": [
+            "Al-Douri, Y."
+          ],
+          "title": "Erratum to “The pressure effect of the bulk modulus seen by the charge density in CdX compounds” [Mater. Chem. Phys. 78 (2003) 625–629]",
+          "year": 2003,
+          "doi": "10.1016/s0254-0584(03)00244-x",
+          "url": "https://doi.org/10.1016/s0254-0584(03)00244-x",
+          "journal/venue": "Materials Chemistry and Physics",
+          "volume": "82",
+          "issue": "2",
+          "pages": "499",
+          "issn": "0254-0584"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Al-Douri, Y"
+          ],
+          "title": "The pressure effect of the bulk modulus seen by the charge density in CdX compounds\" [Mater. Chem. Phys. 78 (2003) 625–629",
+          "year": 2003,
+          "doi": "10.1016/s0254-0584(03)00244-x",
+          "url": "https://doi.org/10.1016/s0254-0584(03)00244-x",
+          "journal/venue": "vol. 82",
+          "volume": "2003",
+          "issue": "2",
+          "pages": "499",
+          "issn": "02540584"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Al-Douri, Y"
+          ],
+          "title": "The pressure effect of the bulk modulus seen by the charge density in CdX compounds\" [Mater. Chem. Phys. 78 (2003) 625–629",
+          "year": 2003,
+          "doi": "10.1016/s0254-0584(03)00244-x",
+          "url": "https://doi.org/10.1016/s0254-0584(03)00244-x",
+          "journal/venue": "vol. 82",
+          "volume": "2003",
+          "issue": "2",
+          "pages": "499",
+          "issn": "02540584"
+        },
+        "adapter_stripped_fields": [
+          "conferenceTitle",
+          "publisher"
+        ],
+        "warnings": [
+          "uncertain_pages",
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "article-journal-8453c54e9f6ae5b4:ieee:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "ieee",
+        "reference_type": "article-journal",
+        "detected_style": "ieee",
+        "detected_type": "book-chapter",
+        "failed_required_fields": [
+          "journal/venue",
+          "issue"
+        ],
+        "formatted_string": "[1]S. V. Matuykin and A. B. Frolova, “PROBLEMS AND MECHANISMS OF INVOLVING UNIVERSITIES IN THE ENGINEERING ACTIVITY OF INDUSTRIAL CLUSTERS,” Фундаментальные исследования (Fundamental research), no. №4 2019, pp. 78–83, 2019, doi: 10.17513/fr.42442.",
+        "expected_fields": {
+          "title": "PROBLEMS AND MECHANISMS OF INVOLVING UNIVERSITIES IN THE ENGINEERING ACTIVITY OF INDUSTRIAL CLUSTERS",
+          "year": 2019,
+          "doi": "10.17513/fr.42442",
+          "url": "https://doi.org/10.17513/fr.42442",
+          "journal/venue": "Фундаментальные исследования (Fundamental research)",
+          "issue": "№4 2019",
+          "pages": "78-83"
+        },
+        "predicted_fields": {
+          "title": "PROBLEMS AND MECHANISMS OF INVOLVING UNIVERSITIES IN THE ENGINEERING ACTIVITY OF INDUSTRIAL CLUSTERS",
+          "year": 2019,
+          "doi": "10.17513/fr.42442",
+          "url": "https://doi.org/10.17513/fr.42442",
+          "journal/venue": "No4",
+          "pages": "78–83"
+        },
+        "raw_predicted_fields": {
+          "title": "PROBLEMS AND MECHANISMS OF INVOLVING UNIVERSITIES IN THE ENGINEERING ACTIVITY OF INDUSTRIAL CLUSTERS",
+          "year": 2019,
+          "doi": "10.17513/fr.42442",
+          "url": "https://doi.org/10.17513/fr.42442",
+          "journal/venue": "Фундаментальные Исследования (Fundamental Research)",
+          "issue": "No4 2019",
+          "pages": "78–83"
+        },
+        "adapter_stripped_fields": [
+          "issn",
+          "issue",
+          "journal",
+          "volume"
+        ],
+        "warnings": [
+          "missing_preferred_fields",
+          "render_output_structurally_incomplete"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-35cca959339406b4:chicago-notes-bib:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "chicago-notes-bib",
+        "reference_type": "book-chapter",
+        "detected_style": "chicago-notes-bib",
+        "detected_type": "article-journal",
+        "failed_required_fields": [
+          "bookTitle",
+          "publisher"
+        ],
+        "formatted_string": "Wallinga, Marnix. “MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension.” In Studies in European Economic Law and Regulation. Springer International Publishing, 2020. https://doi.org/10.1007/978-3-030-54001-2_3.",
+        "expected_fields": {
+          "authors": [
+            "Wallinga, Marnix"
+          ],
+          "title": "MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension",
+          "year": 2020,
+          "doi": "10.1007/978-3-030-54001-2_3",
+          "url": "https://doi.org/10.1007/978-3-030-54001-2_3",
+          "bookTitle": "Studies in European Economic Law and Regulation",
+          "publisher": "Springer International Publishing",
+          "journal/venue": "Studies in European Economic Law and Regulation"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Wallinga, Marnix"
+          ],
+          "title": "MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension",
+          "year": 2020,
+          "doi": "10.1007/978-3-030-54001-2_3",
+          "url": "https://doi.org/10.1007/978-3-030-54001-2_3",
+          "journal/venue": "Studies in European Economic Law and Regulation"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Wallinga, Marnix"
+          ],
+          "title": "MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension",
+          "year": 2020,
+          "doi": "10.1007/978-3-030-54001-2_3",
+          "url": "https://doi.org/10.1007/978-3-030-54001-2_3",
+          "publisher": "Springer International Publishing",
+          "journal/venue": "Studies in European Economic Law and Regulation"
+        },
+        "adapter_stripped_fields": [
+          "isbn",
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields",
+          "render_style_fallback"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-35cca959339406b4:harvard-ctr:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "harvard-ctr",
+        "reference_type": "book-chapter",
+        "detected_style": "harvard-ctr",
+        "detected_type": "article-journal",
+        "failed_required_fields": [
+          "bookTitle",
+          "publisher"
+        ],
+        "formatted_string": "Wallinga, M. (2020) “MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension,” Studies in European Economic Law and Regulation. Springer International Publishing, pp. 71–113. Available at: https://doi.org/10.1007/978-3-030-54001-2_3.",
+        "expected_fields": {
+          "title": "MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension",
+          "year": 2020,
+          "doi": "10.1007/978-3-030-54001-2_3",
+          "url": "https://doi.org/10.1007/978-3-030-54001-2_3",
+          "bookTitle": "Studies in European Economic Law and Regulation",
+          "pages": "71-113",
+          "publisher": "Springer International Publishing",
+          "journal/venue": "Studies in European Economic Law and Regulation"
+        },
+        "predicted_fields": {
+          "title": "MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension",
+          "year": 2020,
+          "doi": "10.1007/978-3-030-54001-2_3",
+          "url": "https://doi.org/10.1007/978-3-030-54001-2_3",
+          "pages": "71–113",
+          "journal/venue": "Studies in European Economic Law and Regulation"
+        },
+        "raw_predicted_fields": {
+          "title": "MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension",
+          "year": 2020,
+          "doi": "10.1007/978-3-030-54001-2_3",
+          "url": "https://doi.org/10.1007/978-3-030-54001-2_3",
+          "pages": "71–113",
+          "publisher": "Springer International Publishing",
+          "journal/venue": "Studies in European Economic Law and Regulation"
+        },
+        "adapter_stripped_fields": [
+          "isbn",
+          "publisher"
+        ],
+        "warnings": [
+          "uncertain_pages",
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-35cca959339406b4:ieee:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "ieee",
+        "reference_type": "book-chapter",
+        "detected_style": "ieee",
+        "detected_type": "article-journal",
+        "failed_required_fields": [
+          "bookTitle",
+          "publisher"
+        ],
+        "formatted_string": "[1]M. Wallinga, “MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension,” in Studies in European Economic Law and Regulation, Springer International Publishing, 2020, pp. 71–113. doi: 10.1007/978-3-030-54001-2_3.",
+        "expected_fields": {
+          "title": "MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension",
+          "year": 2020,
+          "doi": "10.1007/978-3-030-54001-2_3",
+          "url": "https://doi.org/10.1007/978-3-030-54001-2_3",
+          "bookTitle": "Studies in European Economic Law and Regulation",
+          "pages": "71-113",
+          "publisher": "Springer International Publishing",
+          "journal/venue": "Studies in European Economic Law and Regulation"
+        },
+        "predicted_fields": {
+          "title": "MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension",
+          "year": 2020,
+          "doi": "10.1007/978-3-030-54001-2_3",
+          "url": "https://doi.org/10.1007/978-3-030-54001-2_3",
+          "pages": "71–113",
+          "journal/venue": "Studies in European Economic Law and Regulation"
+        },
+        "raw_predicted_fields": {
+          "title": "MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension",
+          "year": 2020,
+          "doi": "10.1007/978-3-030-54001-2_3",
+          "url": "https://doi.org/10.1007/978-3-030-54001-2_3",
+          "pages": "71–113",
+          "publisher": "Springer International Publishing",
+          "journal/venue": "Studies in European Economic Law and Regulation"
+        },
+        "adapter_stripped_fields": [
+          "isbn",
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-35cca959339406b4:mla9:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "mla9",
+        "reference_type": "book-chapter",
+        "detected_style": "mla9",
+        "detected_type": "article-journal",
+        "failed_required_fields": [
+          "bookTitle",
+          "publisher"
+        ],
+        "formatted_string": "Wallinga, Marnix. “MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension.” Studies in European Economic Law and Regulation, Springer International Publishing, 2020, pp. 71–113, https://doi.org/10.1007/978-3-030-54001-2_3.",
+        "expected_fields": {
+          "authors": [
+            "Wallinga, Marnix"
+          ],
+          "title": "MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension",
+          "year": 2020,
+          "doi": "10.1007/978-3-030-54001-2_3",
+          "url": "https://doi.org/10.1007/978-3-030-54001-2_3",
+          "bookTitle": "Studies in European Economic Law and Regulation",
+          "pages": "71-113",
+          "publisher": "Springer International Publishing",
+          "journal/venue": "Studies in European Economic Law and Regulation"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Wallinga, Marnix"
+          ],
+          "title": "MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension",
+          "year": 2020,
+          "doi": "10.1007/978-3-030-54001-2_3",
+          "url": "https://doi.org/10.1007/978-3-030-54001-2_3",
+          "pages": "71–113",
+          "journal/venue": "Studies in European Economic Law and Regulation"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Wallinga, Marnix"
+          ],
+          "title": "MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension",
+          "year": 2020,
+          "doi": "10.1007/978-3-030-54001-2_3",
+          "url": "https://doi.org/10.1007/978-3-030-54001-2_3",
+          "pages": "71–113",
+          "publisher": "Springer International Publishing",
+          "journal/venue": "Studies in European Economic Law and Regulation"
+        },
+        "adapter_stripped_fields": [
+          "isbn",
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-35cca959339406b4:vancouver:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "vancouver",
+        "reference_type": "book-chapter",
+        "detected_style": "vancouver",
+        "detected_type": "article-journal",
+        "failed_required_fields": [
+          "bookTitle",
+          "publisher"
+        ],
+        "formatted_string": "[1]Wallinga M. MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension. Studies in European Economic Law and Regulation, Springer International Publishing; 2020, p. 71–113. https://doi.org/10.1007/978-3-030-54001-2_3.",
+        "expected_fields": {
+          "title": "MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension",
+          "year": 2020,
+          "doi": "10.1007/978-3-030-54001-2_3",
+          "url": "https://doi.org/10.1007/978-3-030-54001-2_3",
+          "bookTitle": "Studies in European Economic Law and Regulation",
+          "pages": "71-113",
+          "publisher": "Springer International Publishing",
+          "journal/venue": "Studies in European Economic Law and Regulation"
+        },
+        "predicted_fields": {
+          "title": "MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension",
+          "year": 2020,
+          "doi": "10.1007/978-3-030-54001-2_3",
+          "url": "https://doi.org/10.1007/978-3-030-54001-2_3",
+          "pages": "71–113",
+          "journal/venue": "Studies in European Economic Law and Regulation"
+        },
+        "raw_predicted_fields": {
+          "title": "MiFID and MiFID II Conduct of Business Rules and Their Relationship with Private Law: The EU Dimension",
+          "year": 2020,
+          "doi": "10.1007/978-3-030-54001-2_3",
+          "url": "https://doi.org/10.1007/978-3-030-54001-2_3",
+          "pages": "71–113",
+          "publisher": "Springer International Publishing",
+          "journal/venue": "Studies in European Economic Law and Regulation"
+        },
+        "adapter_stripped_fields": [
+          "isbn",
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-73959f361b975d3c:vancouver:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "vancouver",
+        "reference_type": "book-chapter",
+        "detected_style": "vancouver",
+        "detected_type": "book-chapter",
+        "failed_required_fields": [
+          "bookTitle",
+          "journal/venue"
+        ],
+        "formatted_string": "[1]Duffie D. Merton, Robert C. (Born 1944). The New Palgrave Dictionary of Economics, Palgrave Macmillan UK; 2008, p. 1–5. https://doi.org/10.1057/978-1-349-95121-5_2796-1.",
+        "expected_fields": {
+          "title": "Merton, Robert C. (Born 1944)",
+          "year": 2008,
+          "doi": "10.1057/978-1-349-95121-5_2796-1",
+          "url": "https://doi.org/10.1057/978-1-349-95121-5_2796-1",
+          "bookTitle": "The New Palgrave Dictionary of Economics",
+          "pages": "1-5",
+          "isbn": "9781349951215",
+          "publisher": "Palgrave Macmillan UK",
+          "journal/venue": "The New Palgrave Dictionary of Economics"
+        },
+        "predicted_fields": {
+          "title": "Merton, Robert C. (Born 1944)",
+          "year": 2008,
+          "doi": "10.1057/978-1-349-95121-5_2796-1",
+          "url": "https://doi.org/10.1057/978-1-349-95121-5_2796-1",
+          "bookTitle": "(Born 1944). The New Palgrave Dictionary of Economics",
+          "pages": "1–5",
+          "isbn": "9781349951215",
+          "publisher": "Palgrave Macmillan UK",
+          "journal/venue": "(Born 1944). The New Palgrave Dictionary of Economics"
+        },
+        "raw_predicted_fields": {
+          "title": "Merton, Robert C. (Born 1944)",
+          "year": 2008,
+          "doi": "10.1057/978-1-349-95121-5_2796-1",
+          "url": "https://doi.org/10.1057/978-1-349-95121-5_2796-1",
+          "bookTitle": "(Born 1944). The New Palgrave Dictionary of Economics",
+          "pages": "1–5",
+          "isbn": "9781349951215",
+          "publisher": "Palgrave Macmillan UK",
+          "journal/venue": "(Born 1944). The New Palgrave Dictionary of Economics"
+        },
+        "adapter_stripped_fields": [],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-7c12d5836a8bf3f8:chicago-notes-bib:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "chicago-notes-bib",
+        "reference_type": "book-chapter",
+        "detected_style": "chicago-notes-bib",
+        "detected_type": "article-journal",
+        "failed_required_fields": [
+          "bookTitle",
+          "publisher"
+        ],
+        "formatted_string": "Pérez, Adriana, Alana F. Roa, and Nayibe Rosado-Mendinueta. “Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment.” In Transactions on Computer Systems and Networks. Springer Nature Singapore, 2022. https://doi.org/10.1007/978-981-19-3383-7_37.",
+        "expected_fields": {
+          "authors": [
+            "Pérez, Adriana",
+            "Roa, Alana F.",
+            "Rosado-Mendinueta, Nayibe"
+          ],
+          "title": "Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment",
+          "year": 2022,
+          "doi": "10.1007/978-981-19-3383-7_37",
+          "url": "https://doi.org/10.1007/978-981-19-3383-7_37",
+          "bookTitle": "Transactions on Computer Systems and Networks",
+          "publisher": "Springer Nature Singapore",
+          "journal/venue": "Transactions on Computer Systems and Networks"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Pérez, Adriana",
+            "Roa, Alana F.",
+            "Rosado-Mendinueta, Nayibe"
+          ],
+          "title": "Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment",
+          "year": 2022,
+          "doi": "10.1007/978-981-19-3383-7_37",
+          "url": "https://doi.org/10.1007/978-981-19-3383-7_37",
+          "journal/venue": "Transactions on Computer Systems and Networks"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Pérez, Adriana",
+            "Roa, Alana F.",
+            "Rosado-Mendinueta, Nayibe"
+          ],
+          "title": "Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment",
+          "year": 2022,
+          "doi": "10.1007/978-981-19-3383-7_37",
+          "url": "https://doi.org/10.1007/978-981-19-3383-7_37",
+          "publisher": "Springer Nature Singapore",
+          "journal/venue": "Transactions on Computer Systems and Networks"
+        },
+        "adapter_stripped_fields": [
+          "isbn",
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields",
+          "render_style_fallback"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-7c12d5836a8bf3f8:harvard-ctr:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "harvard-ctr",
+        "reference_type": "book-chapter",
+        "detected_style": "harvard-ctr",
+        "detected_type": "article-journal",
+        "failed_required_fields": [
+          "bookTitle",
+          "publisher"
+        ],
+        "formatted_string": "Pérez, A., Roa, A.F. and Rosado-Mendinueta, N. (2022) “Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment,” Transactions on Computer Systems and Networks. Springer Nature Singapore, pp. 459–470. Available at: https://doi.org/10.1007/978-981-19-3383-7_37.",
+        "expected_fields": {
+          "title": "Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment",
+          "year": 2022,
+          "doi": "10.1007/978-981-19-3383-7_37",
+          "url": "https://doi.org/10.1007/978-981-19-3383-7_37",
+          "bookTitle": "Transactions on Computer Systems and Networks",
+          "pages": "459-470",
+          "publisher": "Springer Nature Singapore",
+          "journal/venue": "Transactions on Computer Systems and Networks"
+        },
+        "predicted_fields": {
+          "title": "Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment",
+          "year": 2022,
+          "doi": "10.1007/978-981-19-3383-7_37",
+          "url": "https://doi.org/10.1007/978-981-19-3383-7_37",
+          "pages": "459–470",
+          "journal/venue": "Transactions on Computer Systems and Networks"
+        },
+        "raw_predicted_fields": {
+          "title": "Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment",
+          "year": 2022,
+          "doi": "10.1007/978-981-19-3383-7_37",
+          "url": "https://doi.org/10.1007/978-981-19-3383-7_37",
+          "pages": "459–470",
+          "publisher": "Springer Nature Singapore",
+          "journal/venue": "Transactions on Computer Systems and Networks"
+        },
+        "adapter_stripped_fields": [
+          "isbn",
+          "publisher"
+        ],
+        "warnings": [
+          "uncertain_pages",
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-7c12d5836a8bf3f8:ieee:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "ieee",
+        "reference_type": "book-chapter",
+        "detected_style": "ieee",
+        "detected_type": "article-journal",
+        "failed_required_fields": [
+          "bookTitle",
+          "publisher"
+        ],
+        "formatted_string": "[1]A. Pérez, A. F. Roa, and N. Rosado-Mendinueta, “Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment,” in Transactions on Computer Systems and Networks, Springer Nature Singapore, 2022, pp. 459–470. doi: 10.1007/978-981-19-3383-7_37.",
+        "expected_fields": {
+          "title": "Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment",
+          "year": 2022,
+          "doi": "10.1007/978-981-19-3383-7_37",
+          "url": "https://doi.org/10.1007/978-981-19-3383-7_37",
+          "bookTitle": "Transactions on Computer Systems and Networks",
+          "pages": "459-470",
+          "publisher": "Springer Nature Singapore",
+          "journal/venue": "Transactions on Computer Systems and Networks"
+        },
+        "predicted_fields": {
+          "title": "Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment",
+          "year": 2022,
+          "doi": "10.1007/978-981-19-3383-7_37",
+          "url": "https://doi.org/10.1007/978-981-19-3383-7_37",
+          "pages": "459–470",
+          "journal/venue": "Transactions on Computer Systems and Networks"
+        },
+        "raw_predicted_fields": {
+          "title": "Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment",
+          "year": 2022,
+          "doi": "10.1007/978-981-19-3383-7_37",
+          "url": "https://doi.org/10.1007/978-981-19-3383-7_37",
+          "pages": "459–470",
+          "publisher": "Springer Nature Singapore",
+          "journal/venue": "Transactions on Computer Systems and Networks"
+        },
+        "adapter_stripped_fields": [
+          "isbn",
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-7c12d5836a8bf3f8:mla9:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "mla9",
+        "reference_type": "book-chapter",
+        "detected_style": "mla9",
+        "detected_type": "article-journal",
+        "failed_required_fields": [
+          "bookTitle",
+          "publisher"
+        ],
+        "formatted_string": "Pérez, Adriana, et al. “Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment.” Transactions on Computer Systems and Networks, Springer Nature Singapore, 2022, pp. 459–70, https://doi.org/10.1007/978-981-19-3383-7_37.",
+        "expected_fields": {
+          "authors": [
+            "Pérez, Adriana",
+            "Roa, Alana F.",
+            "Rosado-Mendinueta, Nayibe"
+          ],
+          "title": "Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment",
+          "year": 2022,
+          "doi": "10.1007/978-981-19-3383-7_37",
+          "url": "https://doi.org/10.1007/978-981-19-3383-7_37",
+          "bookTitle": "Transactions on Computer Systems and Networks",
+          "publisher": "Springer Nature Singapore",
+          "journal/venue": "Transactions on Computer Systems and Networks"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Pérez, Adriana",
+            "Roa, Alana F.",
+            "Rosado-Mendinueta, Nayibe"
+          ],
+          "title": "Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment",
+          "year": 2022,
+          "doi": "10.1007/978-981-19-3383-7_37",
+          "url": "https://doi.org/10.1007/978-981-19-3383-7_37",
+          "journal/venue": "Transactions on Computer Systems and Networks"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Pérez, Adriana",
+            "Roa, Alana F.",
+            "Rosado-Mendinueta, Nayibe"
+          ],
+          "title": "Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment",
+          "year": 2022,
+          "doi": "10.1007/978-981-19-3383-7_37",
+          "url": "https://doi.org/10.1007/978-981-19-3383-7_37",
+          "publisher": "Springer Nature Singapore",
+          "journal/venue": "Transactions on Computer Systems and Networks"
+        },
+        "adapter_stripped_fields": [
+          "isbn",
+          "publisher"
+        ],
+        "warnings": [
+          "input_style_uncertain",
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-7c12d5836a8bf3f8:vancouver:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "vancouver",
+        "reference_type": "book-chapter",
+        "detected_style": "vancouver",
+        "detected_type": "article-journal",
+        "failed_required_fields": [
+          "bookTitle",
+          "publisher"
+        ],
+        "formatted_string": "[1]Pérez A, Roa AF, Rosado-Mendinueta N. Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment. Transactions on Computer Systems and Networks, Springer Nature Singapore; 2022, p. 459–70. https://doi.org/10.1007/978-981-19-3383-7_37.",
+        "expected_fields": {
+          "title": "Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment",
+          "year": 2022,
+          "doi": "10.1007/978-981-19-3383-7_37",
+          "url": "https://doi.org/10.1007/978-981-19-3383-7_37",
+          "bookTitle": "Transactions on Computer Systems and Networks",
+          "publisher": "Springer Nature Singapore",
+          "journal/venue": "Transactions on Computer Systems and Networks"
+        },
+        "predicted_fields": {
+          "title": "Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment",
+          "year": 2022,
+          "doi": "10.1007/978-981-19-3383-7_37",
+          "url": "https://doi.org/10.1007/978-981-19-3383-7_37",
+          "journal/venue": "Transactions on Computer Systems and Networks"
+        },
+        "raw_predicted_fields": {
+          "title": "Flipgrid for Social Interaction and Collaborative Learning in a Virtual Learning Environment",
+          "year": 2022,
+          "doi": "10.1007/978-981-19-3383-7_37",
+          "url": "https://doi.org/10.1007/978-981-19-3383-7_37",
+          "publisher": "Springer Nature Singapore",
+          "journal/venue": "Transactions on Computer Systems and Networks"
+        },
+        "adapter_stripped_fields": [
+          "isbn",
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-9cf6ab99ace9bad7:apa7:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "apa7",
+        "reference_type": "book-chapter",
+        "detected_style": "apa7",
+        "detected_type": "conference-paper",
+        "failed_required_fields": [
+          "bookTitle",
+          "journal/venue"
+        ],
+        "formatted_string": "Djamarin, D. (2019). Adaptation Novel to Film: Contribution Malay Literary. In Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI) (pp. 142–146). Sciendo. https://doi.org/10.2478/9783110680003-027",
+        "expected_fields": {
+          "title": "Adaptation Novel to Film: Contribution Malay Literary",
+          "year": 2019,
+          "doi": "10.2478/9783110680003-027",
+          "url": "https://doi.org/10.2478/9783110680003-027",
+          "bookTitle": "Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI)",
+          "pages": "142-146",
+          "isbn": "9783110680003",
+          "publisher": "Sciendo",
+          "journal/venue": "Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI)"
+        },
+        "predicted_fields": {
+          "title": "Adaptation Novel to Film: Contribution Malay Literary",
+          "year": 2019,
+          "doi": "10.2478/9783110680003-027",
+          "url": "https://doi.org/10.2478/9783110680003-027",
+          "pages": "142–146",
+          "isbn": "9783110680003",
+          "publisher": "Sciendo"
+        },
+        "raw_predicted_fields": {
+          "title": "Adaptation Novel to Film: Contribution Malay Literary",
+          "year": 2019,
+          "doi": "10.2478/9783110680003-027",
+          "url": "https://doi.org/10.2478/9783110680003-027",
+          "bookTitle": "Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI)",
+          "pages": "142–146",
+          "isbn": "9783110680003",
+          "publisher": "Sciendo"
+        },
+        "adapter_stripped_fields": [
+          "bookTitle",
+          "institution"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-9cf6ab99ace9bad7:chicago-notes-bib:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "chicago-notes-bib",
+        "reference_type": "book-chapter",
+        "detected_style": "chicago-notes-bib",
+        "detected_type": "conference-paper",
+        "failed_required_fields": [
+          "bookTitle",
+          "journal/venue"
+        ],
+        "formatted_string": "Djamarin, Djusmalinar. “Adaptation Novel to Film: Contribution Malay Literary.” In Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI). Sciendo, 2019. https://doi.org/10.2478/9783110680003-027.",
+        "expected_fields": {
+          "authors": [
+            "Djamarin, Djusmalinar"
+          ],
+          "title": "Adaptation Novel to Film: Contribution Malay Literary",
+          "year": 2019,
+          "doi": "10.2478/9783110680003-027",
+          "url": "https://doi.org/10.2478/9783110680003-027",
+          "bookTitle": "Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI)",
+          "isbn": "9783110680003",
+          "publisher": "Sciendo",
+          "journal/venue": "Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI)"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Djamarin, Djusmalinar"
+          ],
+          "title": "Adaptation Novel to Film: Contribution Malay Literary",
+          "year": 2019,
+          "doi": "10.2478/9783110680003-027",
+          "url": "https://doi.org/10.2478/9783110680003-027",
+          "isbn": "9783110680003",
+          "publisher": "Sciendo"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Djamarin, Djusmalinar"
+          ],
+          "title": "Adaptation Novel to Film: Contribution Malay Literary",
+          "year": 2019,
+          "doi": "10.2478/9783110680003-027",
+          "url": "https://doi.org/10.2478/9783110680003-027",
+          "bookTitle": "Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI)",
+          "isbn": "9783110680003",
+          "publisher": "Sciendo"
+        },
+        "adapter_stripped_fields": [
+          "bookTitle",
+          "institution"
+        ],
+        "warnings": [
+          "missing_preferred_fields",
+          "render_style_fallback"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-9cf6ab99ace9bad7:harvard-ctr:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "harvard-ctr",
+        "reference_type": "book-chapter",
+        "detected_style": "harvard-ctr",
+        "detected_type": "conference-paper",
+        "failed_required_fields": [
+          "bookTitle",
+          "journal/venue"
+        ],
+        "formatted_string": "Djamarin, D. (2019) “Adaptation Novel to Film: Contribution Malay Literary,” Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI). Sciendo, pp. 142–146. Available at: https://doi.org/10.2478/9783110680003-027.",
+        "expected_fields": {
+          "title": "Adaptation Novel to Film: Contribution Malay Literary",
+          "year": 2019,
+          "doi": "10.2478/9783110680003-027",
+          "url": "https://doi.org/10.2478/9783110680003-027",
+          "bookTitle": "Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI)",
+          "pages": "142-146",
+          "isbn": "9783110680003",
+          "publisher": "Sciendo",
+          "journal/venue": "Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI)"
+        },
+        "predicted_fields": {
+          "title": "Adaptation Novel to Film: Contribution Malay Literary",
+          "year": 2019,
+          "doi": "10.2478/9783110680003-027",
+          "url": "https://doi.org/10.2478/9783110680003-027",
+          "pages": "142–146",
+          "isbn": "9783110680003",
+          "publisher": "Sciendo"
+        },
+        "raw_predicted_fields": {
+          "title": "Adaptation Novel to Film: Contribution Malay Literary",
+          "year": 2019,
+          "doi": "10.2478/9783110680003-027",
+          "url": "https://doi.org/10.2478/9783110680003-027",
+          "bookTitle": "Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI)",
+          "pages": "142–146",
+          "isbn": "9783110680003",
+          "publisher": "Sciendo"
+        },
+        "adapter_stripped_fields": [
+          "bookTitle",
+          "institution"
+        ],
+        "warnings": [
+          "uncertain_pages",
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-9cf6ab99ace9bad7:ieee:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "ieee",
+        "reference_type": "book-chapter",
+        "detected_style": "ieee",
+        "detected_type": "conference-paper",
+        "failed_required_fields": [
+          "bookTitle",
+          "journal/venue"
+        ],
+        "formatted_string": "[1]D. Djamarin, “Adaptation Novel to Film: Contribution Malay Literary,” in Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI), Sciendo, 2019, pp. 142–146. doi: 10.2478/9783110680003-027.",
+        "expected_fields": {
+          "title": "Adaptation Novel to Film: Contribution Malay Literary",
+          "year": 2019,
+          "doi": "10.2478/9783110680003-027",
+          "url": "https://doi.org/10.2478/9783110680003-027",
+          "bookTitle": "Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI)",
+          "pages": "142-146",
+          "isbn": "9783110680003",
+          "publisher": "Sciendo",
+          "journal/venue": "Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI)"
+        },
+        "predicted_fields": {
+          "title": "Adaptation Novel to Film: Contribution Malay Literary",
+          "year": 2019,
+          "doi": "10.2478/9783110680003-027",
+          "url": "https://doi.org/10.2478/9783110680003-027",
+          "pages": "142–146",
+          "isbn": "9783110680003",
+          "publisher": "Sciendo"
+        },
+        "raw_predicted_fields": {
+          "title": "Adaptation Novel to Film: Contribution Malay Literary",
+          "year": 2019,
+          "doi": "10.2478/9783110680003-027",
+          "url": "https://doi.org/10.2478/9783110680003-027",
+          "bookTitle": "Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI)",
+          "pages": "142–146",
+          "isbn": "9783110680003",
+          "publisher": "Sciendo"
+        },
+        "adapter_stripped_fields": [
+          "bookTitle",
+          "institution"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-9cf6ab99ace9bad7:mla9:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "mla9",
+        "reference_type": "book-chapter",
+        "detected_style": "mla9",
+        "detected_type": "conference-paper",
+        "failed_required_fields": [
+          "bookTitle",
+          "journal/venue"
+        ],
+        "formatted_string": "Djamarin, Djusmalinar. “Adaptation Novel to Film: Contribution Malay Literary.” Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI), Sciendo, 2019, pp. 142–46, https://doi.org/10.2478/9783110680003-027.",
+        "expected_fields": {
+          "authors": [
+            "Djamarin, Djusmalinar"
+          ],
+          "title": "Adaptation Novel to Film: Contribution Malay Literary",
+          "year": 2019,
+          "doi": "10.2478/9783110680003-027",
+          "url": "https://doi.org/10.2478/9783110680003-027",
+          "bookTitle": "Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI)",
+          "isbn": "9783110680003",
+          "publisher": "Sciendo",
+          "journal/venue": "Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI)"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Djamarin, Djusmalinar"
+          ],
+          "title": "Adaptation Novel to Film: Contribution Malay Literary",
+          "year": 2019,
+          "doi": "10.2478/9783110680003-027",
+          "url": "https://doi.org/10.2478/9783110680003-027",
+          "isbn": "9783110680003",
+          "publisher": "Sciendo"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Djamarin, Djusmalinar"
+          ],
+          "title": "Adaptation Novel to Film: Contribution Malay Literary",
+          "year": 2019,
+          "doi": "10.2478/9783110680003-027",
+          "url": "https://doi.org/10.2478/9783110680003-027",
+          "bookTitle": "Proceeding of The 13th International Conference onMalaysia-Indonesia Relations (PAHMI)",
+          "isbn": "9783110680003",
+          "publisher": "Sciendo"
+        },
+        "adapter_stripped_fields": [
+          "bookTitle",
+          "institution"
+        ],
+        "warnings": [
+          "input_style_uncertain",
+          "missing_preferred_fields"
+        ]
+      }
+    ]
+  }
+}

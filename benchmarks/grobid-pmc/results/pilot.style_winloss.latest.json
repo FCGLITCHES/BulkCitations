@@ -1,0 +1,165 @@
+{
+  "generated_at": "2026-04-21T23:21:42.523Z",
+  "mode": "pilot",
+  "compared": 1362,
+  "model_wins": 0,
+  "model_losses": 0,
+  "both_correct": 1242,
+  "both_incorrect": 120,
+  "model_net": 0,
+  "model_win_rate": 0,
+  "by_reference_type": [
+    {
+      "key": "report",
+      "compared": 168,
+      "model_wins": 0,
+      "model_losses": 0,
+      "both_correct": 158,
+      "both_incorrect": 10,
+      "model_net": 0,
+      "model_win_rate": 0
+    },
+    {
+      "key": "article-journal",
+      "compared": 162,
+      "model_wins": 0,
+      "model_losses": 0,
+      "both_correct": 156,
+      "both_incorrect": 6,
+      "model_net": 0,
+      "model_win_rate": 0
+    },
+    {
+      "key": "book",
+      "compared": 156,
+      "model_wins": 0,
+      "model_losses": 0,
+      "both_correct": 148,
+      "both_incorrect": 8,
+      "model_net": 0,
+      "model_win_rate": 0
+    },
+    {
+      "key": "patent",
+      "compared": 156,
+      "model_wins": 0,
+      "model_losses": 0,
+      "both_correct": 150,
+      "both_incorrect": 6,
+      "model_net": 0,
+      "model_win_rate": 0
+    },
+    {
+      "key": "webpage",
+      "compared": 156,
+      "model_wins": 0,
+      "model_losses": 0,
+      "both_correct": 101,
+      "both_incorrect": 55,
+      "model_net": 0,
+      "model_win_rate": 0
+    },
+    {
+      "key": "book-chapter",
+      "compared": 144,
+      "model_wins": 0,
+      "model_losses": 0,
+      "both_correct": 141,
+      "both_incorrect": 3,
+      "model_net": 0,
+      "model_win_rate": 0
+    },
+    {
+      "key": "thesis",
+      "compared": 144,
+      "model_wins": 0,
+      "model_losses": 0,
+      "both_correct": 118,
+      "both_incorrect": 26,
+      "model_net": 0,
+      "model_win_rate": 0
+    },
+    {
+      "key": "conference-paper",
+      "compared": 138,
+      "model_wins": 0,
+      "model_losses": 0,
+      "both_correct": 138,
+      "both_incorrect": 0,
+      "model_net": 0,
+      "model_win_rate": 0
+    },
+    {
+      "key": "preprint",
+      "compared": 138,
+      "model_wins": 0,
+      "model_losses": 0,
+      "both_correct": 132,
+      "both_incorrect": 6,
+      "model_net": 0,
+      "model_win_rate": 0
+    }
+  ],
+  "by_style": [
+    {
+      "key": "apa7",
+      "compared": 227,
+      "model_wins": 0,
+      "model_losses": 0,
+      "both_correct": 170,
+      "both_incorrect": 57,
+      "model_net": 0,
+      "model_win_rate": 0
+    },
+    {
+      "key": "chicago-notes-bib",
+      "compared": 227,
+      "model_wins": 0,
+      "model_losses": 0,
+      "both_correct": 213,
+      "both_incorrect": 14,
+      "model_net": 0,
+      "model_win_rate": 0
+    },
+    {
+      "key": "harvard-ctr",
+      "compared": 227,
+      "model_wins": 0,
+      "model_losses": 0,
+      "both_correct": 221,
+      "both_incorrect": 6,
+      "model_net": 0,
+      "model_win_rate": 0
+    },
+    {
+      "key": "ieee",
+      "compared": 227,
+      "model_wins": 0,
+      "model_losses": 0,
+      "both_correct": 222,
+      "both_incorrect": 5,
+      "model_net": 0,
+      "model_win_rate": 0
+    },
+    {
+      "key": "mla9",
+      "compared": 227,
+      "model_wins": 0,
+      "model_losses": 0,
+      "both_correct": 192,
+      "both_incorrect": 35,
+      "model_net": 0,
+      "model_win_rate": 0
+    },
+    {
+      "key": "vancouver",
+      "compared": 227,
+      "model_wins": 0,
+      "model_losses": 0,
+      "both_correct": 224,
+      "both_incorrect": 3,
+      "model_net": 0,
+      "model_win_rate": 0
+    }
+  ]
+}

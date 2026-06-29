@@ -1,0 +1,24 @@
+{
+  "thresholdSetVersion": "policy-1",
+  "global": {
+    "exact_confidence": 0.82,
+    "exact_margin": 0.12,
+    "family_confidence": 0.67,
+    "ood_max": 0.55
+  },
+  "profileThresholds": {
+    "clean-structured": {},
+    "noisy-short": {
+      "exact_confidence": 0.9,
+      "exact_margin": 0.18,
+      "family_confidence": 0.73,
+      "ood_max": 0.45
+    },
+    "unstructured-long": {
+      "exact_confidence": 0.88,
+      "exact_margin": 0.16,
+      "family_confidence": 0.71,
+      "ood_max": 0.5
+    }
+  }
+}

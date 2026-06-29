@@ -1,0 +1,35 @@
+=== field-recovery by mode across scorer variants ===
+mode                    v0_strict   v1_unicode   v2_authors  v3_fuzztext
+structured_clean            91.3%        91.5%        96.2%        96.2%
+structured_noisy            78.1%        78.4%        79.8%        80.3%
+ocr_like                    66.8%        67.1%        69.9%        84.0%
+pasted_pdf_copy             81.7%        81.7%        83.4%        83.4%
+multiline_numbered          86.6%        86.5%        89.3%        89.3%
+ALL                         81.1%        81.3%        84.0%        87.1%
+
+=== full-recover by mode across scorer variants ===
+mode                    v0_strict   v1_unicode   v2_authors  v3_fuzztext
+structured_clean            66.7%        66.7%        84.3%        84.3%
+structured_noisy            48.0%        48.0%        52.0%        53.3%
+ocr_like                    20.9%        20.9%        23.2%        53.6%
+pasted_pdf_copy             52.4%        51.9%        57.1%        57.1%
+multiline_numbered          63.0%        63.0%        73.0%        73.0%
+
+=== authors field recovery by mode across variants ===
+mode                    v0_strict   v1_unicode   v2_authors  v3_fuzztext
+structured_clean            53.8%        57.6%        88.2%        88.2%
+structured_noisy            62.8%        64.3%        75.0%        75.0%
+ocr_like                    59.0%        60.1%        78.3%        78.3%
+pasted_pdf_copy             67.1%        68.7%        79.3%        79.3%
+multiline_numbered          62.8%        63.9%        81.3%        81.3%
+
+=== title field recovery by mode across variants ===
+mode                    v0_strict   v1_unicode   v2_authors  v3_fuzztext
+structured_clean            99.5%        99.5%        99.5%        99.5%
+structured_noisy            81.9%        82.7%        82.7%        84.7%
+ocr_like                    42.8%        43.6%        43.6%        92.4%
+pasted_pdf_copy             94.7%        94.3%        94.3%        94.3%
+multiline_numbered          86.4%        86.3%        86.3%        86.3%
+
+non-Latin expected authors (strict→empty, unicode→nonempty): 36/1000
+non-Latin expected titles: 24/1000

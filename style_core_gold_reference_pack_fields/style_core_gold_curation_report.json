@@ -1,0 +1,150 @@
+{
+  "input_file": "style-core-freeze-2026-04-13T22-43-05-056Z.precert-pool.ndjson",
+  "dataset_version": "style-core-gold-auto-curated-v2-fields",
+  "created_at_utc": "2026-04-23T03:07:17Z",
+  "row_counts": {
+    "input_rows": 20250,
+    "gold_reference_rows": 7197,
+    "quarantine_review_rows": 13053,
+    "direct_import_rows": 7197
+  },
+  "split_counts_all_rows": {
+    "train": 14307,
+    "val": 2988,
+    "test": 2955
+  },
+  "split_counts_gold_import": {
+    "train": 5060,
+    "val": 1076,
+    "test": 1061
+  },
+  "corrected_label_counts_all_detected_or_gold": {
+    "expected_style": {
+      "apa7": 5636,
+      "vancouver": 5053,
+      "chicago-notes-bib": 3327,
+      "mla9": 2617,
+      "ieee": 1952,
+      "harvard-ctr": 1665
+    },
+    "expected_type": {
+      "article-journal": 11889,
+      "book": 3437,
+      "book-chapter": 3031,
+      "conference-paper": 1165,
+      "report": 434,
+      "thesis": 211,
+      "preprint": 83
+    }
+  },
+  "style_changes_from_original": {
+    "mla9 -> vancouver": 307,
+    "apa7 -> vancouver": 247,
+    "harvard-ctr -> vancouver": 220,
+    "chicago-notes-bib -> vancouver": 155,
+    "vancouver -> ieee": 145,
+    "mla9 -> chicago-notes-bib": 115,
+    "harvard-ctr -> chicago-notes-bib": 71,
+    "mla9 -> ieee": 63,
+    "chicago-notes-bib -> apa7": 56,
+    "mla9 -> apa7": 51,
+    "vancouver -> harvard-ctr": 49,
+    "chicago-notes-bib -> harvard-ctr": 46,
+    "harvard-ctr -> mla9": 38,
+    "vancouver -> chicago-notes-bib": 33,
+    "chicago-notes-bib -> ieee": 32,
+    "chicago-notes-bib -> mla9": 25,
+    "mla9 -> harvard-ctr": 18,
+    "harvard-ctr -> apa7": 11,
+    "apa7 -> chicago-notes-bib": 1,
+    "apa7 -> harvard-ctr": 1
+  },
+  "type_changes_from_original": {
+    "book-chapter -> article-journal": 4299,
+    "article-journal -> book": 2013,
+    "book-chapter -> book": 463,
+    "book -> book-chapter": 459,
+    "article-journal -> book-chapter": 312,
+    "book-chapter -> conference-paper": 288,
+    "article-journal -> report": 151,
+    "article-journal -> conference-paper": 114,
+    "book-chapter -> report": 85,
+    "report -> article-journal": 60,
+    "conference-paper -> article-journal": 26,
+    "book-chapter -> thesis": 26,
+    "book-chapter -> preprint": 22,
+    "conference-paper -> book-chapter": 15,
+    "article-journal -> preprint": 14,
+    "report -> conference-paper": 8,
+    "conference-paper -> book": 6,
+    "article-journal -> thesis": 6,
+    "report -> book": 6,
+    "report -> book-chapter": 4,
+    "book -> report": 4,
+    "book -> article-journal": 3,
+    "preprint -> thesis": 2,
+    "preprint -> conference-paper": 2,
+    "report -> preprint": 1,
+    "preprint -> article-journal": 1,
+    "conference-paper -> report": 1
+  },
+  "quarantine_reject_reason_counts": {
+    "style_uncertain": 7080,
+    "type_uncertain": 4228,
+    "excluded_gold_kind:style_noisy": 3000,
+    "style_below_gold_confidence": 2317,
+    "type_below_gold_confidence": 1614,
+    "missing_required_field:bookTitle": 1558,
+    "missing_required_field:journal": 1161,
+    "missing_required_field:authors": 782,
+    "field_incomplete": 466,
+    "duplicate_normalized_raw_text": 362,
+    "missing_required_field:title": 247,
+    "missing_required_field:publisher": 200,
+    "missing_required_field:conferenceTitle": 116,
+    "missing_required_field:institution": 59,
+    "missing_required_field:authors_or_institution": 20,
+    "missing_required_field:year": 18
+  },
+  "field_missing_required_counts_all_rows": {
+    "book-chapter.bookTitle": 1558,
+    "article-journal.journal": 1161,
+    "article-journal.authors": 315,
+    "book.authors": 274,
+    "book.publisher": 200,
+    "article-journal.title": 168,
+    "conference-paper.conferenceTitle": 116,
+    "book-chapter.authors": 112,
+    "conference-paper.authors": 60,
+    "thesis.institution": 59,
+    "book-chapter.title": 42,
+    "report.authors_or_institution": 20,
+    "book.title": 19,
+    "preprint.authors": 15,
+    "conference-paper.title": 15,
+    "book-chapter.year": 12,
+    "book.year": 6,
+    "thesis.authors": 6,
+    "report.title": 3
+  },
+  "validation": {
+    "jsonl_parse_counts": {
+      "style_core_all_full_audit.ndjson": 20250,
+      "style_core_gold_full_audit.ndjson": 7197,
+      "style_core_quarantine_review.ndjson": 13053,
+      "style_core_gold_import_flat.jsonl": 7197
+    },
+    "gold_import_duplicate_raw_text_count": 0,
+    "gold_import_required_field_fail_count": 0,
+    "gold_import_uses_val_not_validation": true,
+    "raw_text_preserved_from_input": true,
+    "allowed_dataset_splits_only": true,
+    "allowed_gold_enums_only": true
+  },
+  "notes": [
+    "raw_text is preserved exactly from the uploaded precert pool; parsing uses an HTML-unescaped working copy only internally.",
+    "Rows whose style/type/fields could not be safely certified were kept in style_core_quarantine_review.ndjson instead of being imported as gold.",
+    "Direct import rows use dataset_split=val, never validation.",
+    "Exact duplicate raw_text rows are not duplicated in the direct import file because the seed script collides on raw_text."
+  ]
+}

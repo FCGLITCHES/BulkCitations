@@ -1,0 +1,2240 @@
+{
+  "generated_at": "2026-04-21T13:30:36.002Z",
+  "mode": "full",
+  "profile": "current-runtime",
+  "parse_profile": "core_parse_fast",
+  "source_type": "text",
+  "hardware_profile": "benchmark_5600h",
+  "benchmark_variant": "grobid_compare",
+  "slice_preset": "pathological_3001_3400",
+  "semantic_output_hash": "sha256:a0d71f23b08c661aa8cdaf21de281b9e6040689ad779d5770efb1c4e95b7025a",
+  "slice_start": 3001,
+  "slice_end": 3400,
+  "slice_row_count": 400,
+  "clean_debug": {
+    "by_structure": [
+      {
+        "structure_class": "structured",
+        "compared": 362,
+        "soft_instance_f1": 0.884,
+        "macro_soft_f1": 0.9847
+      },
+      {
+        "structure_class": "unstructured",
+        "compared": 0,
+        "soft_instance_f1": 0,
+        "macro_soft_f1": 0
+      }
+    ],
+    "type_accuracy": {
+      "correct": 362,
+      "compared": 362,
+      "accuracy": 1
+    },
+    "style_accuracy": {
+      "correct": 354,
+      "compared": 362,
+      "accuracy": 0.9779
+    },
+    "style_family_accuracy": {
+      "correct": 362,
+      "compared": 362,
+      "accuracy": 1
+    },
+    "adversarial_pair_accuracy": [
+      {
+        "pair_name": "apa7_vs_harvard-ctr",
+        "styles": [
+          "apa7",
+          "harvard-ctr"
+        ],
+        "correct": 122,
+        "compared": 122,
+        "accuracy": 1
+      },
+      {
+        "pair_name": "mla9_vs_chicago-notes-bib",
+        "styles": [
+          "mla9",
+          "chicago-notes-bib"
+        ],
+        "correct": 112,
+        "compared": 120,
+        "accuracy": 0.9333
+      },
+      {
+        "pair_name": "vancouver_vs_ieee",
+        "styles": [
+          "vancouver",
+          "ieee"
+        ],
+        "correct": 120,
+        "compared": 120,
+        "accuracy": 1
+      }
+    ],
+    "adapter_coverage": [
+      {
+        "field": "authors",
+        "expected_rows": 400,
+        "predicted_non_empty_rows": 399,
+        "coverage": 0.9975,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "doi",
+        "expected_rows": 400,
+        "predicted_non_empty_rows": 384,
+        "coverage": 0.96,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "firstAuthor",
+        "expected_rows": 400,
+        "predicted_non_empty_rows": 399,
+        "coverage": 0.9975,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "journal/venue",
+        "expected_rows": 400,
+        "predicted_non_empty_rows": 396,
+        "coverage": 0.99,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "title",
+        "expected_rows": 400,
+        "predicted_non_empty_rows": 397,
+        "coverage": 0.9925,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "url",
+        "expected_rows": 400,
+        "predicted_non_empty_rows": 396,
+        "coverage": 0.99,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "year",
+        "expected_rows": 400,
+        "predicted_non_empty_rows": 395,
+        "coverage": 0.9875,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "repository",
+        "expected_rows": 340,
+        "predicted_non_empty_rows": 333,
+        "coverage": 0.9794,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "bookTitle",
+        "expected_rows": 60,
+        "predicted_non_empty_rows": 60,
+        "coverage": 1,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "isbn",
+        "expected_rows": 60,
+        "predicted_non_empty_rows": 56,
+        "coverage": 0.9333,
+        "hard_failure": false,
+        "warning": true
+      },
+      {
+        "field": "pages",
+        "expected_rows": 60,
+        "predicted_non_empty_rows": 60,
+        "coverage": 1,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "publisher",
+        "expected_rows": 60,
+        "predicted_non_empty_rows": 60,
+        "coverage": 1,
+        "hard_failure": false,
+        "warning": false
+      }
+    ],
+    "contract_samples": [
+      {
+        "variant_id": "preprint-144383a403d1db07:apa7:noisy",
+        "required_fields": [
+          "title",
+          "repository",
+          "journal/venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "repository",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "firstAuthor",
+          "journal/venue",
+          "publisher",
+          "title",
+          "url"
+        ],
+        "missing_required_fields": [
+          "repository"
+        ]
+      },
+      {
+        "variant_id": "preprint-144383a403d1db07:ieee:noisy",
+        "required_fields": [
+          "title",
+          "year",
+          "repository",
+          "journal/venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "repository",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "firstAuthor",
+          "journal/venue",
+          "publisher",
+          "title",
+          "year"
+        ],
+        "missing_required_fields": [
+          "repository"
+        ]
+      },
+      {
+        "variant_id": "preprint-30f0411ad1c5c805:ieee:noisy",
+        "required_fields": [
+          "title",
+          "year",
+          "repository",
+          "journal/venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "repository",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "journal/venue",
+          "publisher",
+          "title",
+          "year"
+        ],
+        "missing_required_fields": [
+          "repository"
+        ]
+      },
+      {
+        "variant_id": "preprint-30f0411ad1c5c805:mla9:noisy",
+        "required_fields": [
+          "authors",
+          "title",
+          "year",
+          "repository",
+          "journal/venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "repository",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "firstAuthor",
+          "title",
+          "url",
+          "year"
+        ],
+        "missing_required_fields": [
+          "repository",
+          "journal/venue"
+        ]
+      },
+      {
+        "variant_id": "preprint-38020f44ab0ab870:apa7:noisy",
+        "required_fields": [
+          "title",
+          "repository",
+          "journal/venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "repository",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "firstAuthor",
+          "journal/venue",
+          "repository",
+          "url"
+        ],
+        "missing_required_fields": [
+          "title"
+        ]
+      },
+      {
+        "variant_id": "preprint-38020f44ab0ab870:vancouver:noisy",
+        "required_fields": [
+          "title",
+          "year"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "repository",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "firstAuthor",
+          "url",
+          "year"
+        ],
+        "missing_required_fields": [
+          "title"
+        ]
+      },
+      {
+        "variant_id": "preprint-41f44a875a1ce010:apa7:noisy",
+        "required_fields": [
+          "title",
+          "repository",
+          "journal/venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "repository",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "firstAuthor",
+          "url"
+        ],
+        "missing_required_fields": [
+          "title",
+          "repository",
+          "journal/venue"
+        ]
+      },
+      {
+        "variant_id": "preprint-41f44a875a1ce010:harvard-ctr:noisy",
+        "required_fields": [
+          "title",
+          "repository",
+          "journal/venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "journal/venue",
+          "repository",
+          "title",
+          "url",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "firstAuthor",
+          "title",
+          "url"
+        ],
+        "missing_required_fields": [
+          "repository",
+          "journal/venue"
+        ]
+      }
+    ],
+    "priority_fields": [
+      {
+        "field": "institution",
+        "soft_f1": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 78
+      },
+      {
+        "field": "conferenceTitle",
+        "soft_f1": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "issn",
+        "soft_f1": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "patent",
+        "soft_f1": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "siteName",
+        "soft_f1": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "authors",
+        "soft_f1": 0.9274,
+        "tp": 313,
+        "fp": 49,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "isbn",
+        "soft_f1": 0.9333,
+        "tp": 42,
+        "fp": 6,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "title",
+        "soft_f1": 0.9972,
+        "tp": 360,
+        "fp": 2,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "publisher",
+        "soft_f1": 1,
+        "tp": 48,
+        "fp": 0,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 314
+      },
+      {
+        "field": "year",
+        "soft_f1": 1,
+        "tp": 362,
+        "fp": 0,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "journal/venue",
+        "soft_f1": 1,
+        "tp": 362,
+        "fp": 0,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "bookTitle",
+        "soft_f1": 1,
+        "tp": 48,
+        "fp": 0,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "doi",
+        "soft_f1": 1,
+        "tp": 362,
+        "fp": 0,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "url",
+        "soft_f1": 1,
+        "tp": 362,
+        "fp": 0,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      },
+      {
+        "field": "repository",
+        "soft_f1": 1,
+        "tp": 314,
+        "fp": 0,
+        "fn": 0,
+        "missing_expected": 0,
+        "unsupported_predicted": 0
+      }
+    ],
+    "priority_cells": [
+      {
+        "citation_style": "apa7",
+        "reference_type": "article-journal",
+        "compared": 0,
+        "soft_instance_f1": 0
+      },
+      {
+        "citation_style": "apa7",
+        "reference_type": "conference-paper",
+        "compared": 0,
+        "soft_instance_f1": 0
+      },
+      {
+        "citation_style": "apa7",
+        "reference_type": "book",
+        "compared": 0,
+        "soft_instance_f1": 0
+      },
+      {
+        "citation_style": "apa7",
+        "reference_type": "thesis",
+        "compared": 0,
+        "soft_instance_f1": 0
+      },
+      {
+        "citation_style": "apa7",
+        "reference_type": "report",
+        "compared": 0,
+        "soft_instance_f1": 0
+      },
+      {
+        "citation_style": "apa7",
+        "reference_type": "patent",
+        "compared": 0,
+        "soft_instance_f1": 0
+      },
+      {
+        "citation_style": "apa7",
+        "reference_type": "webpage",
+        "compared": 0,
+        "soft_instance_f1": 0
+      },
+      {
+        "citation_style": "harvard-ctr",
+        "reference_type": "article-journal",
+        "compared": 0,
+        "soft_instance_f1": 0
+      },
+      {
+        "citation_style": "harvard-ctr",
+        "reference_type": "conference-paper",
+        "compared": 0,
+        "soft_instance_f1": 0
+      },
+      {
+        "citation_style": "harvard-ctr",
+        "reference_type": "book",
+        "compared": 0,
+        "soft_instance_f1": 0
+      },
+      {
+        "citation_style": "harvard-ctr",
+        "reference_type": "thesis",
+        "compared": 0,
+        "soft_instance_f1": 0
+      },
+      {
+        "citation_style": "harvard-ctr",
+        "reference_type": "report",
+        "compared": 0,
+        "soft_instance_f1": 0
+      }
+    ],
+    "style_mismatches": [
+      {
+        "expected_style": "chicago-notes-bib",
+        "detected_style": "mla9",
+        "count": 8
+      }
+    ],
+    "style_failure_examples": [
+      {
+        "expected_style": "chicago-notes-bib",
+        "detected_style": "mla9",
+        "examples": [
+          {
+            "variant_id": "preprint-013a98d4a636ccea:chicago-notes-bib:clean",
+            "reference_type": "preprint",
+            "detected_type": "preprint",
+            "formatted_string": "Awang, Noor Azura, Nik Noor Haryatul Eleena Bt N. Mahmud, and Noor Ummi Hazirah Hani Zulkefli. “Optical Trapping Using Mode-Locked Fiber Laser Au-Np Coated Side-Polished Fiber.” Preprint, Elsevier BV, 2023. https://doi.org/10.2139/ssrn.4577205.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "preprint-0438341024d575b7:chicago-notes-bib:clean",
+            "reference_type": "preprint",
+            "detected_type": "preprint",
+            "formatted_string": "Hassan, A., A. A. M. Arafa, S. Z. Rida, M. A. Dagher, and Hamed M. El Sherbiny. “An Effective Technique for Solving Generalized Cahn-Hilliard (C-H) Problems.” Preprint, Research Square Platform LLC, 2023. https://doi.org/10.21203/rs.3.rs-2870128/v1.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "preprint-0658a1475e8a5845:chicago-notes-bib:clean",
+            "reference_type": "preprint",
+            "detected_type": "preprint",
+            "formatted_string": "Brizuela-Torres, Diego, Yves Zinngrebe, Mark D. A. Rounsevell, and Calum Brown. “Thirty Years of Drivers and Patterns of Land Use Change Across the Amazon Biome.” Preprint, Elsevier BV, 2023. https://doi.org/10.2139/ssrn.4591009.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "preprint-19ff91e02f546e21:chicago-notes-bib:clean",
+            "reference_type": "preprint",
+            "detected_type": "preprint",
+            "formatted_string": "Shen, Yusheng, and Kassandra M. Ori-McKenney. “Microtubule-Associated Proteins Orchestrate the Tubulin Code for Cellular Adaptation.” Preprint, Elsevier BV, 2023. https://doi.org/10.2139/ssrn.4502784.",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      }
+    ],
+    "type_mismatches": [],
+    "stripped_fields_by_type": [
+      {
+        "detected_type": "preprint",
+        "field": "publisher",
+        "count": 314
+      },
+      {
+        "detected_type": "preprint",
+        "field": "institution",
+        "count": 72
+      },
+      {
+        "detected_type": "preprint",
+        "field": "journal",
+        "count": 60
+      },
+      {
+        "detected_type": "book-chapter",
+        "field": "institution",
+        "count": 6
+      }
+    ],
+    "field_failure_examples": [
+      {
+        "field": "authors",
+        "examples": [
+          {
+            "variant_id": "book-chapter-9ebd7c2b56ff9b44:apa7:clean",
+            "citation_style": "apa7",
+            "reference_type": "book-chapter",
+            "detected_style": "apa7",
+            "detected_type": "book-chapter",
+            "formatted_string": "Madhav, M. S., Laha, G. S., Padmakumari, A. P., Somasekhar, N., Mangrauthia, S. K., & Viraktamath, B. C. (2013). Phenotyping Rice for Molecular Plant Breeding. In Phenotyping for Plant Breeding (pp. 1–40). Springer New York. https://doi.org/10.1007/978-1-4614-8320-5_1",
+            "expected_value": [
+              "Madhav, M. S.",
+              "Laha, G. S.",
+              "Padmakumari, A. P.",
+              "Somasekhar, N.",
+              "Mangrauthia, S. K.",
+              "Viraktamath, B. C."
+            ],
+            "predicted_value": [
+              "Madhav, M S"
+            ],
+            "raw_predicted_value": [
+              "Madhav, M S"
+            ],
+            "reason_bucket": "author_initials_only",
+            "warnings": [
+              "input_style_uncertain",
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-9ebd7c2b56ff9b44:chicago-notes-bib:clean",
+            "citation_style": "chicago-notes-bib",
+            "reference_type": "book-chapter",
+            "detected_style": "chicago-notes-bib",
+            "detected_type": "book-chapter",
+            "formatted_string": "Madhav, M. S., G. S. Laha, A. P. Padmakumari, N. Somasekhar, S. K. Mangrauthia, and B. C. Viraktamath. “Phenotyping Rice for Molecular Plant Breeding.” In Phenotyping for Plant Breeding. Springer New York, 2013. https://doi.org/10.1007/978-1-4614-8320-5_1.",
+            "expected_value": [
+              "Madhav, M. S.",
+              "Laha, G. S.",
+              "Padmakumari, A. P.",
+              "Somasekhar, N.",
+              "Mangrauthia, S. K.",
+              "Viraktamath, B. C."
+            ],
+            "predicted_value": [
+              "Madhav, M S"
+            ],
+            "raw_predicted_value": [
+              "Madhav, M S"
+            ],
+            "reason_bucket": "author_initials_only",
+            "warnings": [
+              "missing_preferred_fields",
+              "render_style_fallback"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-9ebd7c2b56ff9b44:harvard-ctr:clean",
+            "citation_style": "harvard-ctr",
+            "reference_type": "book-chapter",
+            "detected_style": "harvard-ctr",
+            "detected_type": "book-chapter",
+            "formatted_string": "Madhav, M.S. et al. (2013) “Phenotyping Rice for Molecular Plant Breeding,” Phenotyping for Plant Breeding. Springer New York, pp. 1–40. Available at: https://doi.org/10.1007/978-1-4614-8320-5_1.",
+            "expected_value": [
+              "Madhav, M. S.",
+              "Laha, G. S.",
+              "Padmakumari, A. P.",
+              "Somasekhar, N.",
+              "Mangrauthia, S. K.",
+              "Viraktamath, B. C."
+            ],
+            "predicted_value": [
+              "Madhav, M S"
+            ],
+            "raw_predicted_value": [
+              "Madhav, M S"
+            ],
+            "reason_bucket": "author_initials_only",
+            "warnings": [
+              "uncertain_pages",
+              "missing_preferred_fields",
+              "render_output_structurally_incomplete"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-9ebd7c2b56ff9b44:ieee:clean",
+            "citation_style": "ieee",
+            "reference_type": "book-chapter",
+            "detected_style": "ieee",
+            "detected_type": "book-chapter",
+            "formatted_string": "[1]M. S. Madhav, G. S. Laha, A. P. Padmakumari, N. Somasekhar, S. K. Mangrauthia, and B. C. Viraktamath, “Phenotyping Rice for Molecular Plant Breeding,” in Phenotyping for Plant Breeding, Springer New York, 2013, pp. 1–40. doi: 10.1007/978-1-4614-8320-5_1.",
+            "expected_value": [
+              "Madhav, M. S.",
+              "Laha, G. S.",
+              "Padmakumari, A. P.",
+              "Somasekhar, N.",
+              "Mangrauthia, S. K.",
+              "Viraktamath, B. C."
+            ],
+            "predicted_value": [
+              "Madhav, M. S."
+            ],
+            "raw_predicted_value": [
+              "Madhav, M. S."
+            ],
+            "reason_bucket": "author_initials_only",
+            "warnings": [
+              "uncertain_split_block",
+              "missing_preferred_fields",
+              "render_output_structurally_incomplete"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-9ebd7c2b56ff9b44:mla9:clean",
+            "citation_style": "mla9",
+            "reference_type": "book-chapter",
+            "detected_style": "mla9",
+            "detected_type": "book-chapter",
+            "formatted_string": "Madhav, M. S., et al. “Phenotyping Rice for Molecular Plant Breeding.” Phenotyping for Plant Breeding, Springer New York, 2013, pp. 1–40, https://doi.org/10.1007/978-1-4614-8320-5_1.",
+            "expected_value": [
+              "Madhav, M. S.",
+              "Laha, G. S.",
+              "Padmakumari, A. P.",
+              "Somasekhar, N.",
+              "Mangrauthia, S. K.",
+              "Viraktamath, B. C."
+            ],
+            "predicted_value": [
+              "Madhav, M S"
+            ],
+            "raw_predicted_value": [
+              "Madhav, M S"
+            ],
+            "reason_bucket": "author_initials_only",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "field": "title",
+        "examples": [
+          {
+            "variant_id": "preprint-17060760b24c9498:apa7:clean",
+            "citation_style": "apa7",
+            "reference_type": "preprint",
+            "detected_style": "apa7",
+            "detected_type": "preprint",
+            "formatted_string": "Jiang, J., Tong, Z., Huang, M., Wang, Y., & Zhao, W. (2023). Effect of Recrystallization Annealing on Microstructure and Properties of Cold-Deformed Cocrcu1.2feni High Entropy Alloy. Elsevier BV. https://doi.org/10.2139/ssrn.4505107",
+            "expected_value": "Effect of Recrystallization Annealing on Microstructure and Properties of Cold-Deformed Cocrcu1.2feni High Entropy Alloy",
+            "predicted_value": "Effect of Recrystallization Annealing on Microstructure and Properties of Cold-Deformed Cocrcu1",
+            "raw_predicted_value": "Effect of Recrystallization Annealing on Microstructure and Properties of Cold-Deformed Cocrcu1",
+            "reason_bucket": "truncated_value",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "preprint-2377bdd72f32afbd:vancouver:clean",
+            "citation_style": "vancouver",
+            "reference_type": "preprint",
+            "detected_style": "vancouver",
+            "detected_type": "preprint",
+            "formatted_string": "[1]Bhat ZUH, Hanif S, Abbasi A, Ali A, Shakir M. Luminescent 3d-Europium-Based Metal-Organic Framework: A Brilliant Sentinel for Quercetin Detection. Unveiling the Path to Portable, Selective, and Sensitive Sensing 2023. https://doi.org/10.2139/ssrn.4467302.",
+            "expected_value": "Luminescent 3d-Europium-Based Metal-Organic Framework: A Brilliant Sentinel for Quercetin Detection. Unveiling the Path to Portable, Selective, and Sensitive Sensing",
+            "predicted_value": "Luminescent 3d-Europium-Based Metal-Organic Framework: A Brilliant Sentinel for Quercetin Detection",
+            "raw_predicted_value": "Luminescent 3d-Europium-Based Metal-Organic Framework: A Brilliant Sentinel for Quercetin Detection",
+            "reason_bucket": "truncated_value",
+            "warnings": [
+              "uncertain_split_block",
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      },
+      {
+        "field": "isbn",
+        "examples": [
+          {
+            "variant_id": "book-chapter-9bea9fa78e88b5de:apa7:clean",
+            "citation_style": "apa7",
+            "reference_type": "book-chapter",
+            "detected_style": "apa7",
+            "detected_type": "book-chapter",
+            "formatted_string": "Weik, M. H. (2000). attenuation rate. In Computer Science and Communications Dictionary (pp. 75–75). Springer US. https://doi.org/10.1007/1-4020-0613-6_994",
+            "expected_value": "9780792384250",
+            "predicted_value": "9781402006135",
+            "raw_predicted_value": "9781402006135",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-9bea9fa78e88b5de:chicago-notes-bib:clean",
+            "citation_style": "chicago-notes-bib",
+            "reference_type": "book-chapter",
+            "detected_style": "chicago-notes-bib",
+            "detected_type": "book-chapter",
+            "formatted_string": "Weik, Martin H. “Attenuation Rate.” In Computer Science and Communications Dictionary. Springer US, 2000. https://doi.org/10.1007/1-4020-0613-6_994.",
+            "expected_value": "9780792384250",
+            "predicted_value": "9781402006135",
+            "raw_predicted_value": "9781402006135",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "missing_preferred_fields",
+              "render_style_fallback"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-9bea9fa78e88b5de:harvard-ctr:clean",
+            "citation_style": "harvard-ctr",
+            "reference_type": "book-chapter",
+            "detected_style": "harvard-ctr",
+            "detected_type": "book-chapter",
+            "formatted_string": "Weik, M.H. (2000) “attenuation rate,” Computer Science and Communications Dictionary. Springer US, pp. 75–75. Available at: https://doi.org/10.1007/1-4020-0613-6_994.",
+            "expected_value": "9780792384250",
+            "predicted_value": "9781402006135",
+            "raw_predicted_value": "9781402006135",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "uncertain_pages",
+              "missing_preferred_fields",
+              "render_output_structurally_incomplete"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-9bea9fa78e88b5de:ieee:clean",
+            "citation_style": "ieee",
+            "reference_type": "book-chapter",
+            "detected_style": "ieee",
+            "detected_type": "book-chapter",
+            "formatted_string": "[1]M. H. Weik, “attenuation rate,” in Computer Science and Communications Dictionary, Springer US, 2000, pp. 75–75. doi: 10.1007/1-4020-0613-6_994.",
+            "expected_value": "9780792384250",
+            "predicted_value": "9781402006135",
+            "raw_predicted_value": "9781402006135",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "uncertain_split_block",
+              "missing_preferred_fields",
+              "render_output_structurally_incomplete"
+            ]
+          },
+          {
+            "variant_id": "book-chapter-9bea9fa78e88b5de:mla9:clean",
+            "citation_style": "mla9",
+            "reference_type": "book-chapter",
+            "detected_style": "mla9",
+            "detected_type": "book-chapter",
+            "formatted_string": "Weik, Martin H. “Attenuation Rate.” Computer Science and Communications Dictionary, Springer US, 2000, pp. 75–75, https://doi.org/10.1007/1-4020-0613-6_994.",
+            "expected_value": "9780792384250",
+            "predicted_value": "9781402006135",
+            "raw_predicted_value": "9781402006135",
+            "reason_bucket": "catastrophic_wrong_content",
+            "warnings": [
+              "missing_preferred_fields"
+            ]
+          }
+        ]
+      }
+    ],
+    "sample_failures": [
+      {
+        "variant_id": "book-chapter-9ebd7c2b56ff9b44:apa7:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "apa7",
+        "reference_type": "book-chapter",
+        "detected_style": "apa7",
+        "detected_type": "book-chapter",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "Madhav, M. S., Laha, G. S., Padmakumari, A. P., Somasekhar, N., Mangrauthia, S. K., & Viraktamath, B. C. (2013). Phenotyping Rice for Molecular Plant Breeding. In Phenotyping for Plant Breeding (pp. 1–40). Springer New York. https://doi.org/10.1007/978-1-4614-8320-5_1",
+        "expected_fields": {
+          "authors": [
+            "Madhav, M. S.",
+            "Laha, G. S.",
+            "Padmakumari, A. P.",
+            "Somasekhar, N.",
+            "Mangrauthia, S. K.",
+            "Viraktamath, B. C."
+          ],
+          "title": "Phenotyping Rice for Molecular Plant Breeding",
+          "year": 2013,
+          "doi": "10.1007/978-1-4614-8320-5_1",
+          "url": "https://doi.org/10.1007/978-1-4614-8320-5_1",
+          "bookTitle": "Phenotyping for Plant Breeding",
+          "pages": "1-40",
+          "publisher": "Springer New York",
+          "journal/venue": "Phenotyping for Plant Breeding"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Madhav, M S"
+          ],
+          "title": "Phenotyping Rice for Molecular Plant Breeding",
+          "year": 2013,
+          "doi": "10.1007/978-1-4614-8320-5_1",
+          "url": "https://doi.org/10.1007/978-1-4614-8320-5_1",
+          "bookTitle": "Phenotyping for Plant Breeding",
+          "pages": "1–40",
+          "publisher": "Springer New York",
+          "journal/venue": "Phenotyping for Plant Breeding"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Madhav, M S"
+          ],
+          "title": "Phenotyping Rice for Molecular Plant Breeding",
+          "year": 2013,
+          "doi": "10.1007/978-1-4614-8320-5_1",
+          "url": "https://doi.org/10.1007/978-1-4614-8320-5_1",
+          "bookTitle": "Phenotyping for Plant Breeding",
+          "pages": "1–40",
+          "publisher": "Springer New York",
+          "journal/venue": "Phenotyping for Plant Breeding"
+        },
+        "adapter_stripped_fields": [],
+        "warnings": [
+          "input_style_uncertain",
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-9ebd7c2b56ff9b44:chicago-notes-bib:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "chicago-notes-bib",
+        "reference_type": "book-chapter",
+        "detected_style": "chicago-notes-bib",
+        "detected_type": "book-chapter",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "Madhav, M. S., G. S. Laha, A. P. Padmakumari, N. Somasekhar, S. K. Mangrauthia, and B. C. Viraktamath. “Phenotyping Rice for Molecular Plant Breeding.” In Phenotyping for Plant Breeding. Springer New York, 2013. https://doi.org/10.1007/978-1-4614-8320-5_1.",
+        "expected_fields": {
+          "authors": [
+            "Madhav, M. S.",
+            "Laha, G. S.",
+            "Padmakumari, A. P.",
+            "Somasekhar, N.",
+            "Mangrauthia, S. K.",
+            "Viraktamath, B. C."
+          ],
+          "title": "Phenotyping Rice for Molecular Plant Breeding",
+          "year": 2013,
+          "doi": "10.1007/978-1-4614-8320-5_1",
+          "url": "https://doi.org/10.1007/978-1-4614-8320-5_1",
+          "bookTitle": "Phenotyping for Plant Breeding",
+          "publisher": "Springer New York",
+          "journal/venue": "Phenotyping for Plant Breeding"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Madhav, M S"
+          ],
+          "title": "Phenotyping Rice for Molecular Plant Breeding",
+          "year": 2013,
+          "doi": "10.1007/978-1-4614-8320-5_1",
+          "url": "https://doi.org/10.1007/978-1-4614-8320-5_1",
+          "bookTitle": "Phenotyping for Plant Breeding",
+          "publisher": "Springer New York",
+          "journal/venue": "Phenotyping for Plant Breeding"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Madhav, M S"
+          ],
+          "title": "Phenotyping Rice for Molecular Plant Breeding",
+          "year": 2013,
+          "doi": "10.1007/978-1-4614-8320-5_1",
+          "url": "https://doi.org/10.1007/978-1-4614-8320-5_1",
+          "bookTitle": "Phenotyping for Plant Breeding",
+          "publisher": "Springer New York",
+          "journal/venue": "Phenotyping for Plant Breeding"
+        },
+        "adapter_stripped_fields": [],
+        "warnings": [
+          "missing_preferred_fields",
+          "render_style_fallback"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-9ebd7c2b56ff9b44:harvard-ctr:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "harvard-ctr",
+        "reference_type": "book-chapter",
+        "detected_style": "harvard-ctr",
+        "detected_type": "book-chapter",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "Madhav, M.S. et al. (2013) “Phenotyping Rice for Molecular Plant Breeding,” Phenotyping for Plant Breeding. Springer New York, pp. 1–40. Available at: https://doi.org/10.1007/978-1-4614-8320-5_1.",
+        "expected_fields": {
+          "authors": [
+            "Madhav, M. S.",
+            "Laha, G. S.",
+            "Padmakumari, A. P.",
+            "Somasekhar, N.",
+            "Mangrauthia, S. K.",
+            "Viraktamath, B. C."
+          ],
+          "title": "Phenotyping Rice for Molecular Plant Breeding",
+          "year": 2013,
+          "doi": "10.1007/978-1-4614-8320-5_1",
+          "url": "https://doi.org/10.1007/978-1-4614-8320-5_1",
+          "bookTitle": "Phenotyping for Plant Breeding",
+          "pages": "1-40",
+          "publisher": "Springer New York",
+          "journal/venue": "Phenotyping for Plant Breeding"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Madhav, M S"
+          ],
+          "title": "Phenotyping Rice for Molecular Plant Breeding",
+          "year": 2013,
+          "doi": "10.1007/978-1-4614-8320-5_1",
+          "url": "https://doi.org/10.1007/978-1-4614-8320-5_1",
+          "bookTitle": "Phenotyping for Plant Breeding",
+          "pages": "1–40",
+          "publisher": "Springer New York",
+          "journal/venue": "Phenotyping for Plant Breeding"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Madhav, M S"
+          ],
+          "title": "Phenotyping Rice for Molecular Plant Breeding",
+          "year": 2013,
+          "doi": "10.1007/978-1-4614-8320-5_1",
+          "url": "https://doi.org/10.1007/978-1-4614-8320-5_1",
+          "bookTitle": "Phenotyping for Plant Breeding",
+          "pages": "1–40",
+          "publisher": "Springer New York",
+          "journal/venue": "Phenotyping for Plant Breeding"
+        },
+        "adapter_stripped_fields": [],
+        "warnings": [
+          "uncertain_pages",
+          "missing_preferred_fields",
+          "render_output_structurally_incomplete"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-9ebd7c2b56ff9b44:mla9:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "mla9",
+        "reference_type": "book-chapter",
+        "detected_style": "mla9",
+        "detected_type": "book-chapter",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "Madhav, M. S., et al. “Phenotyping Rice for Molecular Plant Breeding.” Phenotyping for Plant Breeding, Springer New York, 2013, pp. 1–40, https://doi.org/10.1007/978-1-4614-8320-5_1.",
+        "expected_fields": {
+          "authors": [
+            "Madhav, M. S.",
+            "Laha, G. S.",
+            "Padmakumari, A. P.",
+            "Somasekhar, N.",
+            "Mangrauthia, S. K.",
+            "Viraktamath, B. C."
+          ],
+          "title": "Phenotyping Rice for Molecular Plant Breeding",
+          "year": 2013,
+          "doi": "10.1007/978-1-4614-8320-5_1",
+          "url": "https://doi.org/10.1007/978-1-4614-8320-5_1",
+          "bookTitle": "Phenotyping for Plant Breeding",
+          "pages": "1-40",
+          "publisher": "Springer New York",
+          "journal/venue": "Phenotyping for Plant Breeding"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Madhav, M S"
+          ],
+          "title": "Phenotyping Rice for Molecular Plant Breeding",
+          "year": 2013,
+          "doi": "10.1007/978-1-4614-8320-5_1",
+          "url": "https://doi.org/10.1007/978-1-4614-8320-5_1",
+          "bookTitle": "Phenotyping for Plant Breeding",
+          "pages": "1–40",
+          "publisher": "Springer New York",
+          "journal/venue": "Phenotyping for Plant Breeding"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Madhav, M S"
+          ],
+          "title": "Phenotyping Rice for Molecular Plant Breeding",
+          "year": 2013,
+          "doi": "10.1007/978-1-4614-8320-5_1",
+          "url": "https://doi.org/10.1007/978-1-4614-8320-5_1",
+          "bookTitle": "Phenotyping for Plant Breeding",
+          "pages": "1–40",
+          "publisher": "Springer New York",
+          "journal/venue": "Phenotyping for Plant Breeding"
+        },
+        "adapter_stripped_fields": [],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "book-chapter-9ebd7c2b56ff9b44:vancouver:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "vancouver",
+        "reference_type": "book-chapter",
+        "detected_style": "vancouver",
+        "detected_type": "book-chapter",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "[1]Madhav MS, Laha GS, Padmakumari AP, Somasekhar N, Mangrauthia SK, Viraktamath BC. Phenotyping Rice for Molecular Plant Breeding. Phenotyping for Plant Breeding, Springer New York; 2013, p. 1–40. https://doi.org/10.1007/978-1-4614-8320-5_1.",
+        "expected_fields": {
+          "authors": [
+            "Madhav, M. S.",
+            "Laha, G. S.",
+            "Padmakumari, A. P.",
+            "Somasekhar, N.",
+            "Mangrauthia, S. K.",
+            "Viraktamath, B. C."
+          ],
+          "title": "Phenotyping Rice for Molecular Plant Breeding",
+          "year": 2013,
+          "doi": "10.1007/978-1-4614-8320-5_1",
+          "url": "https://doi.org/10.1007/978-1-4614-8320-5_1",
+          "bookTitle": "Phenotyping for Plant Breeding",
+          "pages": "1-40",
+          "publisher": "Springer New York",
+          "journal/venue": "Phenotyping for Plant Breeding"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Madhav, M S"
+          ],
+          "title": "Phenotyping Rice for Molecular Plant Breeding",
+          "year": 2013,
+          "doi": "10.1007/978-1-4614-8320-5_1",
+          "url": "https://doi.org/10.1007/978-1-4614-8320-5_1",
+          "bookTitle": "Phenotyping for Plant Breeding",
+          "pages": "1–40",
+          "publisher": "Springer New York",
+          "journal/venue": "Phenotyping for Plant Breeding"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Madhav, M S"
+          ],
+          "title": "Phenotyping Rice for Molecular Plant Breeding",
+          "year": 2013,
+          "doi": "10.1007/978-1-4614-8320-5_1",
+          "url": "https://doi.org/10.1007/978-1-4614-8320-5_1",
+          "bookTitle": "Phenotyping for Plant Breeding",
+          "pages": "1–40",
+          "publisher": "Springer New York",
+          "journal/venue": "Phenotyping for Plant Breeding"
+        },
+        "adapter_stripped_fields": [],
+        "warnings": [
+          "uncertain_split_block",
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "preprint-0c09765f95636878:apa7:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "apa7",
+        "reference_type": "preprint",
+        "detected_style": "apa7",
+        "detected_type": "preprint",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "Zhu, C., Qiu, X., Li, yuanming, Zhang, W., Yang, J., Zhong, Y., Deng, J., Zhou, M., Liu, N., & Yang, J. (2023). Effect of Fecral Sublayer Composition on the Microstructure, Mechanical Properties and Corrosion Resistance of Fecral/Ysz Composite Coatings. Elsevier BV. https://doi.org/10.2139/ssrn.4482237",
+        "expected_fields": {
+          "authors": [
+            "Zhu, Changda",
+            "Qiu, Xi",
+            "Li, yuanming",
+            "Zhang, Wei",
+            "Yang, Jian",
+            "Zhong, Yilong",
+            "Deng, Jiuguo",
+            "Zhou, Mingyang",
+            "Liu, Ning",
+            "Yang, Jijun"
+          ],
+          "title": "Effect of Fecral Sublayer Composition on the Microstructure, Mechanical Properties and Corrosion Resistance of Fecral/Ysz Composite Coatings",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4482237",
+          "url": "https://doi.org/10.2139/ssrn.4482237",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Zhu, C",
+            "Qiu, X",
+            "yuanming, Li",
+            "Zhang, W",
+            "Yang, J",
+            "Zhong, Y"
+          ],
+          "title": "Effect of Fecral Sublayer Composition on the Microstructure, Mechanical Properties and Corrosion Resistance of Fecral/Ysz Composite Coatings",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4482237",
+          "url": "https://doi.org/10.2139/ssrn.4482237",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Zhu, C",
+            "Qiu, X",
+            "yuanming, Li",
+            "Zhang, W",
+            "Yang, J",
+            "Zhong, Y"
+          ],
+          "title": "Effect of Fecral Sublayer Composition on the Microstructure, Mechanical Properties and Corrosion Resistance of Fecral/Ysz Composite Coatings",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4482237",
+          "url": "https://doi.org/10.2139/ssrn.4482237",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "adapter_stripped_fields": [
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "preprint-0c09765f95636878:chicago-notes-bib:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "chicago-notes-bib",
+        "reference_type": "preprint",
+        "detected_style": "chicago-notes-bib",
+        "detected_type": "preprint",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "Zhu, Changda, Xi Qiu, yuanming Li, et al. “Effect of Fecral Sublayer Composition on the Microstructure, Mechanical Properties and Corrosion Resistance of Fecral/Ysz Composite Coatings.” Preprint, Elsevier BV, 2023. https://doi.org/10.2139/ssrn.4482237.",
+        "expected_fields": {
+          "authors": [
+            "Zhu, Changda",
+            "Qiu, Xi",
+            "Li, yuanming",
+            "Zhang, Wei",
+            "Yang, Jian",
+            "Zhong, Yilong",
+            "Deng, Jiuguo",
+            "Zhou, Mingyang",
+            "Liu, Ning",
+            "Yang, Jijun"
+          ],
+          "title": "Effect of Fecral Sublayer Composition on the Microstructure, Mechanical Properties and Corrosion Resistance of Fecral/Ysz Composite Coatings",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4482237",
+          "url": "https://doi.org/10.2139/ssrn.4482237",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Zhu, C",
+            "Qiu, X",
+            "yuanming, Li",
+            "Zhang, W",
+            "Yang, J",
+            "Zhong, Y"
+          ],
+          "title": "Effect of Fecral Sublayer Composition on the Microstructure, Mechanical Properties and Corrosion Resistance of Fecral/Ysz Composite Coatings, Preprint",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4482237",
+          "url": "https://doi.org/10.2139/ssrn.4482237",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Zhu, C",
+            "Qiu, X",
+            "yuanming, Li",
+            "Zhang, W",
+            "Yang, J",
+            "Zhong, Y"
+          ],
+          "title": "Effect of Fecral Sublayer Composition on the Microstructure, Mechanical Properties and Corrosion Resistance of Fecral/Ysz Composite Coatings, Preprint",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4482237",
+          "url": "https://doi.org/10.2139/ssrn.4482237",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "adapter_stripped_fields": [
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields",
+          "render_style_fallback"
+        ]
+      },
+      {
+        "variant_id": "preprint-0c09765f95636878:mla9:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "mla9",
+        "reference_type": "preprint",
+        "detected_style": "mla9",
+        "detected_type": "preprint",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "Zhu, Changda, et al. “Effect of Fecral Sublayer Composition on the Microstructure, Mechanical Properties and Corrosion Resistance of Fecral/Ysz Composite Coatings.” Elsevier BV, 2023, https://doi.org/10.2139/ssrn.4482237.",
+        "expected_fields": {
+          "authors": [
+            "Zhu, Changda",
+            "Qiu, Xi",
+            "Li, yuanming",
+            "Zhang, Wei",
+            "Yang, Jian",
+            "Zhong, Yilong",
+            "Deng, Jiuguo",
+            "Zhou, Mingyang",
+            "Liu, Ning",
+            "Yang, Jijun"
+          ],
+          "title": "Effect of Fecral Sublayer Composition on the Microstructure, Mechanical Properties and Corrosion Resistance of Fecral/Ysz Composite Coatings",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4482237",
+          "url": "https://doi.org/10.2139/ssrn.4482237",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Zhu, C",
+            "Qiu, X",
+            "yuanming, Li",
+            "Zhang, W",
+            "Yang, J",
+            "Zhong, Y"
+          ],
+          "title": "Effect of Fecral Sublayer Composition on the Microstructure, Mechanical Properties and Corrosion Resistance of Fecral/Ysz Composite Coatings",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4482237",
+          "url": "https://doi.org/10.2139/ssrn.4482237",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Zhu, C",
+            "Qiu, X",
+            "yuanming, Li",
+            "Zhang, W",
+            "Yang, J",
+            "Zhong, Y"
+          ],
+          "title": "Effect of Fecral Sublayer Composition on the Microstructure, Mechanical Properties and Corrosion Resistance of Fecral/Ysz Composite Coatings",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4482237",
+          "url": "https://doi.org/10.2139/ssrn.4482237",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "adapter_stripped_fields": [
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "preprint-0c09765f95636878:vancouver:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "vancouver",
+        "reference_type": "preprint",
+        "detected_style": "vancouver",
+        "detected_type": "preprint",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "[1]Zhu C, Qiu X, Li yuanming, Zhang W, Yang J, Zhong Y, et al. Effect of Fecral Sublayer Composition on the Microstructure, Mechanical Properties and Corrosion Resistance of Fecral/Ysz Composite Coatings 2023. https://doi.org/10.2139/ssrn.4482237.",
+        "expected_fields": {
+          "authors": [
+            "Zhu, Changda",
+            "Qiu, Xi",
+            "Li, yuanming",
+            "Zhang, Wei",
+            "Yang, Jian",
+            "Zhong, Yilong",
+            "Deng, Jiuguo",
+            "Zhou, Mingyang",
+            "Liu, Ning",
+            "Yang, Jijun"
+          ],
+          "title": "Effect of Fecral Sublayer Composition on the Microstructure, Mechanical Properties and Corrosion Resistance of Fecral/Ysz Composite Coatings",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4482237",
+          "url": "https://doi.org/10.2139/ssrn.4482237"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Zhu, C",
+            "Qiu, X",
+            "yuanming, Li",
+            "Zhang, W",
+            "Yang, J",
+            "Zhong, Y"
+          ],
+          "title": "Effect of Fecral Sublayer Composition on the Microstructure, Mechanical Properties and Corrosion Resistance of Fecral/Ysz Composite Coatings",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4482237",
+          "url": "https://doi.org/10.2139/ssrn.4482237"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Zhu, C",
+            "Qiu, X",
+            "yuanming, Li",
+            "Zhang, W",
+            "Yang, J",
+            "Zhong, Y"
+          ],
+          "title": "Effect of Fecral Sublayer Composition on the Microstructure, Mechanical Properties and Corrosion Resistance of Fecral/Ysz Composite Coatings",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4482237",
+          "url": "https://doi.org/10.2139/ssrn.4482237"
+        },
+        "adapter_stripped_fields": [
+          "publisher"
+        ],
+        "warnings": [
+          "uncertain_split_block",
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "preprint-126a55568a763ac1:apa7:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "apa7",
+        "reference_type": "preprint",
+        "detected_style": "apa7",
+        "detected_type": "preprint",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "Zhang, yuanchun, Gao, S., He, J., Wei, F., & zhang, X. (2023). Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands. Elsevier BV. https://doi.org/10.2139/ssrn.4524460",
+        "expected_fields": {
+          "authors": [
+            "Zhang, yuanchun",
+            "Gao, Shengtao",
+            "He, Jun",
+            "Wei, Feng",
+            "zhang, Xingzhao"
+          ],
+          "title": "Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4524460",
+          "url": "https://doi.org/10.2139/ssrn.4524460",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "predicted_fields": {
+          "authors": [
+            "yuanchun, Zhang",
+            "Gao, S",
+            "He, J",
+            "Wei, F",
+            "zhang, X"
+          ],
+          "title": "Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4524460",
+          "url": "https://doi.org/10.2139/ssrn.4524460",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "yuanchun, Zhang",
+            "Gao, S",
+            "He, J",
+            "Wei, F",
+            "zhang, X"
+          ],
+          "title": "Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4524460",
+          "url": "https://doi.org/10.2139/ssrn.4524460",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "adapter_stripped_fields": [
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "preprint-126a55568a763ac1:chicago-notes-bib:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "chicago-notes-bib",
+        "reference_type": "preprint",
+        "detected_style": "chicago-notes-bib",
+        "detected_type": "preprint",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "Zhang, yuanchun, Shengtao Gao, Jun He, Feng Wei, and Xingzhao zhang. “Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands.” Preprint, Elsevier BV, 2023. https://doi.org/10.2139/ssrn.4524460.",
+        "expected_fields": {
+          "authors": [
+            "Zhang, yuanchun",
+            "Gao, Shengtao",
+            "He, Jun",
+            "Wei, Feng",
+            "zhang, Xingzhao"
+          ],
+          "title": "Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4524460",
+          "url": "https://doi.org/10.2139/ssrn.4524460",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "predicted_fields": {
+          "authors": [
+            "yuanchun, Zhang",
+            "Gao, S",
+            "He, J",
+            "Wei, F",
+            "zhang, X"
+          ],
+          "title": "Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands, Preprint",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4524460",
+          "url": "https://doi.org/10.2139/ssrn.4524460",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "yuanchun, Zhang",
+            "Gao, S",
+            "He, J",
+            "Wei, F",
+            "zhang, X"
+          ],
+          "title": "Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands, Preprint",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4524460",
+          "url": "https://doi.org/10.2139/ssrn.4524460",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "adapter_stripped_fields": [
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields",
+          "render_style_fallback"
+        ]
+      },
+      {
+        "variant_id": "preprint-126a55568a763ac1:harvard-ctr:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "harvard-ctr",
+        "reference_type": "preprint",
+        "detected_style": "harvard-ctr",
+        "detected_type": "preprint",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "Zhang, yuanchun et al. (2023) “Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands.” Elsevier BV. Available at: https://doi.org/10.2139/ssrn.4524460.",
+        "expected_fields": {
+          "authors": [
+            "Zhang, yuanchun",
+            "Gao, Shengtao",
+            "He, Jun",
+            "Wei, Feng",
+            "zhang, Xingzhao"
+          ],
+          "title": "Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4524460",
+          "url": "https://doi.org/10.2139/ssrn.4524460",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "predicted_fields": {
+          "authors": [
+            "yuanchun, Zhang",
+            "Gao, S",
+            "He, J",
+            "Wei, F",
+            "zhang, X"
+          ],
+          "title": "Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4524460",
+          "url": "https://doi.org/10.2139/ssrn.4524460",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "yuanchun, Zhang",
+            "Gao, S",
+            "He, J",
+            "Wei, F",
+            "zhang, X"
+          ],
+          "title": "Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4524460",
+          "url": "https://doi.org/10.2139/ssrn.4524460",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "adapter_stripped_fields": [
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "preprint-126a55568a763ac1:mla9:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "mla9",
+        "reference_type": "preprint",
+        "detected_style": "mla9",
+        "detected_type": "preprint",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "Zhang, yuanchun, et al. “Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands.” Elsevier BV, 2023, https://doi.org/10.2139/ssrn.4524460.",
+        "expected_fields": {
+          "authors": [
+            "Zhang, yuanchun",
+            "Gao, Shengtao",
+            "He, Jun",
+            "Wei, Feng",
+            "zhang, Xingzhao"
+          ],
+          "title": "Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4524460",
+          "url": "https://doi.org/10.2139/ssrn.4524460",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "predicted_fields": {
+          "authors": [
+            "yuanchun, Zhang",
+            "Gao, S",
+            "He, J",
+            "Wei, F",
+            "zhang, X"
+          ],
+          "title": "Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4524460",
+          "url": "https://doi.org/10.2139/ssrn.4524460",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "yuanchun, Zhang",
+            "Gao, S",
+            "He, J",
+            "Wei, F",
+            "zhang, X"
+          ],
+          "title": "Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4524460",
+          "url": "https://doi.org/10.2139/ssrn.4524460",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "adapter_stripped_fields": [
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "preprint-126a55568a763ac1:vancouver:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "vancouver",
+        "reference_type": "preprint",
+        "detected_style": "vancouver",
+        "detected_type": "preprint",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "[1]Zhang yuanchun, Gao S, He J, Wei F, zhang X. Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands 2023. https://doi.org/10.2139/ssrn.4524460.",
+        "expected_fields": {
+          "authors": [
+            "Zhang, yuanchun",
+            "Gao, Shengtao",
+            "He, Jun",
+            "Wei, Feng",
+            "zhang, Xingzhao"
+          ],
+          "title": "Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4524460",
+          "url": "https://doi.org/10.2139/ssrn.4524460"
+        },
+        "predicted_fields": {
+          "authors": [
+            "yuanchun, Zhang",
+            "Gao, S",
+            "He, J",
+            "Wei, F",
+            "zhang, X"
+          ],
+          "title": "Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4524460",
+          "url": "https://doi.org/10.2139/ssrn.4524460"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "yuanchun, Zhang",
+            "Gao, S",
+            "He, J",
+            "Wei, F",
+            "zhang, X"
+          ],
+          "title": "Cofe@C Composites Decorated with Residual Carbon as an Ultrathin Microwave Absorber in Thex and Ku Bands",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4524460",
+          "url": "https://doi.org/10.2139/ssrn.4524460"
+        },
+        "adapter_stripped_fields": [
+          "publisher"
+        ],
+        "warnings": [
+          "uncertain_split_block",
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "preprint-17060760b24c9498:apa7:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "apa7",
+        "reference_type": "preprint",
+        "detected_style": "apa7",
+        "detected_type": "preprint",
+        "failed_required_fields": [
+          "title"
+        ],
+        "formatted_string": "Jiang, J., Tong, Z., Huang, M., Wang, Y., & Zhao, W. (2023). Effect of Recrystallization Annealing on Microstructure and Properties of Cold-Deformed Cocrcu1.2feni High Entropy Alloy. Elsevier BV. https://doi.org/10.2139/ssrn.4505107",
+        "expected_fields": {
+          "title": "Effect of Recrystallization Annealing on Microstructure and Properties of Cold-Deformed Cocrcu1.2feni High Entropy Alloy",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4505107",
+          "url": "https://doi.org/10.2139/ssrn.4505107",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "predicted_fields": {
+          "title": "Effect of Recrystallization Annealing on Microstructure and Properties of Cold-Deformed Cocrcu1",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4505107",
+          "url": "https://doi.org/10.2139/ssrn.4505107",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "raw_predicted_fields": {
+          "title": "Effect of Recrystallization Annealing on Microstructure and Properties of Cold-Deformed Cocrcu1",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4505107",
+          "url": "https://doi.org/10.2139/ssrn.4505107",
+          "repository": "Elsevier BV",
+          "journal/venue": "Y. Wang"
+        },
+        "adapter_stripped_fields": [
+          "institution",
+          "journal",
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "preprint-209810d7dd36aca1:chicago-notes-bib:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "chicago-notes-bib",
+        "reference_type": "preprint",
+        "detected_style": "chicago-notes-bib",
+        "detected_type": "preprint",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "Zhou, Huo, Lixi Xiao, Yuwei Deng, et al. “Revisiting the Multipath Elimination of Contaminants by Carbonyl-Containing Manganese-Carbon Composites in the Peroxymonosulfate System: A New Way of Constructing C-Mn-Pms Complexes to Distinguish the Stages of Active Species Production.” Preprint, Elsevier BV, 2023. https://doi.org/10.2139/ssrn.4467768.",
+        "expected_fields": {
+          "authors": [
+            "Zhou, Huo",
+            "Xiao, Lixi",
+            "Deng, Yuwei",
+            "Chen, Cheng-Xin",
+            "Pei, Xuanyuan",
+            "Li, Qiang",
+            "Ye, Yuxuan",
+            "Pan, Fei"
+          ],
+          "title": "Revisiting the Multipath Elimination of Contaminants by Carbonyl-Containing Manganese-Carbon Composites in the Peroxymonosulfate System: A New Way of Constructing C-Mn-Pms Complexes to Distinguish the Stages of Active Species Production",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4467768",
+          "url": "https://doi.org/10.2139/ssrn.4467768",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Zhou, Huo",
+            "Xiao, Lixi",
+            "Deng, Yuwei"
+          ],
+          "title": "Revisiting the Multipath Elimination of Contaminants by Carbonyl-Containing Manganese-Carbon Composites in the Peroxymonosulfate System: A New Way of Constructing C-Mn-Pms Complexes to Distinguish the Stages of Active Species Production, Preprint",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4467768",
+          "url": "https://doi.org/10.2139/ssrn.4467768",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Zhou, Huo",
+            "Xiao, Lixi",
+            "Deng, Yuwei"
+          ],
+          "title": "Revisiting the Multipath Elimination of Contaminants by Carbonyl-Containing Manganese-Carbon Composites in the Peroxymonosulfate System: A New Way of Constructing C-Mn-Pms Complexes to Distinguish the Stages of Active Species Production, Preprint",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4467768",
+          "url": "https://doi.org/10.2139/ssrn.4467768",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "adapter_stripped_fields": [
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields",
+          "render_style_fallback"
+        ]
+      },
+      {
+        "variant_id": "preprint-209810d7dd36aca1:mla9:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "mla9",
+        "reference_type": "preprint",
+        "detected_style": "mla9",
+        "detected_type": "preprint",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "Zhou, Huo, et al. “Revisiting the Multipath Elimination of Contaminants by Carbonyl-Containing Manganese-Carbon Composites in the Peroxymonosulfate System: A New Way of Constructing C-Mn-Pms Complexes to Distinguish the Stages of Active Species Production.” Elsevier BV, 2023, https://doi.org/10.2139/ssrn.4467768.",
+        "expected_fields": {
+          "authors": [
+            "Zhou, Huo",
+            "Xiao, Lixi",
+            "Deng, Yuwei",
+            "Chen, Cheng-Xin",
+            "Pei, Xuanyuan",
+            "Li, Qiang",
+            "Ye, Yuxuan",
+            "Pan, Fei"
+          ],
+          "title": "Revisiting the Multipath Elimination of Contaminants by Carbonyl-Containing Manganese-Carbon Composites in the Peroxymonosulfate System: A New Way of Constructing C-Mn-Pms Complexes to Distinguish the Stages of Active Species Production",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4467768",
+          "url": "https://doi.org/10.2139/ssrn.4467768",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Zhou, Huo",
+            "Xiao, Lixi",
+            "Deng, Yuwei"
+          ],
+          "title": "Revisiting the Multipath Elimination of Contaminants by Carbonyl-Containing Manganese-Carbon Composites in the Peroxymonosulfate System: A New Way of Constructing C-Mn-Pms Complexes to Distinguish the Stages of Active Species Production",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4467768",
+          "url": "https://doi.org/10.2139/ssrn.4467768",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Zhou, Huo",
+            "Xiao, Lixi",
+            "Deng, Yuwei"
+          ],
+          "title": "Revisiting the Multipath Elimination of Contaminants by Carbonyl-Containing Manganese-Carbon Composites in the Peroxymonosulfate System: A New Way of Constructing C-Mn-Pms Complexes to Distinguish the Stages of Active Species Production",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4467768",
+          "url": "https://doi.org/10.2139/ssrn.4467768",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "adapter_stripped_fields": [
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "preprint-219022281916469e:apa7:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "apa7",
+        "reference_type": "preprint",
+        "detected_style": "apa7",
+        "detected_type": "preprint",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "Tairab, A. M., Wang, X., zhang, zutao, Hao, D., Abdelrahman, M., Salman, W., & Ali, A. (2023). The Nexus of Iot Technology: A Renewable Multi-Module Energy Harvester for Self-Powered on Railway. Elsevier BV. https://doi.org/10.2139/ssrn.4552327",
+        "expected_fields": {
+          "authors": [
+            "Tairab, Alaeldin M.",
+            "Wang, Xin",
+            "zhang, zutao",
+            "Hao, Daning",
+            "Abdelrahman, Mansour",
+            "Salman, Waleed",
+            "Ali, Asif"
+          ],
+          "title": "The Nexus of Iot Technology: A Renewable Multi-Module Energy Harvester for Self-Powered on Railway",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4552327",
+          "url": "https://doi.org/10.2139/ssrn.4552327",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Tairab, A M",
+            "Wang, X",
+            "zutao, zhang",
+            "Hao, D",
+            "Abdelrahman, M",
+            "Salman, W"
+          ],
+          "title": "The Nexus of Iot Technology: A Renewable Multi-Module Energy Harvester for Self-Powered on Railway",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4552327",
+          "url": "https://doi.org/10.2139/ssrn.4552327",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Tairab, A M",
+            "Wang, X",
+            "zutao, zhang",
+            "Hao, D",
+            "Abdelrahman, M",
+            "Salman, W"
+          ],
+          "title": "The Nexus of Iot Technology: A Renewable Multi-Module Energy Harvester for Self-Powered on Railway",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4552327",
+          "url": "https://doi.org/10.2139/ssrn.4552327",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "adapter_stripped_fields": [
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      },
+      {
+        "variant_id": "preprint-219022281916469e:chicago-notes-bib:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "chicago-notes-bib",
+        "reference_type": "preprint",
+        "detected_style": "chicago-notes-bib",
+        "detected_type": "preprint",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "Tairab, Alaeldin M., Xin Wang, zutao zhang, et al. “The Nexus of Iot Technology: A Renewable Multi-Module Energy Harvester for Self-Powered on Railway.” Preprint, Elsevier BV, 2023. https://doi.org/10.2139/ssrn.4552327.",
+        "expected_fields": {
+          "authors": [
+            "Tairab, Alaeldin M.",
+            "Wang, Xin",
+            "zhang, zutao",
+            "Hao, Daning",
+            "Abdelrahman, Mansour",
+            "Salman, Waleed",
+            "Ali, Asif"
+          ],
+          "title": "The Nexus of Iot Technology: A Renewable Multi-Module Energy Harvester for Self-Powered on Railway",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4552327",
+          "url": "https://doi.org/10.2139/ssrn.4552327",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Tairab, A M",
+            "Wang, X",
+            "zutao, zhang",
+            "Hao, D",
+            "Abdelrahman, M",
+            "Salman, W"
+          ],
+          "title": "The Nexus of Iot Technology: A Renewable Multi-Module Energy Harvester for Self-Powered on Railway, Preprint",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4552327",
+          "url": "https://doi.org/10.2139/ssrn.4552327",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Tairab, A M",
+            "Wang, X",
+            "zutao, zhang",
+            "Hao, D",
+            "Abdelrahman, M",
+            "Salman, W"
+          ],
+          "title": "The Nexus of Iot Technology: A Renewable Multi-Module Energy Harvester for Self-Powered on Railway, Preprint",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4552327",
+          "url": "https://doi.org/10.2139/ssrn.4552327",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "adapter_stripped_fields": [
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields",
+          "render_style_fallback"
+        ]
+      },
+      {
+        "variant_id": "preprint-219022281916469e:mla9:clean",
+        "structure_class": "structured",
+        "input_source_kind": "csl_rendered",
+        "citation_style": "mla9",
+        "reference_type": "preprint",
+        "detected_style": "mla9",
+        "detected_type": "preprint",
+        "failed_required_fields": [
+          "authors"
+        ],
+        "formatted_string": "Tairab, Alaeldin M., et al. “The Nexus of Iot Technology: A Renewable Multi-Module Energy Harvester for Self-Powered on Railway.” Elsevier BV, 2023, https://doi.org/10.2139/ssrn.4552327.",
+        "expected_fields": {
+          "authors": [
+            "Tairab, Alaeldin M.",
+            "Wang, Xin",
+            "zhang, zutao",
+            "Hao, Daning",
+            "Abdelrahman, Mansour",
+            "Salman, Waleed",
+            "Ali, Asif"
+          ],
+          "title": "The Nexus of Iot Technology: A Renewable Multi-Module Energy Harvester for Self-Powered on Railway",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4552327",
+          "url": "https://doi.org/10.2139/ssrn.4552327",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "predicted_fields": {
+          "authors": [
+            "Tairab, A M",
+            "Wang, X",
+            "zutao, zhang",
+            "Hao, D",
+            "Abdelrahman, M",
+            "Salman, W"
+          ],
+          "title": "The Nexus of Iot Technology: A Renewable Multi-Module Energy Harvester for Self-Powered on Railway",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4552327",
+          "url": "https://doi.org/10.2139/ssrn.4552327",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "raw_predicted_fields": {
+          "authors": [
+            "Tairab, A M",
+            "Wang, X",
+            "zutao, zhang",
+            "Hao, D",
+            "Abdelrahman, M",
+            "Salman, W"
+          ],
+          "title": "The Nexus of Iot Technology: A Renewable Multi-Module Energy Harvester for Self-Powered on Railway",
+          "year": 2023,
+          "doi": "10.2139/ssrn.4552327",
+          "url": "https://doi.org/10.2139/ssrn.4552327",
+          "repository": "Elsevier BV",
+          "journal/venue": "Elsevier BV"
+        },
+        "adapter_stripped_fields": [
+          "publisher"
+        ],
+        "warnings": [
+          "missing_preferred_fields"
+        ]
+      }
+    ]
+  }
+}

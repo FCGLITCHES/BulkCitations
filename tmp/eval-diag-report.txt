@@ -1,0 +1,46 @@
+mode | refs | field-recovery | full-recover
+structured_clean     |  216 | 89.5% | 61.6%
+structured_noisy     |  150 | 76.6% | 46.7%
+ocr_like             |  211 | 69.5% | 22.7%
+pasted_pdf_copy      |  212 | 87.3% | 62.7%
+multiline_numbered   |  211 | 88.2% | 64.0%
+ALL                  | 1000 | 82.6% | 51.9%
+
+=== per-field recovery by mode (recovery% [miss/wrong of failures]) ===
+field           structured_clean  structured_noisy          ocr_like   pasted_pdf_copy  multiline_number
+authors             49%(14m/59w)       58%(9m/26w)       57%(4m/57w)      63%(11m/44w)      60%(18m/39w)
+title                 97%(7m/0w)      79%(11m/21w)      42%(8m/114w)        95%(6m/4w)       86%(6m/23w)
+journal               75%(0m/6w)        75%(4m/2w)        67%(0m/8w)        75%(2m/4w)        96%(0m/1w)
+year                  98%(4m/0w)       88%(18m/0w)       91%(17m/2w)       95%(10m/0w)        98%(2m/3w)
+doi                  100%(0m/0w)       73%(28m/0w)       84%(0m/26w)       93%(12m/0w)        99%(2m/0w)
+volume               100%(0m/0w)        71%(4m/3w)       100%(0m/0w)        83%(2m/2w)        96%(1m/0w)
+issue                 83%(4m/0w)       54%(11m/0w)        75%(4m/2w)        71%(6m/1w)        75%(6m/0w)
+pages                 92%(4m/0w)        77%(7m/0w)        83%(6m/2w)        80%(7m/2w)        91%(4m/0w)
+publisher            100%(0m/0w)        94%(0m/2w)       57%(9m/22w)        93%(5m/0w)        94%(2m/2w)
+
+=== biggest failure buckets (mode/field: failures, missing, wrong) ===
+  ocr_like/title                     fails=122  missing=  8  wrong=114
+  structured_clean/authors           fails= 73  missing= 14  wrong= 59
+  ocr_like/authors                   fails= 61  missing=  4  wrong= 57
+  multiline_numbered/authors         fails= 57  missing= 18  wrong= 39
+  pasted_pdf_copy/authors            fails= 55  missing= 11  wrong= 44
+  structured_noisy/authors           fails= 35  missing=  9  wrong= 26
+  structured_noisy/title             fails= 32  missing= 11  wrong= 21
+  ocr_like/publisher                 fails= 31  missing=  9  wrong= 22
+  multiline_numbered/title           fails= 29  missing=  6  wrong= 23
+  structured_noisy/doi               fails= 28  missing= 28  wrong=  0
+  ocr_like/doi                       fails= 26  missing=  0  wrong= 26
+  ocr_like/year                      fails= 19  missing= 17  wrong=  2
+  structured_noisy/year              fails= 18  missing= 18  wrong=  0
+  pasted_pdf_copy/doi                fails= 12  missing= 12  wrong=  0
+  structured_noisy/issue             fails= 11  missing= 11  wrong=  0
+  pasted_pdf_copy/title              fails= 10  missing=  6  wrong=  4
+  pasted_pdf_copy/year               fails= 10  missing= 10  wrong=  0
+  pasted_pdf_copy/pages              fails=  9  missing=  7  wrong=  2
+  ocr_like/journal                   fails=  8  missing=  0  wrong=  8
+  ocr_like/pages                     fails=  8  missing=  6  wrong=  2
+  structured_clean/title             fails=  7  missing=  7  wrong=  0
+  structured_noisy/volume            fails=  7  missing=  4  wrong=  3
+  structured_noisy/pages             fails=  7  missing=  7  wrong=  0
+  pasted_pdf_copy/issue              fails=  7  missing=  6  wrong=  1
+  structured_clean/journal           fails=  6  missing=  0  wrong=  6

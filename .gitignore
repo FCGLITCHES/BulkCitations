@@ -1,14 +1,28 @@
-node_modules
-dist
-.DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
-data/
+node_modules/
+.pnpm-store/
+dist/
+build/
 .env
 .env.*
-!.env.template
-.pnpm-store/
+!.env.example
 *.log
-.vscode/
-.antigravity/
+coverage/
+benchmarks/manual/results/
+server/benchmarks/manual/results/
+.DS_Store
+Thumbs.db
+.dev-supervisor.lock
+__pycache__/
+*.py[cod]
+.vercel
+
+# Generated documentation export (regenerate via build_docs_export.py)
+docs-export/
+
+# Vendored CSL styles/locale (reproducible via `npm run csl:vendor`; pinned in
+# server/scripts/styles/csl.pinned.json). Not committed — CI vendors before the CSL oracle.
+server/vendor/csl/
+server/csl-drift-report.md
+
+# Claude Code local agent state (worktrees, plans, etc.)
+.claude/

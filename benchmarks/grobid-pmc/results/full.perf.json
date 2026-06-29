@@ -1,0 +1,146 @@
+{
+  "generated_at": "2026-04-20T16:06:17.357Z",
+  "parse_profile": "core_parse_fast",
+  "source_type": "text",
+  "wall_ms": 59535393.76,
+  "refs_per_sec": 0.05,
+  "output_latency_ms": {
+    "p50": 0,
+    "p95": 0,
+    "p99": 0,
+    "max": 0
+  },
+  "cpu_usage_us": {
+    "user": 15537391000,
+    "system": 957875000,
+    "total": 16495266000
+  },
+  "memory_mb": {
+    "rss_peak": 423.785,
+    "heap_used_peak": 158.883,
+    "external_peak": 4.21,
+    "array_buffers_peak": 1.557
+  },
+  "gc": {
+    "event_count": 0,
+    "total_pause_ms": 0,
+    "max_pause_ms": 0
+  },
+  "stage_timings": [
+    {
+      "phase_id": "extraction",
+      "runs": 13,
+      "total_duration_ms": 59537648,
+      "average_duration_ms": 4579819.08
+    },
+    {
+      "phase_id": "style_detection",
+      "runs": 13,
+      "total_duration_ms": 13078,
+      "average_duration_ms": 1006
+    },
+    {
+      "phase_id": "author_disambiguation",
+      "runs": 13,
+      "total_duration_ms": 13068,
+      "average_duration_ms": 1005.23
+    },
+    {
+      "phase_id": "type_classification",
+      "runs": 13,
+      "total_duration_ms": 8529,
+      "average_duration_ms": 656.08
+    },
+    {
+      "phase_id": "ingestion",
+      "runs": 2,
+      "total_duration_ms": 283,
+      "average_duration_ms": 141.5
+    },
+    {
+      "phase_id": "input_reliability",
+      "runs": 2,
+      "total_duration_ms": 154,
+      "average_duration_ms": 77
+    },
+    {
+      "phase_id": "deduplication",
+      "runs": 2,
+      "total_duration_ms": 122,
+      "average_duration_ms": 61
+    },
+    {
+      "phase_id": "structural_family_routing",
+      "runs": 13,
+      "total_duration_ms": 60,
+      "average_duration_ms": 4.62
+    },
+    {
+      "phase_id": "normalization",
+      "runs": 4,
+      "total_duration_ms": 50,
+      "average_duration_ms": 12.5
+    },
+    {
+      "phase_id": "splitting",
+      "runs": 2,
+      "total_duration_ms": 47,
+      "average_duration_ms": 23.5
+    },
+    {
+      "phase_id": "block_aggregation",
+      "runs": 2,
+      "total_duration_ms": 45,
+      "average_duration_ms": 22.5
+    },
+    {
+      "phase_id": "shared_repair",
+      "runs": 2,
+      "total_duration_ms": 45,
+      "average_duration_ms": 22.5
+    },
+    {
+      "phase_id": "runtime_override_lookup",
+      "runs": 2,
+      "total_duration_ms": 0,
+      "average_duration_ms": 0
+    },
+    {
+      "phase_id": "llm_fallback",
+      "runs": 2,
+      "total_duration_ms": 0,
+      "average_duration_ms": 0
+    },
+    {
+      "phase_id": "enrichment",
+      "runs": 2,
+      "total_duration_ms": 0,
+      "average_duration_ms": 0
+    },
+    {
+      "phase_id": "health_validation",
+      "runs": 2,
+      "total_duration_ms": 0,
+      "average_duration_ms": 0
+    },
+    {
+      "phase_id": "authority_validation",
+      "runs": 2,
+      "total_duration_ms": 0,
+      "average_duration_ms": 0
+    },
+    {
+      "phase_id": "rendering",
+      "runs": 2,
+      "total_duration_ms": 0,
+      "average_duration_ms": 0
+    },
+    {
+      "phase_id": "feedback_loop",
+      "runs": 2,
+      "total_duration_ms": 0,
+      "average_duration_ms": 0
+    }
+  ],
+  "canonical_output_hash": "dcafcc807581025b892630b657bf5b46abe0c9e54f76277dc8a4cc5084a7a00d"
+}

@@ -1,0 +1,57 @@
+{
+  "ok": true,
+  "inputPath": "D:\\Coding\\Bulkreferences\\ml-service\\training\\gold-datasets\\style-core-freeze-2026-04-13T22-43-05-056Z.precert-pool.ndjson",
+  "reviewOutputPath": "D:\\Coding\\Bulkreferences\\ml-service\\training\\gold-datasets\\style-core-freeze-2026-04-13T22-43-05-056Z.precert-pool.admin-review.ndjson",
+  "sanitizedOutputPath": "D:\\Coding\\Bulkreferences\\ml-service\\training\\gold-datasets\\style-core-freeze-2026-04-13T22-43-05-056Z.precert-pool.sanitized.ndjson",
+  "summary": {
+    "datasetVersion": "style-core-freeze-2026-04-13T22-43-05-056Z",
+    "totalRows": 20250,
+    "reviewQueueRows": 11668,
+    "sanitizedRows": 19893,
+    "droppedRows": 357,
+    "clusterCount": 3750,
+    "lookupRequestCount": 12814,
+    "mappedNoisyRows": 1810,
+    "actionCounts": {
+      "review_confidence": 3042,
+      "review_type": 7103,
+      "keep": 8582,
+      "review_style": 818,
+      "review_style_and_type": 348,
+      "drop_duplicate_noisy": 357
+    },
+    "issueCounts": {
+      "family_confidence_below_0_9": 648,
+      "crossref_type_mismatch": 7649,
+      "style_marker_conflict": 2771,
+      "style_confidence_below_1": 2392,
+      "style_margin_below_0_2": 2250,
+      "duplicate_normalized_clean_noisy": 96,
+      "duplicate_exact_clean_noisy": 261
+    },
+    "styleMarkerCounts": {
+      "chicago-notes-bib_starts_ieee_bracket": 32,
+      "harvard_missing_parenthesized_year_near_start": 1824,
+      "chicago-notes-bib_starts_numeric": 283,
+      "mla9_starts_ieee_bracket": 63,
+      "mla9_starts_numeric": 301,
+      "apa7_starts_numeric": 253,
+      "harvard-ctr_starts_numeric": 251
+    },
+    "crossrefStatusCounts": {
+      "resolved_doi": 19150,
+      "error": 93,
+      "resolved_bibliographic": 553,
+      "unresolved": 454
+    },
+    "leakageFieldsStripped": [
+      "source_prefix",
+      "source_filter",
+      "canonical_work_key",
+      "near_dup_cluster_id",
+      "style_confidence",
+      "family_confidence",
+      "style_margin_to_runner_up"
+    ]
+  }
+}

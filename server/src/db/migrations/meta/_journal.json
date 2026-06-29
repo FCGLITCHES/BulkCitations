@@ -1,0 +1,160 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1775053475600,
+      "tag": "0000_fearless_selene",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775109342724,
+      "tag": "0001_wooden_dagger",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775140969861,
+      "tag": "0002_salty_mongu",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1775141535580,
+      "tag": "0003_identity_links",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1775142994804,
+      "tag": "0004_organization_identity_links",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1775143170522,
+      "tag": "0005_audit_and_app_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1775175382528,
+      "tag": "0006_user_conversion_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1775220522736,
+      "tag": "0007_approved_truth_governance",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1775321157255,
+      "tag": "0008_batch_health_summaries",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1775337673176,
+      "tag": "0009_admin_review_persistence",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1775351000000,
+      "tag": "0010_approved_truth_ml_metadata",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1775400000000,
+      "tag": "0011_approved_truth_certification",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1775450000000,
+      "tag": "0012_style_gold_freeze_v2",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1776124800000,
+      "tag": "0013_drop_approved_truth_evidence_snapshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1776172800000,
+      "tag": "0014_approved_truth_editor_drafts",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1776182400000,
+      "tag": "0015_approved_truth_render_variants",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1776227965346,
+      "tag": "0016_woozy_polaris",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1776264000000,
+      "tag": "0017_truth_background_jobs",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1776710742312,
+      "tag": "0018_happy_malcolm_colcord",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1776902400000,
+      "tag": "0019_citation_extraction_bio",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1782340029792,
+      "tag": "0020_add_usage_enrich_count",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1782524015112,
+      "tag": "0021_familiar_marrow",
+      "breakpoints": true
+    }
+  ]
+}

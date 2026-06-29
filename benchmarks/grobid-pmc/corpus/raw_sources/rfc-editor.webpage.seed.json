@@ -1,0 +1,1442 @@
+[
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9953.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "DNS over CoAP (DoC)",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9953.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9952.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Application-Layer Protocol Negotiation (ALPN) ID for CoAP over DTLS",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9952.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9950.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "A YANG Data Model for Terminal Access Controller Access-Control System Plus (TACACS+)",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9950.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9949.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "BUSA-TLS: Mandatory Audio Component (MAC) Pre-Shared Key (PSK) Derivation for TLS 1.3 Using 2 Live Crew's \"Banned in the U.S.A.\"",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9949.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9948.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Internet Protocol Police (IPP) - Schedule of Punishments",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9948.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9947.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Application of the Alternate-Marking Method to the Segment Routing Header",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9947.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9945.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "IETF Community Moderation",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9945.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9940.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Some Key Terms for Network Fault and Problem Management",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9940.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9939.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "PKCS #8: Private-Key Information Content Types",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9939.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9938.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "A Framework for the Deterministic Networking (DetNet) Controller Plane",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9938.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9937.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Proportional Rate Reduction (PRR)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9937.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9936.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Use of ML-KEM in the Cryptographic Message Syntax (CMS)",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9936.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9935.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Internet X.509 Public Key Infrastructure - Algorithm Identifiers for the Module-Lattice-Based Key-Encapsulation Mechanism (ML-KEM)",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9935.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9934.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Privacy-Enhanced Mail (PEM) File Format for Encrypted ClientHello (ECH)",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9934.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9931.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Security Considerations for Optimistic Protocol Transitions in HTTP/1.1",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9931.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9930.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Tunnel Extensible Authentication Protocol (TEAP) Version 1",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9930.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9929.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "IGP Unreachable Prefix Announcement",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9929.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9928.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "DHCPv4 over DHCPv6 with Relay Agent Support",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9928.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9927.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Fixing the C-Flag in the Extended Address Registration Option (EARO)",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9927.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9926.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Prefix Registration for IPv6 Neighbor Discovery",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9926.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9925.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Unsigned X.509 Certificates",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9925.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9924.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Advanced Professional Video",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9924.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9923.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "The FNV Non-Cryptographic Hash Algorithm",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9923.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9922.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "A Common YANG Data Model for Scheduling",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9922.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9921.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "CBOR Object Signing and Encryption (COSE) Header Parameter for Timestamp Tokens as Defined in RFC 3161",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9921.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9920.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "RFC Editor Model (Version 3)",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9920.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9917.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "IGP Flexible Algorithms Reverse Affinity Constraint",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9917.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9915.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Dynamic Host Configuration Protocol for IPv6 (DHCPv6)",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9915.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9911.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Common YANG Data Types",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9911.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9910.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Registration Data Access Protocol (RDAP) Regional Internet Registry (RIR) Search",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9910.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9909.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Internet X.509 Public Key Infrastructure -- Algorithm Identifiers for the Stateless Hash-Based Digital Signature Algorithm (SLH-DSA)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9909.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9908.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Clarification and Enhancement of the CSR Attributes Definition in RFC 7030",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9908.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9907.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Guidelines for Authors and Reviewers of Documents Containing YANG Data Models",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9907.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9906.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Deprecate Usage of ECC-GOST within DNSSEC",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9906.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9905.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Deprecating the Use of SHA-1 in DNSSEC Signature Algorithms",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9905.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9904.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "DNSSEC Cryptographic Algorithm Recommendation Update Process",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9904.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9903.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "A YANG Data Model for OSPF Segment Routing over the MPLS Data Plane",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9903.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9902.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "A YANG Data Model for IS-IS Segment Routing over the MPLS Data Plane",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9902.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9901.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Selective Disclosure for JSON Web Tokens",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9901.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9900.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Updates to NETCONF Transport Port Numbers",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9900.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9899.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Extensions to the YANG Data Model for Access Control Lists (ACLs)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9899.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9898.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Neighbor Discovery Considerations in IPv6 Deployments",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9898.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9897.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Datagram Congestion Control Protocol (DCCP) Extensions for Multipath Operation with Multiple Addresses",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9897.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9896.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "SVG in RFCs",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9896.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9895.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Dynamic Link Exchange Protocol (DLEP) IEEE 802.1Q Aware Credit Window Extension",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9895.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9894.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Dynamic Link Exchange Protocol (DLEP) Diffserv Aware Credit Window Extension",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9894.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9893.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Dynamic Link Exchange Protocol (DLEP) Credit-Based Flow Control Messages and Data Items",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9893.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9892.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Dynamic Link Exchange Protocol (DLEP) Traffic Classification Data Item",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9892.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9891.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Automated Certificate Management Environment (ACME) Delay-Tolerant Networking (DTN) Node ID Validation Extension",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9891.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9890.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "An Update to YANG Module Names Registration",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9890.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9889.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "A Realization of Network Slices for 5G Networks Using Current IP/MPLS Technologies",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9889.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9887.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Terminal Access Controller Access-Control System Plus (TACACS+) over TLS 1.3",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9887.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9886.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "DRIP Entity Tags (DETs) in the Domain Name System",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9886.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9885.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Multi-Part TLVs in IS-IS",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9885.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9884.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Label Switched Path Ping for Segment Routing Path Segment Identifier with MPLS Data Plane",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9884.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9883.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "An Attribute for Statement of Possession of a Private Key",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9883.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9882.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Use of the ML-DSA Signature Algorithm in the Cryptographic Message Syntax (CMS)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9882.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9881.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Internet X.509 Public Key Infrastructure -- Algorithm Identifiers for the Module-Lattice-Based Digital Signature Algorithm (ML-DSA)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9881.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9880.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Semantic Definition Format (SDF) for Data and Interactions of Things",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9880.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9879.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Use of Password-Based Message Authentication Code 1 (PBMAC1) in PKCS #12 Syntax",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9879.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9878.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Updates to Private Header (P-Header) Extension Usage in Session Initiation Protocol (SIP) Requests and Responses",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9878.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9877.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Registration Data Access Protocol (RDAP) Extension for Geofeed Data",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9877.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9876.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Updates to the IANA Registration Procedures for Constrained Application Protocol (CoAP) Content-Formats",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9876.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9875.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "HTTP Cache Groups",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9875.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9874.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Best Practices for Deletion of Domain and Host Objects in the Extensible Provisioning Protocol (EPP)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9874.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9873.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Additional Email Address Extension for the Extensible Provisioning Protocol (EPP)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9873.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9872.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Recommendations for Discovering IPv6 Prefix Used for IPv6 Address Synthesis",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9872.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9871.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "BGP Color-Aware Routing (CAR)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9871.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9870.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Export of UDP Options Information in IP Flow Information Export (IPFIX)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9870.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9869.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Datagram Packetization Layer Path MTU Discovery (DPLPMTUD) for UDP Options",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9869.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9868.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Transport Options for UDP",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9868.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9867.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Mixing Preshared Keys in the IKE_INTERMEDIATE and CREATE_CHILD_SA Exchanges of the Internet Key Exchange Protocol Version 2 (IKEv2) for Post-Quantum Security",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9867.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9866.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Root Node Failure Detector (RNFD): Fast Detection of Border Router Crashes in the Routing Protocol for Low-Power and Lossy Networks (RPL)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9866.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9865.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Cursor-Based Pagination of System of Cross-domain Identity Management (SCIM) Resources",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9865.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9864.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Fully-Specified Algorithms for JSON Object Signing and Encryption (JOSE) and CBOR Object Signing and Encryption (COSE)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9864.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9863.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Path Computation Element Protocol (PCEP) Extension for Color",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9863.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9862.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Path Computation Element Communication Protocol (PCEP) Extensions for Segment Routing (SR) Policy Candidate Paths",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9862.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9861.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "KangarooTwelve and TurboSHAKE",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9861.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9860.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Multicast-Only Fast Reroute (MoFRR) Based on Topology Independent Loop-Free Alternate (TI-LFA) Fast Reroute",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9860.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9859.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Generalized DNS Notifications",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9859.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9858.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Additional Parameter Sets for HSS/LMS Hash-Based Signatures",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9858.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9857.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Advertisement of Segment Routing Policies Using BGP - Link State",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9857.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9856.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Multicast Source Redundancy in EVPNs",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9856.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9855.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Topology Independent Fast Reroute Using Segment Routing",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9855.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9854.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "AODV-RPL: The Routing Protocol for Low-Power and Lossy Networks (RPL) Based on Ad Hoc On-Demand Distance Vector (AODV) Routing",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9854.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9853.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Return Routability Check for DTLS 1.2 and 1.3",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9853.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9849.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "TLS Encrypted Client Hello",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9849.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9848.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Bootstrapping TLS Encrypted ClientHello with DNS Service Bindings",
+      "year": 2026,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9848.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9847.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "IANA Registry Updates for TLS and DTLS",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9847.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9845.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Challenges and Opportunities in Management for Green Networking",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9845.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9844.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Entering IPv6 Zone Identifiers in User Interfaces",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9844.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9843.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "IGP Flexible Algorithms: Bandwidth, Delay, Metrics, and Constraints",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9843.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9842.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Compression Dictionary Transport",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9842.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9841.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Shared Brotli Compressed Data Format",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9841.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9840.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "rLEDBAT: Receiver-Driven Low Extra Delay Background Transport for TCP",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9840.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9839.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Unicode Character Repertoire Subsets",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9839.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9838.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Group Key Management Using the Internet Key Exchange Protocol Version 2 (IKEv2)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9838.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9837.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "The IPv6 VPN Service Destination Option",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9837.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9836.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "A YANG Data Model for Augmenting VPN Service and Network Models with Attachment Circuits",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9836.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9835.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "A Network YANG Data Model for Attachment Circuits",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9835.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9834.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "YANG Data Models for Bearers and Attachment Circuits as a Service (ACaaS)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9834.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9833.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "A Common YANG Data Model for Attachment Circuits",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9833.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9832.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "BGP Classful Transport Planes",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9832.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9831.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Segment Type Extensions for BGP Segment Routing (SR) Policy",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9831.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9830.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Advertising Segment Routing Policies in BGP",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9830.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9829.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Handling of Resource Public Key Infrastructure (RPKI) Certificate Revocation List (CRL) Number Extensions",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9829.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9828.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "RTP Payload Format for JPEG 2000 Streaming with Sub-Codestream Latency",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9828.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9827.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Renaming the Extended Sequence Numbers (ESN) Transform Type in the Internet Key Exchange Protocol Version 2 (IKEv2)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9827.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9826.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "A YANG Data Model for the Path Computation Element Communication Protocol (PCEP)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9826.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9825.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Extensions to OSPF for Advertising Prefix Administrative Tags",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9825.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9824.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Compact Denial of Existence in DNSSEC",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9824.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9820.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Authentication Service Based on the Extensible Authentication Protocol (EAP) for Use with the Constrained Application Protocol (CoAP)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9820.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9819.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Argument Signaling for BGP Services in Segment Routing over IPv6 (SRv6)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9819.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9818.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "DHCPv6 Prefix Delegation on IPv6 Customer Edge (CE) Routers in LANs",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9818.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9817.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Use Cases for In-Network Computing",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9817.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9816.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Usage and Applicability of BGP Link State (BGP-LS) Shortest Path First (SPF) Routing in Data Centers",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9816.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9815.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "BGP Link State (BGP-LS) Shortest Path First (SPF) Routing",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9815.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9814.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Use of the SLH-DSA Signature Algorithm in the Cryptographic Message Syntax (CMS)",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9814.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9813.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Operational Considerations for Using TLS Pre-Shared Keys (TLS-PSKs) with RADIUS",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9813.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor-index",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9812.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Clarification of IPv6 Address Allocation Policy",
+      "year": 2025,
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9812.html"
+    }
+  }
+]

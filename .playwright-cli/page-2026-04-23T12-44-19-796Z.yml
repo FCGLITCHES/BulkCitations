@@ -1,0 +1,105 @@
+- generic [ref=e2]:
+  - paragraph [ref=e4]: I'm building this in public, and feedback is appreciated. This is an early beta build.
+  - generic [ref=e5]:
+    - navigation [ref=e6]:
+      - generic [ref=e8]:
+        - link "BulkReferences Beta" [ref=e10] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e11]: BulkReferences
+          - generic [ref=e12]: Beta
+        - generic [ref=e13]:
+          - link "Home" [ref=e14] [cursor=pointer]:
+            - /url: /
+          - link "History" [ref=e15] [cursor=pointer]:
+            - /url: /history
+          - link "Prices" [ref=e16] [cursor=pointer]:
+            - /url: /prices
+          - link "Resources" [ref=e17] [cursor=pointer]:
+            - /url: /resources
+          - link "API" [ref=e18] [cursor=pointer]:
+            - /url: /api-docs
+          - button "About" [ref=e20] [cursor=pointer]:
+            - text: About
+            - img [ref=e21]
+        - generic [ref=e23]:
+          - button "Toggle theme" [ref=e24] [cursor=pointer]:
+            - img [ref=e25]
+          - link "Sign In" [ref=e28] [cursor=pointer]:
+            - /url: /login?flow=user
+    - main [ref=e29]:
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - heading "Bulk Reference Parser" [level=1] [ref=e32]
+          - paragraph [ref=e33]: Convert messy bibliographies into precision-formatted citations. Paste your raw text or drop your source files below.
+        - generic [ref=e36]:
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - heading "Original Citations" [level=3] [ref=e40]
+              - generic [ref=e42]: 0 references detected
+            - generic [ref=e43]:
+              - generic [ref=e44]:
+                - generic [ref=e45]: Input Mode
+                - combobox [ref=e46] [cursor=pointer]:
+                  - option "Auto profile" [selected]
+                  - option "Text batch"
+                  - option "DOI list"
+              - button "Load Sample" [ref=e47] [cursor=pointer]
+            - generic [ref=e48]:
+              - textbox "Paste your raw citations here... e.g. Smith, J. (2023). Future of Archiving. Oxford Journal..." [ref=e50]:
+                - /placeholder: "Paste your raw citations here...\n\ne.g. Smith, J. (2023). Future of Archiving. Oxford Journal..."
+              - generic [ref=e52]:
+                - generic [ref=e54]: upload_file
+                - generic [ref=e55]:
+                  - generic [ref=e56]: Drag and drop a file here
+                  - generic [ref=e57]: Or choose a file. Accepts .txt, .ris, .bib, and .csv.
+                - button "Choose file" [ref=e59] [cursor=pointer]
+            - generic [ref=e60]:
+              - generic [ref=e61] [cursor=pointer]:
+                - checkbox "Preview split" [disabled] [ref=e62]
+                - generic [ref=e63]: Preview split
+              - group [ref=e64]:
+                - generic "Input cleanup" [ref=e65] [cursor=pointer]:
+                  - generic [ref=e66]: Input cleanup
+                  - generic [ref=e67]: ▼
+            - generic [ref=e68]:
+              - generic [ref=e69]: Target Citation Style
+              - combobox [ref=e70] [cursor=pointer]:
+                - option "APA (7th Edition)" [selected]
+                - option "MLA (9th Edition)"
+                - option "Chicago Author-Date"
+                - option "Chicago Notes & Bibliography"
+                - option "Harvard CTR"
+                - option "Vancouver"
+                - option "IEEE"
+                - option "AMA"
+                - option "ACS"
+            - button "auto_fix_high CONVERT" [disabled] [ref=e71]:
+              - generic [ref=e72]: auto_fix_high
+              - text: CONVERT
+            - generic [ref=e74] [cursor=pointer]:
+              - checkbox "Group Duplicates" [checked] [ref=e75]
+              - generic [ref=e76]: Group Duplicates
+          - generic [ref=e77]:
+            - heading "Converted Citations" [level=3] [ref=e79]
+            - generic [ref=e81]:
+              - generic [ref=e83]: folder_off
+              - heading "No converted references yet" [level=4] [ref=e84]
+              - paragraph [ref=e85]: Convert some references to see them here.
+    - contentinfo [ref=e86]:
+      - generic [ref=e87]:
+        - generic [ref=e88]:
+          - generic [ref=e89]: BulkReferences
+          - paragraph [ref=e90]: © 2026 BulkReferences. Precision in Every Reference.
+        - generic [ref=e91]:
+          - link "Support" [ref=e92] [cursor=pointer]:
+            - /url: /support
+          - link "Contact" [ref=e93] [cursor=pointer]:
+            - /url: /contact
+          - link "Privacy" [ref=e94] [cursor=pointer]:
+            - /url: /privacy
+          - link "Admin" [ref=e95] [cursor=pointer]:
+            - /url: /admin-login
+          - link "Terms" [ref=e96] [cursor=pointer]:
+            - /url: /terms
+  - region "Notifications (F8)":
+    - list

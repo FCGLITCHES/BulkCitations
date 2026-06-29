@@ -1,0 +1,36 @@
+{
+  "thresholdSetVersion": "policy-1",
+  "supportedExactStyles": [
+    "apa7",
+    "chicago-notes-bib",
+    "harvard-ctr",
+    "ieee",
+    "mla9",
+    "vancouver"
+  ],
+  "knownUnsupportedExactStyles": [
+    "ama",
+    "acs",
+    "chicago-author-date"
+  ],
+  "familyByStyle": {
+    "apa7": "author_date",
+    "harvard-ctr": "author_date",
+    "chicago-notes-bib": "notes_bibliography",
+    "mla9": "notes_bibliography",
+    "vancouver": "numeric",
+    "ieee": "numeric",
+    "ama": "numeric",
+    "acs": "numeric",
+    "chicago-author-date": "author_date",
+    "unknown": "unknown"
+  },
+  "operatingMode": "shadow",
+  "requireCalibrationForPrimary": true,
+  "abstainOnMissingPrimaryCalibration": true,
+  "calibration": {
+    "available": false,
+    "source": null,
+    "notes": "Set available=true with calibration artifact before primary promotion."
+  }
+}

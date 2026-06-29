@@ -1,0 +1,16 @@
+# Optional Render Blueprint: https://render.com/docs/infrastructure-as-code
+# If the Web Service was created manually, do not duplicate it — add SESSION_SECRET under
+# Environment (Generate, or paste output of: openssl rand -hex 32), then redeploy.
+services:
+  - type: web
+    name: bulkreferences-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true

@@ -1,0 +1,11 @@
+{
+  "collapseHyphenatedLineBreaks": true,
+  "maxInputChars": 8192,
+  "normalizeWhitespace": true,
+  "removeSoftHyphens": true,
+  "replaceLigatures": true,
+  "stripControlCharacters": true,
+  "tokenizerStrategy": "wordlevel-punctuation-v1",
+  "unicodeNormalization": "NFKC",
+  "version": "plain-text-bio-v1"
+}

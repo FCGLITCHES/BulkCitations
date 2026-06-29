@@ -1,0 +1,499 @@
+{
+  "startedAt": "2026-04-29T17:54:58.184Z",
+  "expectedRefs": 500,
+  "expectedQuality": {
+    "ready": 402,
+    "actionNeeded": 98,
+    "review": 0
+  },
+  "configs": [
+    {
+      "batch": 32,
+      "concurrency": 8
+    },
+    {
+      "batch": 32,
+      "concurrency": 12
+    },
+    {
+      "batch": 48,
+      "concurrency": 8
+    },
+    {
+      "batch": 48,
+      "concurrency": 12
+    },
+    {
+      "batch": 48,
+      "concurrency": 16
+    },
+    {
+      "batch": 64,
+      "concurrency": 8
+    },
+    {
+      "batch": 64,
+      "concurrency": 12
+    },
+    {
+      "batch": 64,
+      "concurrency": 16
+    },
+    {
+      "batch": 96,
+      "concurrency": 6
+    },
+    {
+      "batch": 96,
+      "concurrency": 8
+    },
+    {
+      "batch": 96,
+      "concurrency": 12
+    },
+    {
+      "batch": 128,
+      "concurrency": 4
+    },
+    {
+      "batch": 128,
+      "concurrency": 8
+    }
+  ],
+  "results": [
+    {
+      "config": {
+        "batch": 32,
+        "concurrency": 8
+      },
+      "runIndex": 1,
+      "elapsedMs": 2253,
+      "measuredRefsPerSec": 221.93,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:04:22.328Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c1-1-b32-c8.log"
+    },
+    {
+      "config": {
+        "batch": 32,
+        "concurrency": 8
+      },
+      "runIndex": 2,
+      "elapsedMs": 1589,
+      "measuredRefsPerSec": 314.66,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:04:27.895Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c1-1-b32-c8.log"
+    },
+    {
+      "config": {
+        "batch": 32,
+        "concurrency": 12
+      },
+      "runIndex": 1,
+      "elapsedMs": 2265,
+      "measuredRefsPerSec": 220.75,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:04:44.227Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c1-2-b32-c12.log"
+    },
+    {
+      "config": {
+        "batch": 32,
+        "concurrency": 12
+      },
+      "runIndex": 2,
+      "elapsedMs": 1451,
+      "measuredRefsPerSec": 344.59,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:04:49.679Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c1-2-b32-c12.log"
+    },
+    {
+      "config": {
+        "batch": 48,
+        "concurrency": 8
+      },
+      "runIndex": 1,
+      "elapsedMs": 2115,
+      "measuredRefsPerSec": 236.41,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:05:06.294Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c1-3-b48-c8.log"
+    },
+    {
+      "config": {
+        "batch": 48,
+        "concurrency": 8
+      },
+      "runIndex": 2,
+      "elapsedMs": 1490,
+      "measuredRefsPerSec": 335.57,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:05:11.813Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c1-3-b48-c8.log"
+    },
+    {
+      "config": {
+        "batch": 48,
+        "concurrency": 12
+      },
+      "runIndex": 1,
+      "elapsedMs": 2292,
+      "measuredRefsPerSec": 218.15,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:08:52.188Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c2r-1-b48-c12.log"
+    },
+    {
+      "config": {
+        "batch": 48,
+        "concurrency": 12
+      },
+      "runIndex": 2,
+      "elapsedMs": 1607,
+      "measuredRefsPerSec": 311.14,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:08:57.878Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c2r-1-b48-c12.log"
+    },
+    {
+      "config": {
+        "batch": 48,
+        "concurrency": 16
+      },
+      "runIndex": 1,
+      "elapsedMs": 2228,
+      "measuredRefsPerSec": 224.42,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:09:15.323Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c2r-2-b48-c16.log"
+    },
+    {
+      "config": {
+        "batch": 48,
+        "concurrency": 16
+      },
+      "runIndex": 2,
+      "elapsedMs": 1506,
+      "measuredRefsPerSec": 332.01,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:09:20.789Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c2r-2-b48-c16.log"
+    },
+    {
+      "config": {
+        "batch": 64,
+        "concurrency": 8
+      },
+      "runIndex": 1,
+      "elapsedMs": 1710,
+      "measuredRefsPerSec": 292.4,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:09:29.377Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c2r-3-b64-c8.log"
+    },
+    {
+      "config": {
+        "batch": 64,
+        "concurrency": 8
+      },
+      "runIndex": 2,
+      "elapsedMs": 1360,
+      "measuredRefsPerSec": 367.65,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:09:35.663Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c2r-3-b64-c8.log"
+    },
+    {
+      "config": {
+        "batch": 64,
+        "concurrency": 12
+      },
+      "runIndex": 1,
+      "elapsedMs": 2726,
+      "measuredRefsPerSec": 183.42,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:10:48.551Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c3-1-b64-c12.log"
+    },
+    {
+      "config": {
+        "batch": 64,
+        "concurrency": 12
+      },
+      "runIndex": 2,
+      "elapsedMs": 1883,
+      "measuredRefsPerSec": 265.53,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:10:54.089Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c3-1-b64-c12.log"
+    },
+    {
+      "config": {
+        "batch": 64,
+        "concurrency": 16
+      },
+      "runIndex": 1,
+      "elapsedMs": 2824,
+      "measuredRefsPerSec": 177.05,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:11:13.184Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c3-2-b64-c16.log"
+    },
+    {
+      "config": {
+        "batch": 64,
+        "concurrency": 16
+      },
+      "runIndex": 2,
+      "elapsedMs": 2312,
+      "measuredRefsPerSec": 216.26,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:11:19.723Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c3-2-b64-c16.log"
+    },
+    {
+      "config": {
+        "batch": 96,
+        "concurrency": 8
+      },
+      "runIndex": 1,
+      "elapsedMs": 2524,
+      "measuredRefsPerSec": 198.1,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:11:38.136Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c3-3-b96-c8.log"
+    },
+    {
+      "config": {
+        "batch": 96,
+        "concurrency": 8
+      },
+      "runIndex": 2,
+      "elapsedMs": 1478,
+      "measuredRefsPerSec": 338.29,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:11:43.146Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c3-3-b96-c8.log"
+    },
+    {
+      "config": {
+        "batch": 96,
+        "concurrency": 12
+      },
+      "runIndex": 1,
+      "elapsedMs": 2608,
+      "measuredRefsPerSec": 191.72,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:12:32.107Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c4-1-b96-c12.log"
+    },
+    {
+      "config": {
+        "batch": 96,
+        "concurrency": 12
+      },
+      "runIndex": 2,
+      "elapsedMs": 1462,
+      "measuredRefsPerSec": 342,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:12:37.183Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c4-1-b96-c12.log"
+    },
+    {
+      "config": {
+        "batch": 128,
+        "concurrency": 4
+      },
+      "runIndex": 1,
+      "elapsedMs": 2006,
+      "measuredRefsPerSec": 249.25,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:12:45.786Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c4-2-b128-c4.log"
+    },
+    {
+      "config": {
+        "batch": 128,
+        "concurrency": 4
+      },
+      "runIndex": 2,
+      "elapsedMs": 3282,
+      "measuredRefsPerSec": 152.35,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:12:52.687Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c4-2-b128-c4.log"
+    },
+    {
+      "config": {
+        "batch": 128,
+        "concurrency": 8
+      },
+      "runIndex": 1,
+      "elapsedMs": 2716,
+      "measuredRefsPerSec": 184.09,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:13:11.623Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c4-3-b128-c8.log"
+    },
+    {
+      "config": {
+        "batch": 128,
+        "concurrency": 8
+      },
+      "runIndex": 2,
+      "elapsedMs": 1584,
+      "measuredRefsPerSec": 315.66,
+      "counts": {
+        "ready": 402,
+        "actionNeeded": 98,
+        "review": 0
+      },
+      "qualityPass": true,
+      "settledInputMs": 2500,
+      "completedAt": "2026-04-29T18:13:16.827Z",
+      "logPath": "D:\\Coding\\Bulkreferences\\.codex-server-sweep-c4-3-b128-c8.log"
+    }
+  ],
+  "previous": null,
+  "protocol": "browser-use home page, settled input 2500ms before convert click"
+}

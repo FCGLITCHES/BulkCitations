@@ -1,0 +1,1 @@
+{"status":"degraded","checks":{"postgres":{"status":"ok","required":true,"configured":true},"redis":{"status":"error","required":false,"configured":true}},"version":"1.0.0","pipelineMajor":3,"runtime":{"nodeEnv":"development","port":4000,"persistenceMode":"database","persistenceBackend":"database"}}

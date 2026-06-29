@@ -1,0 +1,7 @@
+{
+  "datasetHash": "8c413156434e55fefcabb647de6bc9d5c261e035a6b6370b678444378823a6df",
+  "exportSchemaVersion": "training-export-v1",
+  "featureVersion": "plain-text-bootstrap-v1",
+  "inputFormat": "flat-jsonl",
+  "preprocessingVersion": "plain-text-bootstrap-v1"
+}

@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bulkreferences.local/benchmarks/grobid-pmc/manifest.schema.json",
+  "title": "Grobid-Style Citation Benchmark Manifest Row",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "record_id",
+      "variant_id",
+      "variant_kind",
+      "reference_type",
+      "citation_style",
+      "formatted_string",
+      "noise_applied",
+      "source",
+      "source_url",
+      "source_hash",
+      "language",
+      "input_structure",
+      "input_source_kind",
+      "expected_fields",
+      "required_fields"
+    ],
+    "properties": {
+      "record_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "variant_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "variant_kind": {
+        "type": "string",
+        "enum": ["clean", "noisy"]
+      },
+      "reference_type": {
+        "type": "string",
+        "enum": [
+          "article-journal",
+          "conference-paper",
+          "book",
+          "book-chapter",
+          "preprint",
+          "thesis",
+          "report",
+          "patent",
+          "webpage"
+        ]
+      },
+      "citation_style": {
+        "type": "string",
+        "enum": [
+          "apa7",
+          "harvard-ctr",
+          "chicago-notes-bib",
+          "vancouver",
+          "ieee",
+          "mla9"
+        ]
+      },
+      "formatted_string": {
+        "type": "string",
+        "minLength": 1
+      },
+      "noise_applied": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "missing_field",
+            "alternate_identifier_format",
+            "odd_punctuation",
+            "non_ascii",
+            "style_specific_quirk",
+            "fake_plausible_id"
+          ]
+        }
+      },
+      "source": {
+        "type": "string",
+        "minLength": 1
+      },
+      "source_url": {
+        "type": "string",
+        "minLength": 1
+      },
+      "source_hash": {
+        "type": "string",
+        "minLength": 1
+      },
+      "language": {
+        "type": "string",
+        "minLength": 1
+      },
+      "input_structure": {
+        "type": "string",
+        "enum": ["structured", "unstructured"]
+      },
+      "input_source_kind": {
+        "type": "string",
+        "enum": [
+          "csl_rendered",
+          "raw_pasted",
+          "pdf_copy",
+          "numbered_block",
+          "typed_manual"
+        ]
+      },
+      "expected_fields": {
+        "type": "object",
+        "additionalProperties": {
+          "anyOf": [
+            { "type": "string" },
+            { "type": "number" },
+            { "type": "boolean" },
+            { "type": "null" },
+            {
+              "type": "array",
+              "items": {
+                "type": ["string", "number", "boolean", "null"]
+              }
+            }
+          ]
+        }
+      },
+      "required_fields": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

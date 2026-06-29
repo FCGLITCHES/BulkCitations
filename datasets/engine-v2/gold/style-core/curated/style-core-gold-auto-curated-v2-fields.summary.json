@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "datasetVersion": "style-core-gold-auto-curated-v2-fields",
+  "packRoot": "D:\\Coding\\Bulkreferences\\style_core_gold_reference_pack_fields",
+  "reviewedBy": "system:style-gold-reference-pack",
+  "includeQuarantine": true,
+  "replaceDatasetVersions": [
+    "style-core-gold-auto-curated-v1"
+  ],
+  "report": {
+    "inputFile": "style-core-freeze-2026-04-13T22-43-05-056Z.precert-pool.ndjson",
+    "curationVersion": "style-core-gold-auto-curated-v2-fields",
+    "curationDate": "2026-04-23T03:07:17Z",
+    "goldRows": 7197,
+    "quarantineRows": 13053
+  },
+  "imported": {
+    "goldRowsRead": 7197,
+    "quarantineRowsRead": 13053,
+    "totalRowsImported": 20250,
+    "deletedReplacedRows": 165,
+    "deletedArtifactPaths": [
+      "D:\\Coding\\Bulkreferences\\ml-service\\training\\gold-datasets\\style-core-gold-auto-curated-v1.style-core.jsonl",
+      "D:\\Coding\\Bulkreferences\\ml-service\\training\\gold-datasets\\style-core-gold-auto-curated-v1.summary.json",
+      "D:\\Coding\\Bulkreferences\\ml-service\\training\\gold-datasets\\style-core-gold-auto-curated-v1.json"
+    ]
+  },
+  "database": {
+    "datasetRows": 19893,
+    "goldRows": 7197,
+    "quarantineRows": 12696
+  },
+  "outputs": {
+    "referencePackDestination": "D:\\Coding\\Bulkreferences\\ml-service\\training\\gold-datasets\\style_core_gold_reference_pack_fields",
+    "canonicalStyleGoldJsonl": "D:\\Coding\\Bulkreferences\\ml-service\\training\\style_gold.jsonl",
+    "canonicalStyleGoldRows": 7120,
+    "datasetStyleGoldJsonl": "D:\\Coding\\Bulkreferences\\ml-service\\training\\gold-datasets\\style-core-gold-auto-curated-v2-fields.style-core.jsonl",
+    "datasetStyleGoldRows": 7120,
+    "manifestPath": "D:\\Coding\\Bulkreferences\\ml-service\\training\\gold-datasets\\style-core-gold-auto-curated-v2-fields.json",
+    "summaryPath": "D:\\Coding\\Bulkreferences\\ml-service\\training\\gold-datasets\\style-core-gold-auto-curated-v2-fields.summary.json"
+  }
+}

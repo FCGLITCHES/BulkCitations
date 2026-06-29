@@ -1,0 +1,5 @@
+# Cloudflare Pages — static Vite app (not Next.js). Build first: pnpm run pages:build
+# Dashboard: connect repo or deploy CLI: pnpm run pages:deploy
+name = "bulkreferences"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = "frontend/dist/public"

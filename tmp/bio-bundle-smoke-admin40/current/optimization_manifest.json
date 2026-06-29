@@ -1,0 +1,9 @@
+{
+  "graphOptimizations": [
+    "lstm_encoder",
+    "linear_head"
+  ],
+  "precision": "float32",
+  "quantized": false,
+  "trainingRows": 1200
+}

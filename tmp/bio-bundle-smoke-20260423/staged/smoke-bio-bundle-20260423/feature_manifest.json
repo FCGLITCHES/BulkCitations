@@ -1,0 +1,6 @@
+{
+  "featureVersion": "plain-text-bio-v1",
+  "labelCount": 45,
+  "labelSchema": "BIO",
+  "source": "hf-bio-gold"
+}

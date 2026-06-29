@@ -1,0 +1,8 @@
+[1] Whitley D, A genetic algorithm tutorial, Statistics and computing, 1994 Jun 1;4(2):65-85.
+[2] Goldberg DE, Holland JH, Genetic algorithms and machine learning, 1988.
+[3] Holland JH, Genetic algorithms, Scientific American, 1992 Jul 1;267(1), 66-73.
+[7] S. R, R. T, A review of selection methods in genetic algorithm, Int. j. of eng. Sc. and tech., 2011 May, 3(5), 3792-7.
+[8] Arabali, Amirsaman, Mahmoud Ghofrani, Mehdi Etezadi-Amoli, M. Sami Fadali, and Yahia Baghzouz. "Genetic-algorithm-based optimization approach for energy management." IEEE Transactions on Power Delivery 28, no. 1 (2012): 162-170.
+[11] Yang, Jinhui, Chunguo Wu, Heow Pueh Lee, and Yanchun Liang. "Solving traveling salesman problems using generalized chromosome genetic algorithm." Progress in Natural Science 18, no. 7 (2008): 887-892.
+[16] Kramer, Olive, Genetic algorithm essentials, Vol. 679. Springer, 2017.
+[34] Whitley, D., Starkweather, T. and Bogart, C., 1990. Genetic algorithms and neural networks: Optimizing connections and connectivity. Parallel computing, 14(3), pp.347-361.

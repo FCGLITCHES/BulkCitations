@@ -1,0 +1,7 @@
+*.parser_output.json
+*.run_*.json
+*.summary_*.md
+*.debug_*.json
+*.debug_*.md
+*.perf_*.json
+local/

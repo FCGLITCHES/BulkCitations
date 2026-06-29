@@ -1,0 +1,111 @@
+name: Citation Quality Gate
+
+on:
+  push:
+    paths:
+      - "server/src/engine/**"
+      - "server/src/benchmark/**"
+      - "server/src/routes/adminTruthRoutes.ts"
+      - "server/scripts/benchmark/**"
+      - "benchmarks/grobid-pmc/**"
+      - "ml-service/app/style_classifier.py"
+      - "ml-service/tools/train_style_bundle.py"
+      - "package.json"
+      - "server/package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/citation-quality-gate.yml"
+  pull_request:
+    paths:
+      - "server/src/engine/**"
+      - "server/src/benchmark/**"
+      - "server/src/routes/adminTruthRoutes.ts"
+      - "server/scripts/benchmark/**"
+      - "benchmarks/grobid-pmc/**"
+      - "ml-service/app/style_classifier.py"
+      - "ml-service/tools/train_style_bundle.py"
+      - "package.json"
+      - "server/package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/citation-quality-gate.yml"
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run server tests
+        run: pnpm test:server
+
+      - name: Run pipeline profile budget checks
+        run: pnpm profile:pipeline
+
+      - name: Run pilot benchmark (heuristic-only)
+        run: pnpm benchmark:run -- --mode=pilot --profile=heuristic-only
+
+      - name: Evaluate pilot benchmark (heuristic-only)
+        run: pnpm benchmark:evaluate -- --mode=pilot --profile=heuristic-only
+
+      - name: Enforce pilot benchmark gate (heuristic-only)
+        run: pnpm benchmark:gate -- --mode=pilot --profile=heuristic-only
+
+      - name: Run pilot benchmark (hybrid-ml)
+        run: pnpm benchmark:run -- --mode=pilot --profile=hybrid-ml
+
+      - name: Evaluate pilot benchmark (hybrid-ml)
+        run: pnpm benchmark:evaluate -- --mode=pilot --profile=hybrid-ml
+
+      - name: Enforce pilot benchmark gate (hybrid-ml)
+        run: pnpm benchmark:gate -- --mode=pilot --profile=hybrid-ml
+
+      - name: Compare hybrid-ml versus heuristic-only style outcomes
+        run: pnpm benchmark:style-winloss -- --mode=pilot
+
+      - name: Append quality summary
+        if: always()
+        run: |
+          {
+            echo "## Citation Quality Gate"
+            echo
+            echo "### Pilot (heuristic-only)"
+            cat benchmarks/grobid-pmc/results/pilot.summary.md
+            echo
+            echo "### Pilot (hybrid-ml)"
+            cat benchmarks/grobid-pmc/results/pilot.hybrid-ml.summary.md
+            echo
+            echo "### Style Win/Loss (hybrid-ml vs heuristic-only)"
+            cat benchmarks/grobid-pmc/results/pilot.style_winloss.summary.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload quality artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: citation-quality-gate
+          path: |
+            benchmarks/grobid-pmc/results/pilot.latest.json
+            benchmarks/grobid-pmc/results/pilot.summary.md
+            benchmarks/grobid-pmc/results/pilot.debug.json
+            benchmarks/grobid-pmc/results/pilot.debug.md
+            benchmarks/grobid-pmc/results/pilot.hybrid-ml.latest.json
+            benchmarks/grobid-pmc/results/pilot.hybrid-ml.summary.md
+            benchmarks/grobid-pmc/results/pilot.hybrid-ml.debug.json
+            benchmarks/grobid-pmc/results/pilot.hybrid-ml.debug.md
+            benchmarks/grobid-pmc/results/pilot.style_winloss.latest.json
+            benchmarks/grobid-pmc/results/pilot.style_winloss.summary.md

@@ -1,0 +1,974 @@
+[
+  {
+    "variant_id": "article-journal-0a40e46f971349d9:apa7:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "article-journal-0a40e46f971349d9:harvard-ctr:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "article-journal-0a40e46f971349d9:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "article-journal-0a40e46f971349d9:vancouver:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "article-journal-0a40e46f971349d9:ieee:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "article-journal-0a40e46f971349d9:mla9:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "article-journal-137b6aa48ebe1478:apa7:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "article-journal-137b6aa48ebe1478:harvard-ctr:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "article-journal-137b6aa48ebe1478:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "article-journal-137b6aa48ebe1478:vancouver:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "article-journal-137b6aa48ebe1478:ieee:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "article-journal-137b6aa48ebe1478:mla9:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "article-journal-160715ea7f78e113:apa7:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "article-journal-160715ea7f78e113:harvard-ctr:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "article-journal-160715ea7f78e113:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "article-journal-160715ea7f78e113:vancouver:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "article-journal-160715ea7f78e113:ieee:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "article-journal-160715ea7f78e113:mla9:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "article-journal-1b52ebbd29cf8532:apa7:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "article-journal-1b52ebbd29cf8532:harvard-ctr:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "article-journal-1b52ebbd29cf8532:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "article-journal-1b52ebbd29cf8532:vancouver:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "article-journal-1b52ebbd29cf8532:ieee:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "article-journal-1b52ebbd29cf8532:mla9:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "book-047bbe33e9a8a895:apa7:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "book-047bbe33e9a8a895:harvard-ctr:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "book-047bbe33e9a8a895:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "book-047bbe33e9a8a895:vancouver:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "book-047bbe33e9a8a895:ieee:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "book-047bbe33e9a8a895:mla9:noisy",
+    "noise_applied": [
+      "fake_plausible_id"
+    ]
+  },
+  {
+    "variant_id": "book-04ee4160b34854bb:apa7:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "book-04ee4160b34854bb:harvard-ctr:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "book-04ee4160b34854bb:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "book-04ee4160b34854bb:vancouver:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "book-04ee4160b34854bb:ieee:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "book-04ee4160b34854bb:mla9:noisy",
+    "noise_applied": [
+      "fake_plausible_id"
+    ]
+  },
+  {
+    "variant_id": "book-104e1ae3110e918e:apa7:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "book-104e1ae3110e918e:harvard-ctr:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "book-104e1ae3110e918e:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "book-104e1ae3110e918e:vancouver:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "book-104e1ae3110e918e:ieee:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "book-104e1ae3110e918e:mla9:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "book-13f4ea772425fcef:apa7:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "book-13f4ea772425fcef:harvard-ctr:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "book-13f4ea772425fcef:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "book-13f4ea772425fcef:vancouver:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "book-13f4ea772425fcef:ieee:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "book-13f4ea772425fcef:mla9:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "book-chapter-0ae11ce81d7289e2:apa7:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "book-chapter-0ae11ce81d7289e2:harvard-ctr:noisy",
+    "noise_applied": [
+      "fake_plausible_id"
+    ]
+  },
+  {
+    "variant_id": "book-chapter-0ae11ce81d7289e2:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "book-chapter-0ae11ce81d7289e2:vancouver:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "book-chapter-0ae11ce81d7289e2:ieee:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "book-chapter-0ae11ce81d7289e2:mla9:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "book-chapter-107015a89302a039:apa7:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "book-chapter-107015a89302a039:harvard-ctr:noisy",
+    "noise_applied": [
+      "fake_plausible_id"
+    ]
+  },
+  {
+    "variant_id": "book-chapter-107015a89302a039:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "book-chapter-107015a89302a039:vancouver:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "book-chapter-107015a89302a039:ieee:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "book-chapter-107015a89302a039:mla9:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "preprint-144383a403d1db07:apa7:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "preprint-144383a403d1db07:harvard-ctr:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "preprint-144383a403d1db07:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "preprint-144383a403d1db07:vancouver:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "preprint-144383a403d1db07:ieee:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "preprint-144383a403d1db07:mla9:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "thesis-028faba376d4c6fa:apa7:noisy",
+    "noise_applied": [
+      "fake_plausible_id"
+    ]
+  },
+  {
+    "variant_id": "thesis-028faba376d4c6fa:harvard-ctr:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "thesis-028faba376d4c6fa:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "thesis-028faba376d4c6fa:vancouver:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "thesis-028faba376d4c6fa:ieee:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "thesis-028faba376d4c6fa:mla9:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "thesis-083479e607065f5c:apa7:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "thesis-083479e607065f5c:harvard-ctr:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "thesis-083479e607065f5c:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "thesis-083479e607065f5c:vancouver:noisy",
+    "noise_applied": [
+      "fake_plausible_id"
+    ]
+  },
+  {
+    "variant_id": "thesis-083479e607065f5c:ieee:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "thesis-083479e607065f5c:mla9:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "report-00f9602823ab681c:apa7:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "report-00f9602823ab681c:harvard-ctr:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "report-00f9602823ab681c:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "report-00f9602823ab681c:vancouver:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "report-00f9602823ab681c:ieee:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "report-00f9602823ab681c:mla9:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "report-05bcdfaa9980ceda:apa7:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "report-05bcdfaa9980ceda:harvard-ctr:noisy",
+    "noise_applied": [
+      "fake_plausible_id"
+    ]
+  },
+  {
+    "variant_id": "report-05bcdfaa9980ceda:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "report-05bcdfaa9980ceda:vancouver:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "report-05bcdfaa9980ceda:ieee:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "report-05bcdfaa9980ceda:mla9:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "report-06957ba50308a249:apa7:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "report-06957ba50308a249:harvard-ctr:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "report-06957ba50308a249:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "fake_plausible_id"
+    ]
+  },
+  {
+    "variant_id": "report-06957ba50308a249:vancouver:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "report-06957ba50308a249:ieee:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "report-06957ba50308a249:mla9:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "report-08376d566f84a3f2:apa7:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "report-08376d566f84a3f2:harvard-ctr:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "report-08376d566f84a3f2:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "report-08376d566f84a3f2:vancouver:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "report-08376d566f84a3f2:ieee:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "report-08376d566f84a3f2:mla9:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "report-0ba051f98c98017a:apa7:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "report-0ba051f98c98017a:harvard-ctr:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "report-0ba051f98c98017a:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "report-0ba051f98c98017a:vancouver:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "report-0ba051f98c98017a:ieee:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "report-0ba051f98c98017a:mla9:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "report-0fab7ad8f6d78470:apa7:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "report-0fab7ad8f6d78470:harvard-ctr:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "report-0fab7ad8f6d78470:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "report-0fab7ad8f6d78470:vancouver:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "report-0fab7ad8f6d78470:ieee:noisy",
+    "noise_applied": [
+      "fake_plausible_id"
+    ]
+  },
+  {
+    "variant_id": "report-0fab7ad8f6d78470:mla9:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "patent-1171b4ea13e588ab:apa7:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "patent-1171b4ea13e588ab:harvard-ctr:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "patent-1171b4ea13e588ab:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "patent-1171b4ea13e588ab:vancouver:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "patent-1171b4ea13e588ab:ieee:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "patent-1171b4ea13e588ab:mla9:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "patent-14e1ba277acb08a7:apa7:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "patent-14e1ba277acb08a7:harvard-ctr:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "patent-14e1ba277acb08a7:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "patent-14e1ba277acb08a7:vancouver:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "patent-14e1ba277acb08a7:ieee:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "patent-14e1ba277acb08a7:mla9:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "patent-16d3b05a299cdf60:apa7:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "patent-16d3b05a299cdf60:harvard-ctr:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "patent-16d3b05a299cdf60:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "patent-16d3b05a299cdf60:vancouver:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "patent-16d3b05a299cdf60:ieee:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "patent-16d3b05a299cdf60:mla9:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "patent-22ad44ff71692f93:apa7:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "patent-22ad44ff71692f93:harvard-ctr:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "patent-22ad44ff71692f93:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "patent-22ad44ff71692f93:vancouver:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "patent-22ad44ff71692f93:ieee:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "patent-22ad44ff71692f93:mla9:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "webpage-02d23a55c7f1c255:apa7:noisy",
+    "noise_applied": [
+      "fake_plausible_id"
+    ]
+  },
+  {
+    "variant_id": "webpage-02d23a55c7f1c255:harvard-ctr:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "webpage-02d23a55c7f1c255:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "webpage-02d23a55c7f1c255:vancouver:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "webpage-02d23a55c7f1c255:ieee:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "webpage-02d23a55c7f1c255:mla9:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "webpage-0a91b14eedc098be:apa7:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "webpage-0a91b14eedc098be:harvard-ctr:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "webpage-0a91b14eedc098be:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "webpage-0a91b14eedc098be:vancouver:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "webpage-0a91b14eedc098be:ieee:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "webpage-0a91b14eedc098be:mla9:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "webpage-2a29c11ff8aa7acb:apa7:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "webpage-2a29c11ff8aa7acb:harvard-ctr:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "webpage-2a29c11ff8aa7acb:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "non_ascii"
+    ]
+  },
+  {
+    "variant_id": "webpage-2a29c11ff8aa7acb:vancouver:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "webpage-2a29c11ff8aa7acb:ieee:noisy",
+    "noise_applied": [
+      "alternate_identifier_format"
+    ]
+  },
+  {
+    "variant_id": "webpage-2a29c11ff8aa7acb:mla9:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "webpage-2a6456ff822dda05:apa7:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "webpage-2a6456ff822dda05:harvard-ctr:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "webpage-2a6456ff822dda05:chicago-notes-bib:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  },
+  {
+    "variant_id": "webpage-2a6456ff822dda05:vancouver:noisy",
+    "noise_applied": [
+      "missing_field"
+    ]
+  },
+  {
+    "variant_id": "webpage-2a6456ff822dda05:ieee:noisy",
+    "noise_applied": [
+      "odd_punctuation"
+    ]
+  },
+  {
+    "variant_id": "webpage-2a6456ff822dda05:mla9:noisy",
+    "noise_applied": [
+      "style_specific_quirk"
+    ]
+  }
+]

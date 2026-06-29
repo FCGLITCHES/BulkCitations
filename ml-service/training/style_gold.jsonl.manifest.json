@@ -1,0 +1,7 @@
+{
+  "source": "D:\\Coding\\Bulkreferences\\datasets\\engine-v2\\gold\\style-core\\exports\\style_gold.jsonl",
+  "mirror": "D:\\Coding\\Bulkreferences\\ml-service\\training\\style_gold.jsonl",
+  "dataset_version": "style-core-gold-auto-curated-v2-fields",
+  "created_at": "2026-04-24T15:08:32.6209762Z",
+  "sha256": "6a119bc39551fdbf21970ae12ac546a77022e6bbf83c38121c7def4251897d37"
+}

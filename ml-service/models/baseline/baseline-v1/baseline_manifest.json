@@ -1,0 +1,41 @@
+{
+  "version": "baseline-v1",
+  "frozen_at": "2026-06-22T23:16:21.816762+00:00",
+  "source": "D:\\Coding\\Bulkreferences\\ml-service\\models\\current",
+  "files": {
+    "config.json": {
+      "bytes": 2960,
+      "sha256": "72af7f6e67de999665cd3921321e83ac20710290891cad2b781535004b28272f"
+    },
+    "extractor.onnx": {
+      "bytes": 18055565,
+      "sha256": "4709621efb15e21d1c1bc267df985a1b6de23c9255714a4f234052720df67339"
+    },
+    "feature_manifest.json": {
+      "bytes": 3264,
+      "sha256": "68c27b6e7aadfac4e78dddcc9fb372b33b49619026510392de11a494e65ff7ac"
+    },
+    "metadata.json": {
+      "bytes": 15923,
+      "sha256": "364bef5af5a1d57f066e592acfe7d7257cf04217af28c89183cf0fc8b2786863"
+    },
+    "optimization_manifest.json": {
+      "bytes": 183,
+      "sha256": "9ffa85e4a65dacd6202a715c103b0a00316f401fa62bf80feb5d388eaf89db3a"
+    },
+    "preprocessing.json": {
+      "bytes": 318,
+      "sha256": "0d77b06e37d66ceb6e6690049d22d4823a1243fa4651e150e074040834b23285"
+    },
+    "tokenizer.json": {
+      "bytes": 1145748,
+      "sha256": "7d0beaa7676d849f1d8177cdc2183d192dfbc83f38a7d3903e48a2a9182dba47"
+    },
+    "tokenizer_config.json": {
+      "bytes": 231,
+      "sha256": "185046b9d10dc17fe68cff7367ccfc04bd9daacbb412b7aeaa39c22889c875a5"
+    }
+  },
+  "claimed_metrics": {},
+  "note": "Immutable baseline. Beat this on the held-out eval set before promoting any model."
+}

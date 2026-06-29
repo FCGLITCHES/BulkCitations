@@ -1,5 +1,0 @@
-{
-  "version": "boundary-scoring-v1",
-  "description": "Regression test cases: raw capture text and expected chunk count or expected chunks. Use for testing splitter changes.",
-  "cases": []
-}

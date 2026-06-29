@@ -1,0 +1,34 @@
+# Synthetic BIO training data purge — 2026-06-24
+# Reason: user retiring 7000+ synthetic refs; keeping real data only.
+# Kept: real-input-gold-v1 (1000), real_corpus_gold_v1 (57), verified.jsonl (63)
+# format: lines  bytes  tracked  path
+1200  1312991  untracked  ml-service/datasets/citation-bio/_archive_synthetic/citation_bio_v1_bootstrap_all.jsonl
+180  200371  untracked  ml-service/datasets/citation-bio/_archive_synthetic/citation_bio_v1_bootstrap_test.jsonl
+840  941145  untracked  ml-service/datasets/citation-bio/_archive_synthetic/citation_bio_v1_bootstrap_train.jsonl
+180  203395  untracked  ml-service/datasets/citation-bio/_archive_synthetic/citation_bio_v1_bootstrap_validation.jsonl
+2  1729  untracked  ml-service/datasets/citation-bio/_archive_synthetic/citation_bio_v1_sample.jsonl
+7120  12512926  untracked  ml-service/datasets/citation-bio/_archive_synthetic/style_gold_supervision.jsonl
+1200  1033953  tracked  ml-service/datasets/citation-bio/annotations/adjudicated.v1.bootstrap.synthetic.jsonl
+2  1189  tracked  ml-service/datasets/citation-bio/annotations/adjudicated.v1.sample.jsonl
+1200  1033953  tracked  datasets/engine-v2/gold/citation-bio/annotations/adjudicated.v1.bootstrap.synthetic.jsonl
+2  1189  tracked  datasets/engine-v2/gold/citation-bio/annotations/adjudicated.v1.sample.jsonl
+1200  1312991  tracked  datasets/engine-v2/gold/citation-bio/processed/citation_bio_v1_bootstrap_all.jsonl
+180  200371  tracked  datasets/engine-v2/gold/citation-bio/processed/citation_bio_v1_bootstrap_test.jsonl
+840  941145  tracked  datasets/engine-v2/gold/citation-bio/processed/citation_bio_v1_bootstrap_train.jsonl
+180  203395  tracked  datasets/engine-v2/gold/citation-bio/processed/citation_bio_v1_bootstrap_validation.jsonl
+2  1729  tracked  datasets/engine-v2/gold/citation-bio/processed/citation_bio_v1_sample.jsonl
+
+# orphaned synthetic metadata removed:
+ml-service/datasets/citation-bio/processed/citation_bio_v1_bootstrap_all.jsonl.manifest.json
+ml-service/datasets/citation-bio/processed/citation_bio_v1_bootstrap_test.jsonl.manifest.json
+ml-service/datasets/citation-bio/processed/citation_bio_v1_bootstrap_train.jsonl.manifest.json
+ml-service/datasets/citation-bio/processed/citation_bio_v1_bootstrap_validation.jsonl.manifest.json
+ml-service/datasets/citation-bio/processed/citation_bio_v1_sample.jsonl.manifest.json
+ml-service/datasets/citation-bio/processed/citation_bio_v1_bootstrap_split_metadata.json
+ml-service/datasets/citation-bio/processed/citation_bio_v1_bootstrap_split_metadata.json.manifest.json
+ml-service/datasets/citation-bio/reports/projection_coverage.json
+datasets/engine-v2/gold/citation-bio/processed/citation_bio_v1_bootstrap_split_metadata.json
+
+# synthetic generator scripts removed + npm entries (style-gold-bio-export, bootstrap-bundle):
+server/scripts/export-style-gold-bio-supervision.ts
+ml-service/datasets/citation-bio/scripts/generate_bootstrap_gold.py

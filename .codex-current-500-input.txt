@@ -1,0 +1,500 @@
+1. SHOJI, Mamoru, & Group, LHD Experiment (2020). Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), 2402039.
+2. Mamoru SHOJI and LHD Experiment Group, "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device," Plasma and Fusion Research, vol. 15, no. 0, pp. 2402039, 2020.
+3. SHOJI M, Group LHDE. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research. 2020;15(0):2402039.
+4. SHOJI, Mamoru and Group, LHDExperiment, 2020. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), pp.2402039.
+5. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research, vol. 15, no. 0, 2020, pp. 2402039.
+6. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research 15, no. 0 (2020): 2402039.
+7. Lowry, OliverH., Rosebrough, NiraJ., Farr, A. Lewis, & Randall, RoseJ. (1951). PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), 265-275.
+8. OliverH. Lowry, NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall, "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT," Journal of Biological Chemistry, vol. 193, no. 1, pp. 265-275, 1951.
+9. Lowry OH, Rosebrough NJ, Farr AL, Randall RJ. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry. 1951;193(1):265-275.
+10. Lowry, OliverH., Rosebrough, NiraJ., Farr, A.Lewis and Randall, RoseJ., 1951. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), pp.265-275.
+11. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry, vol. 193, no. 1, 1951, pp. 265-275.
+12. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry 193, no. 1 (1951): 265-275.
+13. LAEMMLI, U. K. (1970). Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), 680-685.
+14. U. K. LAEMMLI, "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4," Nature, vol. 227, no. 5259, pp. 680-685, 1970.
+15. LAEMMLI UK. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature. 1970;227(5259):680-685.
+16. LAEMMLI, U.K., 1970. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), pp.680-685.
+17. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature, vol. 227, no. 5259, 1970, pp. 680-685.
+18. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature 227, no. 5259 (1970): 680-685.
+19. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing, & Sun, Jian (2016). Deep Residual Learning for Image Recognition. Journal, ?, 770-778.
+20. Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun, "Deep Residual Learning for Image Recognition," Journal, vol. ?, pp. 770-778, 2016.
+21. He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. Journal. 2016;?:770-778.
+22. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing and Sun, Jian, 2016. Deep Residual Learning for Image Recognition. Journal, ?, pp.770-778.
+23. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal, vol. ?, 2016, pp. 770-778.
+24. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal ? (2016): 770-778.
+25. Livak, Kenneth J., & Schmittgen, Thomas D. (2001). Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), 402-408.
+26. Kenneth J. Livak and Thomas D. Schmittgen, "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method," Methods, vol. 25, no. 4, pp. 402-408, 2001.
+27. Livak KJ, Schmittgen TD. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods. 2001;25(4):402-408.
+28. Livak, KennethJ. and Schmittgen, ThomasD., 2001. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), pp.402-408.
+29. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods, vol. 25, no. 4, 2001, pp. 402-408.
+30. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods 25, no. 4 (2001): 402-408.
+31. Kresse, G., & Furthmüller, J. (1996). Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), 11169-11186.
+32. G. Kresse and J. Furthmüller, "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set," Physical review. B, Condensed matter, vol. 54, no. 16, pp. 11169-11186, 1996.
+33. Kresse G, Furthmüller J. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter. 1996;54(16):11169-11186.
+34. Kresse, G. and Furthmüller, J., 1996. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), pp.11169-11186.
+35. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter, vol. 54, no. 16, 1996, pp. 11169-11186.
+36. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter 54, no. 16 (1996): 11169-11186.
+37. SHOJI, Mamoru, & Group, LHD Experiment (2020). Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), 2402039.
+38. Mamoru SHOJI and LHD Experiment Group, "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device," Plasma and Fusion Research, vol. 15, no. 0, pp. 2402039, 2020.
+39. SHOJI M, Group LHDE. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research. 2020;15(0):2402039.
+40. SHOJI, Mamoru and Group, LHDExperiment, 2020. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), pp.2402039.
+41. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research, vol. 15, no. 0, 2020, pp. 2402039.
+42. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research 15, no. 0 (2020): 2402039.
+43. Lowry, OliverH., Rosebrough, NiraJ., Farr, A. Lewis, & Randall, RoseJ. (1951). PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), 265-275.
+44. OliverH. Lowry, NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall, "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT," Journal of Biological Chemistry, vol. 193, no. 1, pp. 265-275, 1951.
+45. Lowry OH, Rosebrough NJ, Farr AL, Randall RJ. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry. 1951;193(1):265-275.
+46. Lowry, OliverH., Rosebrough, NiraJ., Farr, A.Lewis and Randall, RoseJ., 1951. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), pp.265-275.
+47. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry, vol. 193, no. 1, 1951, pp. 265-275.
+48. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry 193, no. 1 (1951): 265-275.
+49. LAEMMLI, U. K. (1970). Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), 680-685.
+50. U. K. LAEMMLI, "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4," Nature, vol. 227, no. 5259, pp. 680-685, 1970.
+51. LAEMMLI UK. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature. 1970;227(5259):680-685.
+52. LAEMMLI, U.K., 1970. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), pp.680-685.
+53. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature, vol. 227, no. 5259, 1970, pp. 680-685.
+54. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature 227, no. 5259 (1970): 680-685.
+55. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing, & Sun, Jian (2016). Deep Residual Learning for Image Recognition. Journal, ?, 770-778.
+56. Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun, "Deep Residual Learning for Image Recognition," Journal, vol. ?, pp. 770-778, 2016.
+57. He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. Journal. 2016;?:770-778.
+58. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing and Sun, Jian, 2016. Deep Residual Learning for Image Recognition. Journal, ?, pp.770-778.
+59. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal, vol. ?, 2016, pp. 770-778.
+60. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal ? (2016): 770-778.
+61. Livak, Kenneth J., & Schmittgen, Thomas D. (2001). Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), 402-408.
+62. Kenneth J. Livak and Thomas D. Schmittgen, "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method," Methods, vol. 25, no. 4, pp. 402-408, 2001.
+63. Livak KJ, Schmittgen TD. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods. 2001;25(4):402-408.
+64. Livak, KennethJ. and Schmittgen, ThomasD., 2001. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), pp.402-408.
+65. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods, vol. 25, no. 4, 2001, pp. 402-408.
+66. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods 25, no. 4 (2001): 402-408.
+67. Kresse, G., & Furthmüller, J. (1996). Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), 11169-11186.
+68. G. Kresse and J. Furthmüller, "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set," Physical review. B, Condensed matter, vol. 54, no. 16, pp. 11169-11186, 1996.
+69. Kresse G, Furthmüller J. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter. 1996;54(16):11169-11186.
+70. Kresse, G. and Furthmüller, J., 1996. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), pp.11169-11186.
+71. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter, vol. 54, no. 16, 1996, pp. 11169-11186.
+72. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter 54, no. 16 (1996): 11169-11186.
+73. SHOJI, Mamoru, & Group, LHD Experiment (2020). Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), 2402039.
+74. Mamoru SHOJI and LHD Experiment Group, "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device," Plasma and Fusion Research, vol. 15, no. 0, pp. 2402039, 2020.
+75. SHOJI M, Group LHDE. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research. 2020;15(0):2402039.
+76. SHOJI, Mamoru and Group, LHDExperiment, 2020. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), pp.2402039.
+77. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research, vol. 15, no. 0, 2020, pp. 2402039.
+78. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research 15, no. 0 (2020): 2402039.
+79. Lowry, OliverH., Rosebrough, NiraJ., Farr, A. Lewis, & Randall, RoseJ. (1951). PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), 265-275.
+80. OliverH. Lowry, NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall, "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT," Journal of Biological Chemistry, vol. 193, no. 1, pp. 265-275, 1951.
+81. Lowry OH, Rosebrough NJ, Farr AL, Randall RJ. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry. 1951;193(1):265-275.
+82. Lowry, OliverH., Rosebrough, NiraJ., Farr, A.Lewis and Randall, RoseJ., 1951. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), pp.265-275.
+83. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry, vol. 193, no. 1, 1951, pp. 265-275.
+84. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry 193, no. 1 (1951): 265-275.
+85. LAEMMLI, U. K. (1970). Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), 680-685.
+86. U. K. LAEMMLI, "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4," Nature, vol. 227, no. 5259, pp. 680-685, 1970.
+87. LAEMMLI UK. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature. 1970;227(5259):680-685.
+88. LAEMMLI, U.K., 1970. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), pp.680-685.
+89. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature, vol. 227, no. 5259, 1970, pp. 680-685.
+90. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature 227, no. 5259 (1970): 680-685.
+91. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing, & Sun, Jian (2016). Deep Residual Learning for Image Recognition. Journal, ?, 770-778.
+92. Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun, "Deep Residual Learning for Image Recognition," Journal, vol. ?, pp. 770-778, 2016.
+93. He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. Journal. 2016;?:770-778.
+94. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing and Sun, Jian, 2016. Deep Residual Learning for Image Recognition. Journal, ?, pp.770-778.
+95. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal, vol. ?, 2016, pp. 770-778.
+96. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal ? (2016): 770-778.
+97. Livak, Kenneth J., & Schmittgen, Thomas D. (2001). Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), 402-408.
+98. Kenneth J. Livak and Thomas D. Schmittgen, "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method," Methods, vol. 25, no. 4, pp. 402-408, 2001.
+99. Livak KJ, Schmittgen TD. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods. 2001;25(4):402-408.
+100. Livak, KennethJ. and Schmittgen, ThomasD., 2001. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), pp.402-408.
+101. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods, vol. 25, no. 4, 2001, pp. 402-408.
+102. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods 25, no. 4 (2001): 402-408.
+103. Kresse, G., & Furthmüller, J. (1996). Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), 11169-11186.
+104. G. Kresse and J. Furthmüller, "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set," Physical review. B, Condensed matter, vol. 54, no. 16, pp. 11169-11186, 1996.
+105. Kresse G, Furthmüller J. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter. 1996;54(16):11169-11186.
+106. Kresse, G. and Furthmüller, J., 1996. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), pp.11169-11186.
+107. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter, vol. 54, no. 16, 1996, pp. 11169-11186.
+108. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter 54, no. 16 (1996): 11169-11186.
+109. SHOJI, Mamoru, & Group, LHD Experiment (2020). Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), 2402039.
+110. Mamoru SHOJI and LHD Experiment Group, "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device," Plasma and Fusion Research, vol. 15, no. 0, pp. 2402039, 2020.
+111. SHOJI M, Group LHDE. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research. 2020;15(0):2402039.
+112. SHOJI, Mamoru and Group, LHDExperiment, 2020. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), pp.2402039.
+113. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research, vol. 15, no. 0, 2020, pp. 2402039.
+114. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research 15, no. 0 (2020): 2402039.
+115. Lowry, OliverH., Rosebrough, NiraJ., Farr, A. Lewis, & Randall, RoseJ. (1951). PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), 265-275.
+116. OliverH. Lowry, NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall, "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT," Journal of Biological Chemistry, vol. 193, no. 1, pp. 265-275, 1951.
+117. Lowry OH, Rosebrough NJ, Farr AL, Randall RJ. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry. 1951;193(1):265-275.
+118. Lowry, OliverH., Rosebrough, NiraJ., Farr, A.Lewis and Randall, RoseJ., 1951. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), pp.265-275.
+119. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry, vol. 193, no. 1, 1951, pp. 265-275.
+120. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry 193, no. 1 (1951): 265-275.
+121. LAEMMLI, U. K. (1970). Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), 680-685.
+122. U. K. LAEMMLI, "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4," Nature, vol. 227, no. 5259, pp. 680-685, 1970.
+123. LAEMMLI UK. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature. 1970;227(5259):680-685.
+124. LAEMMLI, U.K., 1970. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), pp.680-685.
+125. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature, vol. 227, no. 5259, 1970, pp. 680-685.
+126. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature 227, no. 5259 (1970): 680-685.
+127. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing, & Sun, Jian (2016). Deep Residual Learning for Image Recognition. Journal, ?, 770-778.
+128. Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun, "Deep Residual Learning for Image Recognition," Journal, vol. ?, pp. 770-778, 2016.
+129. He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. Journal. 2016;?:770-778.
+130. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing and Sun, Jian, 2016. Deep Residual Learning for Image Recognition. Journal, ?, pp.770-778.
+131. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal, vol. ?, 2016, pp. 770-778.
+132. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal ? (2016): 770-778.
+133. Livak, Kenneth J., & Schmittgen, Thomas D. (2001). Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), 402-408.
+134. Kenneth J. Livak and Thomas D. Schmittgen, "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method," Methods, vol. 25, no. 4, pp. 402-408, 2001.
+135. Livak KJ, Schmittgen TD. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods. 2001;25(4):402-408.
+136. Livak, KennethJ. and Schmittgen, ThomasD., 2001. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), pp.402-408.
+137. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods, vol. 25, no. 4, 2001, pp. 402-408.
+138. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods 25, no. 4 (2001): 402-408.
+139. Kresse, G., & Furthmüller, J. (1996). Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), 11169-11186.
+140. G. Kresse and J. Furthmüller, "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set," Physical review. B, Condensed matter, vol. 54, no. 16, pp. 11169-11186, 1996.
+141. Kresse G, Furthmüller J. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter. 1996;54(16):11169-11186.
+142. Kresse, G. and Furthmüller, J., 1996. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), pp.11169-11186.
+143. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter, vol. 54, no. 16, 1996, pp. 11169-11186.
+144. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter 54, no. 16 (1996): 11169-11186.
+145. SHOJI, Mamoru, & Group, LHD Experiment (2020). Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), 2402039.
+146. Mamoru SHOJI and LHD Experiment Group, "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device," Plasma and Fusion Research, vol. 15, no. 0, pp. 2402039, 2020.
+147. SHOJI M, Group LHDE. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research. 2020;15(0):2402039.
+148. SHOJI, Mamoru and Group, LHDExperiment, 2020. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), pp.2402039.
+149. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research, vol. 15, no. 0, 2020, pp. 2402039.
+150. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research 15, no. 0 (2020): 2402039.
+151. Lowry, OliverH., Rosebrough, NiraJ., Farr, A. Lewis, & Randall, RoseJ. (1951). PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), 265-275.
+152. OliverH. Lowry, NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall, "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT," Journal of Biological Chemistry, vol. 193, no. 1, pp. 265-275, 1951.
+153. Lowry OH, Rosebrough NJ, Farr AL, Randall RJ. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry. 1951;193(1):265-275.
+154. Lowry, OliverH., Rosebrough, NiraJ., Farr, A.Lewis and Randall, RoseJ., 1951. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), pp.265-275.
+155. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry, vol. 193, no. 1, 1951, pp. 265-275.
+156. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry 193, no. 1 (1951): 265-275.
+157. LAEMMLI, U. K. (1970). Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), 680-685.
+158. U. K. LAEMMLI, "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4," Nature, vol. 227, no. 5259, pp. 680-685, 1970.
+159. LAEMMLI UK. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature. 1970;227(5259):680-685.
+160. LAEMMLI, U.K., 1970. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), pp.680-685.
+161. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature, vol. 227, no. 5259, 1970, pp. 680-685.
+162. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature 227, no. 5259 (1970): 680-685.
+163. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing, & Sun, Jian (2016). Deep Residual Learning for Image Recognition. Journal, ?, 770-778.
+164. Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun, "Deep Residual Learning for Image Recognition," Journal, vol. ?, pp. 770-778, 2016.
+165. He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. Journal. 2016;?:770-778.
+166. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing and Sun, Jian, 2016. Deep Residual Learning for Image Recognition. Journal, ?, pp.770-778.
+167. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal, vol. ?, 2016, pp. 770-778.
+168. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal ? (2016): 770-778.
+169. Livak, Kenneth J., & Schmittgen, Thomas D. (2001). Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), 402-408.
+170. Kenneth J. Livak and Thomas D. Schmittgen, "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method," Methods, vol. 25, no. 4, pp. 402-408, 2001.
+171. Livak KJ, Schmittgen TD. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods. 2001;25(4):402-408.
+172. Livak, KennethJ. and Schmittgen, ThomasD., 2001. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), pp.402-408.
+173. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods, vol. 25, no. 4, 2001, pp. 402-408.
+174. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods 25, no. 4 (2001): 402-408.
+175. Kresse, G., & Furthmüller, J. (1996). Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), 11169-11186.
+176. G. Kresse and J. Furthmüller, "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set," Physical review. B, Condensed matter, vol. 54, no. 16, pp. 11169-11186, 1996.
+177. Kresse G, Furthmüller J. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter. 1996;54(16):11169-11186.
+178. Kresse, G. and Furthmüller, J., 1996. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), pp.11169-11186.
+179. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter, vol. 54, no. 16, 1996, pp. 11169-11186.
+180. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter 54, no. 16 (1996): 11169-11186.
+181. SHOJI, Mamoru, & Group, LHD Experiment (2020). Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), 2402039.
+182. Mamoru SHOJI and LHD Experiment Group, "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device," Plasma and Fusion Research, vol. 15, no. 0, pp. 2402039, 2020.
+183. SHOJI M, Group LHDE. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research. 2020;15(0):2402039.
+184. SHOJI, Mamoru and Group, LHDExperiment, 2020. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), pp.2402039.
+185. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research, vol. 15, no. 0, 2020, pp. 2402039.
+186. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research 15, no. 0 (2020): 2402039.
+187. Lowry, OliverH., Rosebrough, NiraJ., Farr, A. Lewis, & Randall, RoseJ. (1951). PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), 265-275.
+188. OliverH. Lowry, NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall, "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT," Journal of Biological Chemistry, vol. 193, no. 1, pp. 265-275, 1951.
+189. Lowry OH, Rosebrough NJ, Farr AL, Randall RJ. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry. 1951;193(1):265-275.
+190. Lowry, OliverH., Rosebrough, NiraJ., Farr, A.Lewis and Randall, RoseJ., 1951. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), pp.265-275.
+191. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry, vol. 193, no. 1, 1951, pp. 265-275.
+192. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry 193, no. 1 (1951): 265-275.
+193. LAEMMLI, U. K. (1970). Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), 680-685.
+194. U. K. LAEMMLI, "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4," Nature, vol. 227, no. 5259, pp. 680-685, 1970.
+195. LAEMMLI UK. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature. 1970;227(5259):680-685.
+196. LAEMMLI, U.K., 1970. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), pp.680-685.
+197. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature, vol. 227, no. 5259, 1970, pp. 680-685.
+198. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature 227, no. 5259 (1970): 680-685.
+199. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing, & Sun, Jian (2016). Deep Residual Learning for Image Recognition. Journal, ?, 770-778.
+200. Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun, "Deep Residual Learning for Image Recognition," Journal, vol. ?, pp. 770-778, 2016.
+201. He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. Journal. 2016;?:770-778.
+202. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing and Sun, Jian, 2016. Deep Residual Learning for Image Recognition. Journal, ?, pp.770-778.
+203. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal, vol. ?, 2016, pp. 770-778.
+204. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal ? (2016): 770-778.
+205. Livak, Kenneth J., & Schmittgen, Thomas D. (2001). Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), 402-408.
+206. Kenneth J. Livak and Thomas D. Schmittgen, "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method," Methods, vol. 25, no. 4, pp. 402-408, 2001.
+207. Livak KJ, Schmittgen TD. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods. 2001;25(4):402-408.
+208. Livak, KennethJ. and Schmittgen, ThomasD., 2001. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), pp.402-408.
+209. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods, vol. 25, no. 4, 2001, pp. 402-408.
+210. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods 25, no. 4 (2001): 402-408.
+211. Kresse, G., & Furthmüller, J. (1996). Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), 11169-11186.
+212. G. Kresse and J. Furthmüller, "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set," Physical review. B, Condensed matter, vol. 54, no. 16, pp. 11169-11186, 1996.
+213. Kresse G, Furthmüller J. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter. 1996;54(16):11169-11186.
+214. Kresse, G. and Furthmüller, J., 1996. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), pp.11169-11186.
+215. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter, vol. 54, no. 16, 1996, pp. 11169-11186.
+216. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter 54, no. 16 (1996): 11169-11186.
+217. SHOJI, Mamoru, & Group, LHD Experiment (2020). Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), 2402039.
+218. Mamoru SHOJI and LHD Experiment Group, "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device," Plasma and Fusion Research, vol. 15, no. 0, pp. 2402039, 2020.
+219. SHOJI M, Group LHDE. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research. 2020;15(0):2402039.
+220. SHOJI, Mamoru and Group, LHDExperiment, 2020. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), pp.2402039.
+221. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research, vol. 15, no. 0, 2020, pp. 2402039.
+222. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research 15, no. 0 (2020): 2402039.
+223. Lowry, OliverH., Rosebrough, NiraJ., Farr, A. Lewis, & Randall, RoseJ. (1951). PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), 265-275.
+224. OliverH. Lowry, NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall, "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT," Journal of Biological Chemistry, vol. 193, no. 1, pp. 265-275, 1951.
+225. Lowry OH, Rosebrough NJ, Farr AL, Randall RJ. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry. 1951;193(1):265-275.
+226. Lowry, OliverH., Rosebrough, NiraJ., Farr, A.Lewis and Randall, RoseJ., 1951. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), pp.265-275.
+227. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry, vol. 193, no. 1, 1951, pp. 265-275.
+228. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry 193, no. 1 (1951): 265-275.
+229. LAEMMLI, U. K. (1970). Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), 680-685.
+230. U. K. LAEMMLI, "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4," Nature, vol. 227, no. 5259, pp. 680-685, 1970.
+231. LAEMMLI UK. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature. 1970;227(5259):680-685.
+232. LAEMMLI, U.K., 1970. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), pp.680-685.
+233. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature, vol. 227, no. 5259, 1970, pp. 680-685.
+234. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature 227, no. 5259 (1970): 680-685.
+235. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing, & Sun, Jian (2016). Deep Residual Learning for Image Recognition. Journal, ?, 770-778.
+236. Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun, "Deep Residual Learning for Image Recognition," Journal, vol. ?, pp. 770-778, 2016.
+237. He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. Journal. 2016;?:770-778.
+238. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing and Sun, Jian, 2016. Deep Residual Learning for Image Recognition. Journal, ?, pp.770-778.
+239. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal, vol. ?, 2016, pp. 770-778.
+240. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal ? (2016): 770-778.
+241. Livak, Kenneth J., & Schmittgen, Thomas D. (2001). Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), 402-408.
+242. Kenneth J. Livak and Thomas D. Schmittgen, "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method," Methods, vol. 25, no. 4, pp. 402-408, 2001.
+243. Livak KJ, Schmittgen TD. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods. 2001;25(4):402-408.
+244. Livak, KennethJ. and Schmittgen, ThomasD., 2001. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), pp.402-408.
+245. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods, vol. 25, no. 4, 2001, pp. 402-408.
+246. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods 25, no. 4 (2001): 402-408.
+247. Kresse, G., & Furthmüller, J. (1996). Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), 11169-11186.
+248. G. Kresse and J. Furthmüller, "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set," Physical review. B, Condensed matter, vol. 54, no. 16, pp. 11169-11186, 1996.
+249. Kresse G, Furthmüller J. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter. 1996;54(16):11169-11186.
+250. Kresse, G. and Furthmüller, J., 1996. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), pp.11169-11186.
+251. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter, vol. 54, no. 16, 1996, pp. 11169-11186.
+252. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter 54, no. 16 (1996): 11169-11186.
+253. SHOJI, Mamoru, & Group, LHD Experiment (2020). Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), 2402039.
+254. Mamoru SHOJI and LHD Experiment Group, "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device," Plasma and Fusion Research, vol. 15, no. 0, pp. 2402039, 2020.
+255. SHOJI M, Group LHDE. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research. 2020;15(0):2402039.
+256. SHOJI, Mamoru and Group, LHDExperiment, 2020. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), pp.2402039.
+257. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research, vol. 15, no. 0, 2020, pp. 2402039.
+258. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research 15, no. 0 (2020): 2402039.
+259. Lowry, OliverH., Rosebrough, NiraJ., Farr, A. Lewis, & Randall, RoseJ. (1951). PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), 265-275.
+260. OliverH. Lowry, NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall, "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT," Journal of Biological Chemistry, vol. 193, no. 1, pp. 265-275, 1951.
+261. Lowry OH, Rosebrough NJ, Farr AL, Randall RJ. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry. 1951;193(1):265-275.
+262. Lowry, OliverH., Rosebrough, NiraJ., Farr, A.Lewis and Randall, RoseJ., 1951. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), pp.265-275.
+263. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry, vol. 193, no. 1, 1951, pp. 265-275.
+264. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry 193, no. 1 (1951): 265-275.
+265. LAEMMLI, U. K. (1970). Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), 680-685.
+266. U. K. LAEMMLI, "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4," Nature, vol. 227, no. 5259, pp. 680-685, 1970.
+267. LAEMMLI UK. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature. 1970;227(5259):680-685.
+268. LAEMMLI, U.K., 1970. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), pp.680-685.
+269. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature, vol. 227, no. 5259, 1970, pp. 680-685.
+270. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature 227, no. 5259 (1970): 680-685.
+271. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing, & Sun, Jian (2016). Deep Residual Learning for Image Recognition. Journal, ?, 770-778.
+272. Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun, "Deep Residual Learning for Image Recognition," Journal, vol. ?, pp. 770-778, 2016.
+273. He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. Journal. 2016;?:770-778.
+274. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing and Sun, Jian, 2016. Deep Residual Learning for Image Recognition. Journal, ?, pp.770-778.
+275. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal, vol. ?, 2016, pp. 770-778.
+276. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal ? (2016): 770-778.
+277. Livak, Kenneth J., & Schmittgen, Thomas D. (2001). Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), 402-408.
+278. Kenneth J. Livak and Thomas D. Schmittgen, "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method," Methods, vol. 25, no. 4, pp. 402-408, 2001.
+279. Livak KJ, Schmittgen TD. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods. 2001;25(4):402-408.
+280. Livak, KennethJ. and Schmittgen, ThomasD., 2001. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), pp.402-408.
+281. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods, vol. 25, no. 4, 2001, pp. 402-408.
+282. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods 25, no. 4 (2001): 402-408.
+283. Kresse, G., & Furthmüller, J. (1996). Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), 11169-11186.
+284. G. Kresse and J. Furthmüller, "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set," Physical review. B, Condensed matter, vol. 54, no. 16, pp. 11169-11186, 1996.
+285. Kresse G, Furthmüller J. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter. 1996;54(16):11169-11186.
+286. Kresse, G. and Furthmüller, J., 1996. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), pp.11169-11186.
+287. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter, vol. 54, no. 16, 1996, pp. 11169-11186.
+288. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter 54, no. 16 (1996): 11169-11186.
+289. SHOJI, Mamoru, & Group, LHD Experiment (2020). Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), 2402039.
+290. Mamoru SHOJI and LHD Experiment Group, "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device," Plasma and Fusion Research, vol. 15, no. 0, pp. 2402039, 2020.
+291. SHOJI M, Group LHDE. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research. 2020;15(0):2402039.
+292. SHOJI, Mamoru and Group, LHDExperiment, 2020. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), pp.2402039.
+293. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research, vol. 15, no. 0, 2020, pp. 2402039.
+294. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research 15, no. 0 (2020): 2402039.
+295. Lowry, OliverH., Rosebrough, NiraJ., Farr, A. Lewis, & Randall, RoseJ. (1951). PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), 265-275.
+296. OliverH. Lowry, NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall, "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT," Journal of Biological Chemistry, vol. 193, no. 1, pp. 265-275, 1951.
+297. Lowry OH, Rosebrough NJ, Farr AL, Randall RJ. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry. 1951;193(1):265-275.
+298. Lowry, OliverH., Rosebrough, NiraJ., Farr, A.Lewis and Randall, RoseJ., 1951. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), pp.265-275.
+299. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry, vol. 193, no. 1, 1951, pp. 265-275.
+300. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry 193, no. 1 (1951): 265-275.
+301. LAEMMLI, U. K. (1970). Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), 680-685.
+302. U. K. LAEMMLI, "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4," Nature, vol. 227, no. 5259, pp. 680-685, 1970.
+303. LAEMMLI UK. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature. 1970;227(5259):680-685.
+304. LAEMMLI, U.K., 1970. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), pp.680-685.
+305. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature, vol. 227, no. 5259, 1970, pp. 680-685.
+306. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature 227, no. 5259 (1970): 680-685.
+307. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing, & Sun, Jian (2016). Deep Residual Learning for Image Recognition. Journal, ?, 770-778.
+308. Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun, "Deep Residual Learning for Image Recognition," Journal, vol. ?, pp. 770-778, 2016.
+309. He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. Journal. 2016;?:770-778.
+310. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing and Sun, Jian, 2016. Deep Residual Learning for Image Recognition. Journal, ?, pp.770-778.
+311. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal, vol. ?, 2016, pp. 770-778.
+312. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal ? (2016): 770-778.
+313. Livak, Kenneth J., & Schmittgen, Thomas D. (2001). Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), 402-408.
+314. Kenneth J. Livak and Thomas D. Schmittgen, "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method," Methods, vol. 25, no. 4, pp. 402-408, 2001.
+315. Livak KJ, Schmittgen TD. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods. 2001;25(4):402-408.
+316. Livak, KennethJ. and Schmittgen, ThomasD., 2001. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), pp.402-408.
+317. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods, vol. 25, no. 4, 2001, pp. 402-408.
+318. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods 25, no. 4 (2001): 402-408.
+319. Kresse, G., & Furthmüller, J. (1996). Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), 11169-11186.
+320. G. Kresse and J. Furthmüller, "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set," Physical review. B, Condensed matter, vol. 54, no. 16, pp. 11169-11186, 1996.
+321. Kresse G, Furthmüller J. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter. 1996;54(16):11169-11186.
+322. Kresse, G. and Furthmüller, J., 1996. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), pp.11169-11186.
+323. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter, vol. 54, no. 16, 1996, pp. 11169-11186.
+324. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter 54, no. 16 (1996): 11169-11186.
+325. SHOJI, Mamoru, & Group, LHD Experiment (2020). Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), 2402039.
+326. Mamoru SHOJI and LHD Experiment Group, "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device," Plasma and Fusion Research, vol. 15, no. 0, pp. 2402039, 2020.
+327. SHOJI M, Group LHDE. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research. 2020;15(0):2402039.
+328. SHOJI, Mamoru and Group, LHDExperiment, 2020. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), pp.2402039.
+329. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research, vol. 15, no. 0, 2020, pp. 2402039.
+330. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research 15, no. 0 (2020): 2402039.
+331. Lowry, OliverH., Rosebrough, NiraJ., Farr, A. Lewis, & Randall, RoseJ. (1951). PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), 265-275.
+332. OliverH. Lowry, NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall, "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT," Journal of Biological Chemistry, vol. 193, no. 1, pp. 265-275, 1951.
+333. Lowry OH, Rosebrough NJ, Farr AL, Randall RJ. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry. 1951;193(1):265-275.
+334. Lowry, OliverH., Rosebrough, NiraJ., Farr, A.Lewis and Randall, RoseJ., 1951. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), pp.265-275.
+335. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry, vol. 193, no. 1, 1951, pp. 265-275.
+336. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry 193, no. 1 (1951): 265-275.
+337. LAEMMLI, U. K. (1970). Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), 680-685.
+338. U. K. LAEMMLI, "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4," Nature, vol. 227, no. 5259, pp. 680-685, 1970.
+339. LAEMMLI UK. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature. 1970;227(5259):680-685.
+340. LAEMMLI, U.K., 1970. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), pp.680-685.
+341. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature, vol. 227, no. 5259, 1970, pp. 680-685.
+342. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature 227, no. 5259 (1970): 680-685.
+343. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing, & Sun, Jian (2016). Deep Residual Learning for Image Recognition. Journal, ?, 770-778.
+344. Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun, "Deep Residual Learning for Image Recognition," Journal, vol. ?, pp. 770-778, 2016.
+345. He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. Journal. 2016;?:770-778.
+346. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing and Sun, Jian, 2016. Deep Residual Learning for Image Recognition. Journal, ?, pp.770-778.
+347. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal, vol. ?, 2016, pp. 770-778.
+348. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal ? (2016): 770-778.
+349. Livak, Kenneth J., & Schmittgen, Thomas D. (2001). Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), 402-408.
+350. Kenneth J. Livak and Thomas D. Schmittgen, "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method," Methods, vol. 25, no. 4, pp. 402-408, 2001.
+351. Livak KJ, Schmittgen TD. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods. 2001;25(4):402-408.
+352. Livak, KennethJ. and Schmittgen, ThomasD., 2001. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), pp.402-408.
+353. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods, vol. 25, no. 4, 2001, pp. 402-408.
+354. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods 25, no. 4 (2001): 402-408.
+355. Kresse, G., & Furthmüller, J. (1996). Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), 11169-11186.
+356. G. Kresse and J. Furthmüller, "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set," Physical review. B, Condensed matter, vol. 54, no. 16, pp. 11169-11186, 1996.
+357. Kresse G, Furthmüller J. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter. 1996;54(16):11169-11186.
+358. Kresse, G. and Furthmüller, J., 1996. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), pp.11169-11186.
+359. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter, vol. 54, no. 16, 1996, pp. 11169-11186.
+360. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter 54, no. 16 (1996): 11169-11186.
+361. SHOJI, Mamoru, & Group, LHD Experiment (2020). Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), 2402039.
+362. Mamoru SHOJI and LHD Experiment Group, "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device," Plasma and Fusion Research, vol. 15, no. 0, pp. 2402039, 2020.
+363. SHOJI M, Group LHDE. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research. 2020;15(0):2402039.
+364. SHOJI, Mamoru and Group, LHDExperiment, 2020. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), pp.2402039.
+365. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research, vol. 15, no. 0, 2020, pp. 2402039.
+366. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research 15, no. 0 (2020): 2402039.
+367. Lowry, OliverH., Rosebrough, NiraJ., Farr, A. Lewis, & Randall, RoseJ. (1951). PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), 265-275.
+368. OliverH. Lowry, NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall, "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT," Journal of Biological Chemistry, vol. 193, no. 1, pp. 265-275, 1951.
+369. Lowry OH, Rosebrough NJ, Farr AL, Randall RJ. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry. 1951;193(1):265-275.
+370. Lowry, OliverH., Rosebrough, NiraJ., Farr, A.Lewis and Randall, RoseJ., 1951. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), pp.265-275.
+371. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry, vol. 193, no. 1, 1951, pp. 265-275.
+372. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry 193, no. 1 (1951): 265-275.
+373. LAEMMLI, U. K. (1970). Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), 680-685.
+374. U. K. LAEMMLI, "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4," Nature, vol. 227, no. 5259, pp. 680-685, 1970.
+375. LAEMMLI UK. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature. 1970;227(5259):680-685.
+376. LAEMMLI, U.K., 1970. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), pp.680-685.
+377. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature, vol. 227, no. 5259, 1970, pp. 680-685.
+378. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature 227, no. 5259 (1970): 680-685.
+379. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing, & Sun, Jian (2016). Deep Residual Learning for Image Recognition. Journal, ?, 770-778.
+380. Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun, "Deep Residual Learning for Image Recognition," Journal, vol. ?, pp. 770-778, 2016.
+381. He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. Journal. 2016;?:770-778.
+382. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing and Sun, Jian, 2016. Deep Residual Learning for Image Recognition. Journal, ?, pp.770-778.
+383. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal, vol. ?, 2016, pp. 770-778.
+384. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal ? (2016): 770-778.
+385. Livak, Kenneth J., & Schmittgen, Thomas D. (2001). Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), 402-408.
+386. Kenneth J. Livak and Thomas D. Schmittgen, "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method," Methods, vol. 25, no. 4, pp. 402-408, 2001.
+387. Livak KJ, Schmittgen TD. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods. 2001;25(4):402-408.
+388. Livak, KennethJ. and Schmittgen, ThomasD., 2001. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), pp.402-408.
+389. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods, vol. 25, no. 4, 2001, pp. 402-408.
+390. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods 25, no. 4 (2001): 402-408.
+391. Kresse, G., & Furthmüller, J. (1996). Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), 11169-11186.
+392. G. Kresse and J. Furthmüller, "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set," Physical review. B, Condensed matter, vol. 54, no. 16, pp. 11169-11186, 1996.
+393. Kresse G, Furthmüller J. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter. 1996;54(16):11169-11186.
+394. Kresse, G. and Furthmüller, J., 1996. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), pp.11169-11186.
+395. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter, vol. 54, no. 16, 1996, pp. 11169-11186.
+396. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter 54, no. 16 (1996): 11169-11186.
+397. SHOJI, Mamoru, & Group, LHD Experiment (2020). Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), 2402039.
+398. Mamoru SHOJI and LHD Experiment Group, "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device," Plasma and Fusion Research, vol. 15, no. 0, pp. 2402039, 2020.
+399. SHOJI M, Group LHDE. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research. 2020;15(0):2402039.
+400. SHOJI, Mamoru and Group, LHDExperiment, 2020. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), pp.2402039.
+401. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research, vol. 15, no. 0, 2020, pp. 2402039.
+402. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research 15, no. 0 (2020): 2402039.
+403. Lowry, OliverH., Rosebrough, NiraJ., Farr, A. Lewis, & Randall, RoseJ. (1951). PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), 265-275.
+404. OliverH. Lowry, NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall, "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT," Journal of Biological Chemistry, vol. 193, no. 1, pp. 265-275, 1951.
+405. Lowry OH, Rosebrough NJ, Farr AL, Randall RJ. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry. 1951;193(1):265-275.
+406. Lowry, OliverH., Rosebrough, NiraJ., Farr, A.Lewis and Randall, RoseJ., 1951. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), pp.265-275.
+407. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry, vol. 193, no. 1, 1951, pp. 265-275.
+408. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry 193, no. 1 (1951): 265-275.
+409. LAEMMLI, U. K. (1970). Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), 680-685.
+410. U. K. LAEMMLI, "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4," Nature, vol. 227, no. 5259, pp. 680-685, 1970.
+411. LAEMMLI UK. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature. 1970;227(5259):680-685.
+412. LAEMMLI, U.K., 1970. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), pp.680-685.
+413. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature, vol. 227, no. 5259, 1970, pp. 680-685.
+414. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature 227, no. 5259 (1970): 680-685.
+415. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing, & Sun, Jian (2016). Deep Residual Learning for Image Recognition. Journal, ?, 770-778.
+416. Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun, "Deep Residual Learning for Image Recognition," Journal, vol. ?, pp. 770-778, 2016.
+417. He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. Journal. 2016;?:770-778.
+418. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing and Sun, Jian, 2016. Deep Residual Learning for Image Recognition. Journal, ?, pp.770-778.
+419. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal, vol. ?, 2016, pp. 770-778.
+420. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal ? (2016): 770-778.
+421. Livak, Kenneth J., & Schmittgen, Thomas D. (2001). Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), 402-408.
+422. Kenneth J. Livak and Thomas D. Schmittgen, "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method," Methods, vol. 25, no. 4, pp. 402-408, 2001.
+423. Livak KJ, Schmittgen TD. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods. 2001;25(4):402-408.
+424. Livak, KennethJ. and Schmittgen, ThomasD., 2001. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), pp.402-408.
+425. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods, vol. 25, no. 4, 2001, pp. 402-408.
+426. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods 25, no. 4 (2001): 402-408.
+427. Kresse, G., & Furthmüller, J. (1996). Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), 11169-11186.
+428. G. Kresse and J. Furthmüller, "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set," Physical review. B, Condensed matter, vol. 54, no. 16, pp. 11169-11186, 1996.
+429. Kresse G, Furthmüller J. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter. 1996;54(16):11169-11186.
+430. Kresse, G. and Furthmüller, J., 1996. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), pp.11169-11186.
+431. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter, vol. 54, no. 16, 1996, pp. 11169-11186.
+432. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter 54, no. 16 (1996): 11169-11186.
+433. SHOJI, Mamoru, & Group, LHD Experiment (2020). Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), 2402039.
+434. Mamoru SHOJI and LHD Experiment Group, "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device," Plasma and Fusion Research, vol. 15, no. 0, pp. 2402039, 2020.
+435. SHOJI M, Group LHDE. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research. 2020;15(0):2402039.
+436. SHOJI, Mamoru and Group, LHDExperiment, 2020. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), pp.2402039.
+437. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research, vol. 15, no. 0, 2020, pp. 2402039.
+438. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research 15, no. 0 (2020): 2402039.
+439. Lowry, OliverH., Rosebrough, NiraJ., Farr, A. Lewis, & Randall, RoseJ. (1951). PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), 265-275.
+440. OliverH. Lowry, NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall, "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT," Journal of Biological Chemistry, vol. 193, no. 1, pp. 265-275, 1951.
+441. Lowry OH, Rosebrough NJ, Farr AL, Randall RJ. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry. 1951;193(1):265-275.
+442. Lowry, OliverH., Rosebrough, NiraJ., Farr, A.Lewis and Randall, RoseJ., 1951. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), pp.265-275.
+443. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry, vol. 193, no. 1, 1951, pp. 265-275.
+444. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry 193, no. 1 (1951): 265-275.
+445. LAEMMLI, U. K. (1970). Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), 680-685.
+446. U. K. LAEMMLI, "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4," Nature, vol. 227, no. 5259, pp. 680-685, 1970.
+447. LAEMMLI UK. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature. 1970;227(5259):680-685.
+448. LAEMMLI, U.K., 1970. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), pp.680-685.
+449. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature, vol. 227, no. 5259, 1970, pp. 680-685.
+450. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature 227, no. 5259 (1970): 680-685.
+451. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing, & Sun, Jian (2016). Deep Residual Learning for Image Recognition. Journal, ?, 770-778.
+452. Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun, "Deep Residual Learning for Image Recognition," Journal, vol. ?, pp. 770-778, 2016.
+453. He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. Journal. 2016;?:770-778.
+454. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing and Sun, Jian, 2016. Deep Residual Learning for Image Recognition. Journal, ?, pp.770-778.
+455. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal, vol. ?, 2016, pp. 770-778.
+456. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal ? (2016): 770-778.
+457. Livak, Kenneth J., & Schmittgen, Thomas D. (2001). Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), 402-408.
+458. Kenneth J. Livak and Thomas D. Schmittgen, "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method," Methods, vol. 25, no. 4, pp. 402-408, 2001.
+459. Livak KJ, Schmittgen TD. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods. 2001;25(4):402-408.
+460. Livak, KennethJ. and Schmittgen, ThomasD., 2001. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), pp.402-408.
+461. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods, vol. 25, no. 4, 2001, pp. 402-408.
+462. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods 25, no. 4 (2001): 402-408.
+463. Kresse, G., & Furthmüller, J. (1996). Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), 11169-11186.
+464. G. Kresse and J. Furthmüller, "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set," Physical review. B, Condensed matter, vol. 54, no. 16, pp. 11169-11186, 1996.
+465. Kresse G, Furthmüller J. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter. 1996;54(16):11169-11186.
+466. Kresse, G. and Furthmüller, J., 1996. Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), pp.11169-11186.
+467. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter, vol. 54, no. 16, 1996, pp. 11169-11186.
+468. Kresse, G., and J. Furthmüller. "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set." Physical review. B, Condensed matter 54, no. 16 (1996): 11169-11186.
+469. SHOJI, Mamoru, & Group, LHD Experiment (2020). Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), 2402039.
+470. Mamoru SHOJI and LHD Experiment Group, "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device," Plasma and Fusion Research, vol. 15, no. 0, pp. 2402039, 2020.
+471. SHOJI M, Group LHDE. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research. 2020;15(0):2402039.
+472. SHOJI, Mamoru and Group, LHDExperiment, 2020. Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device. Plasma and Fusion Research, 15(0), pp.2402039.
+473. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research, vol. 15, no. 0, 2020, pp. 2402039.
+474. SHOJI, Mamoru, and LHD Experiment Group. "Radiation Resistant Camera System for Monitoring Deuterium Plasma Discharges in the Large Helical Device." Plasma and Fusion Research 15, no. 0 (2020): 2402039.
+475. Lowry, OliverH., Rosebrough, NiraJ., Farr, A. Lewis, & Randall, RoseJ. (1951). PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), 265-275.
+476. OliverH. Lowry, NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall, "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT," Journal of Biological Chemistry, vol. 193, no. 1, pp. 265-275, 1951.
+477. Lowry OH, Rosebrough NJ, Farr AL, Randall RJ. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry. 1951;193(1):265-275.
+478. Lowry, OliverH., Rosebrough, NiraJ., Farr, A.Lewis and Randall, RoseJ., 1951. PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT. Journal of Biological Chemistry, 193(1), pp.265-275.
+479. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry, vol. 193, no. 1, 1951, pp. 265-275.
+480. Lowry, OliverH., NiraJ. Rosebrough, A. Lewis Farr, and RoseJ. Randall. "PROTEIN MEASUREMENT WITH THE FOLIN PHENOL REAGENT." Journal of Biological Chemistry 193, no. 1 (1951): 265-275.
+481. LAEMMLI, U. K. (1970). Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), 680-685.
+482. U. K. LAEMMLI, "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4," Nature, vol. 227, no. 5259, pp. 680-685, 1970.
+483. LAEMMLI UK. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature. 1970;227(5259):680-685.
+484. LAEMMLI, U.K., 1970. Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4. Nature, 227(5259), pp.680-685.
+485. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature, vol. 227, no. 5259, 1970, pp. 680-685.
+486. LAEMMLI, U. K.. "Cleavage of Structural Proteins during the Assembly of the Head of Bacteriophage T4." Nature 227, no. 5259 (1970): 680-685.
+487. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing, & Sun, Jian (2016). Deep Residual Learning for Image Recognition. Journal, ?, 770-778.
+488. Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun, "Deep Residual Learning for Image Recognition," Journal, vol. ?, pp. 770-778, 2016.
+489. He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. Journal. 2016;?:770-778.
+490. He, Kaiming, Zhang, Xiangyu, Ren, Shaoqing and Sun, Jian, 2016. Deep Residual Learning for Image Recognition. Journal, ?, pp.770-778.
+491. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal, vol. ?, 2016, pp. 770-778.
+492. He, Kaiming, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep Residual Learning for Image Recognition." Journal ? (2016): 770-778.
+493. Livak, Kenneth J., & Schmittgen, Thomas D. (2001). Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), 402-408.
+494. Kenneth J. Livak and Thomas D. Schmittgen, "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method," Methods, vol. 25, no. 4, pp. 402-408, 2001.
+495. Livak KJ, Schmittgen TD. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods. 2001;25(4):402-408.
+496. Livak, KennethJ. and Schmittgen, ThomasD., 2001. Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method. Methods, 25(4), pp.402-408.
+497. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods, vol. 25, no. 4, 2001, pp. 402-408.
+498. Livak, Kenneth J., and Thomas D. Schmittgen. "Analysis of Relative Gene Expression Data Using Real-Time Quantitative PCR and the 2−ΔΔCT Method." Methods 25, no. 4 (2001): 402-408.
+499. Kresse, G., & Furthmüller, J. (1996). Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set. Physical review. B, Condensed matter, 54(16), 11169-11186.
+500. G. Kresse and J. Furthmüller, "Efficient iterative schemes for<i>ab initio</i>total-energy calculations using a plane-wave basis set," Physical review. B, Condensed matter, vol. 54, no. 16, pp. 11169-11186, 1996.

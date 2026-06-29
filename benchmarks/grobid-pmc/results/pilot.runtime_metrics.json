@@ -1,0 +1,293 @@
+{
+  "measurement_basis": "wall_clock",
+  "wall_clock_ms": 66048,
+  "prediction_count": 1362,
+  "throughput_refs_per_sec": 20.62,
+  "cpu_user_ms": 48812,
+  "cpu_system_ms": 4718,
+  "provider_call_count": 0,
+  "stage_totals_ms": {
+    "normalization": 72,
+    "ingestion": 269,
+    "block_aggregation": 59,
+    "splitting": 62,
+    "style_detection": 2072,
+    "extraction": 32272,
+    "author_disambiguation": 543,
+    "structural_family_routing": 72,
+    "type_classification": 46,
+    "shared_repair": 29,
+    "llm_fallback": 0,
+    "enrichment": 0,
+    "deduplication": 1,
+    "health_validation": 185,
+    "authority_validation": 0,
+    "rendering": 925,
+    "feedback_loop": 0
+  },
+  "worker_stats": [
+    {
+      "worker_index": 0,
+      "prediction_count": 1362,
+      "group_count": 227,
+      "wall_clock_ms": 66048,
+      "throughput_refs_per_sec": 20.62,
+      "cpu_user_ms": 48812,
+      "cpu_system_ms": 4718,
+      "provider_call_count": 0
+    }
+  ],
+  "slow_chunks": [
+    {
+      "chunk_index": 0,
+      "row_count": 6,
+      "wall_clock_ms": 1273,
+      "throughput_refs_per_sec": 4.71,
+      "record_ids": [
+        "article-journal-022226b2452a4ba5"
+      ]
+    },
+    {
+      "chunk_index": 45,
+      "row_count": 6,
+      "wall_clock_ms": 994,
+      "throughput_refs_per_sec": 6.04,
+      "record_ids": [
+        "conference-paper-182579e7d6e3c89f"
+      ]
+    },
+    {
+      "chunk_index": 29,
+      "row_count": 6,
+      "wall_clock_ms": 897,
+      "throughput_refs_per_sec": 6.69,
+      "record_ids": [
+        "conference-paper-0842c9b7527e369a"
+      ]
+    },
+    {
+      "chunk_index": 28,
+      "row_count": 6,
+      "wall_clock_ms": 876,
+      "throughput_refs_per_sec": 6.85,
+      "record_ids": [
+        "conference-paper-07272c9cf263de0d"
+      ]
+    },
+    {
+      "chunk_index": 49,
+      "row_count": 6,
+      "wall_clock_ms": 875,
+      "throughput_refs_per_sec": 6.86,
+      "record_ids": [
+        "conference-paper-1fc5687816792cd6"
+      ]
+    },
+    {
+      "chunk_index": 31,
+      "row_count": 6,
+      "wall_clock_ms": 743,
+      "throughput_refs_per_sec": 8.08,
+      "record_ids": [
+        "conference-paper-0b57fca394b31763"
+      ]
+    },
+    {
+      "chunk_index": 37,
+      "row_count": 6,
+      "wall_clock_ms": 743,
+      "throughput_refs_per_sec": 8.08,
+      "record_ids": [
+        "conference-paper-0f3c18bf81e82941"
+      ]
+    },
+    {
+      "chunk_index": 1,
+      "row_count": 6,
+      "wall_clock_ms": 725,
+      "throughput_refs_per_sec": 8.28,
+      "record_ids": [
+        "article-journal-03684acaf081af46"
+      ]
+    },
+    {
+      "chunk_index": 140,
+      "row_count": 6,
+      "wall_clock_ms": 700,
+      "throughput_refs_per_sec": 8.57,
+      "record_ids": [
+        "thesis-0ef5e4a87b382723"
+      ]
+    },
+    {
+      "chunk_index": 48,
+      "row_count": 6,
+      "wall_clock_ms": 674,
+      "throughput_refs_per_sec": 8.9,
+      "record_ids": [
+        "conference-paper-1e834ecda38fa153"
+      ]
+    }
+  ],
+  "slow_rows": [
+    {
+      "variant_id": "conference-paper-182579e7d6e3c89f:mla9:clean",
+      "record_id": "conference-paper-182579e7d6e3c89f",
+      "duration_ms": 165.67,
+      "output_latency_ms": 607,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "conference-paper-182579e7d6e3c89f:ieee:clean",
+      "record_id": "conference-paper-182579e7d6e3c89f",
+      "duration_ms": 165.67,
+      "output_latency_ms": 606,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "conference-paper-182579e7d6e3c89f:vancouver:clean",
+      "record_id": "conference-paper-182579e7d6e3c89f",
+      "duration_ms": 165.67,
+      "output_latency_ms": 605,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "conference-paper-182579e7d6e3c89f:chicago-notes-bib:clean",
+      "record_id": "conference-paper-182579e7d6e3c89f",
+      "duration_ms": 165.67,
+      "output_latency_ms": 604,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "conference-paper-182579e7d6e3c89f:apa7:clean",
+      "record_id": "conference-paper-182579e7d6e3c89f",
+      "duration_ms": 165.67,
+      "output_latency_ms": 603,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "conference-paper-182579e7d6e3c89f:harvard-ctr:clean",
+      "record_id": "conference-paper-182579e7d6e3c89f",
+      "duration_ms": 165.67,
+      "output_latency_ms": 603,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "conference-paper-0842c9b7527e369a:mla9:clean",
+      "record_id": "conference-paper-0842c9b7527e369a",
+      "duration_ms": 149.5,
+      "output_latency_ms": 497,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "conference-paper-0842c9b7527e369a:ieee:clean",
+      "record_id": "conference-paper-0842c9b7527e369a",
+      "duration_ms": 149.5,
+      "output_latency_ms": 496,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "conference-paper-0842c9b7527e369a:vancouver:clean",
+      "record_id": "conference-paper-0842c9b7527e369a",
+      "duration_ms": 149.5,
+      "output_latency_ms": 495,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "conference-paper-0842c9b7527e369a:chicago-notes-bib:clean",
+      "record_id": "conference-paper-0842c9b7527e369a",
+      "duration_ms": 149.5,
+      "output_latency_ms": 494,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "conference-paper-1fc5687816792cd6:mla9:clean",
+      "record_id": "conference-paper-1fc5687816792cd6",
+      "duration_ms": 145.83,
+      "output_latency_ms": 494,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "conference-paper-0842c9b7527e369a:apa7:clean",
+      "record_id": "conference-paper-0842c9b7527e369a",
+      "duration_ms": 149.5,
+      "output_latency_ms": 493,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "conference-paper-0842c9b7527e369a:harvard-ctr:clean",
+      "record_id": "conference-paper-0842c9b7527e369a",
+      "duration_ms": 149.5,
+      "output_latency_ms": 493,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "conference-paper-1fc5687816792cd6:ieee:clean",
+      "record_id": "conference-paper-1fc5687816792cd6",
+      "duration_ms": 145.83,
+      "output_latency_ms": 493,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "conference-paper-1fc5687816792cd6:vancouver:clean",
+      "record_id": "conference-paper-1fc5687816792cd6",
+      "duration_ms": 145.83,
+      "output_latency_ms": 493,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "conference-paper-1fc5687816792cd6:chicago-notes-bib:clean",
+      "record_id": "conference-paper-1fc5687816792cd6",
+      "duration_ms": 145.83,
+      "output_latency_ms": 492,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "conference-paper-1fc5687816792cd6:harvard-ctr:clean",
+      "record_id": "conference-paper-1fc5687816792cd6",
+      "duration_ms": 145.83,
+      "output_latency_ms": 492,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "conference-paper-1fc5687816792cd6:apa7:clean",
+      "record_id": "conference-paper-1fc5687816792cd6",
+      "duration_ms": 145.83,
+      "output_latency_ms": 491,
+      "reference_type": "conference-paper"
+    },
+    {
+      "variant_id": "thesis-0e54a17dcdd79ad0:chicago-notes-bib:clean",
+      "record_id": "thesis-0e54a17dcdd79ad0",
+      "duration_ms": 92.17,
+      "output_latency_ms": 491,
+      "reference_type": "thesis"
+    },
+    {
+      "variant_id": "thesis-0e54a17dcdd79ad0:ieee:clean",
+      "record_id": "thesis-0e54a17dcdd79ad0",
+      "duration_ms": 92.17,
+      "output_latency_ms": 491,
+      "reference_type": "thesis"
+    }
+  ],
+  "gc_stats": {
+    "total_collections": 0,
+    "total_duration_ms": 0,
+    "max_pause_ms": 0
+  },
+  "memory_stats": {
+    "rss_start_bytes": 237129728,
+    "rss_end_bytes": 379723776,
+    "rss_peak_bytes": 379723776,
+    "heap_used_start_bytes": 61876056,
+    "heap_used_end_bytes": 184863928,
+    "heap_used_peak_bytes": 184863928
+  },
+  "throughput_decay": {
+    "sample_count": 227,
+    "initial_refs_per_sec": 19.64,
+    "final_refs_per_sec": 21.76,
+    "decline_ratio": 0
+  }
+}

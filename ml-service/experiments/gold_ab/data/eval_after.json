@@ -1,0 +1,88 @@
+{
+  "bundle": "D:\\Coding\\Bulkreferences\\ml-service\\experiments\\gold_ab\\models\\staged\\exp-after",
+  "label": "after",
+  "sets": {
+    "validated_holdout": {
+      "tier": 1,
+      "rows": 23,
+      "skipped": 0,
+      "entity_exact_f1": 0.1504,
+      "entity_exact_precision": 0.1244,
+      "entity_exact_recall": 0.1901,
+      "per_label_f1": {
+        "accessed_date": 1.0,
+        "author": 0.0331,
+        "conference_title": 0.0,
+        "doi": 0.2424,
+        "issue": 0.0,
+        "journal": 0.0,
+        "pages": 0.1333,
+        "publisher": 0.0,
+        "repository": 0.0,
+        "site_name": 1.0,
+        "title": 0.0,
+        "url": 0.6667,
+        "volume": 0.0,
+        "year": 0.1111
+      },
+      "field_accept_without_edit_rate": 0.0,
+      "field_mean_similarity": 0.0,
+      "field_confident_wrong_rate": 0.0,
+      "field_mean_edit_distance": 0.0
+    },
+    "real_corpus": {
+      "tier": 2,
+      "rows": 57,
+      "skipped": 0,
+      "entity_exact_f1": 0.0,
+      "entity_exact_precision": 0.0,
+      "entity_exact_recall": 0.0,
+      "per_label_f1": {
+        "accessed_date": 0.0,
+        "author": 0.0,
+        "conference_title": 0.0,
+        "doi": 0.0,
+        "issue": 0.0,
+        "journal": 0.0,
+        "pages": 0.0,
+        "place_of_publication": 0.0,
+        "publisher": 0.0,
+        "site_name": 0.0,
+        "title": 0.0,
+        "url": 0.0,
+        "volume": 0.0,
+        "year": 0.0
+      },
+      "field_accept_without_edit_rate": 0.0,
+      "field_mean_similarity": 0.6679,
+      "field_confident_wrong_rate": 0.7544,
+      "field_mean_edit_distance": 95.2456
+    },
+    "real_input": {
+      "tier": 2,
+      "rows": 100,
+      "skipped": 0,
+      "entity_exact_f1": 0.0,
+      "entity_exact_precision": 0.0,
+      "entity_exact_recall": 0.0,
+      "per_label_f1": {
+        "author": 0.0,
+        "book_title": 0.0,
+        "conference_title": 0.0,
+        "doi": 0.0,
+        "issue": 0.0,
+        "journal": 0.0,
+        "pages": 0.0,
+        "publisher": 0.0,
+        "title": 0.0,
+        "url": 0.0,
+        "volume": 0.0,
+        "year": 0.0
+      },
+      "field_accept_without_edit_rate": 0.0,
+      "field_mean_similarity": 0.2228,
+      "field_confident_wrong_rate": 0.85,
+      "field_mean_edit_distance": 154.85
+    }
+  }
+}

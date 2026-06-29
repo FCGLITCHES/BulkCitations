@@ -1,0 +1,4415 @@
+{
+  "generated_at": "2026-04-05T11:04:28.331Z",
+  "mode": "pilot",
+  "scoring_spec_version": "grobid-soft-v1",
+  "thresholds": {
+    "clean_macro_soft_f1_floor": 0.84,
+    "clean_instance_soft_f1_floor": 0.55,
+    "per_cell_soft_f1_floor": 0.75,
+    "target_macro_soft_f1": 0.9
+  },
+  "contract_sanity": {
+    "failures": [
+      "Field journal prediction coverage 0.0855 is below the hard floor 0.1.",
+      "Field issn prediction coverage 0 is below the hard floor 0.1.",
+      "Field conferenceTitle prediction coverage 0.0725 is below the hard floor 0.1.",
+      "Field publisher prediction coverage 0 is below the hard floor 0.1.",
+      "Field isbn prediction coverage 0 is below the hard floor 0.1.",
+      "Field bookTitle prediction coverage 0 is below the hard floor 0.1.",
+      "Field patent prediction coverage 0 is below the hard floor 0.1."
+    ],
+    "warnings": [
+      "Field volume prediction coverage 0.1068 is below the warning floor 0.4.",
+      "Field issue prediction coverage 0.1126 is below the warning floor 0.4.",
+      "Field pages prediction coverage 0.1778 is below the warning floor 0.4.",
+      "Field repository prediction coverage 0.3913 is below the warning floor 0.4.",
+      "Field institution prediction coverage 0.1667 is below the warning floor 0.4.",
+      "Field siteName prediction coverage 0.1404 is below the warning floor 0.4."
+    ],
+    "field_coverage": [
+      {
+        "field": "title",
+        "expected_rows": 1350,
+        "predicted_non_empty_rows": 1320,
+        "coverage": 0.9778,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "url",
+        "expected_rows": 1350,
+        "predicted_non_empty_rows": 1123,
+        "coverage": 0.8319,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "year",
+        "expected_rows": 1350,
+        "predicted_non_empty_rows": 1319,
+        "coverage": 0.977,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "venue",
+        "expected_rows": 1236,
+        "predicted_non_empty_rows": 600,
+        "coverage": 0.4854,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "doi",
+        "expected_rows": 1122,
+        "predicted_non_empty_rows": 947,
+        "coverage": 0.844,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "authors",
+        "expected_rows": 972,
+        "predicted_non_empty_rows": 911,
+        "coverage": 0.9372,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "firstAuthor",
+        "expected_rows": 972,
+        "predicted_non_empty_rows": 911,
+        "coverage": 0.9372,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "publisher",
+        "expected_rows": 438,
+        "predicted_non_empty_rows": 0,
+        "coverage": 0,
+        "hard_failure": true,
+        "warning": false
+      },
+      {
+        "field": "institution",
+        "expected_rows": 426,
+        "predicted_non_empty_rows": 71,
+        "coverage": 0.1667,
+        "hard_failure": false,
+        "warning": true
+      },
+      {
+        "field": "pages",
+        "expected_rows": 360,
+        "predicted_non_empty_rows": 64,
+        "coverage": 0.1778,
+        "hard_failure": false,
+        "warning": true
+      },
+      {
+        "field": "isbn",
+        "expected_rows": 294,
+        "predicted_non_empty_rows": 0,
+        "coverage": 0,
+        "hard_failure": true,
+        "warning": false
+      },
+      {
+        "field": "journal",
+        "expected_rows": 234,
+        "predicted_non_empty_rows": 20,
+        "coverage": 0.0855,
+        "hard_failure": true,
+        "warning": false
+      },
+      {
+        "field": "volume",
+        "expected_rows": 234,
+        "predicted_non_empty_rows": 25,
+        "coverage": 0.1068,
+        "hard_failure": false,
+        "warning": true
+      },
+      {
+        "field": "issn",
+        "expected_rows": 228,
+        "predicted_non_empty_rows": 0,
+        "coverage": 0,
+        "hard_failure": true,
+        "warning": false
+      },
+      {
+        "field": "issue",
+        "expected_rows": 222,
+        "predicted_non_empty_rows": 25,
+        "coverage": 0.1126,
+        "hard_failure": false,
+        "warning": true
+      },
+      {
+        "field": "bookTitle",
+        "expected_rows": 144,
+        "predicted_non_empty_rows": 0,
+        "coverage": 0,
+        "hard_failure": true,
+        "warning": false
+      },
+      {
+        "field": "thesisType",
+        "expected_rows": 144,
+        "predicted_non_empty_rows": 64,
+        "coverage": 0.4444,
+        "hard_failure": false,
+        "warning": false
+      },
+      {
+        "field": "conferenceTitle",
+        "expected_rows": 138,
+        "predicted_non_empty_rows": 10,
+        "coverage": 0.0725,
+        "hard_failure": true,
+        "warning": false
+      },
+      {
+        "field": "repository",
+        "expected_rows": 138,
+        "predicted_non_empty_rows": 54,
+        "coverage": 0.3913,
+        "hard_failure": false,
+        "warning": true
+      },
+      {
+        "field": "patent",
+        "expected_rows": 114,
+        "predicted_non_empty_rows": 0,
+        "coverage": 0,
+        "hard_failure": true,
+        "warning": false
+      },
+      {
+        "field": "siteName",
+        "expected_rows": 114,
+        "predicted_non_empty_rows": 16,
+        "coverage": 0.1404,
+        "hard_failure": false,
+        "warning": true
+      },
+      {
+        "field": "arxiv",
+        "expected_rows": 6,
+        "predicted_non_empty_rows": 0,
+        "coverage": 0,
+        "hard_failure": false,
+        "warning": false
+      }
+    ],
+    "samples": [
+      {
+        "variant_id": "article-journal-022226b2452a4ba5:chicago-notes-bib:clean",
+        "required_fields": [
+          "authors",
+          "title",
+          "year",
+          "doi",
+          "url",
+          "journal",
+          "volume",
+          "issue",
+          "venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "issue",
+          "journal",
+          "pages",
+          "title",
+          "url",
+          "venue",
+          "volume",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issue",
+          "pages",
+          "title",
+          "url",
+          "volume",
+          "year"
+        ],
+        "missing_required_fields": [
+          "journal",
+          "venue"
+        ]
+      },
+      {
+        "variant_id": "article-journal-022226b2452a4ba5:vancouver:clean",
+        "required_fields": [
+          "title",
+          "year",
+          "doi",
+          "url",
+          "journal",
+          "volume",
+          "issue",
+          "venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "issue",
+          "journal",
+          "pages",
+          "title",
+          "url",
+          "venue",
+          "volume",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "siteName",
+          "title",
+          "url",
+          "venue",
+          "year"
+        ],
+        "missing_required_fields": [
+          "journal",
+          "volume",
+          "issue"
+        ]
+      },
+      {
+        "variant_id": "article-journal-022226b2452a4ba5:ieee:clean",
+        "required_fields": [
+          "title",
+          "year",
+          "doi",
+          "url",
+          "journal",
+          "volume",
+          "issue",
+          "pages",
+          "venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "issue",
+          "journal",
+          "pages",
+          "title",
+          "url",
+          "venue",
+          "volume",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "pages",
+          "title",
+          "year"
+        ],
+        "missing_required_fields": [
+          "url",
+          "journal",
+          "volume",
+          "issue",
+          "venue"
+        ]
+      },
+      {
+        "variant_id": "article-journal-022226b2452a4ba5:mla9:clean",
+        "required_fields": [
+          "authors",
+          "title",
+          "year",
+          "doi",
+          "url",
+          "journal",
+          "volume",
+          "issue",
+          "venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "issue",
+          "journal",
+          "pages",
+          "title",
+          "url",
+          "venue",
+          "volume",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "siteName",
+          "title",
+          "url",
+          "venue",
+          "year"
+        ],
+        "missing_required_fields": [
+          "journal",
+          "volume",
+          "issue"
+        ]
+      },
+      {
+        "variant_id": "article-journal-03684acaf081af46:harvard-ctr:clean",
+        "required_fields": [
+          "title",
+          "year",
+          "doi",
+          "url",
+          "journal",
+          "volume",
+          "issue",
+          "pages",
+          "venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "issue",
+          "journal",
+          "pages",
+          "title",
+          "url",
+          "venue",
+          "volume",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "siteName",
+          "title",
+          "url",
+          "venue",
+          "year"
+        ],
+        "missing_required_fields": [
+          "journal",
+          "volume",
+          "issue",
+          "pages"
+        ]
+      },
+      {
+        "variant_id": "article-journal-03684acaf081af46:chicago-notes-bib:clean",
+        "required_fields": [
+          "authors",
+          "title",
+          "year",
+          "doi",
+          "url",
+          "journal",
+          "volume",
+          "issue",
+          "pages",
+          "venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "issue",
+          "journal",
+          "pages",
+          "title",
+          "url",
+          "venue",
+          "volume",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "siteName",
+          "title",
+          "url",
+          "venue",
+          "year"
+        ],
+        "missing_required_fields": [
+          "journal",
+          "volume",
+          "issue",
+          "pages"
+        ]
+      },
+      {
+        "variant_id": "article-journal-03684acaf081af46:vancouver:clean",
+        "required_fields": [
+          "title",
+          "year",
+          "doi",
+          "url",
+          "journal",
+          "volume",
+          "issue",
+          "pages",
+          "venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "issue",
+          "journal",
+          "pages",
+          "title",
+          "url",
+          "venue",
+          "volume",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "siteName",
+          "title",
+          "url",
+          "venue",
+          "year"
+        ],
+        "missing_required_fields": [
+          "journal",
+          "volume",
+          "issue",
+          "pages"
+        ]
+      },
+      {
+        "variant_id": "article-journal-03684acaf081af46:ieee:clean",
+        "required_fields": [
+          "title",
+          "year",
+          "doi",
+          "url",
+          "journal",
+          "volume",
+          "issue",
+          "pages",
+          "venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "issue",
+          "journal",
+          "pages",
+          "title",
+          "url",
+          "venue",
+          "volume",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "title",
+          "year"
+        ],
+        "missing_required_fields": [
+          "url",
+          "journal",
+          "volume",
+          "issue",
+          "pages",
+          "venue"
+        ]
+      },
+      {
+        "variant_id": "article-journal-03684acaf081af46:mla9:clean",
+        "required_fields": [
+          "authors",
+          "title",
+          "year",
+          "doi",
+          "url",
+          "journal",
+          "volume",
+          "issue",
+          "pages",
+          "venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "issue",
+          "journal",
+          "pages",
+          "title",
+          "url",
+          "venue",
+          "volume",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "siteName",
+          "title",
+          "url",
+          "venue",
+          "year"
+        ],
+        "missing_required_fields": [
+          "journal",
+          "volume",
+          "issue",
+          "pages"
+        ]
+      },
+      {
+        "variant_id": "article-journal-051631b9666c8063:harvard-ctr:clean",
+        "required_fields": [
+          "title",
+          "year",
+          "doi",
+          "url",
+          "journal",
+          "volume",
+          "issue",
+          "pages",
+          "venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "issue",
+          "journal",
+          "pages",
+          "title",
+          "url",
+          "venue",
+          "volume",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "siteName",
+          "title",
+          "url",
+          "venue",
+          "year"
+        ],
+        "missing_required_fields": [
+          "journal",
+          "volume",
+          "issue",
+          "pages"
+        ]
+      },
+      {
+        "variant_id": "article-journal-051631b9666c8063:chicago-notes-bib:clean",
+        "required_fields": [
+          "authors",
+          "title",
+          "year",
+          "doi",
+          "url",
+          "journal",
+          "volume",
+          "issue",
+          "pages",
+          "venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "issue",
+          "journal",
+          "pages",
+          "title",
+          "url",
+          "venue",
+          "volume",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "siteName",
+          "title",
+          "url",
+          "venue",
+          "year"
+        ],
+        "missing_required_fields": [
+          "journal",
+          "volume",
+          "issue",
+          "pages"
+        ]
+      },
+      {
+        "variant_id": "article-journal-051631b9666c8063:vancouver:clean",
+        "required_fields": [
+          "title",
+          "year",
+          "doi",
+          "url",
+          "journal",
+          "volume",
+          "issue",
+          "pages",
+          "venue"
+        ],
+        "expected_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "issn",
+          "issue",
+          "journal",
+          "pages",
+          "title",
+          "url",
+          "venue",
+          "volume",
+          "year"
+        ],
+        "predicted_keys": [
+          "authors",
+          "doi",
+          "firstAuthor",
+          "siteName",
+          "title",
+          "url",
+          "venue",
+          "year"
+        ],
+        "missing_required_fields": [
+          "journal",
+          "volume",
+          "issue",
+          "pages"
+        ]
+      }
+    ]
+  },
+  "partitions": [
+    {
+      "partition": "clean",
+      "by_tier": {
+        "strict": {
+          "fields": {
+            "authors": {
+              "tp": 2,
+              "fp": 851,
+              "fn": 35,
+              "precision": 0.0023,
+              "recall": 0.0541,
+              "f1": 0.0045
+            },
+            "title": {
+              "tp": 6,
+              "fp": 1178,
+              "fn": 16,
+              "precision": 0.0051,
+              "recall": 0.2727,
+              "f1": 0.01
+            },
+            "year": {
+              "tp": 352,
+              "fp": 831,
+              "fn": 17,
+              "precision": 0.2975,
+              "recall": 0.9539,
+              "f1": 0.4536
+            },
+            "doi": {
+              "tp": 41,
+              "fp": 870,
+              "fn": 97,
+              "precision": 0.045,
+              "recall": 0.2971,
+              "f1": 0.0782
+            },
+            "url": {
+              "tp": 34,
+              "fp": 951,
+              "fn": 215,
+              "precision": 0.0345,
+              "recall": 0.1365,
+              "f1": 0.0551
+            },
+            "journal": {
+              "tp": 6,
+              "fp": 14,
+              "fn": 190,
+              "precision": 0.3,
+              "recall": 0.0306,
+              "f1": 0.0556
+            },
+            "volume": {
+              "tp": 10,
+              "fp": 15,
+              "fn": 185,
+              "precision": 0.4,
+              "recall": 0.0513,
+              "f1": 0.0909
+            },
+            "issue": {
+              "tp": 9,
+              "fp": 16,
+              "fn": 173,
+              "precision": 0.36,
+              "recall": 0.0495,
+              "f1": 0.087
+            },
+            "pages": {
+              "tp": 2,
+              "fp": 62,
+              "fn": 266,
+              "precision": 0.0313,
+              "recall": 0.0075,
+              "f1": 0.012
+            },
+            "issn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 204,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "firstAuthor": {
+              "tp": 7,
+              "fp": 846,
+              "fn": 35,
+              "precision": 0.0082,
+              "recall": 0.1667,
+              "f1": 0.0156
+            },
+            "venue": {
+              "tp": 6,
+              "fp": 527,
+              "fn": 571,
+              "precision": 0.0113,
+              "recall": 0.0104,
+              "f1": 0.0108
+            },
+            "conferenceTitle": {
+              "tp": 0,
+              "fp": 10,
+              "fn": 128,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "publisher": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 402,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "isbn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 258,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "bookTitle": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 132,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "repository": {
+              "tp": 0,
+              "fp": 54,
+              "fn": 78,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "arxiv": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 6,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "institution": {
+              "tp": 0,
+              "fp": 71,
+              "fn": 289,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "thesisType": {
+              "tp": 63,
+              "fp": 1,
+              "fn": 68,
+              "precision": 0.9844,
+              "recall": 0.4809,
+              "f1": 0.6462
+            },
+            "patent": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 96,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "siteName": {
+              "tp": 0,
+              "fp": 6,
+              "fn": 90,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          },
+          "macro_field_f1": 0.0691,
+          "instance": {
+            "tp": 1,
+            "fp": 1199,
+            "fn": 1199,
+            "precision": 0.0008,
+            "recall": 0.0008,
+            "f1": 0.0008
+          },
+          "total_rows": 1200
+        },
+        "soft": {
+          "fields": {
+            "authors": {
+              "tp": 2,
+              "fp": 851,
+              "fn": 35,
+              "precision": 0.0023,
+              "recall": 0.0541,
+              "f1": 0.0045
+            },
+            "title": {
+              "tp": 6,
+              "fp": 1178,
+              "fn": 16,
+              "precision": 0.0051,
+              "recall": 0.2727,
+              "f1": 0.01
+            },
+            "year": {
+              "tp": 352,
+              "fp": 831,
+              "fn": 17,
+              "precision": 0.2975,
+              "recall": 0.9539,
+              "f1": 0.4536
+            },
+            "doi": {
+              "tp": 41,
+              "fp": 870,
+              "fn": 97,
+              "precision": 0.045,
+              "recall": 0.2971,
+              "f1": 0.0782
+            },
+            "url": {
+              "tp": 34,
+              "fp": 951,
+              "fn": 215,
+              "precision": 0.0345,
+              "recall": 0.1365,
+              "f1": 0.0551
+            },
+            "journal": {
+              "tp": 7,
+              "fp": 13,
+              "fn": 190,
+              "precision": 0.35,
+              "recall": 0.0355,
+              "f1": 0.0645
+            },
+            "volume": {
+              "tp": 10,
+              "fp": 15,
+              "fn": 185,
+              "precision": 0.4,
+              "recall": 0.0513,
+              "f1": 0.0909
+            },
+            "issue": {
+              "tp": 9,
+              "fp": 16,
+              "fn": 173,
+              "precision": 0.36,
+              "recall": 0.0495,
+              "f1": 0.087
+            },
+            "pages": {
+              "tp": 11,
+              "fp": 53,
+              "fn": 266,
+              "precision": 0.1719,
+              "recall": 0.0397,
+              "f1": 0.0645
+            },
+            "issn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 204,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "firstAuthor": {
+              "tp": 7,
+              "fp": 846,
+              "fn": 35,
+              "precision": 0.0082,
+              "recall": 0.1667,
+              "f1": 0.0156
+            },
+            "venue": {
+              "tp": 7,
+              "fp": 526,
+              "fn": 571,
+              "precision": 0.0131,
+              "recall": 0.0121,
+              "f1": 0.0126
+            },
+            "conferenceTitle": {
+              "tp": 0,
+              "fp": 10,
+              "fn": 128,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "publisher": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 402,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "isbn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 258,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "bookTitle": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 132,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "repository": {
+              "tp": 0,
+              "fp": 54,
+              "fn": 78,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "arxiv": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 6,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "institution": {
+              "tp": 0,
+              "fp": 71,
+              "fn": 289,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "thesisType": {
+              "tp": 63,
+              "fp": 1,
+              "fn": 68,
+              "precision": 0.9844,
+              "recall": 0.4809,
+              "f1": 0.6462
+            },
+            "patent": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 96,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "siteName": {
+              "tp": 0,
+              "fp": 6,
+              "fn": 90,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          },
+          "macro_field_f1": 0.0719,
+          "instance": {
+            "tp": 5,
+            "fp": 1195,
+            "fn": 1195,
+            "precision": 0.0042,
+            "recall": 0.0042,
+            "f1": 0.0042
+          },
+          "total_rows": 1200
+        },
+        "levenshtein": {
+          "fields": {
+            "authors": {
+              "tp": 2,
+              "fp": 851,
+              "fn": 35,
+              "precision": 0.0023,
+              "recall": 0.0541,
+              "f1": 0.0045
+            },
+            "title": {
+              "tp": 6,
+              "fp": 1178,
+              "fn": 16,
+              "precision": 0.0051,
+              "recall": 0.2727,
+              "f1": 0.01
+            },
+            "year": {
+              "tp": 352,
+              "fp": 831,
+              "fn": 17,
+              "precision": 0.2975,
+              "recall": 0.9539,
+              "f1": 0.4536
+            },
+            "doi": {
+              "tp": 41,
+              "fp": 870,
+              "fn": 97,
+              "precision": 0.045,
+              "recall": 0.2971,
+              "f1": 0.0782
+            },
+            "url": {
+              "tp": 34,
+              "fp": 951,
+              "fn": 215,
+              "precision": 0.0345,
+              "recall": 0.1365,
+              "f1": 0.0551
+            },
+            "journal": {
+              "tp": 7,
+              "fp": 13,
+              "fn": 190,
+              "precision": 0.35,
+              "recall": 0.0355,
+              "f1": 0.0645
+            },
+            "volume": {
+              "tp": 10,
+              "fp": 15,
+              "fn": 185,
+              "precision": 0.4,
+              "recall": 0.0513,
+              "f1": 0.0909
+            },
+            "issue": {
+              "tp": 9,
+              "fp": 16,
+              "fn": 173,
+              "precision": 0.36,
+              "recall": 0.0495,
+              "f1": 0.087
+            },
+            "pages": {
+              "tp": 11,
+              "fp": 53,
+              "fn": 266,
+              "precision": 0.1719,
+              "recall": 0.0397,
+              "f1": 0.0645
+            },
+            "issn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 204,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "firstAuthor": {
+              "tp": 7,
+              "fp": 846,
+              "fn": 35,
+              "precision": 0.0082,
+              "recall": 0.1667,
+              "f1": 0.0156
+            },
+            "venue": {
+              "tp": 7,
+              "fp": 526,
+              "fn": 571,
+              "precision": 0.0131,
+              "recall": 0.0121,
+              "f1": 0.0126
+            },
+            "conferenceTitle": {
+              "tp": 0,
+              "fp": 10,
+              "fn": 128,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "publisher": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 402,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "isbn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 258,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "bookTitle": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 132,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "repository": {
+              "tp": 0,
+              "fp": 54,
+              "fn": 78,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "arxiv": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 6,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "institution": {
+              "tp": 0,
+              "fp": 71,
+              "fn": 289,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "thesisType": {
+              "tp": 63,
+              "fp": 1,
+              "fn": 68,
+              "precision": 0.9844,
+              "recall": 0.4809,
+              "f1": 0.6462
+            },
+            "patent": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 96,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "siteName": {
+              "tp": 0,
+              "fp": 6,
+              "fn": 90,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          },
+          "macro_field_f1": 0.0719,
+          "instance": {
+            "tp": 5,
+            "fp": 1195,
+            "fn": 1195,
+            "precision": 0.0042,
+            "recall": 0.0042,
+            "f1": 0.0042
+          },
+          "total_rows": 1200
+        },
+        "ratcliff_obershelp": {
+          "fields": {
+            "authors": {
+              "tp": 2,
+              "fp": 851,
+              "fn": 35,
+              "precision": 0.0023,
+              "recall": 0.0541,
+              "f1": 0.0045
+            },
+            "title": {
+              "tp": 6,
+              "fp": 1178,
+              "fn": 16,
+              "precision": 0.0051,
+              "recall": 0.2727,
+              "f1": 0.01
+            },
+            "year": {
+              "tp": 352,
+              "fp": 831,
+              "fn": 17,
+              "precision": 0.2975,
+              "recall": 0.9539,
+              "f1": 0.4536
+            },
+            "doi": {
+              "tp": 41,
+              "fp": 870,
+              "fn": 97,
+              "precision": 0.045,
+              "recall": 0.2971,
+              "f1": 0.0782
+            },
+            "url": {
+              "tp": 34,
+              "fp": 951,
+              "fn": 215,
+              "precision": 0.0345,
+              "recall": 0.1365,
+              "f1": 0.0551
+            },
+            "journal": {
+              "tp": 7,
+              "fp": 13,
+              "fn": 190,
+              "precision": 0.35,
+              "recall": 0.0355,
+              "f1": 0.0645
+            },
+            "volume": {
+              "tp": 10,
+              "fp": 15,
+              "fn": 185,
+              "precision": 0.4,
+              "recall": 0.0513,
+              "f1": 0.0909
+            },
+            "issue": {
+              "tp": 9,
+              "fp": 16,
+              "fn": 173,
+              "precision": 0.36,
+              "recall": 0.0495,
+              "f1": 0.087
+            },
+            "pages": {
+              "tp": 11,
+              "fp": 53,
+              "fn": 266,
+              "precision": 0.1719,
+              "recall": 0.0397,
+              "f1": 0.0645
+            },
+            "issn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 204,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "firstAuthor": {
+              "tp": 7,
+              "fp": 846,
+              "fn": 35,
+              "precision": 0.0082,
+              "recall": 0.1667,
+              "f1": 0.0156
+            },
+            "venue": {
+              "tp": 7,
+              "fp": 526,
+              "fn": 571,
+              "precision": 0.0131,
+              "recall": 0.0121,
+              "f1": 0.0126
+            },
+            "conferenceTitle": {
+              "tp": 0,
+              "fp": 10,
+              "fn": 128,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "publisher": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 402,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "isbn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 258,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "bookTitle": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 132,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "repository": {
+              "tp": 0,
+              "fp": 54,
+              "fn": 78,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "arxiv": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 6,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "institution": {
+              "tp": 0,
+              "fp": 71,
+              "fn": 289,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "thesisType": {
+              "tp": 63,
+              "fp": 1,
+              "fn": 68,
+              "precision": 0.9844,
+              "recall": 0.4809,
+              "f1": 0.6462
+            },
+            "patent": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 96,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "siteName": {
+              "tp": 0,
+              "fp": 6,
+              "fn": 90,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          },
+          "macro_field_f1": 0.0719,
+          "instance": {
+            "tp": 5,
+            "fp": 1195,
+            "fn": 1195,
+            "precision": 0.0042,
+            "recall": 0.0042,
+            "f1": 0.0042
+          },
+          "total_rows": 1200
+        }
+      },
+      "cell_soft_instance_f1": [
+        {
+          "citation_style": "apa7",
+          "reference_type": "article-journal",
+          "compared": 35,
+          "f1": 0.1429,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "conference-paper",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "book",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "book-chapter",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "preprint",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "thesis",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "report",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "patent",
+          "compared": 16,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "webpage",
+          "compared": 16,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "article-journal",
+          "compared": 35,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "conference-paper",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "book",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "book-chapter",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "preprint",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "thesis",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "report",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "patent",
+          "compared": 16,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "webpage",
+          "compared": 16,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "article-journal",
+          "compared": 35,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "conference-paper",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "book",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "book-chapter",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "preprint",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "thesis",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "report",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "patent",
+          "compared": 16,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "webpage",
+          "compared": 16,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "article-journal",
+          "compared": 35,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "conference-paper",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "book",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "book-chapter",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "preprint",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "thesis",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "report",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "patent",
+          "compared": 16,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "webpage",
+          "compared": 16,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "article-journal",
+          "compared": 35,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "conference-paper",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "book",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "book-chapter",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "preprint",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "thesis",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "report",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "patent",
+          "compared": 16,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "webpage",
+          "compared": 16,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "article-journal",
+          "compared": 35,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "conference-paper",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "book",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "book-chapter",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "preprint",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "thesis",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "report",
+          "compared": 22,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "patent",
+          "compared": 16,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "webpage",
+          "compared": 16,
+          "f1": 0,
+          "below_threshold": true
+        }
+      ],
+      "by_style": [
+        {
+          "citation_style": "apa7",
+          "compared": 200,
+          "soft_instance_f1": 0.025
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "compared": 200,
+          "soft_instance_f1": 0
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "compared": 200,
+          "soft_instance_f1": 0
+        },
+        {
+          "citation_style": "vancouver",
+          "compared": 200,
+          "soft_instance_f1": 0
+        },
+        {
+          "citation_style": "ieee",
+          "compared": 200,
+          "soft_instance_f1": 0
+        },
+        {
+          "citation_style": "mla9",
+          "compared": 200,
+          "soft_instance_f1": 0
+        }
+      ],
+      "by_type": [
+        {
+          "reference_type": "article-journal",
+          "compared": 210,
+          "soft_instance_f1": 0.0238
+        },
+        {
+          "reference_type": "conference-paper",
+          "compared": 138,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "book",
+          "compared": 132,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "book-chapter",
+          "compared": 132,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "preprint",
+          "compared": 132,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "thesis",
+          "compared": 132,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "report",
+          "compared": 132,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "patent",
+          "compared": 96,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "webpage",
+          "compared": 96,
+          "soft_instance_f1": 0
+        }
+      ],
+      "by_noise_type": [],
+      "throughput_refs_per_sec": 489.8,
+      "missing_prediction_count": 0,
+      "unsupported_field_count": 3551
+    },
+    {
+      "partition": "noisy",
+      "by_tier": {
+        "strict": {
+          "fields": {
+            "authors": {
+              "tp": 0,
+              "fp": 58,
+              "fn": 26,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "title": {
+              "tp": 0,
+              "fp": 136,
+              "fn": 14,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "year": {
+              "tp": 25,
+              "fp": 111,
+              "fn": 14,
+              "precision": 0.1838,
+              "recall": 0.641,
+              "f1": 0.2857
+            },
+            "doi": {
+              "tp": 0,
+              "fp": 36,
+              "fn": 78,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "url": {
+              "tp": 0,
+              "fp": 138,
+              "fn": 12,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "journal": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 24,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "volume": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 24,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "issue": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 24,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "pages": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "issn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 24,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "firstAuthor": {
+              "tp": 0,
+              "fp": 58,
+              "fn": 26,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "venue": {
+              "tp": 0,
+              "fp": 67,
+              "fn": 65,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "publisher": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 36,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "isbn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 36,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "bookTitle": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 12,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "repository": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 6,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "institution": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 66,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "thesisType": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 12,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "patent": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 18,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "siteName": {
+              "tp": 0,
+              "fp": 10,
+              "fn": 8,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          },
+          "macro_field_f1": 0.0143,
+          "instance": {
+            "tp": 2,
+            "fp": 148,
+            "fn": 148,
+            "precision": 0.0133,
+            "recall": 0.0133,
+            "f1": 0.0133
+          },
+          "total_rows": 150
+        },
+        "soft": {
+          "fields": {
+            "authors": {
+              "tp": 0,
+              "fp": 58,
+              "fn": 26,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "title": {
+              "tp": 0,
+              "fp": 136,
+              "fn": 14,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "year": {
+              "tp": 25,
+              "fp": 111,
+              "fn": 14,
+              "precision": 0.1838,
+              "recall": 0.641,
+              "f1": 0.2857
+            },
+            "doi": {
+              "tp": 0,
+              "fp": 36,
+              "fn": 78,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "url": {
+              "tp": 0,
+              "fp": 138,
+              "fn": 12,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "journal": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 24,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "volume": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 24,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "issue": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 24,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "pages": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "issn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 24,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "firstAuthor": {
+              "tp": 0,
+              "fp": 58,
+              "fn": 26,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "venue": {
+              "tp": 0,
+              "fp": 67,
+              "fn": 65,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "publisher": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 36,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "isbn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 36,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "bookTitle": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 12,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "repository": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 6,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "institution": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 66,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "thesisType": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 12,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "patent": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 18,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "siteName": {
+              "tp": 0,
+              "fp": 10,
+              "fn": 8,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          },
+          "macro_field_f1": 0.0143,
+          "instance": {
+            "tp": 2,
+            "fp": 148,
+            "fn": 148,
+            "precision": 0.0133,
+            "recall": 0.0133,
+            "f1": 0.0133
+          },
+          "total_rows": 150
+        },
+        "levenshtein": {
+          "fields": {
+            "authors": {
+              "tp": 0,
+              "fp": 58,
+              "fn": 26,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "title": {
+              "tp": 0,
+              "fp": 136,
+              "fn": 14,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "year": {
+              "tp": 25,
+              "fp": 111,
+              "fn": 14,
+              "precision": 0.1838,
+              "recall": 0.641,
+              "f1": 0.2857
+            },
+            "doi": {
+              "tp": 0,
+              "fp": 36,
+              "fn": 78,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "url": {
+              "tp": 0,
+              "fp": 138,
+              "fn": 12,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "journal": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 24,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "volume": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 24,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "issue": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 24,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "pages": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "issn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 24,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "firstAuthor": {
+              "tp": 0,
+              "fp": 58,
+              "fn": 26,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "venue": {
+              "tp": 0,
+              "fp": 67,
+              "fn": 65,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "publisher": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 36,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "isbn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 36,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "bookTitle": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 12,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "repository": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 6,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "institution": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 66,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "thesisType": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 12,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "patent": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 18,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "siteName": {
+              "tp": 0,
+              "fp": 10,
+              "fn": 8,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          },
+          "macro_field_f1": 0.0143,
+          "instance": {
+            "tp": 2,
+            "fp": 148,
+            "fn": 148,
+            "precision": 0.0133,
+            "recall": 0.0133,
+            "f1": 0.0133
+          },
+          "total_rows": 150
+        },
+        "ratcliff_obershelp": {
+          "fields": {
+            "authors": {
+              "tp": 0,
+              "fp": 58,
+              "fn": 26,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "title": {
+              "tp": 0,
+              "fp": 136,
+              "fn": 14,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "year": {
+              "tp": 25,
+              "fp": 111,
+              "fn": 14,
+              "precision": 0.1838,
+              "recall": 0.641,
+              "f1": 0.2857
+            },
+            "doi": {
+              "tp": 0,
+              "fp": 36,
+              "fn": 78,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "url": {
+              "tp": 0,
+              "fp": 138,
+              "fn": 12,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "journal": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 24,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "volume": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 24,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "issue": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 24,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "pages": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 30,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "issn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 24,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "firstAuthor": {
+              "tp": 0,
+              "fp": 58,
+              "fn": 26,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "venue": {
+              "tp": 0,
+              "fp": 67,
+              "fn": 65,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "publisher": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 36,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "isbn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 36,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "bookTitle": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 12,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "repository": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 6,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "institution": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 66,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "thesisType": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 12,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "patent": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 18,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "siteName": {
+              "tp": 0,
+              "fp": 10,
+              "fn": 8,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          },
+          "macro_field_f1": 0.0143,
+          "instance": {
+            "tp": 2,
+            "fp": 148,
+            "fn": 148,
+            "precision": 0.0133,
+            "recall": 0.0133,
+            "f1": 0.0133
+          },
+          "total_rows": 150
+        }
+      },
+      "cell_soft_instance_f1": [
+        {
+          "citation_style": "apa7",
+          "reference_type": "article-journal",
+          "compared": 4,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "conference-paper",
+          "compared": 0,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "book",
+          "compared": 4,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "book-chapter",
+          "compared": 2,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "preprint",
+          "compared": 1,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "thesis",
+          "compared": 2,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "report",
+          "compared": 6,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "patent",
+          "compared": 3,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "webpage",
+          "compared": 3,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "article-journal",
+          "compared": 4,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "conference-paper",
+          "compared": 0,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "book",
+          "compared": 4,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "book-chapter",
+          "compared": 2,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "preprint",
+          "compared": 1,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "thesis",
+          "compared": 2,
+          "f1": 0.5,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "report",
+          "compared": 6,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "patent",
+          "compared": 3,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "webpage",
+          "compared": 3,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "article-journal",
+          "compared": 4,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "conference-paper",
+          "compared": 0,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "book",
+          "compared": 4,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "book-chapter",
+          "compared": 2,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "preprint",
+          "compared": 1,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "thesis",
+          "compared": 2,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "report",
+          "compared": 6,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "patent",
+          "compared": 3,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "webpage",
+          "compared": 3,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "article-journal",
+          "compared": 4,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "conference-paper",
+          "compared": 0,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "book",
+          "compared": 4,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "book-chapter",
+          "compared": 2,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "preprint",
+          "compared": 1,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "thesis",
+          "compared": 2,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "report",
+          "compared": 6,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "patent",
+          "compared": 3,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "webpage",
+          "compared": 3,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "article-journal",
+          "compared": 4,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "conference-paper",
+          "compared": 0,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "book",
+          "compared": 4,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "book-chapter",
+          "compared": 2,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "preprint",
+          "compared": 1,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "thesis",
+          "compared": 2,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "report",
+          "compared": 6,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "patent",
+          "compared": 3,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "webpage",
+          "compared": 3,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "article-journal",
+          "compared": 4,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "conference-paper",
+          "compared": 0,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "book",
+          "compared": 4,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "book-chapter",
+          "compared": 2,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "preprint",
+          "compared": 1,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "thesis",
+          "compared": 2,
+          "f1": 0.5,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "report",
+          "compared": 6,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "patent",
+          "compared": 3,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "webpage",
+          "compared": 3,
+          "f1": 0,
+          "below_threshold": true
+        }
+      ],
+      "by_style": [
+        {
+          "citation_style": "apa7",
+          "compared": 25,
+          "soft_instance_f1": 0
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "compared": 25,
+          "soft_instance_f1": 0.04
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "compared": 25,
+          "soft_instance_f1": 0
+        },
+        {
+          "citation_style": "vancouver",
+          "compared": 25,
+          "soft_instance_f1": 0
+        },
+        {
+          "citation_style": "ieee",
+          "compared": 25,
+          "soft_instance_f1": 0
+        },
+        {
+          "citation_style": "mla9",
+          "compared": 25,
+          "soft_instance_f1": 0.04
+        }
+      ],
+      "by_type": [
+        {
+          "reference_type": "article-journal",
+          "compared": 24,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "book",
+          "compared": 24,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "book-chapter",
+          "compared": 12,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "preprint",
+          "compared": 6,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "thesis",
+          "compared": 12,
+          "soft_instance_f1": 0.1667
+        },
+        {
+          "reference_type": "report",
+          "compared": 36,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "patent",
+          "compared": 18,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "webpage",
+          "compared": 18,
+          "soft_instance_f1": 0
+        }
+      ],
+      "by_noise_type": [
+        {
+          "noise_type": "missing_field",
+          "compared": 32,
+          "soft_instance_f1": 0
+        },
+        {
+          "noise_type": "alternate_identifier_format",
+          "compared": 40,
+          "soft_instance_f1": 0
+        },
+        {
+          "noise_type": "odd_punctuation",
+          "compared": 29,
+          "soft_instance_f1": 0
+        },
+        {
+          "noise_type": "style_specific_quirk",
+          "compared": 18,
+          "soft_instance_f1": 0
+        },
+        {
+          "noise_type": "non_ascii",
+          "compared": 19,
+          "soft_instance_f1": 0.1053
+        },
+        {
+          "noise_type": "fake_plausible_id",
+          "compared": 12,
+          "soft_instance_f1": 0
+        }
+      ],
+      "throughput_refs_per_sec": 600,
+      "missing_prediction_count": 0,
+      "unsupported_field_count": 555
+    },
+    {
+      "partition": "combined",
+      "by_tier": {
+        "strict": {
+          "fields": {
+            "authors": {
+              "tp": 2,
+              "fp": 909,
+              "fn": 61,
+              "precision": 0.0022,
+              "recall": 0.0317,
+              "f1": 0.0041
+            },
+            "title": {
+              "tp": 6,
+              "fp": 1314,
+              "fn": 30,
+              "precision": 0.0045,
+              "recall": 0.1667,
+              "f1": 0.0088
+            },
+            "year": {
+              "tp": 377,
+              "fp": 942,
+              "fn": 31,
+              "precision": 0.2858,
+              "recall": 0.924,
+              "f1": 0.4366
+            },
+            "doi": {
+              "tp": 41,
+              "fp": 906,
+              "fn": 175,
+              "precision": 0.0433,
+              "recall": 0.1898,
+              "f1": 0.0705
+            },
+            "url": {
+              "tp": 34,
+              "fp": 1089,
+              "fn": 227,
+              "precision": 0.0303,
+              "recall": 0.1303,
+              "f1": 0.0491
+            },
+            "journal": {
+              "tp": 6,
+              "fp": 14,
+              "fn": 214,
+              "precision": 0.3,
+              "recall": 0.0273,
+              "f1": 0.05
+            },
+            "volume": {
+              "tp": 10,
+              "fp": 15,
+              "fn": 209,
+              "precision": 0.4,
+              "recall": 0.0457,
+              "f1": 0.082
+            },
+            "issue": {
+              "tp": 9,
+              "fp": 16,
+              "fn": 197,
+              "precision": 0.36,
+              "recall": 0.0437,
+              "f1": 0.0779
+            },
+            "pages": {
+              "tp": 2,
+              "fp": 62,
+              "fn": 296,
+              "precision": 0.0313,
+              "recall": 0.0067,
+              "f1": 0.011
+            },
+            "issn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 228,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "firstAuthor": {
+              "tp": 7,
+              "fp": 904,
+              "fn": 61,
+              "precision": 0.0077,
+              "recall": 0.1029,
+              "f1": 0.0143
+            },
+            "venue": {
+              "tp": 6,
+              "fp": 594,
+              "fn": 636,
+              "precision": 0.01,
+              "recall": 0.0093,
+              "f1": 0.0097
+            },
+            "conferenceTitle": {
+              "tp": 0,
+              "fp": 10,
+              "fn": 128,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "publisher": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 438,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "isbn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 294,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "bookTitle": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 144,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "repository": {
+              "tp": 0,
+              "fp": 54,
+              "fn": 84,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "arxiv": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 6,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "institution": {
+              "tp": 0,
+              "fp": 71,
+              "fn": 355,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "thesisType": {
+              "tp": 63,
+              "fp": 1,
+              "fn": 80,
+              "precision": 0.9844,
+              "recall": 0.4406,
+              "f1": 0.6087
+            },
+            "patent": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 114,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "siteName": {
+              "tp": 0,
+              "fp": 16,
+              "fn": 98,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          },
+          "macro_field_f1": 0.0647,
+          "instance": {
+            "tp": 3,
+            "fp": 1347,
+            "fn": 1347,
+            "precision": 0.0022,
+            "recall": 0.0022,
+            "f1": 0.0022
+          },
+          "total_rows": 1350
+        },
+        "soft": {
+          "fields": {
+            "authors": {
+              "tp": 2,
+              "fp": 909,
+              "fn": 61,
+              "precision": 0.0022,
+              "recall": 0.0317,
+              "f1": 0.0041
+            },
+            "title": {
+              "tp": 6,
+              "fp": 1314,
+              "fn": 30,
+              "precision": 0.0045,
+              "recall": 0.1667,
+              "f1": 0.0088
+            },
+            "year": {
+              "tp": 377,
+              "fp": 942,
+              "fn": 31,
+              "precision": 0.2858,
+              "recall": 0.924,
+              "f1": 0.4366
+            },
+            "doi": {
+              "tp": 41,
+              "fp": 906,
+              "fn": 175,
+              "precision": 0.0433,
+              "recall": 0.1898,
+              "f1": 0.0705
+            },
+            "url": {
+              "tp": 34,
+              "fp": 1089,
+              "fn": 227,
+              "precision": 0.0303,
+              "recall": 0.1303,
+              "f1": 0.0491
+            },
+            "journal": {
+              "tp": 7,
+              "fp": 13,
+              "fn": 214,
+              "precision": 0.35,
+              "recall": 0.0317,
+              "f1": 0.0581
+            },
+            "volume": {
+              "tp": 10,
+              "fp": 15,
+              "fn": 209,
+              "precision": 0.4,
+              "recall": 0.0457,
+              "f1": 0.082
+            },
+            "issue": {
+              "tp": 9,
+              "fp": 16,
+              "fn": 197,
+              "precision": 0.36,
+              "recall": 0.0437,
+              "f1": 0.0779
+            },
+            "pages": {
+              "tp": 11,
+              "fp": 53,
+              "fn": 296,
+              "precision": 0.1719,
+              "recall": 0.0358,
+              "f1": 0.0593
+            },
+            "issn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 228,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "firstAuthor": {
+              "tp": 7,
+              "fp": 904,
+              "fn": 61,
+              "precision": 0.0077,
+              "recall": 0.1029,
+              "f1": 0.0143
+            },
+            "venue": {
+              "tp": 7,
+              "fp": 593,
+              "fn": 636,
+              "precision": 0.0117,
+              "recall": 0.0109,
+              "f1": 0.0113
+            },
+            "conferenceTitle": {
+              "tp": 0,
+              "fp": 10,
+              "fn": 128,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "publisher": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 438,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "isbn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 294,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "bookTitle": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 144,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "repository": {
+              "tp": 0,
+              "fp": 54,
+              "fn": 84,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "arxiv": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 6,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "institution": {
+              "tp": 0,
+              "fp": 71,
+              "fn": 355,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "thesisType": {
+              "tp": 63,
+              "fp": 1,
+              "fn": 80,
+              "precision": 0.9844,
+              "recall": 0.4406,
+              "f1": 0.6087
+            },
+            "patent": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 114,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "siteName": {
+              "tp": 0,
+              "fp": 16,
+              "fn": 98,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          },
+          "macro_field_f1": 0.0673,
+          "instance": {
+            "tp": 7,
+            "fp": 1343,
+            "fn": 1343,
+            "precision": 0.0052,
+            "recall": 0.0052,
+            "f1": 0.0052
+          },
+          "total_rows": 1350
+        },
+        "levenshtein": {
+          "fields": {
+            "authors": {
+              "tp": 2,
+              "fp": 909,
+              "fn": 61,
+              "precision": 0.0022,
+              "recall": 0.0317,
+              "f1": 0.0041
+            },
+            "title": {
+              "tp": 6,
+              "fp": 1314,
+              "fn": 30,
+              "precision": 0.0045,
+              "recall": 0.1667,
+              "f1": 0.0088
+            },
+            "year": {
+              "tp": 377,
+              "fp": 942,
+              "fn": 31,
+              "precision": 0.2858,
+              "recall": 0.924,
+              "f1": 0.4366
+            },
+            "doi": {
+              "tp": 41,
+              "fp": 906,
+              "fn": 175,
+              "precision": 0.0433,
+              "recall": 0.1898,
+              "f1": 0.0705
+            },
+            "url": {
+              "tp": 34,
+              "fp": 1089,
+              "fn": 227,
+              "precision": 0.0303,
+              "recall": 0.1303,
+              "f1": 0.0491
+            },
+            "journal": {
+              "tp": 7,
+              "fp": 13,
+              "fn": 214,
+              "precision": 0.35,
+              "recall": 0.0317,
+              "f1": 0.0581
+            },
+            "volume": {
+              "tp": 10,
+              "fp": 15,
+              "fn": 209,
+              "precision": 0.4,
+              "recall": 0.0457,
+              "f1": 0.082
+            },
+            "issue": {
+              "tp": 9,
+              "fp": 16,
+              "fn": 197,
+              "precision": 0.36,
+              "recall": 0.0437,
+              "f1": 0.0779
+            },
+            "pages": {
+              "tp": 11,
+              "fp": 53,
+              "fn": 296,
+              "precision": 0.1719,
+              "recall": 0.0358,
+              "f1": 0.0593
+            },
+            "issn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 228,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "firstAuthor": {
+              "tp": 7,
+              "fp": 904,
+              "fn": 61,
+              "precision": 0.0077,
+              "recall": 0.1029,
+              "f1": 0.0143
+            },
+            "venue": {
+              "tp": 7,
+              "fp": 593,
+              "fn": 636,
+              "precision": 0.0117,
+              "recall": 0.0109,
+              "f1": 0.0113
+            },
+            "conferenceTitle": {
+              "tp": 0,
+              "fp": 10,
+              "fn": 128,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "publisher": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 438,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "isbn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 294,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "bookTitle": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 144,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "repository": {
+              "tp": 0,
+              "fp": 54,
+              "fn": 84,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "arxiv": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 6,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "institution": {
+              "tp": 0,
+              "fp": 71,
+              "fn": 355,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "thesisType": {
+              "tp": 63,
+              "fp": 1,
+              "fn": 80,
+              "precision": 0.9844,
+              "recall": 0.4406,
+              "f1": 0.6087
+            },
+            "patent": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 114,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "siteName": {
+              "tp": 0,
+              "fp": 16,
+              "fn": 98,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          },
+          "macro_field_f1": 0.0673,
+          "instance": {
+            "tp": 7,
+            "fp": 1343,
+            "fn": 1343,
+            "precision": 0.0052,
+            "recall": 0.0052,
+            "f1": 0.0052
+          },
+          "total_rows": 1350
+        },
+        "ratcliff_obershelp": {
+          "fields": {
+            "authors": {
+              "tp": 2,
+              "fp": 909,
+              "fn": 61,
+              "precision": 0.0022,
+              "recall": 0.0317,
+              "f1": 0.0041
+            },
+            "title": {
+              "tp": 6,
+              "fp": 1314,
+              "fn": 30,
+              "precision": 0.0045,
+              "recall": 0.1667,
+              "f1": 0.0088
+            },
+            "year": {
+              "tp": 377,
+              "fp": 942,
+              "fn": 31,
+              "precision": 0.2858,
+              "recall": 0.924,
+              "f1": 0.4366
+            },
+            "doi": {
+              "tp": 41,
+              "fp": 906,
+              "fn": 175,
+              "precision": 0.0433,
+              "recall": 0.1898,
+              "f1": 0.0705
+            },
+            "url": {
+              "tp": 34,
+              "fp": 1089,
+              "fn": 227,
+              "precision": 0.0303,
+              "recall": 0.1303,
+              "f1": 0.0491
+            },
+            "journal": {
+              "tp": 7,
+              "fp": 13,
+              "fn": 214,
+              "precision": 0.35,
+              "recall": 0.0317,
+              "f1": 0.0581
+            },
+            "volume": {
+              "tp": 10,
+              "fp": 15,
+              "fn": 209,
+              "precision": 0.4,
+              "recall": 0.0457,
+              "f1": 0.082
+            },
+            "issue": {
+              "tp": 9,
+              "fp": 16,
+              "fn": 197,
+              "precision": 0.36,
+              "recall": 0.0437,
+              "f1": 0.0779
+            },
+            "pages": {
+              "tp": 11,
+              "fp": 53,
+              "fn": 296,
+              "precision": 0.1719,
+              "recall": 0.0358,
+              "f1": 0.0593
+            },
+            "issn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 228,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "firstAuthor": {
+              "tp": 7,
+              "fp": 904,
+              "fn": 61,
+              "precision": 0.0077,
+              "recall": 0.1029,
+              "f1": 0.0143
+            },
+            "venue": {
+              "tp": 7,
+              "fp": 593,
+              "fn": 636,
+              "precision": 0.0117,
+              "recall": 0.0109,
+              "f1": 0.0113
+            },
+            "conferenceTitle": {
+              "tp": 0,
+              "fp": 10,
+              "fn": 128,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "publisher": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 438,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "isbn": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 294,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "bookTitle": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 144,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "repository": {
+              "tp": 0,
+              "fp": 54,
+              "fn": 84,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "arxiv": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 6,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "institution": {
+              "tp": 0,
+              "fp": 71,
+              "fn": 355,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "thesisType": {
+              "tp": 63,
+              "fp": 1,
+              "fn": 80,
+              "precision": 0.9844,
+              "recall": 0.4406,
+              "f1": 0.6087
+            },
+            "patent": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 114,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            "siteName": {
+              "tp": 0,
+              "fp": 16,
+              "fn": 98,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          },
+          "macro_field_f1": 0.0673,
+          "instance": {
+            "tp": 7,
+            "fp": 1343,
+            "fn": 1343,
+            "precision": 0.0052,
+            "recall": 0.0052,
+            "f1": 0.0052
+          },
+          "total_rows": 1350
+        }
+      },
+      "cell_soft_instance_f1": [
+        {
+          "citation_style": "apa7",
+          "reference_type": "article-journal",
+          "compared": 39,
+          "f1": 0.1282,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "conference-paper",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "book",
+          "compared": 26,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "book-chapter",
+          "compared": 24,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "preprint",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "thesis",
+          "compared": 24,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "report",
+          "compared": 28,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "patent",
+          "compared": 19,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "apa7",
+          "reference_type": "webpage",
+          "compared": 19,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "article-journal",
+          "compared": 39,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "conference-paper",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "book",
+          "compared": 26,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "book-chapter",
+          "compared": 24,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "preprint",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "thesis",
+          "compared": 24,
+          "f1": 0.0417,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "report",
+          "compared": 28,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "patent",
+          "compared": 19,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "reference_type": "webpage",
+          "compared": 19,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "article-journal",
+          "compared": 39,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "conference-paper",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "book",
+          "compared": 26,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "book-chapter",
+          "compared": 24,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "preprint",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "thesis",
+          "compared": 24,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "report",
+          "compared": 28,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "patent",
+          "compared": 19,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "reference_type": "webpage",
+          "compared": 19,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "article-journal",
+          "compared": 39,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "conference-paper",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "book",
+          "compared": 26,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "book-chapter",
+          "compared": 24,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "preprint",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "thesis",
+          "compared": 24,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "report",
+          "compared": 28,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "patent",
+          "compared": 19,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "vancouver",
+          "reference_type": "webpage",
+          "compared": 19,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "article-journal",
+          "compared": 39,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "conference-paper",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "book",
+          "compared": 26,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "book-chapter",
+          "compared": 24,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "preprint",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "thesis",
+          "compared": 24,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "report",
+          "compared": 28,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "patent",
+          "compared": 19,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "ieee",
+          "reference_type": "webpage",
+          "compared": 19,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "article-journal",
+          "compared": 39,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "conference-paper",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "book",
+          "compared": 26,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "book-chapter",
+          "compared": 24,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "preprint",
+          "compared": 23,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "thesis",
+          "compared": 24,
+          "f1": 0.0417,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "report",
+          "compared": 28,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "patent",
+          "compared": 19,
+          "f1": 0,
+          "below_threshold": true
+        },
+        {
+          "citation_style": "mla9",
+          "reference_type": "webpage",
+          "compared": 19,
+          "f1": 0,
+          "below_threshold": true
+        }
+      ],
+      "by_style": [
+        {
+          "citation_style": "apa7",
+          "compared": 225,
+          "soft_instance_f1": 0.0222
+        },
+        {
+          "citation_style": "harvard-ctr",
+          "compared": 225,
+          "soft_instance_f1": 0.0044
+        },
+        {
+          "citation_style": "chicago-notes-bib",
+          "compared": 225,
+          "soft_instance_f1": 0
+        },
+        {
+          "citation_style": "vancouver",
+          "compared": 225,
+          "soft_instance_f1": 0
+        },
+        {
+          "citation_style": "ieee",
+          "compared": 225,
+          "soft_instance_f1": 0
+        },
+        {
+          "citation_style": "mla9",
+          "compared": 225,
+          "soft_instance_f1": 0.0044
+        }
+      ],
+      "by_type": [
+        {
+          "reference_type": "article-journal",
+          "compared": 234,
+          "soft_instance_f1": 0.0214
+        },
+        {
+          "reference_type": "conference-paper",
+          "compared": 138,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "book",
+          "compared": 156,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "book-chapter",
+          "compared": 144,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "preprint",
+          "compared": 138,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "thesis",
+          "compared": 144,
+          "soft_instance_f1": 0.0139
+        },
+        {
+          "reference_type": "report",
+          "compared": 168,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "patent",
+          "compared": 114,
+          "soft_instance_f1": 0
+        },
+        {
+          "reference_type": "webpage",
+          "compared": 114,
+          "soft_instance_f1": 0
+        }
+      ],
+      "by_noise_type": [
+        {
+          "noise_type": "missing_field",
+          "compared": 32,
+          "soft_instance_f1": 0
+        },
+        {
+          "noise_type": "alternate_identifier_format",
+          "compared": 40,
+          "soft_instance_f1": 0
+        },
+        {
+          "noise_type": "odd_punctuation",
+          "compared": 29,
+          "soft_instance_f1": 0
+        },
+        {
+          "noise_type": "style_specific_quirk",
+          "compared": 18,
+          "soft_instance_f1": 0
+        },
+        {
+          "noise_type": "non_ascii",
+          "compared": 19,
+          "soft_instance_f1": 0.1053
+        },
+        {
+          "noise_type": "fake_plausible_id",
+          "compared": 12,
+          "soft_instance_f1": 0
+        }
+      ],
+      "throughput_refs_per_sec": 500,
+      "missing_prediction_count": 0,
+      "unsupported_field_count": 4106
+    }
+  ],
+  "target_status": "below_target"
+}

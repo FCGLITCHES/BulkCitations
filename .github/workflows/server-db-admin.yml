@@ -1,0 +1,69 @@
+name: Server DB Admin
+
+on:
+  push:
+    paths:
+      - "server/**"
+      - "frontend/shared/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/server-db-admin.yml"
+  pull_request:
+    paths:
+      - "server/**"
+      - "frontend/shared/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/server-db-admin.yml"
+
+jobs:
+  admin-db-suite:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build server
+        run: pnpm --dir server run build
+
+      - name: Run DB-backed admin suite
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/bulkreferences_test
+          REDIS_URL: redis://127.0.0.1:6379
+          PERSISTENCE_BACKEND: database
+        run: pnpm --dir server run test:db

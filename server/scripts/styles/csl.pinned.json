@@ -1,0 +1,8 @@
+{
+  "$comment": "Pinned CSL sources for reproducible vendoring. The styles and locales live in SEPARATE repos with independent commit histories, so each is pinned on its own. `npm run csl:sync` reports when these drift from upstream HEAD and opens a pin-bump PR; never hand-bump without review. The engine-style -> CSL id mapping is the single source of truth in src/engine/styleRegistry.ts.",
+  "stylesRepo": "citation-style-language/styles",
+  "stylesCommit": "6aaae8296e2f859751ccf14dabbc46f16022060d",
+  "localesRepo": "citation-style-language/locales",
+  "localesCommit": "af8725651dbca236639e4d539659b29457b47b50",
+  "locale": "en-US"
+}

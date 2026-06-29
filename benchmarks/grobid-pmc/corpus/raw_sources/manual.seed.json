@@ -1,0 +1,414 @@
+[
+  {
+    "referenceType": "patent",
+    "source": "google-patents",
+    "sourceUrl": "https://patents.google.com/patent/US6285999B1/en",
+    "language": "en",
+    "expectedFields": {
+      "title": "Method for node ranking in a linked database",
+      "year": 2001,
+      "patent": "US6285999B1",
+      "url": "https://patents.google.com/patent/US6285999B1/en"
+    }
+  },
+  {
+    "referenceType": "patent",
+    "source": "google-patents",
+    "sourceUrl": "https://patents.google.com/patent/US5960411A/en",
+    "language": "en",
+    "expectedFields": {
+      "title": "Method and system for placing a purchase order via a communications network",
+      "year": 1999,
+      "patent": "US5960411A",
+      "url": "https://patents.google.com/patent/US5960411A/en"
+    }
+  },
+  {
+    "referenceType": "patent",
+    "source": "google-patents",
+    "sourceUrl": "https://patents.google.com/patent/US7779001B2/en",
+    "language": "en",
+    "expectedFields": {
+      "title": "Web page ranking with hierarchical considerations",
+      "year": 2010,
+      "patent": "US7779001B2",
+      "url": "https://patents.google.com/patent/US7779001B2/en"
+    }
+  },
+  {
+    "referenceType": "patent",
+    "source": "google-patents",
+    "sourceUrl": "https://patents.google.com/patent/US8127220B1/en",
+    "language": "en",
+    "expectedFields": {
+      "title": "Scoring links in a document",
+      "year": 2012,
+      "patent": "US8127220B1",
+      "url": "https://patents.google.com/patent/US8127220B1/en"
+    }
+  },
+  {
+    "referenceType": "patent",
+    "source": "google-patents",
+    "sourceUrl": "https://patents.google.com/patent/US7058628B1/en",
+    "language": "en",
+    "expectedFields": {
+      "title": "Method for node ranking in a linked database",
+      "year": 2006,
+      "patent": "US7058628B1",
+      "url": "https://patents.google.com/patent/US7058628B1/en"
+    }
+  },
+  {
+    "referenceType": "patent",
+    "source": "google-patents",
+    "sourceUrl": "https://patents.google.com/patent/US8131715B1/en",
+    "language": "en",
+    "expectedFields": {
+      "title": "Scoring documents in a database",
+      "year": 2012,
+      "patent": "US8131715B1",
+      "url": "https://patents.google.com/patent/US8131715B1/en"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "w3c",
+    "sourceUrl": "https://www.w3.org/TR/WCAG22/",
+    "language": "en",
+    "expectedFields": {
+      "title": "Web Content Accessibility Guidelines (WCAG) 2.2",
+      "year": 2023,
+      "institution": "World Wide Web Consortium",
+      "siteName": "W3C",
+      "url": "https://www.w3.org/TR/WCAG22/"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "python-docs",
+    "sourceUrl": "https://docs.python.org/3/library/functions.html",
+    "language": "en",
+    "expectedFields": {
+      "title": "Built-in Functions",
+      "year": 2024,
+      "institution": "Python Software Foundation",
+      "siteName": "Python Documentation",
+      "url": "https://docs.python.org/3/library/functions.html"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "nodejs-docs",
+    "sourceUrl": "https://nodejs.org/docs/latest-v22.x/api/",
+    "language": "en",
+    "expectedFields": {
+      "title": "Node.js v22.x API Documentation",
+      "year": 2024,
+      "institution": "Node.js Contributors",
+      "siteName": "Node.js Documentation",
+      "url": "https://nodejs.org/docs/latest-v22.x/api/"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "postgresql-docs",
+    "sourceUrl": "https://www.postgresql.org/docs/17/",
+    "language": "en",
+    "expectedFields": {
+      "title": "PostgreSQL 17 Documentation",
+      "year": 2024,
+      "institution": "PostgreSQL Global Development Group",
+      "siteName": "PostgreSQL Documentation",
+      "url": "https://www.postgresql.org/docs/17/"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "react-docs",
+    "sourceUrl": "https://react.dev/learn/state-a-components-memory",
+    "language": "en",
+    "expectedFields": {
+      "title": "State: A Component's Memory",
+      "year": 2024,
+      "institution": "React Team",
+      "siteName": "React",
+      "url": "https://react.dev/learn/state-a-components-memory"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "mdn",
+    "sourceUrl": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map",
+    "language": "en",
+    "expectedFields": {
+      "title": "Array.prototype.map()",
+      "year": 2024,
+      "institution": "Mozilla Contributors",
+      "siteName": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map"
+    }
+  },
+  {
+    "referenceType": "patent",
+    "source": "google-patents",
+    "sourceUrl": "https://patents.google.com/patent/US8131717B1/en",
+    "language": "en",
+    "expectedFields": {
+      "title": "Scoring documents in a database",
+      "year": 2012,
+      "patent": "US8131717B1",
+      "url": "https://patents.google.com/patent/US8131717B1/en"
+    }
+  },
+  {
+    "referenceType": "patent",
+    "source": "google-patents",
+    "sourceUrl": "https://patents.google.com/patent/US7269587B1/en",
+    "language": "en",
+    "expectedFields": {
+      "title": "Scoring documents in a linked database",
+      "year": 2007,
+      "patent": "US7269587B1",
+      "url": "https://patents.google.com/patent/US7269587B1/en"
+    }
+  },
+  {
+    "referenceType": "patent",
+    "source": "google-patents",
+    "sourceUrl": "https://patents.google.com/patent/US8407231B2/en",
+    "language": "en",
+    "expectedFields": {
+      "title": "Document scoring based on link-based criteria",
+      "year": 2013,
+      "patent": "US8407231B2",
+      "url": "https://patents.google.com/patent/US8407231B2/en"
+    }
+  },
+  {
+    "referenceType": "patent",
+    "source": "google-patents",
+    "sourceUrl": "https://patents.google.com/patent/US20060235842A1/en",
+    "language": "en",
+    "expectedFields": {
+      "title": "Web page ranking for page query across public and private",
+      "year": 2006,
+      "patent": "US20060235842A1",
+      "url": "https://patents.google.com/patent/US20060235842A1/en"
+    }
+  },
+  {
+    "referenceType": "patent",
+    "source": "google-patents",
+    "sourceUrl": "https://patents.google.com/patent/US20130282691A1/en",
+    "language": "en",
+    "expectedFields": {
+      "title": "Navigable Website Analysis Engine",
+      "year": 2013,
+      "patent": "US20130282691A1",
+      "url": "https://patents.google.com/patent/US20130282691A1/en"
+    }
+  },
+  {
+    "referenceType": "patent",
+    "source": "google-patents",
+    "sourceUrl": "https://patents.google.com/patent/US20140344241A1/en",
+    "language": "en",
+    "expectedFields": {
+      "title": "User-enhanced ranking of information objects",
+      "year": 2014,
+      "patent": "US20140344241A1",
+      "url": "https://patents.google.com/patent/US20140344241A1/en"
+    }
+  },
+  {
+    "referenceType": "patent",
+    "source": "google-patents",
+    "sourceUrl": "https://patents.google.com/patent/US8438062B2/en",
+    "language": "en",
+    "expectedFields": {
+      "title": "Network node ad targeting",
+      "year": 2013,
+      "patent": "US8438062B2",
+      "url": "https://patents.google.com/patent/US8438062B2/en"
+    }
+  },
+  {
+    "referenceType": "patent",
+    "source": "google-patents",
+    "sourceUrl": "https://patents.google.com/patent/US20040078281A1/en",
+    "language": "en",
+    "expectedFields": {
+      "title": "Product sales apparatus and method",
+      "year": 2004,
+      "patent": "US20040078281A1",
+      "url": "https://patents.google.com/patent/US20040078281A1/en"
+    }
+  },
+  {
+    "referenceType": "patent",
+    "source": "google-patents",
+    "sourceUrl": "https://patents.google.com/patent/US8321291B2/en",
+    "language": "en",
+    "expectedFields": {
+      "title": "Method, system and computer readable medium for facilitating a transaction between a customer, a merchant and an associate",
+      "year": 2012,
+      "patent": "US8321291B2",
+      "url": "https://patents.google.com/patent/US8321291B2/en"
+    }
+  },
+  {
+    "referenceType": "patent",
+    "source": "google-patents",
+    "sourceUrl": "https://patents.google.com/patent/US12326871B2/en",
+    "language": "en",
+    "expectedFields": {
+      "title": "Detecting duplicate tables in data lake databases",
+      "year": 2025,
+      "patent": "US12326871B2",
+      "url": "https://patents.google.com/patent/US12326871B2/en"
+    }
+  },
+  {
+    "referenceType": "patent",
+    "source": "google-patents",
+    "sourceUrl": "https://patents.google.com/patent/US10409821B2/en",
+    "language": "en",
+    "expectedFields": {
+      "title": "Search result ranking using machine learning",
+      "year": 2019,
+      "patent": "US10409821B2",
+      "url": "https://patents.google.com/patent/US10409821B2/en"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9110",
+    "language": "en",
+    "expectedFields": {
+      "title": "HTTP Semantics",
+      "year": 2022,
+      "institution": "Internet Engineering Task Force",
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9110"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9111",
+    "language": "en",
+    "expectedFields": {
+      "title": "HTTP Caching",
+      "year": 2022,
+      "institution": "Internet Engineering Task Force",
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9111"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc8259",
+    "language": "en",
+    "expectedFields": {
+      "title": "The JavaScript Object Notation (JSON) Data Interchange Format",
+      "year": 2017,
+      "institution": "Internet Engineering Task Force",
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc8259"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc3986",
+    "language": "en",
+    "expectedFields": {
+      "title": "Uniform Resource Identifier (URI): Generic Syntax",
+      "year": 2005,
+      "institution": "Internet Engineering Task Force",
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc3986"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc6455",
+    "language": "en",
+    "expectedFields": {
+      "title": "The WebSocket Protocol",
+      "year": 2011,
+      "institution": "Internet Engineering Task Force",
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc6455"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc6265",
+    "language": "en",
+    "expectedFields": {
+      "title": "HTTP State Management Mechanism",
+      "year": 2011,
+      "institution": "Internet Engineering Task Force",
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc6265"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc8446",
+    "language": "en",
+    "expectedFields": {
+      "title": "The Transport Layer Security (TLS) Protocol Version 1.3",
+      "year": 2018,
+      "institution": "Internet Engineering Task Force",
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc8446"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc9000",
+    "language": "en",
+    "expectedFields": {
+      "title": "QUIC: A UDP-Based Multiplexed and Secure Transport",
+      "year": 2021,
+      "institution": "Internet Engineering Task Force",
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc9000"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "rfc-editor",
+    "sourceUrl": "https://www.rfc-editor.org/rfc/rfc7540",
+    "language": "en",
+    "expectedFields": {
+      "title": "Hypertext Transfer Protocol Version 2 (HTTP/2)",
+      "year": 2015,
+      "institution": "Internet Engineering Task Force",
+      "siteName": "RFC Editor",
+      "url": "https://www.rfc-editor.org/rfc/rfc7540"
+    }
+  },
+  {
+    "referenceType": "webpage",
+    "source": "ecma-international",
+    "sourceUrl": "https://tc39.es/ecma262/",
+    "language": "en",
+    "expectedFields": {
+      "title": "ECMAScript 2024 Language Specification",
+      "year": 2024,
+      "institution": "Ecma International",
+      "siteName": "ECMAScript",
+      "url": "https://tc39.es/ecma262/"
+    }
+  }
+]

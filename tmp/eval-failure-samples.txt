@@ -1,0 +1,1389 @@
+[structured_clean/authors/missing]
+  exp: ["Кирчанов, Максим"]
+  got: [{"family":"Кирчанов","given":"М","initials":"М.","isCorporate":false}]
+  in : Кирчанов, М. (2011). A Cat’s Lick: Democratisation and Minority Communities in the Post-Soviet Baltic by Timofey Agarin, and Continuity and Change in the Baltic Sea Region: Comparing Foreign Policies 
+
+[structured_noisy/authors/missing]
+  exp: ["Алексеев, Игорь"]
+  got: [{"family":"Алексеев","given":"И","initials":"И.","isCorporate":false}]
+  in : Алексеев, И. . Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории. Ab Imperio, 2004(3), 491–516. https://doi.org/
+
+[structured_noisy/title/missing]
+  exp: Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории
+  got: "Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории"
+  in : Алексеев, И. . Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории. Ab Imperio, 2004(3), 491–516. https://doi.org/
+
+[structured_noisy/doi/missing]
+  exp: 10.1353/imp.2004.0159
+  got: null
+  in : Алексеев, И. . Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории. Ab Imperio, 2004(3), 491–516. https://doi.org/
+
+[structured_clean/authors/wrong]
+  exp: ["Gebreegziabher, Tesafaldet","Gebreeyesus, Filimon"]
+  got: [{"family":"Gebreegziabher","given":"T.","initials":"T.","isCorporate":false},{"family":"Gebreeyesus","given":"F","initi
+  in : Gebreegziabher, T., & Gebreeyesus, F. (2023). Biomass Waste to Energy for a Particleboards Industry. International Conference on Energy Harvesting, Storage, and Transfer. https://doi.org/10.11159/ehst
+
+[structured_clean/authors/wrong]
+  exp: ["Albright, Carol Bonomo"]
+  got: [{"family":"Albright","given":"C B","initials":"C. B.","isCorporate":false}]
+  in : Albright, C. B. (2022). American Woman, Italian Style. Fordham University Press. https://doi.org/10.1515/9780823290840
+
+[structured_clean/authors/wrong]
+  exp: ["Yakimenko, Valerie V."]
+  got: [{"family":"Yakimenko","given":"V V","initials":"V. V.","isCorporate":false}]
+  in : Yakimenko, V. V. (2019). The Major Rivers and the Genesis of the Recent Area of Ticks Ixodes persulcatus in Western Siberia. In Parasitology Research Monographs (pp. 367–381). Springer International P
+
+[structured_noisy/authors/wrong]
+  exp: ["Bischoff, Arnd","Schürmann, Bernd"]
+  got: [{"family":"Bischoff","given":"A.","initials":"A.","isCorporate":false},{"family":"Schürmann","given":"B","initials":"B.
+  in : Bischoff, A., & Schürmann, B. . Higher Order Neural Networks in a Unified Learning Scheme. In ICANN ’93 (pp. 679–682). Springer London. https://doi.org/
+
+[structured_noisy/year/missing]
+  exp: 1993
+  got: null
+  in : Bischoff, A., & Schürmann, B. . Higher Order Neural Networks in a Unified Learning Scheme. In ICANN ’93 (pp. 679–682). Springer London. https://doi.org/
+
+[structured_noisy/doi/missing]
+  exp: 10.1007/978-1-4471-2063-6_187
+  got: null
+  in : Bischoff, A., & Schürmann, B. . Higher Order Neural Networks in a Unified Learning Scheme. In ICANN ’93 (pp. 679–682). Springer London. https://doi.org/
+
+[structured_clean/authors/wrong]
+  exp: ["Awang, Noor Azura","Mahmud, Nik Noor Haryatul Eleena Bt N","Zulkefli, Noor Ummi Hazirah Hani"]
+  got: [{"family":"Awang","given":"N A","initials":"N. A.","isCorporate":false},{"family":"Mahmud","given":"N. N. H. E. B. N.",
+  in : Awang, N. A., Mahmud, N. N. H. E. B. N., & Zulkefli, N. U. H. H. (2023). Optical Trapping Using Mode-Locked Fiber Laser Au-Np Coated Side-Polished Fiber. Elsevier BV. https://doi.org/10.2139/ssrn.4577
+
+[structured_noisy/authors/wrong]
+  exp: ["Chen, Huilan","Cheng, Dong","Zhou, Dan","Mo, Yinyin","Zhong, Lingyu","Wang, Yuqi","Wang, Yudan","Qiu, Huishan","Tan, X
+  got: [{"family":"Chen","given":"H.","initials":"H.","isCorporate":false},{"family":"Cheng","given":"D.","initials":"D.","isCo
+  in : Chen, H., Cheng, D., Zhou, D., Mo, Y., Zhong, L., Wang, Y., Wang, Y., Qiu, H., Tan, X., Wang, B., Huang, M., & Song, B. . Ripv1, a Ralstonia Solanacearum Type Iii Effector, Acts as a Novel E3 Ubiquiti
+
+[structured_noisy/year/missing]
+  exp: 2023
+  got: null
+  in : Chen, H., Cheng, D., Zhou, D., Mo, Y., Zhong, L., Wang, Y., Wang, Y., Qiu, H., Tan, X., Wang, B., Huang, M., & Song, B. . Ripv1, a Ralstonia Solanacearum Type Iii Effector, Acts as a Novel E3 Ubiquiti
+
+[structured_noisy/doi/missing]
+  exp: 10.2139/ssrn.4583547
+  got: null
+  in : Chen, H., Cheng, D., Zhou, D., Mo, Y., Zhong, L., Wang, Y., Wang, Y., Qiu, H., Tan, X., Wang, B., Huang, M., & Song, B. . Ripv1, a Ralstonia Solanacearum Type Iii Effector, Acts as a Novel E3 Ubiquiti
+
+[ocr_like/authors/missing]
+  exp: ["Кирчанов, Максим"]
+  got: [{"family":"Кирчанов","given":"М","initials":"М.","isCorporate":false}]
+  in : Кирчанов, М. (2011). A Cat’s Lick: Democratisation and Minority Communities in the Post-Soviet Ba1tic by Timofey Agarin, and Continuity and Change in thc Baltic Sea Region: Comparing Forcign Policies 
+
+[ocr_like/title/wrong]
+  exp: A Cat’s Lick: Democratisation and Minority Communities in the Post-Soviet Baltic by Timofey Agarin, and Continuity and C
+  got: "A Cat's Lick: Democratisation and Minority Communities in the Post-Soviet Ba1tic by Timofey Agarin, and Continuity and 
+  in : Кирчанов, М. (2011). A Cat’s Lick: Democratisation and Minority Communities in the Post-Soviet Ba1tic by Timofey Agarin, and Continuity and Change in thc Baltic Sea Region: Comparing Forcign Policies 
+
+[pasted_pdf_copy/authors/missing]
+  exp: ["Кирчанов, Максим"]
+  got: [{"family":"Кирчанов","given":"Максим","initials":"М.","isCorporate":false}]
+  in : Кирчанов, Максим. “A Cat’s Lick: Democratisation and Minority Communities in the\nPost-Soviet Baltic by Timofey Agarin, and Continuity and Change in the Baltic Sea\nRegion: Comparing Foreign Policies 
+
+[multiline_numbered/authors/missing]
+  exp: ["Кирчанов, Максим"]
+  got: [{"family":"Кирчанов","given":"М.","initials":"М.","isCorporate":false}]
+  in : 6. [1]М. Кирчанов, “A Cat’s Lick: Democratisation and Minority Communities\nin the Post-Soviet Baltic by Timofey Agarin, and Continuity\nand Change in the Baltic Sea Region: Comparing Foreign\nPolicie
+
+[ocr_like/authors/wrong]
+  exp: ["Gebreegziabher, Tesafaldet","Gebreeyesus, Filimon"]
+  got: [{"family":"Gebreegziabher","given":"T.","initials":"T.","isCorporate":false},{"family":"Gebreeyesus","given":"F","initi
+  in : Gebreegziabher, T., & Gebreeyesus, F. (2023). 8iomass Waste to Energy for a Particleboards Industry. Intcrnational Conference on Energy Harvesting, Storaqe, and Transfer. https://doi.org/10.11159/ehst
+
+[ocr_like/title/wrong]
+  exp: Biomass Waste to Energy for a Particleboards Industry
+  got: "8iomass Waste to Energy for a Particleboards Industry"
+  in : Gebreegziabher, T., & Gebreeyesus, F. (2023). 8iomass Waste to Energy for a Particleboards Industry. Intcrnational Conference on Energy Harvesting, Storaqe, and Transfer. https://doi.org/10.11159/ehst
+
+[multiline_numbered/authors/wrong]
+  exp: ["Gebreegziabher, Tesafaldet","Gebreeyesus, Filimon"]
+  got: [{"family":"Gebreegziabher","given":"T","initials":"T.","isCorporate":false},{"family":"Gebreeyesus","given":"F","initia
+  in : 141. Gebreegziabher, T. and Gebreeyesus, F. (2023) “Biomass Waste to Energy for a Particleboards\nIndustry.” Avestia Publishing. Available at: https://doi.org/10.11159/ehst23.123.
+
+[pasted_pdf_copy/authors/wrong]
+  exp: ["Gebreegziabher, Tesafaldet","Gebreeyesus, Filimon"]
+  got: [{"family":"Gebreegziabher","given":"T.","initials":"T.","isCorporate":false},{"family":"Gebreeyesus","given":"F.","init
+  in : [1]T. Gebreegziabher and F. Gebreeyesus, “Biomass Waste to Energy for a Particleboards\nIndustry,” Avestia Publishing, 2023. doi: 10.11159/ehst23.123.
+
+[pasted_pdf_copy/authors/wrong]
+  exp: ["Albright, Carol Bonomo"]
+  got: [{"family":"Albright","given":"C B","initials":"C. B.","isCorporate":false}]
+  in : Albright, C. B. (2022). American Woman, Italian Style. Fordham\nUniversity Press. https://doi.org/10.1515/9780823290840
+
+[multiline_numbered/authors/wrong]
+  exp: ["Albright, Carol Bonomo"]
+  got: [{"family":"Albright","given":"C B","initials":"C. B.","isCorporate":false}]
+  in : [279] Albright, C.B. (2022) American Woman, Italian Style. Fordham University Press. Available\nat: https://doi.org/10.1515/9780823290840.
+
+[ocr_like/publisher/wrong]
+  exp: Springer International Publishing
+  got: "Sprinqer International Publishing"
+  in : Taylor, M. (2015). Quantum Microscopy of Biological Systems. Sprinqer International Publishing. https://doi.org/10.1O07/978-3-319-18938-3
+
+[pasted_pdf_copy/authors/wrong]
+  exp: ["Yakimenko, Valerie V."]
+  got: [{"family":"Yakimenko","given":"V V","initials":"V. V.","isCorporate":false}]
+  in : Yakimenko, V. V. (2019). The Major Rivers and the Genesis of the Recent\nArea of Ticks Ixodes persulcatus in Western Siberia. In Parasitology\nResearch Monographs (pp. 367–381). Springer International
+
+[ocr_like/title/wrong]
+  exp: The Major Rivers and the Genesis of the Recent Area of Ticks Ixodes persulcatus in Western Siberia
+  got: "The Major Rivers and the Genesis of the Reccnt Area of Ticks Ixodes Persulcatus in Westcrn Siberia"
+  in : Yakimenko, Valerie V. “The Major Rivers and the Genesis of the Reccnt Area of Ticks Ixodes Persulcatus in Westcrn Siberia.” In Parasitology Rescarch Monographs. Springer International Pub1ishing, 2019
+
+[ocr_like/doi/wrong]
+  exp: 10.1007/978-3-030-29061-0_16
+  got: "10.1007/978-3-03o-29061-0_16"
+  in : Yakimenko, Valerie V. “The Major Rivers and the Genesis of the Reccnt Area of Ticks Ixodes Persulcatus in Westcrn Siberia.” In Parasitology Rescarch Monographs. Springer International Pub1ishing, 2019
+
+[ocr_like/pages/missing]
+  exp: 367-381
+  got: null
+  in : Yakimenko, Valerie V. “The Major Rivers and the Genesis of the Reccnt Area of Ticks Ixodes Persulcatus in Westcrn Siberia.” In Parasitology Rescarch Monographs. Springer International Pub1ishing, 2019
+
+[ocr_like/publisher/wrong]
+  exp: Springer International Publishing
+  got: "Springer International Pub1ishing"
+  in : Yakimenko, Valerie V. “The Major Rivers and the Genesis of the Reccnt Area of Ticks Ixodes Persulcatus in Westcrn Siberia.” In Parasitology Rescarch Monographs. Springer International Pub1ishing, 2019
+
+[pasted_pdf_copy/authors/wrong]
+  exp: ["Awang, Noor Azura","Mahmud, Nik Noor Haryatul Eleena Bt N","Zulkefli, Noor Ummi Hazirah Hani"]
+  got: [{"family":"Awang","given":"N A","initials":"N. A.","isCorporate":false},{"family":"Mahmud","given":"N. N. H. E. B. N.",
+  in : Awang, N. A., Mahmud, N. N. H. E. B. N., & Zulkefli, N. U. H. H. (2023).\nOptical Trapping Using Mode-Locked Fiber Laser Au-Np Coated Side-Polished\nFiber. Elsevier BV. https://doi.org/10.2139/ssrn.45
+
+[ocr_like/title/wrong]
+  exp: Optical Trapping Using Mode-Locked Fiber Laser Au-Np Coated Side-Polished Fiber
+  got: "0ptical Trapping Using Mode-Locked Fiber Laser Au-Np Coated Side-Polished Fiber, Prcprint"
+  in : Awang, Noor Azura, Nik Noor Haryatul Eleena Bt N. Mahmud, and Noor Ummi Hazirah Hani Zulkefli. “0ptical Trapping Using Mode-Locked Fiber Laser Au-Np Coated Side-Polished Fiber.” Prcprint, Elsevier BV,
+
+[multiline_numbered/authors/wrong]
+  exp: ["Yu, Hao","Wen, Youjin","Xu, Zhehang","Yang, Pingle","Zhang, Jianlin","Meng, Fanyuan"]
+  got: [{"family":"Yu","given":"H. et al. (2023)","initials":"H. E. A. (.","isCorporate":false}]
+  in : 555. Yu, H. et al. (2023) “Group Cohesion Under Asymmetric Voting Behaviors.” Elsevier BV.\nAvailable at: https://doi.org/10.2139/ssrn.4525752.
+
+[ocr_like/title/wrong]
+  exp: Relações interfaciais de poli(dimetilsiloxano) com solidos inorganicos
+  got: "Re1ações interfaciais de poli(dimetilsiloxano) com solidos inorganicos"
+  in : Botter Junior, W. (2021). Re1ações interfaciais de poli(dimetilsiloxano) com solidos inorganicos [Dissertation, Universidade Estadual de Campinas]. https://doi.org/l0.47749/t/unicarnp.1997.133750
+
+[ocr_like/doi/wrong]
+  exp: 10.47749/t/unicamp.1997.133750
+  got: "10.47749/t/unicarnp.1997.133750"
+  in : Botter Junior, W. (2021). Re1ações interfaciais de poli(dimetilsiloxano) com solidos inorganicos [Dissertation, Universidade Estadual de Campinas]. https://doi.org/l0.47749/t/unicarnp.1997.133750
+
+[ocr_like/title/wrong]
+  exp: Results of spirit leveling in Kansas, 1896 to 1913, inclusive
+  got: "Resu1ts of spirit leveling in Kansas, 1896 to 1913, inclusive"
+  in : US Geological Survey (1914) Resu1ts of spirit leveling in Kansas, 1896 to 1913, inclusive. US Geological 5urvey. Available at: https://doi.org/10.3133/b571.
+
+[ocr_like/title/missing]
+  exp: Web page ranking for page query across public and private
+  got: null
+  in : Web page ranking for page query across public and private. Patent US2006O235842A1, issued 2006. https://patcnts.google.corn/patent/US2006O235842A1/en.
+
+[ocr_like/year/missing]
+  exp: 2025
+  got: null
+  in : [1]“Export of UDP Options Information in IP Flow Information Export (IPFIX),” RFC Editor. [Online]. Availab1e: https://www.rfc-cditor.org/rfc/rfc9870.html
+
+[structured_clean/authors/missing]
+  exp: ["Кирчанов, Максим"]
+  got: [{"family":"Кирчанов","given":"Максим","initials":"М.","isCorporate":false}]
+  in : Кирчанов, Максим. “A Cat’s Lick: Democratisation and Minority Communities in the Post-Soviet Baltic by Timofey Agarin, and Continuity and Change in the Baltic Sea Region: Comparing Foreign Policies by
+
+[structured_noisy/authors/missing]
+  exp: ["Алексеев, Игорь"]
+  got: [{"family":"Алексеев","given":null,"initials":null,"isCorporate":false},{"family":"Игорь","given":null,"initials":null,"
+  in : Алексеев;  Игорь.  “Собирание  Расколотой  Уммы:  Фундаментализм  Как  Реинтерпретация  Исламской  Истории.”  Ab  Imperio  2004;  no.  3  (2004):  491–516.  https://doi.org/10.1353/imp.2004.0159.
+
+[structured_noisy/title/missing]
+  exp: Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории
+  got: "Собирание Расколотой Уммы: Фундаментализм Как Реинтерпретация Исламской Истории"
+  in : Алексеев;  Игорь.  “Собирание  Расколотой  Уммы:  Фундаментализм  Как  Реинтерпретация  Исламской  Истории.”  Ab  Imperio  2004;  no.  3  (2004):  491–516.  https://doi.org/10.1353/imp.2004.0159.
+
+[structured_noisy/volume/wrong]
+  exp: 2004
+  got: "3"
+  in : Алексеев;  Игорь.  “Собирание  Расколотой  Уммы:  Фундаментализм  Как  Реинтерпретация  Исламской  Истории.”  Ab  Imperio  2004;  no.  3  (2004):  491–516.  https://doi.org/10.1353/imp.2004.0159.
+
+[structured_noisy/issue/missing]
+  exp: 3
+  got: null
+  in : Алексеев;  Игорь.  “Собирание  Расколотой  Уммы:  Фундаментализм  Как  Реинтерпретация  Исламской  Истории.”  Ab  Imperio  2004;  no.  3  (2004):  491–516.  https://doi.org/10.1353/imp.2004.0159.
+
+[structured_noisy/authors/wrong]
+  exp: ["Herschel, William"]
+  got: [{"family":"Hérschél","given":"Williàm","initials":"W.","isCorporate":false}]
+  in : Hérschél, Williàm. Thé Sciéntific Pàpérs of Sir Williàm Hérschél. Càmbridgé Univérsity Préss, 2013. https://doi.org/10.1017/cbo9781139649650.
+
+[structured_noisy/title/wrong]
+  exp: The Scientific Papers of Sir William Herschel
+  got: "Thé Sciéntific Pàpérs of Sir Williàm Hérschél"
+  in : Hérschél, Williàm. Thé Sciéntific Pàpérs of Sir Williàm Hérschél. Càmbridgé Univérsity Préss, 2013. https://doi.org/10.1017/cbo9781139649650.
+
+[structured_noisy/publisher/wrong]
+  exp: Cambridge University Press
+  got: "Càmbridgé Univérsity Préss"
+  in : Hérschél, Williàm. Thé Sciéntific Pàpérs of Sir Williàm Hérschél. Càmbridgé Univérsity Préss, 2013. https://doi.org/10.1017/cbo9781139649650.
+
+[structured_clean/pages/missing]
+  exp: 367-381
+  got: null
+  in : Yakimenko, Valerie V. “The Major Rivers and the Genesis of the Recent Area of Ticks Ixodes Persulcatus in Western Siberia.” In Parasitology Research Monographs. Springer International Publishing, 2019
+
+[structured_noisy/pages/missing]
+  exp: 679-682
+  got: null
+  in : Bischoff, Arnd, and Bernd Schürmann. “Higher Order Neural Networks in a Unified Learning Scheme.” In ICANN ’93. Springer London, 1993. doi:10.1007/978-1-4471-2063-6_187.
+
+[structured_noisy/doi/missing]
+  exp: 10.2139/ssrn.4583547
+  got: null
+  in : Chen, Huilan, Dong Cheng, Dan Zhou, et al. “Ripv1, a Ralstonia Solanacearum Type Iii Effector, Acts as a Novel E3 Ubiquitin Ligase to Suppress Plant Pamp-Triggered Immunity Responses and Promote Susce
+
+[structured_noisy/authors/wrong]
+  exp: ["Antonio Fonseca Machado, Paulo"]
+  got: [{"family":"Machado","given":"Antonio Fonseca","initials":"A. F.","isCorporate":false},{"family":"Paulo","given":null,"i
+  in : Antonio  Fonseca  Machado;  Paulo.  “Algebras  Geradas  Por  Menores  de  Matrizes  Cataleticas.”  Dissertation;  Universidade  Estadual  de  Campinas;  2021.  https://doi.org/10.47749/t/unicamp.1997.
+
+[structured_noisy/title/wrong]
+  exp: Stem cell culture perfusion device
+  got: "Stém céll culturé pérfusion dévicé. Pàtént , issuéd"
+  in : Stém céll culturé pérfusion dévicé. Pàtént CN223951035U, issuéd 2026. https://pàténts.googlé.com/pàtént/CN223951035U/én.
+
+[structured_noisy/title/wrong]
+  exp: The Transport Layer Security (TLS) Protocol Version 1.3
+  got: "Thé Trànsport Làyér Sécurity (TLS) Protocol Vérsion 1.3"
+  in : Intérnét Enginééring Tàsk Forcé. “Thé Trànsport Làyér Sécurity (TLS) Protocol Vérsion 1.3.” RFC Editor, Intérnét Enginééring Tàsk Forcé, 2018. https://www.rfc-éditor.org/rfc/rfc8446.
+
+[ocr_like/authors/wrong]
+  exp: ["Rebel, Annette","Schell, Randall"]
+  got: [{"family":"Rebel","given":"A","initials":"A.","isCorporate":false},{"family":"Schell","given":"R","initials":"R.","isCo
+  in : Rebel, A. and Schell, R. (2015) “Faust’s Anesthesioloqy Review, 4th ed.,” Ancsthcsia &amp; Analgesia, 120(4), p. 953. Available at: https://doi.org/10.1213/ane.0000000O00000588.
+
+[ocr_like/journal/wrong]
+  exp: Anesthesia &amp; Analgesia
+  got: "Ancsthcsia & Analgesia"
+  in : Rebel, A. and Schell, R. (2015) “Faust’s Anesthesioloqy Review, 4th ed.,” Ancsthcsia &amp; Analgesia, 120(4), p. 953. Available at: https://doi.org/10.1213/ane.0000000O00000588.
+
+[ocr_like/doi/wrong]
+  exp: 10.1213/ane.0000000000000588
+  got: "10.1213/ane.0000000o00000588"
+  in : Rebel, A. and Schell, R. (2015) “Faust’s Anesthesioloqy Review, 4th ed.,” Ancsthcsia &amp; Analgesia, 120(4), p. 953. Available at: https://doi.org/10.1213/ane.0000000O00000588.
+
+[pasted_pdf_copy/authors/missing]
+  exp: ["Кирчанов, Максим"]
+  got: [{"family":"Кирчанов","given":"М","initials":"М.","isCorporate":false}]
+  in : Кирчанов, М. (2011) “A Cat’s Lick: Democratisation and Minority\nCommunities in the Post-Soviet Baltic by Timofey Agarin, and\nContinuity and Change in the Baltic Sea Region: Comparing Foreign\nPolici
+
+[pasted_pdf_copy/doi/missing]
+  exp: 10.1353/imp.2011.0081
+  got: null
+  in : Кирчанов, М. (2011) “A Cat’s Lick: Democratisation and Minority\nCommunities in the Post-Soviet Baltic by Timofey Agarin, and\nContinuity and Change in the Baltic Sea Region: Comparing Foreign\nPolici
+
+[multiline_numbered/authors/missing]
+  exp: ["Кирчанов, Максим"]
+  got: [{"family":"Кирчанов","given":"Максим","initials":"М.","isCorporate":false}]
+  in : 7. Кирчанов, Максим. “A Cat’s Lick: Democratisation and Minority Communities in the Post-Soviet\nBaltic by Timofey Agarin, and Continuity and Change in the Baltic Sea\nRegion: Comparing Foreign Polici
+
+[ocr_like/publisher/wrong]
+  exp: Cambridge University Press
+  got: "Carnbridge Univcrsity Press"
+  in : Herschel, W. (2013). The Scientific Papers of Sir Williarn Hersche1. Carnbridge Univcrsity Press. https://doi.org/10.1017/cbo9781139649650
+
+[pasted_pdf_copy/authors/wrong]
+  exp: ["Yakimenko, Valerie V."]
+  got: [{"family":"Yakimenko","given":"V. V.","initials":"V. V.","isCorporate":false}]
+  in : [1]V. V. Yakimenko, “The Major Rivers and the Genesis of the Recent Area of Ticks\nIxodes persulcatus in Western Siberia,” in Parasitology Research Monographs, Spri-\nnger International Publishing, 20
+
+[ocr_like/authors/wrong]
+  exp: ["Yakimenko, Valerie V."]
+  got: [{"family":"Yakimenko","given":"V V","initials":"V. V.","isCorporate":false}]
+  in : Yakimenko, V.V. (2019) “The Major Rivers and the Genesis of the Recent Area of Ticks Ixodes persulcatus in Western Siberia,” Parasitology Research Monographs. Springer International Publishing, pp. 36
+
+[multiline_numbered/authors/wrong]
+  exp: ["Grunow, Daniela","Khoudja, Yassine"]
+  got: [{"family":"Grunow","given":"D","initials":"D.","isCorporate":false},{"family":"Khoudja","given":"Y","initials":"Y.","is
+  in : [423] Grunow, D. and Khoudja, Y. (2024) “Multidimensionalität sozialstrukturellen Wandels,” Handbuch Sozialstrukturanalyse.\nSpringer Fachmedien Wiesbaden, pp. 1–36. Available at: https://doi.org/10.1
+
+[pasted_pdf_copy/authors/wrong]
+  exp: ["Awang, Noor Azura","Mahmud, Nik Noor Haryatul Eleena Bt N","Zulkefli, Noor Ummi Hazirah Hani"]
+  got: [{"family":"Awang","given":"N A","initials":"N. A.","isCorporate":false},{"family":"Zulkefli","given":"N.U.H.H. (2023)",
+  in : Awang, N.A., Mahmud, N.N.H.E.B.N. and Zulkefli, N.U.H.H. (2023) “Optical Trapping\nUsing Mode-Locked Fiber Laser Au-Np Coated Side-Polished Fiber.” Elsevier BV.\nAvailable at: https://doi.org/10.2139/
+
+[ocr_like/authors/wrong]
+  exp: ["Awang, Noor Azura","Mahmud, Nik Noor Haryatul Eleena Bt N","Zulkefli, Noor Ummi Hazirah Hani"]
+  got: [{"family":"Awang","given":"N A","initials":"N. A.","isCorporate":false},{"family":"8. N. Mahmud","given":"N N H E","ini
+  in : [1]N. A. Awang, N. N. H. E. 8. N. Mahmud, and N. U. H. H. Zulkefli, “Optical Trapping Using Mode-Locked Fiber Laser Au-Np Coated Side-Po1ished Fiber,” 2023, Elsevier BV. doi: 10.2139/ssrn.4577205.
+
+[multiline_numbered/authors/wrong]
+  exp: ["Yu, Hao","Wen, Youjin","Xu, Zhehang","Yang, Pingle","Zhang, Jianlin","Meng, Fanyuan"]
+  got: [{"family":"Yu","given":"H","initials":"H.","isCorporate":false},{"family":"Wen","given":"Y","initials":"Y.","isCorporat
+  in : 557. [1]Yu H, Wen Y, Xu Z, Yang P, Zhang J, Meng\nF. Group Cohesion Under Asymmetric Voting Behaviors 2023. https://doi.org/10.2139/ssrn.4525752.
+
+[multiline_numbered/title/wrong]
+  exp: Group Cohesion Under Asymmetric Voting Behaviors
+  got: "[1]Yu H, Wen Y, Xu Z, Yang P, Zhang J, Meng F"
+  in : 557. [1]Yu H, Wen Y, Xu Z, Yang P, Zhang J, Meng\nF. Group Cohesion Under Asymmetric Voting Behaviors 2023. https://doi.org/10.2139/ssrn.4525752.
+
+[multiline_numbered/authors/missing]
+  exp: ["Botter Junior, Wilson"]
+  got: []
+  in : 678. [1]W. Botter Junior, “Relações interfaciais de poli(dimetilsiloxano) com solidos\ninorganicos,” Dissertation, Universidade Estadual de Campinas, 2021. doi: 10.47749/t/unicamp.1997.133750.
+
+[multiline_numbered/title/wrong]
+  exp: Relações interfaciais de poli(dimetilsiloxano) com solidos inorganicos
+  got: "[1]W"
+  in : 678. [1]W. Botter Junior, “Relações interfaciais de poli(dimetilsiloxano) com solidos\ninorganicos,” Dissertation, Universidade Estadual de Campinas, 2021. doi: 10.47749/t/unicamp.1997.133750.
+
+[ocr_like/year/missing]
+  exp: 2006
+  got: null
+  in : [1]“Web page ranking for page query across public and privatc,” US20060235842A1, 2O06 [Online]. Available: https://patents.google.com/patent/US20060235842A1/en
+
+[structured_clean/authors/missing]
+  exp: ["Кирчанов, Максим"]
+  got: [{"family":"Кирчанов","given":"М","initials":"М.","isCorporate":false}]
+  in : Кирчанов, М. (2011) “A Cat’s Lick: Democratisation and Minority Communities in the Post-Soviet Baltic by Timofey Agarin, and Continuity and Change in the Baltic Sea Region: Comparing Foreign Policies 
+
+[structured_noisy/authors/missing]
+  exp: ["Алексеев, Игорь"]
+  got: [{"family":"Алексеев","given":"И","initials":"И.","isCorporate":false}]
+  in : Алексеев, И. (2004) “Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории,” Ab Imperio, 2004(3), pp. 491–516. Available at: doi:10.1353/imp.2004.0159.
+
+[structured_noisy/title/missing]
+  exp: Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории
+  got: "Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории"
+  in : Алексеев, И. (2004) “Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории,” Ab Imperio, 2004(3), pp. 491–516. Available at: doi:10.1353/imp.2004.0159.
+
+[structured_clean/authors/wrong]
+  exp: ["Gebreegziabher, Tesafaldet","Gebreeyesus, Filimon"]
+  got: [{"family":"Gebreegziabher","given":"T","initials":"T.","isCorporate":false},{"family":"Gebreeyesus","given":"F","initia
+  in : Gebreegziabher, T. and Gebreeyesus, F. (2023) “Biomass Waste to Energy for a Particleboards Industry.” Avestia Publishing. Available at: https://doi.org/10.11159/ehst23.123.
+
+[structured_clean/authors/wrong]
+  exp: ["Albright, Carol Bonomo"]
+  got: [{"family":"Albright","given":"C B","initials":"C. B.","isCorporate":false}]
+  in : Albright, C.B. (2022) American Woman, Italian Style. Fordham University Press. Available at: https://doi.org/10.1515/9780823290840.
+
+[structured_noisy/year/missing]
+  exp: 2013
+  got: null
+  in : Herschel, W. The Scientific Papers of Sir William Herschel. Cambridge University Press. Available at: https://doi.org/.
+
+[structured_noisy/doi/missing]
+  exp: 10.1017/cbo9781139649650
+  got: null
+  in : Herschel, W. The Scientific Papers of Sir William Herschel. Cambridge University Press. Available at: https://doi.org/.
+
+[structured_noisy/authors/wrong]
+  exp: ["Bischoff, Arnd","Schürmann, Bernd"]
+  got: [{"family":"Bischoff","given":"A","initials":"A.","isCorporate":false},{"family":"Schürmann","given":"B","initials":"B."
+  in : Bischoff, A. and Schürmann, B. (1993) “Higher Order Neural Networks in a Unified Learning Scheme,” ICANN ’93. Springer London, pp. 679–682. Available at: https://doi.org/10.1007/978-1-4471-2063-6_187.
+
+[structured_noisy/authors/wrong]
+  exp: ["Chen, Huilan","Cheng, Dong","Zhou, Dan","Mo, Yinyin","Zhong, Lingyu","Wang, Yuqi","Wang, Yudan","Qiu, Huishan","Tan, X
+  got: [{"family":"Chen","given":null,"initials":null,"isCorporate":false},{"family":"et al. (2023)","given":"H.","initials":"H
+  in : Chen;  H.  et  al.  (2023)  “Ripv1;  a  Ralstonia  Solanacearum  Type  Iii  Effector;  Acts  as  a  Novel  E3  Ubiquitin  Ligase  to  Suppress  Plant  Pamp-Triggered  Immunity  Responses  and  Promote
+
+[ocr_like/authors/wrong]
+  exp: ["Lowe, Danny D."]
+  got: [{"family":"Lowe","given":"D D","initials":"D. D.","isCorporate":false}]
+  in : Lowe, D. D. (l995). 5tereo hcadphone sound sourcc localization system. The Journal of the Acoustical Society of America, 98(1), 25–25. https://doi.orq/10.1121/1.4l3710
+
+[ocr_like/year/missing]
+  exp: 1995
+  got: null
+  in : Lowe, D. D. (l995). 5tereo hcadphone sound sourcc localization system. The Journal of the Acoustical Society of America, 98(1), 25–25. https://doi.orq/10.1121/1.4l3710
+
+[ocr_like/doi/wrong]
+  exp: 10.1121/1.413710
+  got: "10.1121/1.4l3710"
+  in : Lowe, D. D. (l995). 5tereo hcadphone sound sourcc localization system. The Journal of the Acoustical Society of America, 98(1), 25–25. https://doi.orq/10.1121/1.4l3710
+
+[pasted_pdf_copy/authors/missing]
+  exp: ["Кирчанов, Максим"]
+  got: [{"family":"Кирчанов","given":"М","initials":"М.","isCorporate":false}]
+  in : [1]Кирчанов М. A Cat’s Lick: Democratisation and Minority Communities in the\nPost-Soviet Baltic by Timofey Agarin, and Continuity and Change in the Bal-\ntic Sea Region: Comparing Foreign Policies by
+
+[pasted_pdf_copy/doi/missing]
+  exp: 10.1353/imp.2011.0081
+  got: null
+  in : [1]Кирчанов М. A Cat’s Lick: Democratisation and Minority Communities in the\nPost-Soviet Baltic by Timofey Agarin, and Continuity and Change in the Bal-\ntic Sea Region: Comparing Foreign Policies by
+
+[pasted_pdf_copy/issue/missing]
+  exp: 3
+  got: null
+  in : [1]Кирчанов М. A Cat’s Lick: Democratisation and Minority Communities in the\nPost-Soviet Baltic by Timofey Agarin, and Continuity and Change in the Bal-\ntic Sea Region: Comparing Foreign Policies by
+
+[multiline_numbered/journal/wrong]
+  exp: Anesthesia &amp; Analgesia
+  got: "Anesthesia & Analgesia"
+  in : 12. [1]A. Rebel and R. Schell, “Faust’s Anesthesiology Review, 4th ed.,”\nAnesthesia &amp; Analgesia, vol. 120, no. 4, p. 953, 2015,\ndoi: 10.1213/ane.0000000000000588.
+
+[ocr_like/authors/wrong]
+  exp: ["Li, Dazhou","Zhang, Bo"]
+  got: [{"family":"Li","given":"D.","initials":"D.","isCorporate":false},{"family":"Zhang","given":"B","initials":"B.","isCorpo
+  in : Li, D., & Zhang, B. (2022). DEC0MPOSING THE IMPLEMENTATI0N OF COMPLEX ENGINEERlNG PROBLEM-SOLVING SKILLS ON PYTHON-BASED ARTIFICIAL INTELLIGENCE AND BIG DATA. Proceedings of ADVED 2022- 8th Internatio
+
+[multiline_numbered/authors/wrong]
+  exp: ["Li, Dazhou","Zhang, Bo"]
+  got: [{"family":"Li","given":"D","initials":"D.","isCorporate":false},{"family":"Zhang","given":"B","initials":"B.","isCorpor
+  in : 147. Li, D. and Zhang, B. (2022) “DECOMPOSING THE IMPLEMENTATION OF COMPLEX\nENGINEERING PROBLEM-SOLVING SKILLS ON PYTHON-BASED ARTIFICIAL INTELLIGENCE AND BIG DATA.” International\nOrganization Cente
+
+[pasted_pdf_copy/title/missing]
+  exp: Biomass Waste to Energy for a Particleboards Industry
+  got: null
+  in : [1]Gebreegziabher T, Gebreeyesus F. Biomass Waste to Energy for a\nParticleboards Industry, Avestia Publishing; 2023. https://doi.org/10.1-\n1159/ehst23.123.
+
+[pasted_pdf_copy/doi/missing]
+  exp: 10.11159/ehst23.123
+  got: null
+  in : [1]Gebreegziabher T, Gebreeyesus F. Biomass Waste to Energy for a\nParticleboards Industry, Avestia Publishing; 2023. https://doi.org/10.1-\n1159/ehst23.123.
+
+[pasted_pdf_copy/publisher/missing]
+  exp: Avestia Publishing
+  got: null
+  in : [1]Gebreegziabher T, Gebreeyesus F. Biomass Waste to Energy for a\nParticleboards Industry, Avestia Publishing; 2023. https://doi.org/10.1-\n1159/ehst23.123.
+
+[multiline_numbered/title/wrong]
+  exp: Quantum Microscopy of Biological Systems
+  got: "Michael"
+  in : 286. Taylor, Michael. Quantum Microscopy of Biological Systems. Springer International\nPublishing, 2015. https://doi.org/10.1007/978-3-319-18938-3.
+
+[ocr_like/doi/wrong]
+  exp: 10.47749/t/unicamp.1997.114219
+  got: "10.47749/t/unicamp.l997.114219"
+  in : Antonio Fonseca Machado, P. (2021). Algebras geradas por menores de matrizes cataleticas [Dissertation, Universidade Estadual de Campinas]. https://doi.org/10.47749/t/unicamp.l997.114219
+
+[structured_clean/authors/missing]
+  exp: ["Кирчанов, Максим"]
+  got: [{"family":"Кирчанов","given":"М.","initials":"М.","isCorporate":false}]
+  in : [1]М. Кирчанов, “A Cat’s Lick: Democratisation and Minority Communities in the Post-Soviet Baltic by Timofey Agarin, and Continuity and Change in the Baltic Sea Region: Comparing Foreign Policies by D
+
+[structured_noisy/authors/missing]
+  exp: ["Алексеев, Игорь"]
+  got: [{"family":"Алексеев","given":"И.","initials":"И.","isCorporate":false}]
+  in : [1]И. Алексеев, “Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории,” Ab Imperio, vol. 2004, no. 3, pp. 491–516, 2004, doi: 10.1353/imp.2004.0159.
+
+[structured_noisy/title/missing]
+  exp: Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории
+  got: "Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории"
+  in : [1]И. Алексеев, “Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории,” Ab Imperio, vol. 2004, no. 3, pp. 491–516, 2004, doi: 10.1353/imp.2004.0159.
+
+[structured_noisy/authors/missing]
+  exp: ["Bischoff, Arnd","Schürmann, Bernd"]
+  got: []
+  in : [1]A.  Bischoff  and  B.  Schürmann;  “Higher  Order  Neural  Networks  in  a  Unified  Learning  Scheme;”  in  ICANN  ’93;  Springer  London;  1993;  pp.  679–682.  doi:  10.1007/978-1-4471-2063-6_18
+
+[structured_noisy/title/wrong]
+  exp: Higher Order Neural Networks in a Unified Learning Scheme
+  got: "Bischoff and B"
+  in : [1]A.  Bischoff  and  B.  Schürmann;  “Higher  Order  Neural  Networks  in  a  Unified  Learning  Scheme;”  in  ICANN  ’93;  Springer  London;  1993;  pp.  679–682.  doi:  10.1007/978-1-4471-2063-6_18
+
+[structured_noisy/pages/missing]
+  exp: 679-682
+  got: null
+  in : [1]A.  Bischoff  and  B.  Schürmann;  “Higher  Order  Neural  Networks  in  a  Unified  Learning  Scheme;”  in  ICANN  ’93;  Springer  London;  1993;  pp.  679–682.  doi:  10.1007/978-1-4471-2063-6_18
+
+[structured_noisy/doi/missing]
+  exp: 10.2139/ssrn.4583547
+  got: null
+  in : [1]H. Chen et al., “Ripv1, a Ralstonia Solanacearum Type Iii Effector, Acts as a Novel E3 Ubiquitin Ligase to Suppress Plant Pamp-Triggered Immunity Responses and Promote Susceptibility in Potato,” 20
+
+[structured_clean/year/missing]
+  exp: 2025
+  got: null
+  in : [1]“Export of UDP Options Information in IP Flow Information Export (IPFIX),” RFC Editor. [Online]. Available: https://www.rfc-editor.org/rfc/rfc9870.html
+
+[structured_noisy/year/missing]
+  exp: 2018
+  got: null
+  in : [1]Internet Engineering Task Force “The Transport Layer Security (TLS) Protocol Version 1.3 ” RFC Editor. [Online]. Available: https://www.rfc-editor.org/rfc/rfc8446
+
+[ocr_like/journal/wrong]
+  exp: The Journal of the Acoustical Society of America
+  got: "The Journal of the Acoustical Society of Arnerica"
+  in : Lowe, Danny D. “5tereo Headphone Sound Sourcc Localization System.” The Journal of the Acoustical Society of Arnerica 98, no. l (1995): 25–25. https://doi.org/10.1121/1.413710.
+
+[ocr_like/issue/wrong]
+  exp: 1
+  got: "l"
+  in : Lowe, Danny D. “5tereo Headphone Sound Sourcc Localization System.” The Journal of the Acoustical Society of Arnerica 98, no. l (1995): 25–25. https://doi.org/10.1121/1.413710.
+
+[pasted_pdf_copy/journal/wrong]
+  exp: Anesthesia &amp; Analgesia
+  got: "Anesthesia & Analg- esia"
+  in : Rebel, A., & Schell, R. (2015). Faust’s Anesthesiology Review, 4th ed. Anesthesia &amp; Analg-\nesia, 120(4), 953. https://doi.org/10.1213/ane.0000000000000588
+
+[multiline_numbered/title/wrong]
+  exp: Stereo headphone sound source localization system
+  got: "[1]Lowe DD"
+  in : 17. [1]Lowe DD. Stereo headphone sound source localization system. The Journal of\nthe Acoustical Society of America 1995;98:25–25. https://doi.org/10.1121/1.413710.
+
+[multiline_numbered/issue/missing]
+  exp: 1
+  got: null
+  in : 17. [1]Lowe DD. Stereo headphone sound source localization system. The Journal of\nthe Acoustical Society of America 1995;98:25–25. https://doi.org/10.1121/1.413710.
+
+[multiline_numbered/title/wrong]
+  exp: Quantum Microscopy of Biological Systems
+  got: "Michael"
+  in : [289] Taylor, Michael. Quantum Microscopy of Biological Systems. Springer International Publishing, 2015, https://doi.org/10.1007/978-3-319-18938-3.
+
+[ocr_like/doi/wrong]
+  exp: 10.48209/978-65-5417-045-1
+  got: "10.48209/978-65-5417-045-l"
+  in : MARTINS, Dayse M. CONEXÕES INTERDISCIPLINARES. Arco Editores, 2022. https://doi.org/10.482O9/978-65-5417-045-l.
+
+[ocr_like/pages/missing]
+  exp: 321-326
+  got: null
+  in : Shikhrnan, Vladimir. “Shaplcy-Wert.” In Studicnbücher Wirtschaftsmathematik. Springer Fachmedien Wiesbaden, 2019. https://doi.orq/10.10O7/978-3-658-24543-6_48.
+
+[ocr_like/year/missing]
+  exp: 2021
+  got: null
+  in : Antonio Fonseca Machado, Paulo. “Algebras Geradas Por Menores de Matrizcs Cataleticas.” Dissertation, Universidade Estadual de Campinas, 2O21. https://doi.org/10.47749/t/unicamp.1997.114219.
+
+[multiline_numbered/authors/missing]
+  exp: ["Antonio Fonseca Machado, Paulo"]
+  got: []
+  in : 684. [1]P. Antonio Fonseca Machado, “Algebras geradas por menores de matrizes cataleticas,” Dissertation, Universidade\nEstadual de Campinas, 2021. doi: 10.47749/t/unicamp.1997.114219.
+
+[multiline_numbered/title/wrong]
+  exp: Algebras geradas por menores de matrizes cataleticas
+  got: "[1]P"
+  in : 684. [1]P. Antonio Fonseca Machado, “Algebras geradas por menores de matrizes cataleticas,” Dissertation, Universidade\nEstadual de Campinas, 2021. doi: 10.47749/t/unicamp.1997.114219.
+
+[ocr_like/year/missing]
+  exp: 2026
+  got: null
+  in : [1]“TLS Encrypted C1ient Hello,” RFC Editor. [Online]. Available: https://www.rfc-editor.org/rfc/rfc9849.html
+
+[structured_clean/authors/missing]
+  exp: ["Кирчанов, Максим"]
+  got: [{"family":"Кирчанов","given":"Максим","initials":"М.","isCorporate":false}]
+  in : Кирчанов, Максим. “A Cat’s Lick: Democratisation and Minority Communities in the Post-Soviet Baltic by Timofey Agarin, and Continuity and Change in the Baltic Sea Region: Comparing Foreign Policies by
+
+[structured_noisy/authors/missing]
+  exp: ["Алексеев, Игорь"]
+  got: [{"family":"Игорь","given":"Алексеев","initials":"А.","isCorporate":false}]
+  in : Алексеев Игорь. “Собирание Расколотой Уммы: Фундаментализм Как Реинтерпретация Исламской Истории.” Ab Imperio vol. 2004 no. 3 2004 491–516 https://doi.org/10.1353/imp.2004.0159.
+
+[structured_noisy/title/missing]
+  exp: Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории
+  got: "Собирание Расколотой Уммы: Фундаментализм Как Реинтерпретация Исламской Истории"
+  in : Алексеев Игорь. “Собирание Расколотой Уммы: Фундаментализм Как Реинтерпретация Исламской Истории.” Ab Imperio vol. 2004 no. 3 2004 491–516 https://doi.org/10.1353/imp.2004.0159.
+
+[structured_noisy/journal/missing]
+  exp: Ab Imperio
+  got: null
+  in : Алексеев Игорь. “Собирание Расколотой Уммы: Фундаментализм Как Реинтерпретация Исламской Истории.” Ab Imperio vol. 2004 no. 3 2004 491–516 https://doi.org/10.1353/imp.2004.0159.
+
+[structured_noisy/volume/missing]
+  exp: 2004
+  got: null
+  in : Алексеев Игорь. “Собирание Расколотой Уммы: Фундаментализм Как Реинтерпретация Исламской Истории.” Ab Imperio vol. 2004 no. 3 2004 491–516 https://doi.org/10.1353/imp.2004.0159.
+
+[structured_noisy/issue/missing]
+  exp: 3
+  got: null
+  in : Алексеев Игорь. “Собирание Расколотой Уммы: Фундаментализм Как Реинтерпретация Исламской Истории.” Ab Imperio vol. 2004 no. 3 2004 491–516 https://doi.org/10.1353/imp.2004.0159.
+
+[structured_noisy/pages/missing]
+  exp: 491-516
+  got: null
+  in : Алексеев Игорь. “Собирание Расколотой Уммы: Фундаментализм Как Реинтерпретация Исламской Истории.” Ab Imperio vol. 2004 no. 3 2004 491–516 https://doi.org/10.1353/imp.2004.0159.
+
+[structured_noisy/title/wrong]
+  exp: The Transport Layer Security (TLS) Protocol Version 1.3
+  got: "Thé Trànsport Làyér Sécurity (TLS) Protocol Vérsion 1.3"
+  in : Intérnét Enginééring Tàsk Forcé. “Thé Trànsport Làyér Sécurity (TLS) Protocol Vérsion 1.3.” RFC Editor, Intérnét Enginééring Tàsk Forcé, 2018, https://www.rfc-éditor.org/rfc/rfc8446.
+
+[ocr_like/journal/wrong]
+  exp: The Journal of the Acoustical Society of America
+  got: "The Journa1 of the Acoustical Society of Amcrica"
+  in : Poese, Matthew E., Robcrt M. Keolian, Robert W. Smith, Eric C. Mitchcll, Cory M. Roberts, and Steven L. Garrett. “Trillium: A Thermoacoustic-5tirling Refrigerator lmplernentation Using an Inline Topol
+
+[pasted_pdf_copy/journal/wrong]
+  exp: Anesthesia &amp; Analgesia
+  got: "Anesthesia & Analgesia"
+  in : Rebel, Annette, and Randall Schell. “Faust’s Anesthesiology Review, 4th\nEd.” Anesthesia &amp; Analgesia 120, no. 4 (2015): 953.\nhttps://doi.org/10.1213/ane.0000000000000588.
+
+[ocr_like/year/missing]
+  exp: 2023
+  got: null
+  in : Contreras, M.L. et al. (2O23) “Anafilaxia inducida por cjercicio: a propósito de un caso.” Grupo Pacífico. Available at: https://doi.orq/10.48158/semg23-144.
+
+[multiline_numbered/title/missing]
+  exp: DECOMPOSING THE IMPLEMENTATION OF COMPLEX ENGINEERING PROBLEM-SOLVING SKILLS ON PYTHON-BASED ARTIFICIAL INTELLIGENCE AND
+  got: null
+  in : 149. [1]Li D, Zhang B. DECOMPOSING THE IMPLEMENTATION OF COMPLEX ENGINEERING PROBLEM-SOLVING SKILLS ON\nPYTHON-BASED ARTIFICIAL INTELLIGENCE AND BIG DATA, International Organization Center of Academic
+
+[multiline_numbered/year/missing]
+  exp: 2022
+  got: null
+  in : 149. [1]Li D, Zhang B. DECOMPOSING THE IMPLEMENTATION OF COMPLEX ENGINEERING PROBLEM-SOLVING SKILLS ON\nPYTHON-BASED ARTIFICIAL INTELLIGENCE AND BIG DATA, International Organization Center of Academic
+
+[multiline_numbered/doi/missing]
+  exp: 10.47696/adved.202211
+  got: null
+  in : 149. [1]Li D, Zhang B. DECOMPOSING THE IMPLEMENTATION OF COMPLEX ENGINEERING PROBLEM-SOLVING SKILLS ON\nPYTHON-BASED ARTIFICIAL INTELLIGENCE AND BIG DATA, International Organization Center of Academic
+
+[multiline_numbered/publisher/missing]
+  exp: International Organization Center of Academic Research
+  got: null
+  in : 149. [1]Li D, Zhang B. DECOMPOSING THE IMPLEMENTATION OF COMPLEX ENGINEERING PROBLEM-SOLVING SKILLS ON\nPYTHON-BASED ARTIFICIAL INTELLIGENCE AND BIG DATA, International Organization Center of Academic
+
+[ocr_like/publisher/wrong]
+  exp: Arco Editores
+  got: "Arco Editorcs"
+  in : MARTINS, D.M. (2022) CONEXÕE5 INTERDISCIPLINARES. Arco Editorcs. Available at: https://doi.org/10.48209/978-65-5417-045-1.
+
+[ocr_like/pages/missing]
+  exp: 1-36
+  got: null
+  in : Grunow, Daniela, and Yassine Khoudja. “Multidimensionalität Sozialstrukturellen Wandels.” In Handbuch Sozialstrukturanalyse. Sprinqcr Fachmedien Wiesbaden, 2024. https://doi.org/10.10O7/978-3-658-3975
+
+[ocr_like/publisher/wrong]
+  exp: Springer Fachmedien Wiesbaden
+  got: "Sprinqcr Fachmedien Wiesbaden"
+  in : Grunow, Daniela, and Yassine Khoudja. “Multidimensionalität Sozialstrukturellen Wandels.” In Handbuch Sozialstrukturanalyse. Sprinqcr Fachmedien Wiesbaden, 2024. https://doi.org/10.10O7/978-3-658-3975
+
+[structured_clean/authors/missing]
+  exp: ["Кирчанов, Максим"]
+  got: [{"family":"Кирчанов","given":"М","initials":"М.","isCorporate":false}]
+  in : [1]Кирчанов М. A Cat’s Lick: Democratisation and Minority Communities in the Post-Soviet Baltic by Timofey Agarin, and Continuity and Change in the Baltic Sea Region: Comparing Foreign Policies by Dav
+
+[structured_clean/issue/missing]
+  exp: 3
+  got: null
+  in : [1]Кирчанов М. A Cat’s Lick: Democratisation and Minority Communities in the Post-Soviet Baltic by Timofey Agarin, and Continuity and Change in the Baltic Sea Region: Comparing Foreign Policies by Dav
+
+[structured_noisy/title/missing]
+  exp: Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории
+  got: "Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории"
+  in : [1]Алексеев И. Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории. Ab Imperio 2004;2004:491–516. https://doi.org/10.1353/imp.2004.0159.
+
+[structured_noisy/issue/missing]
+  exp: 3
+  got: null
+  in : [1]Алексеев И. Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории. Ab Imperio 2004;2004:491–516. https://doi.org/10.1353/imp.2004.0159.
+
+[structured_clean/title/missing]
+  exp: Biomass Waste to Energy for a Particleboards Industry
+  got: null
+  in : [1]Gebreegziabher T, Gebreeyesus F. Biomass Waste to Energy for a Particleboards Industry, Avestia Publishing; 2023. https://doi.org/10.11159/ehst23.123.
+
+[structured_noisy/pages/missing]
+  exp: 679-682
+  got: null
+  in : [1]Bischoff  A;  Schürmann  B.  Higher  Order  Neural  Networks  in  a  Unified  Learning  Scheme.  ICANN  ’93;  Springer  London;  1993;  p.  679–82.  https://doi.org/10.1007/978-1-4471-2063-6_187.
+
+[structured_noisy/title/wrong]
+  exp: Ripv1, a Ralstonia Solanacearum Type Iii Effector, Acts as a Novel E3 Ubiquitin Ligase to Suppress Plant Pamp-Triggered 
+  got: "Ripv1, à Ràlstonià Solànàcéàrum Typé Iii Efféctor, Acts às à Novél E3 Ubiquitin Ligàsé to Suppréss Plànt Pàmp-Triggéréd
+  in : [1]Chén H, Chéng D, Zhou D, Mo Y, Zhong L, Wàng Y, ét àl. Ripv1, à Ràlstonià Solànàcéàrum Typé Iii Efféctor, Acts às à Novél E3 Ubiquitin Ligàsé to Suppréss Plànt Pàmp-Triggéréd Immunity Résponsés ànd
+
+[ocr_like/year/wrong]
+  exp: 2014
+  got: 2408
+  in : Poese, M.E. ct a1. (2O14) “Trillium: A thermoacoustic-Stir1ing refrigerator implementation using an inline topology,” The Journal of the Acoustical Society of America, 135(4_Supplemcnt), pp. 24O8–2408
+
+[ocr_like/issue/wrong]
+  exp: 4_Supplement
+  got: "4_Supplemcnt"
+  in : Poese, M.E. ct a1. (2O14) “Trillium: A thermoacoustic-Stir1ing refrigerator implementation using an inline topology,” The Journal of the Acoustical Society of America, 135(4_Supplemcnt), pp. 24O8–2408
+
+[pasted_pdf_copy/journal/wrong]
+  exp: Anesthesia &amp; Analgesia
+  got: "Anesthesia & Analgesia"
+  in : Rebel, Annette, and Randall Schell. “Faust’s Anesthesiology Review, 4th\nEd.” Anesthesia &amp; Analgesia, vol. 120, no. 4, 2015, p. 953,\nhttps://doi.org/10.1213/ane.0000000000000588.
+
+[multiline_numbered/authors/missing]
+  exp: ["Poese, Matthew E.","Keolian, Robert M.","Smith, Robert W.","Mitchell, Eric C.","Roberts, Cory M.","Garrett, Steven L."
+  got: []
+  in : 23. [1]Poese ME, Keolian RM, Smith RW, Mitchell EC, Roberts CM, Garrett\nSL. Trillium: A thermoacoustic-Stirling refrigerator implementation using an inline topology. The\nJournal of the Acoustical So
+
+[multiline_numbered/issue/missing]
+  exp: 4_Supplement
+  got: null
+  in : 23. [1]Poese ME, Keolian RM, Smith RW, Mitchell EC, Roberts CM, Garrett\nSL. Trillium: A thermoacoustic-Stirling refrigerator implementation using an inline topology. The\nJournal of the Acoustical So
+
+[multiline_numbered/publisher/wrong]
+  exp: Atlantis Press
+  got: "Proceedings of the 6th International Conference on Strategies, Models and Technologies of Economic Systems Management (
+  in : [152] Kaminskyi, A., & Nehrey, M. (2019). Investment Risk Measurement for Agricultural ETF.\nProceedings of the 6th International Conference on Strategies, Models and Technologies of\nEconomic Systems
+
+[ocr_like/publisher/wrong]
+  exp: Springer Fachmedien Wiesbaden
+  got: "5pringer Fachmcdien Wiesbaden"
+  in : [1]D. Grunow and Y. Khoudja, “Multidimensionalität sozialstrukturellen Wandels,” in Handbuch 5ozialstrukturanalyse, 5pringer Fachmcdien Wiesbaden, 2024, pp. 1–36. doi: 10.1007/978-3-658-39759-3_6-1.
+
+[pasted_pdf_copy/year/missing]
+  exp: 2018
+  got: null
+  in : [1]Internet Engineering Task Force, “The Transport Layer Security (TLS)\nProtocol Version 1.3,” RFC Editor. [Online]. Available:\nhttps://www.rfc-editor.org/rfc/rfc8446
+
+[structured_clean/journal/wrong]
+  exp: Anesthesia &amp; Analgesia
+  got: "Anesthesia & Analgesia"
+  in : Rebel, A., & Schell, R. (2015). Faust’s Anesthesiology Review, 4th ed. Anesthesia &amp; Analgesia, 120(4), 953. https://doi.org/10.1213/ane.0000000000000588
+
+[structured_noisy/year/missing]
+  exp: 2015
+  got: null
+  in : Gagas, J. . Mouth of Madness. American Book Review, 36(4), 28–29. https://doi.org/
+
+[structured_noisy/year/missing]
+  exp: 2022
+  got: null
+  in : MARTINS, D. M. . CONEXÕES INTERDISCIPLINARES. Arco Editores. https://doi.org/
+
+[pasted_pdf_copy/journal/wrong]
+  exp: Anesthesia &amp; Analgesia
+  got: "Anesthesia & Analgesia"
+  in : [1]Rebel A, Schell R. Faust’s Anesthesiology Review, 4th ed. Anesthesia &amp;\nAnalgesia 2015;120:953. https://doi.org/10.1213/ane.0000000000000588.
+
+[pasted_pdf_copy/issue/missing]
+  exp: 4
+  got: null
+  in : [1]Rebel A, Schell R. Faust’s Anesthesiology Review, 4th ed. Anesthesia &amp;\nAnalgesia 2015;120:953. https://doi.org/10.1213/ane.0000000000000588.
+
+[ocr_like/publisher/missing]
+  exp: УП «ИВЦ Минфина»
+  got: null
+  in : Trаtsiak, A. I. (2022). THE 100-YEAR HISTORY 0F THE NATIONAL LIBRARY OF BELARUS IN THE AUDIO-VI5UAL DOCUMENTS OF THE 8ELARUSIAN STATE ARCHIVES OF FILMS, PHOTOGRAPHS AND SOUND. LIBRARIES IN THE INFORMA
+
+[pasted_pdf_copy/authors/missing]
+  exp: ["Bi, Hailin","Cheng, Chunpeng","Fu, Kunru","Fan, Xiang","Zi, Pengfei","Liu, Zhaoxian","Wang, Xudi","Guizhong, Zuo"]
+  got: []
+  in : [1]H. Bi et al., “A Novel Remote Detection Method for Inner Leak Location in a\nTokamak: Theory and Preliminary Experimental Validation,” 2023, Elsevier BV.\ndoi: 10.2139/ssrn.4525444.
+
+[ocr_like/authors/missing]
+  exp: ["Καρέλου, Μαρία"]
+  got: [{"family":"Καρέλου","given":"Μ","initials":"Μ.","isCorporate":false}]
+  in : Καρέλου, Μ. (2022). Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση [Dissertation, National Documentation Centre (EKT)]. https://doi.orq/10.12681/eadd/52712
+
+[ocr_like/title/missing]
+  exp: Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση
+  got: "Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση"
+  in : Καρέλου, Μ. (2022). Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση [Dissertation, National Documentation Centre (EKT)]. https://doi.orq/10.12681/eadd/52712
+
+[pasted_pdf_copy/authors/missing]
+  exp: ["Καρέλου, Μαρία"]
+  got: [{"family":"Καρέλου","given":"Μ","initials":"Μ.","isCorporate":false}]
+  in : [1]Καρέλου Μ. Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση.\nDissertation. National Documentation Centre (EKT), 2022.\nhttps://doi.org/10.12681/eadd/52712.
+
+[pasted_pdf_copy/title/missing]
+  exp: Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση
+  got: null
+  in : [1]Καρέλου Μ. Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση.\nDissertation. National Documentation Centre (EKT), 2022.\nhttps://doi.org/10.12681/eadd/52712.
+
+[pasted_pdf_copy/year/missing]
+  exp: 2022
+  got: null
+  in : [1]Καρέλου Μ. Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση.\nDissertation. National Documentation Centre (EKT), 2022.\nhttps://doi.org/10.12681/eadd/52712.
+
+[pasted_pdf_copy/doi/missing]
+  exp: 10.12681/eadd/52712
+  got: null
+  in : [1]Καρέλου Μ. Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση.\nDissertation. National Documentation Centre (EKT), 2022.\nhttps://doi.org/10.12681/eadd/52712.
+
+[multiline_numbered/authors/missing]
+  exp: ["Καρέλου, Μαρία"]
+  got: [{"family":"Καρέλου","given":"Μαρία","initials":"Μ.","isCorporate":false}]
+  in : [694] Καρέλου, Μαρία. “Σχεδιασμός Και Σύνθεση Ενώσεων Με Αντικαρκινική Δράση.”\nDissertation, National Documentation Centre (EKT), 2022. https://doi.org/10.12681/eadd/52712.
+
+[multiline_numbered/title/missing]
+  exp: Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση
+  got: "Σχεδιασμός Και Σύνθεση Ενώσεων Με Αντικαρκινική Δράση"
+  in : [694] Καρέλου, Μαρία. “Σχεδιασμός Και Σύνθεση Ενώσεων Με Αντικαρκινική Δράση.”\nDissertation, National Documentation Centre (EKT), 2022. https://doi.org/10.12681/eadd/52712.
+
+[structured_clean/journal/wrong]
+  exp: Anesthesia &amp; Analgesia
+  got: "Anesthesia & Analgesia"
+  in : Rebel, Annette, and Randall Schell. “Faust’s Anesthesiology Review, 4th Ed.” Anesthesia &amp; Analgesia 120, no. 4 (2015): 953. https://doi.org/10.1213/ane.0000000000000588.
+
+[structured_clean/pages/missing]
+  exp: 321-326
+  got: null
+  in : Shikhman, Vladimir. “Shapley-Wert.” In Studienbücher Wirtschaftsmathematik. Springer Fachmedien Wiesbaden, 2019. https://doi.org/10.1007/978-3-658-24543-6_48.
+
+[structured_noisy/pages/missing]
+  exp: 545-552
+  got: null
+  in : Hatala, Branislav. “Gas Cooled Fast Reactor System (GFR).” In Encyclopedia of Nuclear Energy. Elsevier, 2021. https://doi.org/.
+
+[multiline_numbered/volume/missing]
+  exp: 46
+  got: null
+  in : [31] Verstraete, B. “Lovers’ Legends: The Greek Gay Myths by Andrew\nCalimach (Review).” Mouseion: Journal of the Classical Association of Canada,\nvol. 46, no. 3, 2002, pp. 413–14, https://doi.org/10
+
+[multiline_numbered/issue/missing]
+  exp: 3
+  got: null
+  in : [31] Verstraete, B. “Lovers’ Legends: The Greek Gay Myths by Andrew\nCalimach (Review).” Mouseion: Journal of the Classical Association of Canada,\nvol. 46, no. 3, 2002, pp. 413–14, https://doi.org/10
+
+[ocr_like/publisher/missing]
+  exp: УП «ИВЦ Минфина»
+  got: "УП «ИВЦ Минфина»"
+  in : Trаtsiak, A. I. “THE 100-YEAR HISTORY OF THE NATIONAL LIBRARY OF BELARUS lN THE AUDIO-VISUAL DOCUMENTS OF THE BELARUSIAN STATE ARCHIVES OF FILMS, PHOTOGRAPHS AND SOUND.” Paper presented at LIBRARlES I
+
+[pasted_pdf_copy/doi/missing]
+  exp: 10.48158/semg23-144
+  got: null
+  in : Contreras, María Luisa, et al. “Anafilaxia Inducida Por Ejercicio: A\nPropósito de Un Caso.” 2023, XXIX Congreso Nacional de Medicina General\ny de Familia y V Jornadas SEMG Andalucía Abstracts Public
+
+[pasted_pdf_copy/publisher/missing]
+  exp: Grupo Pacífico
+  got: null
+  in : Contreras, María Luisa, et al. “Anafilaxia Inducida Por Ejercicio: A\nPropósito de Un Caso.” 2023, XXIX Congreso Nacional de Medicina General\ny de Familia y V Jornadas SEMG Andalucía Abstracts Public
+
+[multiline_numbered/pages/missing]
+  exp: 679-682
+  got: null
+  in : [450] [1]A. Bischoff and B. Schürmann, “Higher Order Neural Networks in\na Unified Learning Scheme,” in ICANN ’93, Springer London, 1993,\npp. 679–682. doi: 10.1007/978-1-4471-2063-6_187.
+
+[ocr_like/title/missing]
+  exp: An effective technique for solving generalized Cahn-Hilliard (C-H) problems
+  got: null
+  in : Hassan, A., Arafa, A. A. M., Rida, S. Z., Dagher, M. A., & Sherbiny, H. M. E. (2O23). An effective technique for solvinq generalized Cahn-Hi1liard (C-H) problems. Research Square Platform LLC. https:/
+
+[ocr_like/authors/missing]
+  exp: ["Καρέλου, Μαρία"]
+  got: [{"family":"Καρέλου","given":"Μ.","initials":"Μ.","isCorporate":false}]
+  in : [1]Μ. Καρέλου, “Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση,” Dissertation, National Documentation Ccntre (EKT), 2022. doi: 1O.12681/eadd/52712.
+
+[ocr_like/title/missing]
+  exp: Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση
+  got: "Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση"
+  in : [1]Μ. Καρέλου, “Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση,” Dissertation, National Documentation Ccntre (EKT), 2022. doi: 1O.12681/eadd/52712.
+
+[multiline_numbered/title/missing]
+  exp: Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση
+  got: "Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση"
+  in : [693] Καρέλου, Μ. (2022) Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση. Dissertation. National\nDocumentation Centre (EKT). Available at: https://doi.org/10.12681/eadd/52712.
+
+[pasted_pdf_copy/title/wrong]
+  exp: TLS Encrypted Client Hello
+  got: "RFC Editor. htt- ps://www.rfc-editor"
+  in : TLS Encrypted Client Hello. (2026). RFC Editor. htt-\nps://www.rfc-editor.org/rfc/rfc9849.html
+
+[multiline_numbered/year/wrong]
+  exp: 2026
+  got: 1104
+  in : [1104] [1]“Application-Layer Protocol Negotiation (ALPN) ID for CoAP over DTLS,” RFC Editor. [Online]. Available: https://www.rfc-editor.org/rfc/rfc9952.html
+
+[structured_clean/journal/wrong]
+  exp: Anesthesia &amp; Analgesia
+  got: "Anesthesia & Analgesia"
+  in : Rebel, A. and Schell, R. (2015) “Faust’s Anesthesiology Review, 4th ed.,” Anesthesia &amp; Analgesia, 120(4), p. 953. Available at: https://doi.org/10.1213/ane.0000000000000588.
+
+[ocr_like/journal/wrong]
+  exp: Mouseion: Journal of the Classical Association of Canada
+  got: "Mouseion: Journal of the Classica1 Association of Canada"
+  in : Verstraete, B. “Lovers’ Legends: The Greek Gay Myths by Andrew Calimach (Review).” Mouseion: Journal of the Classica1 Association of Canada 46, no. 3 (2002): 4l3–14. https://doi.org/10.l353/mou.2002.0
+
+[ocr_like/pages/wrong]
+  exp: 413-414
+  got: "4l3–14"
+  in : Verstraete, B. “Lovers’ Legends: The Greek Gay Myths by Andrew Calimach (Review).” Mouseion: Journal of the Classica1 Association of Canada 46, no. 3 (2002): 4l3–14. https://doi.org/10.l353/mou.2002.0
+
+[multiline_numbered/issue/missing]
+  exp: 3
+  got: null
+  in : 29. [1]Verstraete B. Lovers’ Legends: The Greek Gay Myths by Andrew Calimach\n(review). Mouseion: Journal of the Classical Association of Canada 2002;46:413–4. https://doi.org/10.1353/mou.2002.0027.
+
+[ocr_like/publisher/missing]
+  exp: УП «ИВЦ Минфина»
+  got: "УП «ИВЦ Минфина»"
+  in : [1]A. I. Trаtsiak, “THE 100-YEAR HISTORY OF THE NATIONAL LIBRARY OF 8ELARUS IN THE AUDIO-VISUAL DOCUMENTS OF THE BELARUSIAN STATE ARCHIVES OF FILMS, PHOTOGRAPHS AND SOUND,” УП «ИВЦ Минфина», 2022. doi
+
+[pasted_pdf_copy/publisher/missing]
+  exp: УП «ИВЦ Минфина»
+  got: null
+  in : Trаtsiak, A.I. (2022) “THE 100-YEAR HISTORY OF THE NATIONAL LIBRARY OF BELARUS\nIN THE AUDIO-VISUAL DOCUMENTS OF THE BELARUSIAN STATE ARCHIVES OF FILMS,\nPHOTOGRAPHS AND SOUND.” УП «ИВЦ Минфина». Avai
+
+[pasted_pdf_copy/pages/missing]
+  exp: 1-2
+  got: null
+  in : Zhao, Weibing. “Pro-Poor Tourism.” In Encyclopedia of Tourism. Springer\nInternational Publishing, 2014.\nhttps://doi.org/10.1007/978-3-319-01669-6_152-1.
+
+[multiline_numbered/title/missing]
+  exp: Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση
+  got: "Καρέλου, Μαρία. Σχεδιασμός Και Σύνθεση Ενώσεων Με Αντικαρκινική Δράση"
+  in : 697. Καρέλου, Μαρία. Σχεδιασμός Και Σύνθεση Ενώσεων Με Αντικαρκινική Δράση. 2022, https://doi.org/10.12681/eadd/52712. National Documentation Centre\n(EKT), Dissertation.
+
+[structured_clean/journal/wrong]
+  exp: Anesthesia &amp; Analgesia
+  got: "Anesthesia & Analgesia"
+  in : [1]A. Rebel and R. Schell, “Faust’s Anesthesiology Review, 4th ed.,” Anesthesia &amp; Analgesia, vol. 120, no. 4, p. 953, 2015, doi: 10.1213/ane.0000000000000588.
+
+[structured_clean/year/missing]
+  exp: 2018
+  got: null
+  in : [1]Internet Engineering Task Force, “The Transport Layer Security (TLS) Protocol Version 1.3,” RFC Editor. [Online]. Available: https://www.rfc-editor.org/rfc/rfc8446
+
+[pasted_pdf_copy/journal/missing]
+  exp: The Journal of the Acoustical Society of America
+  got: null
+  in : Lowe, Danny D. “Stereo Headphone Sound Source Localization System.” The\nJournal of the Acoustical Society of America, vol. 98, no. 1, 1995, pp.\n25–25, https://doi.org/10.1121/1.413710.
+
+[pasted_pdf_copy/year/missing]
+  exp: 1995
+  got: null
+  in : Lowe, Danny D. “Stereo Headphone Sound Source Localization System.” The\nJournal of the Acoustical Society of America, vol. 98, no. 1, 1995, pp.\n25–25, https://doi.org/10.1121/1.413710.
+
+[pasted_pdf_copy/doi/missing]
+  exp: 10.1121/1.413710
+  got: null
+  in : Lowe, Danny D. “Stereo Headphone Sound Source Localization System.” The\nJournal of the Acoustical Society of America, vol. 98, no. 1, 1995, pp.\n25–25, https://doi.org/10.1121/1.413710.
+
+[pasted_pdf_copy/volume/missing]
+  exp: 98
+  got: null
+  in : Lowe, Danny D. “Stereo Headphone Sound Source Localization System.” The\nJournal of the Acoustical Society of America, vol. 98, no. 1, 1995, pp.\n25–25, https://doi.org/10.1121/1.413710.
+
+[pasted_pdf_copy/issue/missing]
+  exp: 1
+  got: null
+  in : Lowe, Danny D. “Stereo Headphone Sound Source Localization System.” The\nJournal of the Acoustical Society of America, vol. 98, no. 1, 1995, pp.\n25–25, https://doi.org/10.1121/1.413710.
+
+[pasted_pdf_copy/pages/missing]
+  exp: 25-25
+  got: null
+  in : Lowe, Danny D. “Stereo Headphone Sound Source Localization System.” The\nJournal of the Acoustical Society of America, vol. 98, no. 1, 1995, pp.\n25–25, https://doi.org/10.1121/1.413710.
+
+[multiline_numbered/title/missing]
+  exp: Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории
+  got: "Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории"
+  in : [39] Алексеев, И. (2004) “Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории,” Ab Imperio, 2004(3),\npp. 491–516. Available at: https://doi.org/10.1353/imp.2004.0159.
+
+[ocr_like/publisher/missing]
+  exp: УП «ИВЦ Минфина»
+  got: "УП «ИВЦ Минфина»"
+  in : Trаtsiak, A. I. “THE 100-YEAR HISTORY OF THE NATIONAL LIBRARY OF BELARUS IN THE AUDIO-VISUAL DOCUMENTS OF THE BELARUSIAN STATE ARCHIVES OF FILMS, PHOTOGRAPHS AND S0UND.” 2022, LlBRARIES IN THE INFORMA
+
+[ocr_like/title/missing]
+  exp: An effective technique for solving generalized Cahn-Hilliard (C-H) problems
+  got: null
+  in : [1]Hassan A, Arafa AAM, Rida SZ, Dagher MA, Sherbiny HME. An effective technique for so1ving gencralized Cahn-Hilliard (C-H) prob1ems 2023. https://doi.org/10.212O3/rs.3.rs-2870128/v1.
+
+[ocr_like/title/missing]
+  exp: Galena-Elizabeth folio, Illinois-Iowa
+  got: null
+  in : US Geological Survey. Galcna-Elizabeth Folio, Illinois-Iowa. US Geological Survey, 19l6, https://doi.org/10.3133/gf200.
+
+[structured_clean/journal/wrong]
+  exp: Anesthesia &amp; Analgesia
+  got: "Anesthesia & Analgesia"
+  in : Rebel, Annette, and Randall Schell. “Faust’s Anesthesiology Review, 4th Ed.” Anesthesia &amp; Analgesia, vol. 120, no. 4, 2015, p. 953, https://doi.org/10.1213/ane.0000000000000588.
+
+[structured_noisy/journal/missing]
+  exp: American Book Review
+  got: null
+  in : Gagas Jonathan. “Mouth of Madness.” American Book Review vol. 36 no. 4 2015 28–29 https://doi.org/10.1353/abr.2015.0061.
+
+[structured_noisy/volume/missing]
+  exp: 36
+  got: null
+  in : Gagas Jonathan. “Mouth of Madness.” American Book Review vol. 36 no. 4 2015 28–29 https://doi.org/10.1353/abr.2015.0061.
+
+[structured_noisy/issue/missing]
+  exp: 4
+  got: null
+  in : Gagas Jonathan. “Mouth of Madness.” American Book Review vol. 36 no. 4 2015 28–29 https://doi.org/10.1353/abr.2015.0061.
+
+[structured_noisy/pages/missing]
+  exp: 28-29
+  got: null
+  in : Gagas Jonathan. “Mouth of Madness.” American Book Review vol. 36 no. 4 2015 28–29 https://doi.org/10.1353/abr.2015.0061.
+
+[pasted_pdf_copy/journal/missing]
+  exp: The Journal of the Acoustical Society of America
+  got: null
+  in : Poese, Matthew E., et al. “Trillium: A Thermoacoustic-Stirling Refrigerator\nImplementation Using an Inline Topology.” The Journal of the Acoustical\nSociety of America, vol. 135, no. 4_Supplement, 20
+
+[pasted_pdf_copy/volume/missing]
+  exp: 135
+  got: null
+  in : Poese, Matthew E., et al. “Trillium: A Thermoacoustic-Stirling Refrigerator\nImplementation Using an Inline Topology.” The Journal of the Acoustical\nSociety of America, vol. 135, no. 4_Supplement, 20
+
+[pasted_pdf_copy/issue/missing]
+  exp: 4_Supplement
+  got: null
+  in : Poese, Matthew E., et al. “Trillium: A Thermoacoustic-Stirling Refrigerator\nImplementation Using an Inline Topology.” The Journal of the Acoustical\nSociety of America, vol. 135, no. 4_Supplement, 20
+
+[pasted_pdf_copy/pages/missing]
+  exp: 2408-2408
+  got: null
+  in : Poese, Matthew E., et al. “Trillium: A Thermoacoustic-Stirling Refrigerator\nImplementation Using an Inline Topology.” The Journal of the Acoustical\nSociety of America, vol. 135, no. 4_Supplement, 20
+
+[multiline_numbered/issue/missing]
+  exp: 3
+  got: null
+  in : 41. [1]Алексеев И. Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории. Ab\nImperio 2004;2004:491–516. https://doi.org/10.1353/imp.2004.0159.
+
+[multiline_numbered/title/missing]
+  exp: THE 100-YEAR HISTORY OF THE NATIONAL LIBRARY OF BELARUS IN THE AUDIO-VISUAL DOCUMENTS OF THE BELARUSIAN STATE ARCHIVES O
+  got: "ИВЦ Минфина"
+  in : [167] [1]Trаtsiak AI. THE 100-YEAR HISTORY OF THE NATIONAL LIBRARY OF BELARUS IN THE\nAUDIO-VISUAL DOCUMENTS OF THE BELARUSIAN STATE ARCHIVES OF FILMS, PHOTOGRAPHS AND SOUND, УП\n«ИВЦ Минфина»; 2022. 
+
+[multiline_numbered/publisher/missing]
+  exp: УП «ИВЦ Минфина»
+  got: "УП «ИВЦ Минфина»"
+  in : [167] [1]Trаtsiak AI. THE 100-YEAR HISTORY OF THE NATIONAL LIBRARY OF BELARUS IN THE\nAUDIO-VISUAL DOCUMENTS OF THE BELARUSIAN STATE ARCHIVES OF FILMS, PHOTOGRAPHS AND SOUND, УП\n«ИВЦ Минфина»; 2022. 
+
+[structured_clean/journal/wrong]
+  exp: Anesthesia &amp; Analgesia
+  got: "Anesthesia & Analgesia"
+  in : [1]Rebel A, Schell R. Faust’s Anesthesiology Review, 4th ed. Anesthesia &amp; Analgesia 2015;120:953. https://doi.org/10.1213/ane.0000000000000588.
+
+[structured_clean/issue/missing]
+  exp: 4
+  got: null
+  in : [1]Rebel A, Schell R. Faust’s Anesthesiology Review, 4th ed. Anesthesia &amp; Analgesia 2015;120:953. https://doi.org/10.1213/ane.0000000000000588.
+
+[structured_noisy/issue/missing]
+  exp: 4
+  got: null
+  in : [1]Gagas J. Mouth of Madness. American Book Review 2015;36:28–9. https://doi.org/10.1353/abr.2015.0061.
+
+[pasted_pdf_copy/title/missing]
+  exp: Effect of Fecral Sublayer Composition on the Microstructure, Mechanical Properties and Corrosion Resistance of Fecral/Ys
+  got: null
+  in : Zhu, C., Qiu, X., Li, yuanming, Zhang, W., Yang, J., Zhong, Y., Deng, J., Zhou, M.,\nLiu, N., & Yang, J. (2023). Effect of Fecral Sublayer Composition on the\nMicrostructure, Mechanical Properties and
+
+[pasted_pdf_copy/year/missing]
+  exp: 2023
+  got: null
+  in : Zhu, C., Qiu, X., Li, yuanming, Zhang, W., Yang, J., Zhong, Y., Deng, J., Zhou, M.,\nLiu, N., & Yang, J. (2023). Effect of Fecral Sublayer Composition on the\nMicrostructure, Mechanical Properties and
+
+[pasted_pdf_copy/title/wrong]
+  exp: Efeitos da lesão da eminencia media hipotalamica nas alterações do timo e resposta imunologica induzidas pelo estresse e
+  got: "https:/- /doi.org/10.47749/t/unicamp.1994.84260"
+  in : Luiz Giacomini, Fernando. Efeitos Da Lesão Da Eminencia Media\nHipotalamica Nas Alterações Do Timo e Resposta Imunologica Induzidas\nPelo Estresse Em Ratos. 2021, https:/-\n/doi.org/10.47749/t/unicamp
+
+[pasted_pdf_copy/volume/wrong]
+  exp: 108
+  got: "02"
+  in : Boberski, Jens, et al. “Anisotropy of Force Distributions in Sheared So-\nft-Particle Systems.” EPL (Europhysics Letters), vol. 108, no. 4, 2014, p. 440-\n02, https://doi.org/10.1209/0295-5075/108/440
+
+[pasted_pdf_copy/issue/missing]
+  exp: 4
+  got: null
+  in : Boberski, Jens, et al. “Anisotropy of Force Distributions in Sheared So-\nft-Particle Systems.” EPL (Europhysics Letters), vol. 108, no. 4, 2014, p. 440-\n02, https://doi.org/10.1209/0295-5075/108/440
+
+[pasted_pdf_copy/pages/wrong]
+  exp: 44002
+  got: "440–402"
+  in : Boberski, Jens, et al. “Anisotropy of Force Distributions in Sheared So-\nft-Particle Systems.” EPL (Europhysics Letters), vol. 108, no. 4, 2014, p. 440-\n02, https://doi.org/10.1209/0295-5075/108/440
+
+[pasted_pdf_copy/authors/missing]
+  exp: ["Brown, Anthony"]
+  got: []
+  in : [1]A. Brown, “Directional Dark Matter Detection With Scintillating\nCrystals [Poster],” US DOE, 2022. doi: 10.2172/1879510.
+
+[ocr_like/pages/missing]
+  exp: 19-25
+  got: null
+  in : Pitchumoni, C. S. “Geriatric Gastroenterology: A Gastroenterologist’s Perspective.” In Geriatric Gastroenterology. Sprinqcr International Publishing, 2021. https://doi.org/10.1007/978-3-030-30192-7_2.
+
+[multiline_numbered/year/missing]
+  exp: 2020
+  got: null
+  in : 462. [1]T. Padmavathi, M. Uma Devi, and B. Prathibha Devi, “Mutagenic Effect of Chemicals on\nCertain Biochemical Parameters in Two Cultivars of Sunflower (Helianthus annuus L.),” in Medicinal Plants:
+
+[multiline_numbered/doi/missing]
+  exp: 10.1007/978-981-15-1636-8_42
+  got: null
+  in : 462. [1]T. Padmavathi, M. Uma Devi, and B. Prathibha Devi, “Mutagenic Effect of Chemicals on\nCertain Biochemical Parameters in Two Cultivars of Sunflower (Helianthus annuus L.),” in Medicinal Plants:
+
+[multiline_numbered/pages/missing]
+  exp: 693-714
+  got: null
+  in : 462. [1]T. Padmavathi, M. Uma Devi, and B. Prathibha Devi, “Mutagenic Effect of Chemicals on\nCertain Biochemical Parameters in Two Cultivars of Sunflower (Helianthus annuus L.),” in Medicinal Plants:
+
+[multiline_numbered/publisher/wrong]
+  exp: Springer Singapore
+  got: "in Medicinal Plants"
+  in : 462. [1]T. Padmavathi, M. Uma Devi, and B. Prathibha Devi, “Mutagenic Effect of Chemicals on\nCertain Biochemical Parameters in Two Cultivars of Sunflower (Helianthus annuus L.),” in Medicinal Plants:
+
+[pasted_pdf_copy/year/missing]
+  exp: 2026
+  got: null
+  in : [1]“Some Key Terms for Network Fault and Problem Management,” RFC Editor. [Online].\nAvailable: https://www.rfc-editor.org/rfc/rfc9940.html
+
+[structured_clean/pages/missing]
+  exp: 1-36
+  got: null
+  in : Grunow, Daniela, and Yassine Khoudja. “Multidimensionalität Sozialstrukturellen Wandels.” In Handbuch Sozialstrukturanalyse. Springer Fachmedien Wiesbaden, 2024. https://doi.org/10.1007/978-3-658-3975
+
+[ocr_like/issue/missing]
+  exp: 4
+  got: null
+  in : [1]Boberski J, Reza 5haebani M, Wolf DE. Anisotropy of force distributions in sheared soft-particle systems. EPL (Europhysics Letters) 2014;108:44002. https://doi.org/10.1209/0295-5075/108/44002.
+
+[pasted_pdf_copy/title/missing]
+  exp: Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории
+  got: "Собирание Расколотой Уммы: Фундаментализм Как Реинтерпретация Исламской Истории"
+  in : Алексеев, Игорь. “Собирание Расколотой Уммы: Фундаментализм Как\nРеинтерпретация Исламской Истории.” Ab Imperio 2004, no. 3 (2004): 49-\n1–516. https://doi.org/10.1353/imp.2004.0159.
+
+[pasted_pdf_copy/volume/wrong]
+  exp: 2004
+  got: "3"
+  in : Алексеев, Игорь. “Собирание Расколотой Уммы: Фундаментализм Как\nРеинтерпретация Исламской Истории.” Ab Imperio 2004, no. 3 (2004): 49-\n1–516. https://doi.org/10.1353/imp.2004.0159.
+
+[pasted_pdf_copy/issue/wrong]
+  exp: 3
+  got: "2004"
+  in : Алексеев, Игорь. “Собирание Расколотой Уммы: Фундаментализм Как\nРеинтерпретация Исламской Истории.” Ab Imperio 2004, no. 3 (2004): 49-\n1–516. https://doi.org/10.1353/imp.2004.0159.
+
+[pasted_pdf_copy/pages/wrong]
+  exp: 491-516
+  got: "49–41"
+  in : Алексеев, Игорь. “Собирание Расколотой Уммы: Фундаментализм Как\nРеинтерпретация Исламской Истории.” Ab Imperio 2004, no. 3 (2004): 49-\n1–516. https://doi.org/10.1353/imp.2004.0159.
+
+[pasted_pdf_copy/pages/missing]
+  exp: 57-74
+  got: null
+  in : He, Ming, and Toh-Ming Lu. “Cu-Dielectric Interfaces.” In Springer\nSeries in Materials Science. Springer New York, 2012. https://doi.org/10.1007/978-1-4614-1812--\n2_5.
+
+[structured_noisy/journal/missing]
+  exp: Zeitschrift für Gerontologie und Geriatrie
+  got: null
+  in : Singler K. and Masuch J. (2021) “Ein außergewöhnliches „Delirscreening“ ” Zeitschrift für Gerontologie und Geriatrie 54(5) 442–443. Available at: https://doi.org/10.1007/s00391-021-01916-5.
+
+[structured_noisy/volume/missing]
+  exp: 54
+  got: null
+  in : Singler K. and Masuch J. (2021) “Ein außergewöhnliches „Delirscreening“ ” Zeitschrift für Gerontologie und Geriatrie 54(5) 442–443. Available at: https://doi.org/10.1007/s00391-021-01916-5.
+
+[structured_noisy/issue/missing]
+  exp: 5
+  got: null
+  in : Singler K. and Masuch J. (2021) “Ein außergewöhnliches „Delirscreening“ ” Zeitschrift für Gerontologie und Geriatrie 54(5) 442–443. Available at: https://doi.org/10.1007/s00391-021-01916-5.
+
+[ocr_like/authors/missing]
+  exp: ["Алексеев, Игорь"]
+  got: [{"family":"Алексеев","given":"И","initials":"И.","isCorporate":false}]
+  in : Алексеев, И. (2004). Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории. Ab Irnperio, 2004(3), 491–516. https://doi.org/10.1353/imp.2004.0159
+
+[ocr_like/journal/wrong]
+  exp: Ab Imperio
+  got: "Ab Irnperio"
+  in : Алексеев, И. (2004). Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории. Ab Irnperio, 2004(3), 491–516. https://doi.org/10.1353/imp.2004.0159
+
+[pasted_pdf_copy/title/missing]
+  exp: Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории
+  got: "Собирание расколотой уммы: фундаментализм как реинтерпретация исламс- кой истории"
+  in : [1]И. Алексеев, “Собирание расколотой уммы: фундаментализм как реинтерпретация исламс-\nкой истории,” Ab Imperio, vol. 2004, no. 3, pp. 491–516, 2004, doi:\n10.1353/imp.2004.0159.
+
+[pasted_pdf_copy/publisher/missing]
+  exp: © Georg Thieme Verlag KG
+  got: null
+  in : Elgaafary, S., M. Hlevnjak, M. Schulze, et al. “Dauerhaftes Ansprechen Auf\nOlaparib Und Endokrine Therapie Bei Einer Patientin Mit Metastasiertem\nLuminalem Mammakarzinom Und gBRCA-Mutation.” Paper p
+
+[ocr_like/pages/missing]
+  exp: 197-217
+  got: null
+  in : Silcox, Mark. “Historicism, Scicnce Fiction, and the Singularity.” In Science and Fiction. Springer lnternational Publishing, 2021. https://doi.org/10.1007/978-3-030-64269-3_10.
+
+[multiline_numbered/pages/missing]
+  exp: 545-552
+  got: null
+  in : [466] Hatala, Branislav. “Gas Cooled Fast Reactor System (GFR).” In Encyclopedia of Nuclear Energy.\nElsevier, 2021. https://doi.org/10.1016/b978-0-12-409548-9.12207-9.
+
+[pasted_pdf_copy/title/wrong]
+  exp: Politica do aproveitamento de areia no Estado de São Paulo
+  got: "http- s://doi.org/"
+  in : [1]Herrmann H. Politica do aproveitamento de areia no Estado de São Pau-\nlo. Dissertation. Universidade Estadual de Campinas, 2021. http-\ns://doi.org/10.47749/t/unicamp.1990.27020.
+
+[structured_clean/year/missing]
+  exp: 2026
+  got: null
+  in : [1]“TLS Encrypted Client Hello,” RFC Editor. [Online]. Available: https://www.rfc-editor.org/rfc/rfc9849.html
+
+[pasted_pdf_copy/title/missing]
+  exp: Собирание расколотой уммы: фундаментализм как реинтерпретация исламской истории
+  got: "Собирание Расколотой Уммы: Фундаментализм Как Реин- терпретация Исламской Истории"
+  in : Алексеев, Игорь. “Собирание Расколотой Уммы: Фундаментализм Как Реин-\nтерпретация Исламской Истории.” Ab Imperio, vol. 2004, no. 3, 2004, pp.\n491–516, https://doi.org/10.1353/imp.2004.0159.
+
+[pasted_pdf_copy/year/missing]
+  exp: 2025
+  got: null
+  in : [1]“Best Practices for Deletion of Domain and Host Objects in the\nExtensible Provisioning Protocol (EPP),” RFC Editor. [Online]. Avai-\nlable: https://www.rfc-editor.org/rfc/rfc9874.html
+
+[structured_noisy/journal/wrong]
+  exp: Zeitschrift für Gerontologie und Geriatrie
+  got: "Zéitschrift Für Gérontologié Und Gériàtrié"
+  in : Singlér, K., ànd J. Màsuch. “Ein Außérgéwöhnlichés „Délirscrééning“.” Zéitschrift Für Gérontologié Und Gériàtrié, vol. 54, no. 5, 2021, pp. 442–43, https://doi.org/10.1007/s00391-021-01916-5.
+
+[ocr_like/issue/missing]
+  exp: 1
+  got: null
+  in : [1]Tiwari N. Merger Under The Regime of Competition Law: A Comparative Study of lndian Legal Framework With EC and UK. Bond Law Review 2011;23. https://doi.org/1O.53300/00lc.5580.
+
+[pasted_pdf_copy/issue/missing]
+  exp: 2
+  got: null
+  in : [1]Bird IL. A Lady’s Life in the Rocky Mountains. Victorian Review\n1997;23:167–167. https://doi.org/10.1353/vcr.1997.0036.
+
+[ocr_like/year/wrong]
+  exp: 2021
+  got: 1990
+  in : Herrrnann, Hildebrando. Politica Do Aproveitamento de Areia No Estado de São Paulo. 202l, https://doi.org/10.47749/t/unicamp.1990.27020. Univcrsidade Estadual de Campinas, Disscrtation.
+
+[structured_clean/issue/missing]
+  exp: 1
+  got: null
+  in : [1]Lowe DD. Stereo headphone sound source localization system. The Journal of the Acoustical Society of America 1995;98:25–25. https://doi.org/10.1121/1.413710.
+
+[structured_noisy/journal/wrong]
+  exp: Zeitschrift für Gerontologie und Geriatrie
+  got: "Zéitschrift Für Gérontologié Und Gériàtrié"
+  in : [1]Singlér K, Màsuch J. Ein àußérgéwöhnlichés „Délirscrééning“. Zéitschrift Für Gérontologié Und Gériàtrié 2021;54:442–3. https://doi.org/10.1007/s00391-021-01916-5.
+
+[pasted_pdf_copy/pages/missing]
+  exp: 679-682
+  got: null
+  in : Bischoff, Arnd, and Bernd Schürmann. “Higher Order Neural Networks in a Unified Learning Sche-\nme.” In ICANN ’93. Springer London, 1993. https://doi.org/10.1007/978-1-4471-2063-6_187.
+
+[ocr_like/publisher/missing]
+  exp: Elsevier
+  got: null
+  in : Hatala, B. (2021). Gas Cooled Fast Reactor Systern (GFR). In Encyclopedia of Nuclear Energy (pp. 545–552). E1sevier. https://doi.org/10.1016/b978-O-12-409548-9.12207-9
+
+[multiline_numbered/year/wrong]
+  exp: 2025
+  got: 1128
+  in : [1128] [1]“A YANG Data Model for IS-IS Segment Routing over the MPLS Data Plane,” RFC\nEditor. [Online]. Available: https://www.rfc-editor.org/rfc/rfc9902.html
+
+[structured_clean/title/missing]
+  exp: Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση
+  got: "Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση"
+  in : Καρέλου, Μ. (2022). Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση [Dissertation, National Documentation Centre (EKT)]. https://doi.org/10.12681/eadd/52712
+
+[ocr_like/journal/wrong]
+  exp: The Journal of the Acoustical Society of America
+  got: "The Journal of thc Acoustical Society of America"
+  in : [1]Shoar K, Lyka E, Coussios C, Cleveland R. Passivc acoustic mapping of cavitation during shock wave lithotripsy. The Journal of thc Acoustical Society of America 2017;141:3673–3673. https://doi.org/
+
+[ocr_like/issue/missing]
+  exp: 5_Supplement
+  got: null
+  in : [1]Shoar K, Lyka E, Coussios C, Cleveland R. Passivc acoustic mapping of cavitation during shock wave lithotripsy. The Journal of thc Acoustical Society of America 2017;141:3673–3673. https://doi.org/
+
+[ocr_like/publisher/missing]
+  exp: FUNDACIO DE LA COMUNITAT VALENCIANA SCITO
+  got: null
+  in : [1]H. Pashaei Adl et al., “The thermal decoherence of superradiance in halide perovskite supercrystals,” FUNDAClO DE LA COMUNITAT VALENCIANA SClTO, 2022. doi: 10.29363/nanogc.emlem.2022.044.
+
+[pasted_pdf_copy/title/wrong]
+  exp: IMAP4 Access Control List (ACL) Extension
+  got: "http- s://doi.org/"
+  in : Melnikov, A. IMAP4 Access Control List (ACL) Extension. RFC Editor, 2005, http-\ns://doi.org/10.17487/rfc4314.
+
+[structured_noisy/volume/wrong]
+  exp: 14
+  got: "20"
+  in : Pillai;  Rachna;  Nisha  Nayakkam  Valappil;  and  Dinesh  Aynipulli  Chulli  Parambil.  “An  Updated  Methodology  for  Sediment  Distribution  Maps  Using  Conditional  Strings  in  Arc  GIS  10.X.”
+
+[structured_clean/pages/missing]
+  exp: 1-2
+  got: null
+  in : Zhao, Weibing. “Pro-Poor Tourism.” In Encyclopedia of Tourism. Springer International Publishing, 2014. https://doi.org/10.1007/978-3-319-01669-6_152-1.
+
+[structured_clean/title/missing]
+  exp: Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση
+  got: "Σχεδιασμός Και Σύνθεση Ενώσεων Με Αντικαρκινική Δράση"
+  in : Καρέλου, Μαρία. “Σχεδιασμός Και Σύνθεση Ενώσεων Με Αντικαρκινική Δράση.” Dissertation, National Documentation Centre (EKT), 2022. https://doi.org/10.12681/eadd/52712.
+
+[ocr_like/pages/wrong]
+  exp: 191-194
+  got: "l91–94"
+  in : Robertson, Noel. “Myth and History in Ancient Greece: The Symbolic Creation of a Colony by Claude Calame (Review).” Mouseion: Journal of the Classica1 Association of Canada, vol. 48, no. 2, 2004, pp. 
+
+[pasted_pdf_copy/pages/missing]
+  exp: 197-217
+  got: null
+  in : Silcox, Mark. “Historicism, Science Fiction, and the Singularity.” Science and\nFiction, Springer International Publishing, 2021, pp. 197–217,\nhttps://doi.org/10.1007/978-3-030-64269-3_10.
+
+[pasted_pdf_copy/publisher/missing]
+  exp: Springer International Publishing
+  got: null
+  in : Silcox, Mark. “Historicism, Science Fiction, and the Singularity.” Science and\nFiction, Springer International Publishing, 2021, pp. 197–217,\nhttps://doi.org/10.1007/978-3-030-64269-3_10.
+
+[structured_noisy/journal/missing]
+  exp: Arabian Journal of Geosciences
+  got: null
+  in : Pillai, R., Valappil, N.N. and Parambil, D.A.C. (2021) “An updated methodology for sediment distribution maps using conditional strings in Arc GIS 10.X,” Arabian Journal of Geosciences, 14(20). Availa
+
+[structured_noisy/volume/missing]
+  exp: 14
+  got: null
+  in : Pillai, R., Valappil, N.N. and Parambil, D.A.C. (2021) “An updated methodology for sediment distribution maps using conditional strings in Arc GIS 10.X,” Arabian Journal of Geosciences, 14(20). Availa
+
+[structured_clean/title/missing]
+  exp: Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση
+  got: "Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση"
+  in : Καρέλου, Μ. (2022) Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση. Dissertation. National Documentation Centre (EKT). Available at: https://doi.org/10.12681/eadd/52712.
+
+[ocr_like/issue/missing]
+  exp: 2
+  got: null
+  in : [1]Robertson N. Myth and History in Ancient Greece: The Symbolic Creation of a Colony by Claude Calame (review). Mouseion: Journa1 of the Classical Association of Canada 2004;48:191–4. https://doi.org
+
+[structured_clean/title/missing]
+  exp: Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση
+  got: "Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση"
+  in : [1]Μ. Καρέλου, “Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση,” Dissertation, National Documentation Centre (EKT), 2022. doi: 10.12681/eadd/52712.
+
+[structured_clean/year/missing]
+  exp: 2025
+  got: null
+  in : [1]“The IPv6 VPN Service Destination Option,” RFC Editor. [Online]. Available: https://www.rfc-editor.org/rfc/rfc9837.html
+
+[structured_noisy/volume/wrong]
+  exp: 14
+  got: "20"
+  in : Pillai Rachna et al. “An Updated Methodology for Sediment Distribution Maps Using Conditional Strings in Arc GIS 10.X.” Arabian Journal of Geosciences vol. 14 no. 20 2021 https://doi.org/10.1007/s1251
+
+[structured_noisy/publisher/wrong]
+  exp: Springer Berlin Heidelberg
+  got: "Springér Bérlin Héidélbérg"
+  in : Gérlàch, Mànfréd, ànd Andréàs Wàrnké. Pockét Guidé Néuro-/Psychophàrmàkà Im Kindés- Und Jugéndàltér. Springér Bérlin Héidélbérg, 2020, https://doi.org/10.1007/978-3-662-61088-6.
+
+[structured_clean/title/missing]
+  exp: Σχεδιασμός και σύνθεση ενώσεων με αντικαρκινική δράση
+  got: "Σχεδιασμός Και Σύνθεση Ενώσεων Με Αντικαρκινική Δράση"
+  in : Καρέλου, Μαρία. Σχεδιασμός Και Σύνθεση Ενώσεων Με Αντικαρκινική Δράση. 2022, https://doi.org/10.12681/eadd/52712. National Documentation Centre (EKT), Dissertation.
+
+[multiline_numbered/issue/missing]
+  exp: 4
+  got: null
+  in : [71] [1]Gagas J. Mouth of Madness. American Book Review 2015;36:28–9. https://doi.org/10.1353/abr.2015.0061.
+
+[multiline_numbered/pages/missing]
+  exp: 1-31
+  got: null
+  in : [478] Kivistö, Sari. “Introduction: Medicine for the Sick Soul.” In Medical Analogy in\nLatin Satire. Palgrave Macmillan UK, 2009. https://doi.org/10.1057/9780230244870_1.
+
+[multiline_numbered/year/wrong]
+  exp: 2025
+  got: 1146
+  in : 1146. [1]“Transport Options for UDP,” RFC Editor. [Online]. Available: https://www.rfc-editor.org/rfc/rfc9868.html
+
+[structured_clean/issue/missing]
+  exp: 4_Supplement
+  got: null
+  in : [1]Poese ME, Keolian RM, Smith RW, Mitchell EC, Roberts CM, Garrett SL. Trillium: A thermoacoustic-Stirling refrigerator implementation using an inline topology. The Journal of the Acoustical Society 
+
+[ocr_like/pages/missing]
+  exp: 179-196
+  got: null
+  in : [1]S. Roy, S. Sen, R. Mehera, R. K. Pal, and S. K. 8andyopadhyay, “Brain Tumor Detection: A Comparative 5tudy Among Fast Object Detection Methods,” in Lecture Notes in Networks and Systems, Springer S

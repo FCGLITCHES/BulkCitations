@@ -1,0 +1,175 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(210, 40%, 98%);
+  --foreground: hsl(222, 47%, 11%);
+  --muted: hsl(210, 40%, 94%);
+  --muted-foreground: hsl(215, 16%, 47%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(222, 47%, 11%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(222, 47%, 11%);
+  --border: hsl(214, 32%, 91%);
+  --input: hsl(214, 32%, 91%);
+  --primary: hsl(220, 100%, 6%);
+  /* New semantic tokens */
+  --surface: #f8f9fb;
+  --on-surface: #191c1e;
+  --on-surface-variant: #44474e;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f2f4f6;
+  --surface-container: #eceef0;
+  --surface-container-high: #e6e8ea;
+  --surface-container-highest: #e0e3e5;
+  --primary-container: #002147;
+  --on-primary-container: #708ab5;
+  --primary-fixed-dim: #aec7f6;
+  --secondary: #43664d;
+  --error: #ba1a1a;
+  --on-error: #ffffff;
+  --outline: #74777f;
+  --outline-variant: #c4c6cf;
+}
+
+.dark {
+  --background: hsl(0, 0%, 9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(0, 0%, 15%);
+  --muted-foreground: hsl(0, 0%, 65%);
+  --popover: hsl(0, 0%, 11%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(0, 0%, 11%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(0, 0%, 20%);
+  --input: hsl(0, 0%, 20%);
+  --primary: hsl(220, 100%, 80%);
+  /* New semantic tokens - Dark Mode Overrides */
+  --surface: #191c1e;
+  --on-surface: #e1e2e4;
+  --on-surface-variant: #c4c6cf;
+  --surface-container-lowest: #0b0f11;
+  --surface-container-low: #1d2123;
+  --surface-container: #212527;
+  --surface-container-high: #2b3032;
+  --surface-container-highest: #363b3d;
+  --primary-container: #004786;
+  --on-primary-container: #d2e4ff;
+  --primary-fixed-dim: #aec7f6;
+  --secondary: #aad0b1;
+  --error: #ffb4ab;
+  --on-error: #690005;
+  --outline: #8e9199;
+  --outline-variant: #44474e;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  /* Disable transitions for instant theme switching */
+  .no-transitions,
+  .no-transitions *,
+  .no-transitions *:before,
+  .no-transitions *:after {
+    transition: none;
+  }
+}
+
+@layer utilities {
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .material-symbols-filled {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+
+  .institutional-login-texture {
+    background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBGqPKKmAu_ZcWLhJOUmYhJ60SDUI3xSGfgn9Wx47AWD3TiCmZfp03GrJEzrlZgo7-uCwZC7NsP7i_0I9TB3DSm2zFJWUw0fft232Y0b0IQsimCyme-57hmlM35TaJGt7S_Nh3KqyS8uudDOSu_ENWQN3SbzuvfLRSqPhz3GZHOysvbmyHIYWk7d5Rs69-uUJUQ_U6YJMokthv6Mh8E6Wil6Eb-0SAkWYchtMq8gYt41kFeEhp4OiJgVwCCPciN6KssTnr0-cK5sz7w');
+    background-position: center;
+    background-size: cover;
+  }
+}
+
+.bg-gradient-brand {
+  background: var(--primary-container);
+}
+
+.text-gradient-brand {
+  color: var(--primary);
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.glass-header {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.vellum-shadow {
+  box-shadow: 0 24px 48px -12px rgba(25, 28, 30, 0.04);
+}
+
+.signature-cta {
+  background: #002147;
+}
+
+.tonal-shift {
+  @apply bg-slate-50/50 dark:bg-slate-900/50;
+}
+
+.sage-gradient {
+  background: #002147;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #eceef0;
+  border-radius: 10px;
+}
+
+.citation-card {
+  border-left: 4px solid transparent;
+}
+
+.citation-card.ready { border-left-color: #10b981; }
+.citation-card.review { border-left-color: #f59e0b; }
+.citation-card.error { border-left-color: #ef4444; }
+
+.dark .citation-card.ready,
+.dark .citation-card.review,
+.dark .citation-card.error {
+  border-left-color: transparent;
+}

@@ -1,0 +1,7 @@
+{
+  "graphOptimized": false,
+  "notes": "Bootstrap fixture bundle generated in-repo for validation and smoke coverage.",
+  "offlineOptimized": false,
+  "provider": "CPUExecutionProvider",
+  "quantization": "none"
+}

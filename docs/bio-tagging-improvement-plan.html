@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIO Tagging — Improvement Plan & Roadmap</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --ink:#161b26; --muted:#5b6472;
+    --line:#e5e9ef; --line2:#eef1f5;
+    --indigo:#4f46e5; --teal:#0d9488; --amber:#d97706; --green:#059669; --red:#dc2626;
+    --p0:#6366f1; --p1:#0ea5e9; --p2:#0d9488; --p3:#d97706; --p4:#db2777;
+    --shadow:0 1px 2px rgba(16,24,40,.04),0 6px 22px rgba(16,24,40,.06);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:48px 28px 80px}
+  code{font-family:"SF Mono",ui-monospace,"Cascadia Code",Consolas,monospace;font-size:.86em;
+    background:#eef1f5;padding:1px 6px;border-radius:5px;color:#1f2937}
+
+  /* header */
+  header.hero{margin-bottom:36px}
+  .kicker{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--indigo);margin:0 0 10px}
+  h1{font-size:38px;line-height:1.1;margin:0 0 14px;letter-spacing:-.02em}
+  .thesis{font-size:18px;color:var(--muted);max-width:760px;margin:0}
+  .thesis b{color:var(--ink)}
+  .meta{margin-top:18px;font-size:13px;color:var(--muted);display:flex;gap:18px;flex-wrap:wrap}
+  .meta span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block}
+
+  h2{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+    margin:46px 0 18px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+
+  /* decision callouts */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .callout{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 22px;box-shadow:var(--shadow)}
+  .callout .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    padding:4px 9px;border-radius:6px;margin-bottom:12px}
+  .tag.restart{background:#fef2f2;color:var(--red)}
+  .tag.loop{background:#eef2ff;color:var(--indigo)}
+  .callout h3{margin:0 0 8px;font-size:18px}
+  .callout p{margin:0 0 10px;color:#39414f;font-size:14.5px}
+  .callout ul{margin:8px 0 0;padding-left:18px;color:#39414f;font-size:14px}
+  .callout li{margin:5px 0}
+
+  /* loop diagram */
+  .loop{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:30px 26px;box-shadow:var(--shadow)}
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;justify-content:center}
+  .node{flex:1 1 150px;min-width:140px;background:#f8fafc;border:1px solid var(--line);border-radius:12px;
+    padding:14px 14px;text-align:center;position:relative}
+  .node .n{font-size:11px;font-weight:700;color:var(--indigo);letter-spacing:.05em}
+  .node .t{font-size:14px;font-weight:650;margin:5px 0 3px}
+  .node .s{font-size:12px;color:var(--muted)}
+  .arrow{display:flex;align-items:center;justify-content:center;color:#9aa4b2;font-size:22px;padding:0 6px;flex:0 0 auto}
+  .gate{background:linear-gradient(180deg,#eef2ff,#fff);border:1.5px solid var(--indigo)}
+  .gate .n{color:var(--indigo)}
+  .branch{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+  .lane{border-radius:12px;padding:16px 18px;border:1px solid var(--line)}
+  .lane.auto{background:#ecfdf5;border-color:#a7f3d0}
+  .lane.human{background:#fffbeb;border-color:#fde68a}
+  .lane h4{margin:0 0 6px;font-size:14px;display:flex;align-items:center;gap:8px}
+  .lane.auto h4{color:var(--green)} .lane.human h4{color:var(--amber)}
+  .lane p{margin:0;font-size:13px;color:#39414f}
+  .lane .pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em}
+  .lane.auto .pill{background:#d1fae5;color:#047857}
+  .lane.human .pill{background:#fef3c7;color:#b45309}
+  .retrain{margin-top:18px;text-align:center;font-size:13px;color:var(--muted);
+    background:#f8fafc;border:1px dashed var(--line);border-radius:10px;padding:12px}
+  .retrain b{color:var(--ink)}
+
+  /* phases */
+  .phase{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:16px;overflow:hidden;box-shadow:var(--shadow)}
+  .phase .head{display:flex;align-items:center;gap:14px;padding:16px 22px;cursor:default;border-left:5px solid}
+  .phase .pid{font-size:12px;font-weight:800;letter-spacing:.06em;color:#fff;padding:4px 10px;border-radius:7px}
+  .phase .ptitle{font-size:17px;font-weight:700;flex:1}
+  .phase .pgoal{font-size:13px;color:var(--muted);text-align:right;max-width:42%}
+  .phase .body{padding:6px 22px 20px;display:grid;grid-template-columns:1fr 280px;gap:24px}
+  .phase ul{margin:10px 0 0;padding-left:18px}
+  .phase li{margin:7px 0;font-size:14.5px;color:#2c3340}
+  .phase li b{color:var(--ink)}
+  .gatebox{background:#f8fafc;border:1px solid var(--line);border-radius:11px;padding:14px 16px;align-self:start;margin-top:10px}
+  .gatebox .gl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .gatebox p{margin:0;font-size:13px;color:#39414f}
+  .gatebox .check{color:var(--green);font-weight:700}
+
+  .p0{border-color:var(--p0)} .p0 .pid{background:var(--p0)}
+  .p1{border-color:var(--p1)} .p1 .pid{background:var(--p1)}
+  .p2{border-color:var(--p2)} .p2 .pid{background:var(--p2)}
+  .p3{border-color:var(--p3)} .p3 .pid{background:var(--p3)}
+  .p4{border-color:var(--p4)} .p4 .pid{background:var(--p4)}
+
+  /* tables */
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);
+    border-radius:12px;overflow:hidden;box-shadow:var(--shadow);font-size:13.5px}
+  th{background:#f3f5f8;text-align:left;padding:11px 14px;font-size:11px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--muted);font-weight:700;border-bottom:1px solid var(--line)}
+  td{padding:10px 14px;border-bottom:1px solid var(--line2);color:#2c3340;vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  .num{font-variant-numeric:tabular-nums;font-weight:650;color:var(--ink)}
+  .tier{font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+  .tier.int{color:var(--teal)} .tier.prod{color:var(--indigo)}
+
+  /* principles */
+  .principles{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .pr{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px 20px;box-shadow:var(--shadow);position:relative}
+  .pr .pn{position:absolute;top:16px;right:18px;font-size:30px;font-weight:800;color:#eef1f5;line-height:1}
+  .pr h4{margin:0 0 7px;font-size:15.5px;padding-right:30px}
+  .pr p{margin:0;font-size:13.5px;color:#39414f}
+  .pr .lead{font-weight:650;color:var(--ink)}
+  .pr.span2{grid-column:1 / -1}
+
+  /* sequencing */
+  .seq{display:flex;gap:0;align-items:center;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;padding:20px;box-shadow:var(--shadow);justify-content:center}
+  .seq .s{font-weight:700;font-size:14px;padding:8px 14px;border-radius:9px;color:#fff}
+  .seq .a{color:#9aa4b2;font-size:20px;padding:0 8px}
+
+  footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+  @media(max-width:760px){
+    .grid2,.branch,.phase .body,.principles{grid-template-columns:1fr}
+    h1{font-size:30px}.phase .pgoal{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <p class="kicker">BulkReferences · ML Engine</p>
+    <h1>BIO Tagging — Self-Improving Label Loop</h1>
+    <p class="thesis">The bottleneck is <b>label quality, not model size</b>. Build a <b>consensus-gated loop</b> where the LLM, the live model, and the engine projection vote — the admin touches <b>only the disagreements</b> — and rebuild gold on real, <b>stratified</b> data with reliability gates that beat a frozen baseline.</p>
+    <div class="meta">
+      <span><span class="dot"></span> Objective: reliability on messy input</span>
+      <span><span class="dot" style="background:var(--amber)"></span> Constraint: minimal admin intervention</span>
+      <span><span class="dot" style="background:var(--indigo)"></span> Gate: beat <code>baseline-v1</code> on real eval</span>
+    </div>
+  </header>
+
+  <!-- ============ KEY DECISIONS ============ -->
+  <h2>Two foundational decisions</h2>
+  <div class="grid2">
+    <div class="callout">
+      <span class="tag restart">Restart gold — don't delete</span>
+      <h3>Quarantine the 1,200 synthetic refs &amp; rebuild on real data</h3>
+      <p>Synthetic templated rows teach the model template <em>shapes</em>, not real-world variety — exactly why <code>book_title</code> (F1 0.03), <code>publisher</code> (0.26) and <code>conference_title</code> (0.28) collapsed.</p>
+      <ul>
+        <li>Flip synthetic rows to <code>row_status: quarantined</code> — the loader already excludes them. <b>Nothing is lost.</b></li>
+        <li>Freeze the current ONNX model as <code>baseline-v1</code> — it's the consensus "model leg" <em>and</em> the bar to beat.</li>
+        <li>Rebuild gold smaller but <b>stratified</b>: quality &gt; volume for sequence labeling — <em>with</em> per-field minimums so rare classes don't vanish.</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <span class="tag loop">Minimal-admin loop</span>
+      <h3>Three-way consensus, human only on conflict</h3>
+      <p>Your instinct is right — LLM labels, engine fixes, you verify. The upgrade: make it a <b>vote between three independent signals</b> so most rows never need you.</p>
+      <ul>
+        <li><b>LLM</b> (GPT-5.4 nano) proposes field spans.</li>
+        <li><b>Engine projection</b> aligns them to tokens (hardened — no silent drops).</li>
+        <li><b>Live model</b> predicts independently.</li>
+        <li><b>Agree → auto-gold</b> (0 admin). <b>Disagree / ambiguous → admin.</b> That's the only human touch.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============ THE LOOP ============ -->
+  <h2>The labeling loop — how "minimal admin" actually works</h2>
+  <div class="loop">
+    <div class="flow">
+      <div class="node"><div class="n">1 · SAMPLE</div><div class="t">Stratified + active learning</div><div class="s">Cold-start: stratified. Steady: only uncertain / invalid refs.</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="n">2 · LLM</div><div class="t">API pre-label</div><div class="s">GPT-5.4 nano → candidate field spans (~300/batch).</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="n">3 · ENGINE</div><div class="t">Projection + align</div><div class="s">Fuzzy token alignment, flags ambiguity, never drops silently.</div></div>
+      <div class="arrow">→</div>
+      <div class="node gate"><div class="n">4 · CONSENSUS GATE</div><div class="t">LLM ∩ Model ∩ Projection</div><div class="s">Do all three signals agree on every span?</div></div>
+    </div>
+
+    <div class="branch">
+      <div class="lane auto">
+        <h4><span class="pill">Agree</span> Auto-gold — no admin</h4>
+        <p>All three signals match → promote to gold as <code>trust_level: auto_consensus</code>. Where LLM+projection agree but the <em>model</em> was wrong, it's still auto-gold <b>and</b> flagged as a high-value training example. No human needed.</p>
+      </div>
+      <div class="lane human">
+        <h4><span class="pill">Conflict</span> Admin verify / correct</h4>
+        <p>Projection failed, signals disagree, or span is ambiguous → routed to the span-correction UI. This is the <b>only</b> queue the admin sees — small, high-signal, accuracy-critical.</p>
+      </div>
+    </div>
+
+    <div class="retrain">
+      Gold set &nbsp;→&nbsp; <b>Retrain</b> &nbsp;→&nbsp; <b>Evaluate on held-out real eval set</b> &nbsp;→&nbsp; promote model only if it beats <code>baseline-v1</code> &nbsp;↺&nbsp; <b>the new model becomes the next "model leg" of the gate</b> — the loop tightens itself.
+    </div>
+  </div>
+
+  <!-- ============ ROADMAP ============ -->
+  <h2>Phased roadmap — each phase gated, no phase skips the eval</h2>
+
+  <div class="phase p0">
+    <div class="head"><span class="pid">P0</span><span class="ptitle">Lock the truth</span><span class="pgoal">Stop optimizing against a lying metric</span></div>
+    <div class="body">
+      <ul>
+        <li>Hand-label a <b>held-out, real, stratified eval set</b> (~300 refs) — never used for training.</li>
+        <li>Define <b>two-tier benchmarks</b>: internal model metrics <em>and</em> product/acceptance metrics (see below).</li>
+        <li>Freeze current model as <code>baseline-v1</code>; measure its <em>real</em> per-field F1 honestly.</li>
+        <li>Quarantine the 1,200 synthetic rows out of the active track.</li>
+      </ul>
+      <div class="gatebox"><div class="gl">Exit gate</div><p><span class="check">✓</span> A real eval set exists and every future change is scored on it. No promotion without it.</p></div>
+    </div>
+  </div>
+
+  <div class="phase p1">
+    <div class="head"><span class="pid">P1</span><span class="ptitle">Rebuild the gold track</span><span class="pgoal">Fix the label-generation root cause</span></div>
+    <div class="body">
+      <ul>
+        <li><b>Harden projection</b> in <code>bioSupervisionExport.ts</code>: replace raw <code>indexOf</code> with normalized/fuzzy alignment, positional disambiguation for repeated values, and <b>flag failures instead of silently dropping rows</b>.</li>
+        <li>Stand up the <b>LLM pre-label API call</b> and the <b>consensus reconciler</b> (LLM + model + projection).</li>
+        <li>Seed gold with the <b>stratified real sample</b>, consensus-verified.</li>
+      </ul>
+      <div class="gatebox"><div class="gl">Exit gate</div><p><span class="check">✓</span> Quantify rows previously lost to silent drops. New gold beats baseline per-field F1 on real eval.</p></div>
+    </div>
+  </div>
+
+  <div class="phase p2">
+    <div class="head"><span class="pid">P2</span><span class="ptitle">The minimal-admin flywheel</span><span class="pgoal">Where the "fast rate" comes from</span></div>
+    <div class="body">
+      <ul>
+        <li>Build the <b>span-correction UI</b> in <code>AdminBioTraining.tsx</code> (today it only selects datasets + trains — the missing piece).</li>
+        <li><b>Active-learning queue</b>: surface only low-confidence / invalid-BIO / signal-disagreement refs — route weak classes preferentially.</li>
+        <li>Auto-promote consensus agreements; auto-trigger retrain + auto-eval on each batch.</li>
+      </ul>
+      <div class="gatebox"><div class="gl">Exit gate</div><p><span class="check">✓</span> Predict → correct → retrain runs as one loop. Admin-touched rows are a small fraction of throughput.</p></div>
+    </div>
+  </div>
+
+  <div class="phase p3">
+    <div class="head"><span class="pid">P3</span><span class="ptitle">Cheap, latency-safe model upgrades</span><span class="pgoal">Attack the failure modes directly</span></div>
+    <div class="body">
+      <ul>
+        <li><b>CRF / Viterbi-constrained decoding</b> — makes invalid sequences (<code>I-author</code> with no <code>B-</code>) structurally impossible; lifts entity-F1 for ~0 inference cost.</li>
+        <li><b>Char / orthographic features</b> — citations are proper nouns &amp; numbers; a 45K word vocab has crippling OOV. Classic small-data NER win.</li>
+        <li><b>Class-weighted / focal loss</b> so single-digit classes stop being ignored.</li>
+      </ul>
+      <div class="gatebox"><div class="gl">Exit gate</div><p><span class="check">✓</span> Each change independently beats baseline on real eval. Throughput stays within guardrail (not the driver).</p></div>
+    </div>
+  </div>
+
+  <div class="phase p4">
+    <div class="head"><span class="pid">P4</span><span class="ptitle">Volume + the safe refactor</span><span class="pgoal">Only after benchmarks are locked</span></div>
+    <div class="body">
+      <ul>
+        <li>Import &amp; map <b>public citation corpora</b> (CORA / anystyle / Neural ParsCit) onto the 23-field schema to fill stratum gaps.</li>
+        <li><b>Move-only, parity-locked</b> split of the 25K-line extraction file: <b>one parser group at a time</b>, golden-output snapshot before &amp; after every move, byte-identical output asserted, <b>zero "while I'm here" fixes</b>.</li>
+      </ul>
+      <div class="gatebox"><div class="gl">Exit gate</div><p><span class="check">✓</span> Refactor produces identical golden output at every step. Corpus import improves weak-class F1.</p></div>
+    </div>
+  </div>
+
+  <!-- ============ STRATIFIED DATA ============ -->
+  <h2>Stratified gold set — coverage, not just count</h2>
+  <p style="color:var(--muted);margin:-6px 0 16px;font-size:14px">1,000 generic refs still miss the hard cases. Stratify across the inputs that actually break extraction, with a per-stratum minimum so the model sees each failure shape.</p>
+  <table>
+    <thead><tr><th>Stratum</th><th>Why it's hard</th><th>Min target</th></tr></thead>
+    <tbody>
+      <tr><td><b>Pasted PDF text</b></td><td>Broken line wraps, ligatures, hyphenation</td><td class="num">40</td></tr>
+      <tr><td><b>Google Scholar exports</b></td><td>Inconsistent ordering, abbreviated venues</td><td class="num">30</td></tr>
+      <tr><td><b>DOI-heavy refs</b></td><td>DOI/URL noise that steals <code>year</code>/<code>pages</code> spans</td><td class="num">30</td></tr>
+      <tr><td><b>Books</b></td><td><code>book_title</code> + publisher + edition + place — currently worst class</td><td class="num">40</td></tr>
+      <tr><td><b>Webpages / online sources</b></td><td><code>site_name</code>, <code>accessed_date</code>, URL boundaries</td><td class="num">30</td></tr>
+      <tr><td><b>Government / institutional reports</b></td><td><code>report_number</code>, <code>institution</code> — single-digit coverage today</td><td class="num">30</td></tr>
+      <tr><td><b>Theses &amp; dissertations</b></td><td><code>thesis_type</code>, institution, repository</td><td class="num">25</td></tr>
+      <tr><td><b>Conference papers</b></td><td><code>conference_title</code> — collapsed class</td><td class="num">30</td></tr>
+      <tr><td><b>Missing / inconsistent punctuation</b></td><td>Boundary detection has no delimiters to lean on</td><td class="num">30</td></tr>
+      <tr><td><b>Multilingual</b></td><td>Non-English names, venues, diacritics</td><td class="num">25</td></tr>
+      <tr><td><b>Student-style malformed</b></td><td>The real distribution — the inputs you must not fail confidently on</td><td class="num">40</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============ BENCHMARKS ============ -->
+  <h2>Benchmarks — measure the product, not just the model</h2>
+  <p style="color:var(--muted);margin:-6px 0 16px;font-size:14px">Users don't care whether the engine labels something APA7 vs Harvard. They care whether the final citation is usable without fixing it. Internal F1 is a <em>health signal</em>; the product metric is acceptance.</p>
+  <table>
+    <thead><tr><th style="width:120px">Tier</th><th>Metric</th><th>What it answers</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tier int">Internal</span></td><td>Per-field precision / recall / F1</td><td>Which fields the model is weak on (drives active learning)</td></tr>
+      <tr><td><span class="tier int">Internal</span></td><td>Entity-level exact match + BIO validity rate</td><td>Span boundary &amp; structural correctness</td></tr>
+      <tr><td><span class="tier prod">Product</span></td><td><b>Accept-without-edit rate</b></td><td>Would a student/researcher accept this output unchanged?</td></tr>
+      <tr><td><span class="tier prod">Product</span></td><td><b>Field-level edit distance</b></td><td>How much manual fixing remains per reference</td></tr>
+      <tr><td><span class="tier prod">Product</span></td><td><b>Rendered + export fidelity</b></td><td>Does the final formatted citation &amp; export match truth?</td></tr>
+      <tr><td><span class="tier prod">Product</span></td><td><b>Confident-wrong rate</b></td><td>High-confidence outputs that are actually wrong — the unforgivable case, drive toward zero</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============ PRINCIPLES ============ -->
+  <h2>Crosscutting principles</h2>
+  <div class="principles">
+    <div class="pr"><span class="pn">1</span><h4>Benchmark the output, not the internals</h4><p><span class="lead">Style/type F1 is internal.</span> The roadmap's north-star metric is "accept without fixing," plus export fidelity and edit distance. Internal labels never become the goal.</p></div>
+    <div class="pr"><span class="pn">2</span><h4>Stratify the real data</h4><p><span class="lead">Coverage beats count.</span> A stratified set with per-class minimums (PDF paste, Scholar, DOI-heavy, books, webpages, reports, theses, conference, broken punctuation, multilingual, malformed) — not 1,000 generic refs.</p></div>
+    <div class="pr"><span class="pn">3</span><h4>Reliability is the objective; throughput is a guardrail</h4><p><span class="lead">350 refs/sec must not collapse, but it does not drive the roadmap.</span> Users forgive a few extra seconds; they never forgive confident-wrong citations. Quality gates promotion — speed only monitors for regression.</p></div>
+    <div class="pr"><span class="pn">4</span><h4>Loud internally, calm externally</h4><p><span class="lead">Two channels.</span> Internal: structured health logs, per-phase degradation, confidence telemetry. External: clean states only — "Needs review", "Low confidence author", "Could not verify source". Never scary internals to end users.</p></div>
+    <div class="pr span2"><span class="pn">5</span><h4>The extraction-file split is move-only or it doesn't happen</h4><p><span class="lead">A 25K-line file is fragile, but splitting before benchmarks are locked invites months of churn.</span> Rules: do it <b>after</b> P0's eval harness exists; <b>one parser group at a time</b>; golden-output snapshot before &amp; after each move; assert byte-identical output; <b>zero behaviour changes, zero opportunistic fixes</b>. If you can't prove parity, you don't move.</p></div>
+  </div>
+
+  <!-- ============ SEQUENCING ============ -->
+  <h2>Sequencing</h2>
+  <div class="seq">
+    <span class="s" style="background:var(--p0)">P0 Lock truth</span><span class="a">→</span>
+    <span class="s" style="background:var(--p1)">P1 Rebuild gold</span><span class="a">→</span>
+    <span class="s" style="background:var(--p2)">P2 Flywheel</span><span class="a">→</span>
+    <span class="s" style="background:var(--p3)">P3 Model</span>
+    <span class="a">&amp;</span>
+    <span class="s" style="background:var(--p4)">P4 Volume + refactor</span>
+  </div>
+  <p style="color:var(--muted);font-size:14px;margin-top:14px">P0→P1→P2 is the critical path — it builds the self-improving loop that gives you the fast rate. P3 (model) and P4 (volume + the careful refactor) run after, gated on the same real eval set. The single highest-leverage first action: <b>harden the projection + stand up the real eval set</b> — together they improve every retrain immediately and finally tell you the truth.</p>
+
+  <footer>
+    BulkReferences citation engine · BIO tagging improvement plan · generated for review. Each phase is gated on beating <code>baseline-v1</code> on the held-out real eval set — no phase skips it.
+  </footer>
+
+</div>
+</body>
+</html>

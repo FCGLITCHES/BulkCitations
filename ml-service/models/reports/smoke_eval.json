@@ -1,0 +1,144 @@
+{
+  "bundle": "D:\\Coding\\Bulkreferences\\ml-service\\models\\current",
+  "gold": "D:\\Coding\\Bulkreferences\\ml-service\\datasets\\citation-bio\\eval\\holdout.template.jsonl",
+  "rows_evaluated": 2,
+  "rows_skipped": 0,
+  "internal": {
+    "entity_exact_precision": 0.3125,
+    "entity_exact_recall": 0.3333,
+    "entity_exact_f1": 0.3226,
+    "entity_true": 15,
+    "entity_predicted": 16,
+    "entity_correct": 5,
+    "per_label": {
+      "author": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "true": 2,
+        "predicted": 5,
+        "correct": 0
+      },
+      "doi": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "true": 1,
+        "predicted": 0,
+        "correct": 0
+      },
+      "institution": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "true": 1,
+        "predicted": 0,
+        "correct": 0
+      },
+      "issue": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "true": 1,
+        "predicted": 1,
+        "correct": 1
+      },
+      "journal": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.6667,
+        "true": 1,
+        "predicted": 2,
+        "correct": 1
+      },
+      "pages": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "true": 1,
+        "predicted": 1,
+        "correct": 1
+      },
+      "place_of_publication": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "true": 1,
+        "predicted": 0,
+        "correct": 0
+      },
+      "publisher": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "true": 1,
+        "predicted": 0,
+        "correct": 0
+      },
+      "report_number": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "true": 1,
+        "predicted": 0,
+        "correct": 0
+      },
+      "title": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "true": 2,
+        "predicted": 4,
+        "correct": 0
+      },
+      "url": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "true": 0,
+        "predicted": 1,
+        "correct": 0
+      },
+      "volume": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "true": 1,
+        "predicted": 1,
+        "correct": 1
+      },
+      "year": {
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1": 0.6667,
+        "true": 2,
+        "predicted": 1,
+        "correct": 1
+      }
+    },
+    "bio_validity_rate": 0.0
+  },
+  "product": {
+    "accept_without_edit_rate": 0.0,
+    "mean_field_similarity": 0.4135,
+    "mean_edit_distance": 63.0,
+    "confident_wrong_rate": 1.0,
+    "rows": 2
+  },
+  "by_stratum": {
+    "doi_heavy": {
+      "accept_without_edit_rate": 0.0,
+      "mean_field_similarity": 0.7787,
+      "mean_edit_distance": 43.0,
+      "confident_wrong_rate": 1.0,
+      "rows": 1
+    },
+    "gov_reports": {
+      "accept_without_edit_rate": 0.0,
+      "mean_field_similarity": 0.0484,
+      "mean_edit_distance": 83.0,
+      "confident_wrong_rate": 1.0,
+      "rows": 1
+    }
+  }
+}

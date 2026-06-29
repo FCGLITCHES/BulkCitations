@@ -1,0 +1,12 @@
+{
+  "SUPPORTED_EXACT_COMMIT": "Model exact style commit passed all policy thresholds.",
+  "HEURISTIC_AGREEMENT": "Heuristic and model agree on top style.",
+  "HEURISTIC_DISAGREEMENT": "Heuristic and model disagree on top style.",
+  "UNSUPPORTED_EXACT_OR_LOW_MARGIN": "Input matched unsupported exact style cues or had low style margin.",
+  "LOW_CONFIDENCE_EXACT": "Exact style confidence or margin was below policy thresholds.",
+  "FAMILY_ONLY_FALLBACK": "Family confidence passed while exact commit was withheld.",
+  "OOD_RISK": "Out-of-distribution risk exceeded policy tolerance.",
+  "MISSING_CALIBRATION_PRIMARY": "Primary mode requires calibration artifact before model commits are allowed.",
+  "INPUT_NOT_CITATION_LIKE": "Input did not match citation-like structure.",
+  "UNKNOWN_OR_OOD": "Policy abstained due insufficient confidence or unknown style evidence."
+}

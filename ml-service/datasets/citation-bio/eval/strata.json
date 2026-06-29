@@ -1,0 +1,27 @@
+{
+  "name": "citation-bio-holdout-v1",
+  "purpose": "Held-out, real, human-labeled eval set. NEVER used for training. The single source of truth for whether a BIO model change actually helped.",
+  "split": "holdout",
+  "label_space": "canonical BIO cores (author, editors, year, title, journal, conference_title, book_title, publisher, institution, edition, thesis_type, repository, article_number, accessed_date, site_name, database, report_number, place_of_publication, volume, issue, pages, doi, url)",
+  "total_target": 350,
+  "rules": [
+    "Every reference must be REAL (no synthetic/templated text).",
+    "Char offsets must be exact: raw_text[start:end] == entity_text.",
+    "A reference may only appear in ONE stratum (assign the dominant difficulty).",
+    "input_hash must not collide with any training-track row (the validator enforces this).",
+    "expected_fields is required for the product tier (accept-without-edit, edit distance)."
+  ],
+  "strata": [
+    { "key": "pdf_paste", "target": 40, "why": "Broken line wraps, ligatures, hyphenation from copied PDF text." },
+    { "key": "google_scholar_export", "target": 30, "why": "Inconsistent ordering, abbreviated venues." },
+    { "key": "doi_heavy", "target": 30, "why": "DOI/URL noise that steals year/pages spans." },
+    { "key": "books", "target": 40, "why": "book_title + publisher + edition + place — currently worst class." },
+    { "key": "webpages", "target": 30, "why": "site_name, accessed_date, URL boundaries." },
+    { "key": "gov_reports", "target": 30, "why": "report_number, institution — single-digit training coverage." },
+    { "key": "theses", "target": 25, "why": "thesis_type, institution, repository." },
+    { "key": "conference_papers", "target": 30, "why": "conference_title — collapsed class." },
+    { "key": "missing_punctuation", "target": 30, "why": "No delimiters for boundary detection." },
+    { "key": "multilingual", "target": 25, "why": "Non-English names, venues, diacritics." },
+    { "key": "student_malformed", "target": 40, "why": "The real distribution — must not fail confidently." }
+  ]
+}

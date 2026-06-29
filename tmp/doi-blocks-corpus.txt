@@ -1,0 +1,24 @@
+1) Jiménez-Luna J, Grisoni F, Weskamp N, Schneider G. Artificial intelligence in drug discovery: recent advances and future perspectives. Expert Opin Drug Discov. 2021;16:949-59. DOI: 10.1080/17460441.2021.1909567
+2) Paul D, Sanap G, Shenoy S, Kalyane D, Kalia K, Tekade RK. Artificial intelligence in drug discovery and development. Drug Discov Today. 2021;26:80-93. DOI: 10.1016/j.drudis.2020.10.010
+3) Sapoval N, Aghazadeh A, Nute MG, et al. Current progress and open challenges for applying deep learning across the biosciences. Nat Commun. 2022;13. DOI: 10.1038/s41467-022-29268-7
+4) Kim H, Kim E, Lee I, Bae B, Park M, Nam H. Artificial intelligence in drug discovery: a comprehensive review of data-driven and machine learning approaches. Biotechnol Bioprocess Eng. 2020;25:895-930. DOI: 10.1007/s12257-020-0049-y
+5) Gentile F, Yaacoub JC, Gleave J, et al. Artificial intelligence-enabled virtual screening of ultra-large chemical libraries with deep docking. Nat Protoc. 2022;17:672-97. DOI: 10.1038/s41596-021-00659-2
+6) Miljković F, Rodríguez-Pérez R, Bajorath J. Impact of artificial intelligence on compound discovery, design, and synthesis. ACS Omega. 2021;6:33293-9. DOI: 10.1021/acsomega.1c05512
+7) Skalic M, Jiménez J, Sabbadin D, De Fabritiis G. Shape-based generative modeling for de novo drug design. J Chem Inf Model. 2019;59:1205-14. DOI: 10.1021/acs.jcim.8b00706
+8) Sousa T, Correia J, Pereira V, Rocha M. Generative deep learning for targeted compound design. J Chem Inf Model. 2021;61:5343-61. DOI: 10.1021/acs.jcim.0c01496
+9) Daina A, Michielin O, Zoete V. SwissADME: a free web tool to evaluate pharmacokinetics, drug-likeness and medicinal chemistry friendliness of small molecules. Sci Rep. 2017;7. DOI: 10.1038/srep42717
+10) Zhang D, Luo G, Ding X, Lu C. Preclinical experimental models of drug metabolism and disposition in drug discovery and development. Acta Pharm Sin B. 2012;2:549-61. DOI: 10.1016/j.apsb.2012.10.004
+11) Vamathevan J, Clark D, Czodrowski P, et al. Applications of machine learning in drug discovery and development. Nat Rev Drug Discov. 2019;18:463-77. DOI: 10.1038/s41573-019-0024-5
+12) Cortes C, Vapnik V. Support-vector networks. Mach Learn. 1995;20:273-97. DOI: 10.1007/BF00994018
+1. Jiménez-Luna J, Grisoni F, Weskamp N, Schneider G: Artificial intelligence in drug discovery: recent
+advances and future perspectives. Expert Opin Drug Discov. 2021, 16:949-59.
+10.1080/17460441.2021.1909567
+2. Paul D, Sanap G, Shenoy S, Kalyane D, Kalia K, Tekade RK: Artificial intelligence in drug discovery and
+development. Drug Discov Today. 2021, 26:80-93. 10.1016/j.drudis.2020.10.010
+3. Sapoval N, Aghazadeh A, Nute MG, et al.: Current progress and open challenges for applying deep learning
+across the biosciences. Nat Commun. 2022, 13: 10.1038/s41467-022-29268-7
+4. Daina A, Michielin O, Zoete V: SwissADME: a free web tool to evaluate pharmacokinetics, drug-likeness and
+medicinal chemistry friendliness of small molecules. Sci Rep. 2017, 7: 10.1038/srep42717
+5. Schmidhuber J: Deep learning in neural networks: an overview. Neural Netw. 2015, 61:85-117.
+10.1016/j.neunet.2014.09.003
+6. LeCun Y, Bengio Y, Hinton G: Deep learning. Nature. 2015, 521:436-44. 10.1038/nature14539
